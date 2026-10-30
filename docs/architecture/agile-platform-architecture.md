@@ -185,7 +185,7 @@ Migrations: decided in the spec (G-28, D-66).
 The field-level contracts are in [contracts.md](contracts.md): conventions, shared schemas, 57 endpoints with caller policy, request, response, errors and side effects, examples, and the four frozen-first module interfaces (`LlmGateway.run`, `AiContext.assemble`, `Sessions`, `Core`). The caller-policy column is the policy map that `packages/contracts` implements (A-01).
 
 ## 7. Identity, permissions and trust boundaries
-**Authentication (D-03).** The browser signs in with Firebase and sends `Authorization: Bearer <ID token>`. The API verifies the token on every request against Google's public keys: algorithm RS256, issuer and audience from the tier's Firebase project id (library chosen in the spec). Claims used: `sub`, `email` and `email_verified`. The application role comes from `users`, never from a claim or the client. After verification the middleware loads the `users` row and rejects a disabled user (403 `USER_DISABLED`) before the policy gate (A-10).
+**Authentication (D-03).** The browser signs in with Firebase and sends `Authorization: Bearer <ID token>`. The API verifies the token on every request against Google's public keys: algorithm RS256, issuer and audience from the tier's Firebase project id (library chosen in the spec). Claims used: `sub` and `email`. The application role comes from `users`, never from a claim or the client. After verification the middleware loads the `users` row before the policy gate. Email verification and account disabling are Firebase configuration (D-57): a token that passes verification belongs to a verified, enabled account, so the application keeps no verified or disabled state and has no `EMAIL_NOT_VERIFIED` or `USER_DISABLED` path. This assumes the Firebase project is configured to issue tokens only to such accounts.
 
 **Registration (D-08, D-63).** Codes are strings of at least 13 characters, one per role per tier (local and dev use the demo codes of D-63; production codes are different, random and secret), compared in constant time and never logged (request bodies of these two endpoints are not logged). `POST /api/auth/check-code` is public and rate-limited per client IP; `register` checks the code again as the final authority, and is also rate-limited. The client IP is taken from the header the hosting platform sets (not one the client can supply; the spec names it); only an HMAC of it is stored. A Firebase account created directly, without a `users` row, can call nothing except `register` and gets 403 `USER_NOT_REGISTERED`.
 
@@ -286,7 +286,7 @@ sequenceDiagram
 |---|---|---|---|---|---|---|
 | check-code | sync | no | yes | wrong code 403; limit 429 | "code not accepted" or "wait a minute" | retry after `Retry-After` |
 | Firebase signup and email verification | sync (external) | n/a | n/a | Firebase error | Firebase message | retry; an account without a `users` row is harmless |
-| register | sync | yes (one insert) | repeat gives 409 `ALREADY_REGISTERED` | code, email-not-verified or race | the matching error | verify the email, retry |
+| register | sync | yes (one insert) | repeat gives 409 `ALREADY_REGISTERED` | code or race | the matching error | retry |
 
 ### 9.2 PM plan generation and approval
 ```mermaid
@@ -414,7 +414,7 @@ Every screen uses live data (no mocks) through the contracts client. Common stat
 
 | Screen (role) | Endpoints (contracts.md #) | Fields shown | Screen-specific states and actions |
 |---|---|---|---|
-| Sign in and register (all) | 2, 3, 4 | role, code, display name | code validated before signup; unverified email shows "verify your email, then continue" |
+| Sign in and register (all) | 2, 3, 4 | role, code, display name | code validated before signup; Firebase's own messages for sign-in problems are shown as returned (verification and disabled accounts are Firebase's, D-57) |
 | Projects list (all) | 6, 5 (PM) | name, status, progress | PM sees "New project"; empty for a new Dev Lead or Developer: "ask your PM to add you" |
 | Project board and backlog (all) | 7, 16, 20, 22, 24, 27 | epics, tasks, points, status, blocked, assignee, sprint | Developer can change only their own tasks; delete confirmation; stale version shows a reload prompt |
 | Checkpoints and sprints (PM, Dev Lead) | 12 to 15, 27 to 33 | dates, status, `completedPoints` | sprint close shows a carry-over choice for each unfinished task |

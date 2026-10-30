@@ -781,7 +781,7 @@ These fourteen were written into the first pass of the architecture document as 
 | D-45 | Sprint dates are inclusive calendar dates; sprints of a project do not overlap; one ACTIVE sprint per project | A-07 | none |
 | D-46 | A PLAN can be approved only when every epic in it is expanded | A-08 | enforced on `proposal_epics` rows (A-07) |
 | D-47 | The role × operation rows of the first pass (PMs and Dev Leads both edit epics, checkpoints and tasks; only Dev Leads and the assignee change task status; usage views show own sessions and aggregates) | A-09 | now the policy map (A-01) |
-| D-48 | `users.email` is unique and taken from the verified token; the display name is entered at registration | A-10 | `email_verified` required (A-10) |
+| D-48 | `users.email` is unique and taken from the verified token; the display name is entered at registration | A-10 | `email_verified` requirement dropped (D-57) |
 | D-49 | Only a PLANNED sprint may be deleted | A-11 | none |
 | D-50 | The per-endpoint codes `USER_NOT_REGISTERED` and `REGISTRATION_CODE_INVALID` | A-12 | more codes added (A-12) |
 | D-51 | Restoring a soft-deleted row is a manual database operation by the team | A-13 | none |
@@ -814,7 +814,7 @@ Source: `concerns.md`, a secondary attacker review of the first draft (Part 1: D
 | C-19 limiter undercounts | Accepted | A-04 |
 | C-20 wrong-owner overwrite in uploads | Accepted | A-05 |
 | C-21 parallel expansions write one JSON row | Accepted | A-07 |
-| C-22 unverified email, no disable path | Accepted | A-10 |
+| C-22 unverified email, no disable path | Closed by D-57 (Firebase configuration; member-removal rules remain open) | A-10 |
 | C-23 dev and prod leaks; deploy-path contradiction | Accepted | A-11 (sign-off item 1). Vercel supports branch-scoped Preview variables (documentation checked) |
 | C-24 a third-party 429 switches off AI | Accepted | A-12 |
 | C-25 §8 mapping holes | Accepted | A-12; architecture §8 |
@@ -849,7 +849,7 @@ Written in delegation mode: the team asked for valid findings to be integrated a
 | A-07 | `proposal_epics` rows with leases; requests carry no text or session id; session caps | One JSON payload with a version check | Parallel expansions would conflict or lose updates | yes (schema) |
 | A-08 | Context allow-list per feature; parameterised SQL with member ids; titles only; provenance | Scope retrieval to the target project only | Keeps D-28's purpose while closing the leaks | no |
 | A-09 | Guard version in the summary key; user and project in the result-cache key; flags recorded; `flagged` stored | Keys on content only | Prevents cross-user leaks and stale summaries after a security fix | no |
-| A-10 | `email_verified`; `disabled_at`; 24-character codes; hashed-IP rate limit table | Open email; no disable path | A teammate's address cannot be claimed; a leaked code has a revocation path | partly |
+| A-10 | Longer registration codes (at least 13 characters, D-63); hashed-IP rate limit table. `email_verified` and `disabled_at` were proposed and dropped (D-57: Firebase configuration) | Open email; no disable path | Brute-forcing a registration code becomes impractical; verification and disabling stay with Firebase | partly |
 | A-11 | Branch-scoped dev secrets; previews in mock mode; production only from protected `main`; approved migration job; startup assertions | Keep D-29 and D-32 as written | They contradict each other and previews would read dev secrets | no |
 | A-12 | Breaker counts upstream failures only; 429 transient; decaying budget block; new error codes; flagged input marked, not blocked | Global breaker on any failure | One user or an outsider on the shared key cannot switch AI off for everyone | no |
 | A-13 | Prisma client extension for soft-delete and archived filters; one `assertWritable` | A helper function | A helper can be bypassed | no |

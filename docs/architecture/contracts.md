@@ -57,7 +57,7 @@ Columns: policy (roles; predicate), request, response, errors beyond the common 
 | 7 | `GET /api/projects/{projectId}` | any role; member | none | 200 `ProjectDetail` | | none |
 | 8 | `PATCH /api/pm/projects/{projectId}` | PM; member | `{ name?, brief?, status?: "ARCHIVED", version }` | 200 `Project` | 409 `CONFLICT_VERSION` | archived projects become read-only |
 | 9 | `GET /api/projects/{projectId}/members` | any role; member | none | 200 list of `Member` | | none |
-| 10 | `POST /api/projects/{projectId}/members` | PM adds `DEV_LEAD`, LEAD adds `DEVELOPER`; member; adder | `{ email }` | 201 `Member` (200 with the same body if already a member) | 422 if the email is not a registered, verified, enabled user of the role the caller may add | inserts membership |
+| 10 | `POST /api/projects/{projectId}/members` | PM adds `DEV_LEAD`, LEAD adds `DEVELOPER`; member; adder | `{ email }` | 201 `Member` (200 with the same body if already a member) | 422 if the email is not a registered user of the role the caller may add | inserts membership |
 | 11 | `DELETE /api/projects/{projectId}/members/{userId}` | same roles as 10; member; adder | none | 204 | 409 `CONFLICT_STATE` if the user has open assigned tasks | deletes membership |
 
 ### 3.3 Planning (checkpoints, epics, tasks, sprints)
