@@ -1,35 +1,35 @@
 {
   "project-state": {
-    "checksum": "75fda8723eeebb0bb85d8e9b95456116a4cc27d7f9b1f4f95cedc4381db35ea8"
+    "checksum": "8afc687a71ac843ed821ed6d2a8d4f2f71a1d15ee162df40d1e2e51b1356aba1"
   },
   "branch-state": {
-    "checksum": "3d151397b636766290d8a86ff65989b45a36a7bfeaac6b18d8fa67502f4ca85c"
+    "checksum": "6b4ddf9e99ab53ae3dd9e6bbbf72f12d69966f0352f36cd44ec2fab3c1629bf9"
   },
   "sync-project-state": {
-    "checksum": "11ccbf5c29a707e06640d86a9a868314842aaa5caa48c9f9e5249dbdeef91237"
+    "checksum": "94c880654b452b0061d4073098c0d7f481356afd35522eca586ea1e658a1dfd5"
   },
   "writing-specs-lite": {
-    "checksum": "bcadddebec1d32a2a84eaecfeaac002dbfaebf51821d30c79cb2416ea2a09795"
+    "checksum": "837df0306e4bb4eba79590f963f7b5106bd6553d91a82fc388806fa98e9ea90b"
   },
   "writing-plans-lite": {
-    "checksum": "c15582b571373d290a7d0455a414db425f77291f0ef02f5c0f6e059669cfe299"
+    "checksum": "fca4baca5d0cb39034397e4cb4c5ca17b9b2ce1da9957d1ffa9d5d787368c229"
   },
   "executing-plans-lite": {
-    "checksum": "22cf8d6908b608bbf7e5738f78ceba1d486419a7aedea7273aead7a64c167ddb"
+    "checksum": "f86a48c988275b1609795610f67074766b30b02d3e016b99db36c6d9cd9f98c5"
   },
   "update-documentation": {
-    "checksum": "1a679de9ff9c285a4d8f8b1a870936f8ba84a20031467a61b16fb5cd08a447a6"
+    "checksum": "0dbdb2bad08695216540ec09b6bfc6c172ac5e6b60ce0aa96a2028f2f3e1142f"
   },
   "slicing-architecture": {
-    "checksum": "b9833b9d04db04437aa9b92e46c7a023de949916fe45f08820e07d6ea58b1c07"
+    "checksum": "800dabd9bfd6c09952b8db9e85726cce9e142827e21366790612ca88be052744"
   },
   "drafting-interfaces": {
-    "checksum": "89dbd736ee9673caed2ed2d711507979d87939c71892b7f914af8da62f67863f"
+    "checksum": "5eda6b786ce051f1df8442fb2581a81e3e22c486d73f3830e100c5e5fb340d64"
   },
   "authoring-tests": {
-    "checksum": "6e0405b26fcc7dd2fdf8d8d215feca86be17ec4697d7076148b21d859229e850"
+    "checksum": "8a487a77ede276c5eb5c58c117f0b4d6ff71cf1588a9f0eab61a83b4b7a17fb3"
   },
   "architecting-systems": {
-    "checksum": "eb846a33def4baf7dbf8b7677ced586008dc6b2d151060fcb9078a4c4ccfb601"
+    "checksum": "b1d6bdc8f22abb0973a50b837c74f17f3e95058dfd2e5bccd009e6a28b501929"
   }
 }

@@ -326,7 +326,7 @@ function drift() {
 function dirChecksum(dir) {
   const h = crypto.createHash('sha256');
   const walk = d => fs.readdirSync(d, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name)).forEach(e => {
-    const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else h.update(p.slice(dir.length) + '\0').update(fs.readFileSync(p));
+    const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else h.update(p.slice(dir.length).replace(/\\/g, '/') + '\0').update(fs.readFileSync(p).toString('latin1').replace(/\r\n/g, '\n'));
   });
   walk(dir); return h.digest('hex');
 }
