@@ -1,0 +1,11 @@
+{
+  "_comment": "Copy to workflow/manifest.json. Hand-written read-list per role. {state} = the project-state directory. `ws pack <role> [--area A] [--id C1] [--cat]` prints these files with sizes. Roles with byArea add architecture/<A>.md and conventions/<A>.md.",
+  "roles": {
+    "spec-writer":  { "files": ["AGENTS.md", "{state}/STATE.md", "{state}/guardrails.md"], "branchState": true, "byArea": true },
+    "planner":      { "files": ["{state}/guardrails.md", "{state}/STATE.md"], "branchState": true, "byArea": true },
+    "implementer":  { "files": ["{state}/guardrails.md"], "branchState": true, "byArea": true },
+    "reviewer":     { "files": ["{state}/guardrails.md"], "byArea": true },
+    "sync":         { "files": ["{state}/STATE.md", "{state}/guardrails.md", "{state}/ledger/done-ledger.md"], "branchState": true },
+    "doc-writer":   { "files": ["{state}/STATE.md"], "byArea": true }
+  }
+}

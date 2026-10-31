@@ -1,0 +1,6 @@
+{
+  "int_branch": "development",
+  "release_branch": "main",
+  "skills": ["project-state", "branch-state", "sync-project-state", "writing-specs-lite", "writing-plans-lite", "executing-plans-lite", "update-documentation", "slicing-architecture", "drafting-interfaces", "authoring-tests", "architecting-systems"],
+  "test_commands": {}
+}

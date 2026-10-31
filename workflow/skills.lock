@@ -1,0 +1,35 @@
+{
+  "project-state": {
+    "checksum": "75fda8723eeebb0bb85d8e9b95456116a4cc27d7f9b1f4f95cedc4381db35ea8"
+  },
+  "branch-state": {
+    "checksum": "3d151397b636766290d8a86ff65989b45a36a7bfeaac6b18d8fa67502f4ca85c"
+  },
+  "sync-project-state": {
+    "checksum": "11ccbf5c29a707e06640d86a9a868314842aaa5caa48c9f9e5249dbdeef91237"
+  },
+  "writing-specs-lite": {
+    "checksum": "bcadddebec1d32a2a84eaecfeaac002dbfaebf51821d30c79cb2416ea2a09795"
+  },
+  "writing-plans-lite": {
+    "checksum": "c15582b571373d290a7d0455a414db425f77291f0ef02f5c0f6e059669cfe299"
+  },
+  "executing-plans-lite": {
+    "checksum": "22cf8d6908b608bbf7e5738f78ceba1d486419a7aedea7273aead7a64c167ddb"
+  },
+  "update-documentation": {
+    "checksum": "1a679de9ff9c285a4d8f8b1a870936f8ba84a20031467a61b16fb5cd08a447a6"
+  },
+  "slicing-architecture": {
+    "checksum": "b9833b9d04db04437aa9b92e46c7a023de949916fe45f08820e07d6ea58b1c07"
+  },
+  "drafting-interfaces": {
+    "checksum": "89dbd736ee9673caed2ed2d711507979d87939c71892b7f914af8da62f67863f"
+  },
+  "authoring-tests": {
+    "checksum": "6e0405b26fcc7dd2fdf8d8d215feca86be17ec4697d7076148b21d859229e850"
+  },
+  "architecting-systems": {
+    "checksum": "eb846a33def4baf7dbf8b7677ced586008dc6b2d151060fcb9078a4c4ccfb601"
+  }
+}

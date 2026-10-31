@@ -1,0 +1,21 @@
+{
+  "_comment": "Copy to workflow/infra.json. `ws infra ensure` starts missing services once and rebuilds the template database only when hashFiles change; tests connect via TEST_DATABASE_URL and fall back to a throwaway container (Testcontainers or equivalent) when it is unset. Per-worker clones: `ws infra db <worker>` -> test_<branch>_<worker>.",
+  "services": {
+    "postgres": {
+      "image": "postgres:16",
+      "port": 55432,
+      "containerPort": 5432,
+      "env": { "POSTGRES_PASSWORD": "test" },
+      "health": "pg_isready -U postgres"
+    }
+  },
+  "databases": {
+    "app": {
+      "service": "postgres",
+      "user": "postgres",
+      "template": "app_template",
+      "migrate": "npx prisma migrate deploy --schema prisma/schema.prisma",
+      "hashFiles": ["prisma/schema.prisma"]
+    }
+  }
+}
