@@ -92,6 +92,9 @@ required section (below); an optional section with nothing to change is covered 
     other cases decide yourself. Likewise, every answer to a question you asked the operator that
     settles a design or scope point is a decision candidate (`ws decision new`); mark trivial
     preferences `local` and keep them in the branch state only.
+11. **A skill limit or flow does not fit** (a size cap you must exceed, a step that costs more
+    than the change, a read list that misses or wastes) — log it with `ws feedback` and say it in
+    one line (`project-state` skill, `skill-feedback.md`). Never edit the vendored skill.
 
 Not at the end, not batched: sessions end unpredictably and the update is what gets lost. **A
 task is not complete until the branch state reflects it.**

@@ -95,4 +95,11 @@ a partial yes.
 | 4 | Fold a merged branch state | `sync-project-state` |
 | 5 | Fold report + guide question | `sync-project-state` |
 | 6 | Guide confirmation for a `Done` workstream | `update-documentation` |
+
+## 9. Skill Feedback
+
+If a skill limit or flow does not fit the work (a size cap too low, a read list too long, a step
+costing more than the change), log it with `ws feedback` and mention it in one line; at a stage
+boundary, propose a batch if three or more are open. Never edit `workflow/skills/`. Procedure:
+`project-state` skill, `skill-feedback.md`.
 ````

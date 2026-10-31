@@ -17,9 +17,9 @@ const BUDGETS = [ // soft targets in bytes; reported, never enforced
 const BRANCH_STATE_BUDGET = 8192;
 
 const [cmd, ...args] = process.argv.slice(2);
-const commands = { init, doctor, budget, pack, status, changes, task, hook, infra, test, adapters, 'verify-scope': verifyScope, decision, lesson, fold, skills, drift, 'guide-targets': guideTargets };
+const commands = { feedback, init, doctor, budget, pack, status, changes, task, hook, infra, test, adapters, 'verify-scope': verifyScope, decision, lesson, fold, skills, drift, 'guide-targets': guideTargets };
 if (!commands[cmd]) {
-  console.log('ws <init|doctor|budget|pack <role> [--area A] [--id C1] [--cat]|status <W> <status>|changes [slug]|task start|done [T]|infra ...|test [component]|adapters claude|codex|verify-scope <role>|decision new|show|supersede|lesson new|graduate|fold <slug>|skills sync|check|drift|guide-targets <paths...>>');
+  console.log('ws <init|doctor|budget|pack <role> [--area A] [--id C1] [--cat]|status <W> <status>|changes [slug]|task start|done [T]|infra ...|test [component]|adapters claude|codex|verify-scope <role>|decision new|show|supersede|lesson new|graduate|fold <slug>|skills sync|check|drift|guide-targets <paths...>|feedback <skill> --issue --evidence --suggest>');
   process.exit(cmd ? 1 : 0);
 }
 
@@ -311,6 +311,18 @@ function lesson([sub, ...a]) {
   } else console.error('ws lesson new <title> [--rule R --scope project|role:X --cause C --found F] | graduate <L-id>');
 }
 
+// ---- skill feedback ----
+function feedback([skill, ...a]) {
+  const f = path.join(WORKFLOW, 'skill-feedback.md');
+  if (!skill || !flag(a, '--issue')) { console.error('ws feedback <skill-or-limit> --issue "..." --evidence "..." --suggest "..."'); process.exit(1); }
+  const head = '# Skill Feedback\n\nBounds or flows that did not fit (project-state skill, skill-feedback.md). The operator decides; changes are made at user level and re-synced.\n\n| Date | Skill / limit | Issue | Evidence | Suggested revision | Status |\n|---|---|---|---|---|---|\n';
+  if (!fs.existsSync(f)) fs.writeFileSync(f, head);
+  const c = v => String(flag(a, v) || '-').replace(/\|/g, '/').replace(/\n/g, ' ');
+  fs.appendFileSync(f, `| ${new Date().toISOString().slice(0, 10)} | ${skill} | ${c('--issue')} | ${c('--evidence')} | ${c('--suggest')} | Open |\n`);
+  const open = (read(f).match(/\| Open \|\s*$/gm) || []).length;
+  console.log(`logged in ${f} (${open} open${open >= 3 ? '; three or more open: propose a revision batch to the operator' : ''})`);
+}
+
 // ---- drift ----
 function drift() {
   const dir = path.join(STATE_DIR, 'architecture');
@@ -342,7 +354,8 @@ function skills([sub]) {
       fs.rmSync(path.join(dst, n), { recursive: true, force: true }); fs.cpSync(from, path.join(dst, n), { recursive: true });
       lock[n] = { checksum: dirChecksum(path.join(dst, n)) };
     }
-    for (const n of fs.readdirSync(dst)) if (!enabled.includes(n)) { fs.rmSync(path.join(dst, n), { recursive: true, force: true }); console.log(`removed (not enabled): ${n}`); }
+    for (const n of fs.readdirSync(dst)) if (!enabled.includes(n) && n !== 'README.md') { fs.rmSync(path.join(dst, n), { recursive: true, force: true }); console.log(`removed (not enabled): ${n}`); }
+    if (fs.existsSync(path.join(src, 'README.md'))) fs.copyFileSync(path.join(src, 'README.md'), path.join(dst, 'README.md'));
     fs.writeFileSync(lockFile, JSON.stringify(lock, null, 2) + '\n'); console.log(`synced ${Object.keys(lock).length} skill(s); lock updated. Commit workflow/skills and skills.lock.`);
   } else if (sub === 'check') {
     const lock = readJson(lockFile) || {}; let bad = 0;
@@ -350,7 +363,7 @@ function skills([sub]) {
       const p = path.join(dst, n);
       if (!fs.existsSync(p)) { console.log(`MISSING ${n}`); bad++; } else if (lock[n]?.checksum !== dirChecksum(p)) { console.log(`EDITED  ${n} (differs from lock; edit the user-level skill and re-sync)`); bad++; }
     }
-    if (fs.existsSync(dst)) for (const n of fs.readdirSync(dst)) if (!enabled.includes(n)) { console.log(`UNLISTED ${n}`); bad++; }
+    if (fs.existsSync(dst)) for (const n of fs.readdirSync(dst)) if (!enabled.includes(n) && n !== 'README.md') { console.log(`UNLISTED ${n}`); bad++; }
     console.log(bad ? `${bad} problem(s)` : 'ok'); process.exit(bad ? 1 : 0);
   } else console.error('ws skills sync|check  (source: $WS_SKILLS_SRC or ~/.claude/skills; enabled list: config.json "skills")');
 }

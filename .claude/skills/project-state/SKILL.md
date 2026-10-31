@@ -70,7 +70,7 @@ If `workflow/project-state/STATE.md` does not exist — [bootstrapping.md](boots
 [--id C1] [--cat]` (the read-list for a role from `workflow/manifest.json`, with a token
 estimate; copy [templates/manifest-template.json](templates/manifest-template.json)),
 `status <W> <status>` (validated), `changes [slug]` (Changes table from commit trailers),
-`task start <T>|done`, `test [component]` (quiet runner), `infra ...` ([infra.md](infra.md)), `decision new|show|supersede`, `lesson new|graduate`, `fold <slug>` (mechanical part of a sync), `adapters claude|codex` and `verify-scope <role>` (role files in `templates/agents/`, `templates/models-template.json`), `skills sync|check` (vendoring with a checksum lock), `drift`, `guide-targets <paths...>`. **If Node is missing, everything still works by hand** — the steps below and
+`task start <T>|done`, `test [component]` (quiet runner), `infra ...` ([infra.md](infra.md)), `decision new|show|supersede`, `lesson new|graduate`, `fold <slug>` (mechanical part of a sync), `adapters claude|codex` and `verify-scope <role>` (role files in `templates/agents/`, `templates/models-template.json`), `skills sync|check` (vendoring with a checksum lock), `drift`, `guide-targets <paths...>`, `feedback <skill> --issue --evidence --suggest`. **If Node is missing, everything still works by hand** — the steps below and
 in `branch-state` are the fallback; `ws` only saves tokens and typos.
 
 ## Creating a Cold-Folder Entry
@@ -126,6 +126,7 @@ about size.
 | [templates/lesson-template.md](templates/lesson-template.md) | Recording a permanent lesson |
 | [templates/agents/](templates/agents/), [templates/models-template.json](templates/models-template.json) | Setting up provider-neutral role definitions (`workflow/agents/`) and model tiers; then `ws adapters` |
 | [experiments.md](experiments.md) | Validating which model tier a role can use |
+| [skill-feedback.md](skill-feedback.md) | A size cap, read list or flow does not fit the work: how to flag it and propose a revision |
 | [templates/agents-router-template.md](templates/agents-router-template.md) | Writing a project's `AGENTS.md` for the first time |
 | `branch-state` skill | Any work happening *on* a branch — write-immediately triggers, the branch-state template, session rows, commit conventions |
 | `sync-project-state` skill | Folding a merged, approved branch state into this layout |
