@@ -1,17 +1,17 @@
 # Contracts: API and module interfaces
 
-Companion to [agile-platform-architecture.md](agile-platform-architecture.md) (§6). It holds the field-level contracts that the zod schemas in `packages/contracts` implement (D-01c). If code and this file disagree, fix the disagreement before merging; the OpenAPI file generated from the schemas is checked against the running API by a contract test (A-17).
+Companion to [agile-platform-architecture.md](agile-platform-architecture.md) (§6). It holds the field-level contracts that the zod schemas in `packages/contracts` implement (AD-01c). If code and this file disagree, fix the disagreement before merging; the OpenAPI file generated from the schemas is checked against the running API by a contract test (A-17).
 
-Decisions cited as D-nn are in [decision-log.md](decision-log.md); tags A-nn are delegated assumptions awaiting the team's sign-off (architecture §16).
+Decisions cited as AD-nn are in [decision-log.md](decision-log.md); tags A-nn are delegated assumptions awaiting the team's sign-off (architecture §16).
 
 ## 1. Conventions
 - Base path `/api`. JSON bodies in UTF-8; `Content-Type: application/json` (the upload accepts the same JSON). Unknown body fields and server-managed fields are rejected with 422.
 - Auth: `Authorization: Bearer <Firebase ID token>` on everything except `GET /api/health` and `POST /api/auth/check-code` (architecture §7).
-- Ids are UUIDs. Instants are ISO-8601 UTC (`2026-10-29T01:30:00Z`). Dates are `YYYY-MM-DD` and are read in the application time zone (D-37).
-- Every mutable entity returns `version`. A write sends the `version` it read; a stale one gives 409 `CONFLICT_VERSION` (D-35).
-- Lists: `?page=0&size=20` (size at most 100); response `{ "items": [...], "page": 0, "size": 20, "total": 134 }`; a page past the end returns an empty `items`; each list names its sort key, with `id` as tie-breaker (D-37).
+- Ids are UUIDs. Instants are ISO-8601 UTC (`2026-10-29T01:30:00Z`). Dates are `YYYY-MM-DD` and are read in the application time zone (AD-37).
+- Every mutable entity returns `version`. A write sends the `version` it read; a stale one gives 409 `CONFLICT_VERSION` (AD-35).
+- Lists: `?page=0&size=20` (size at most 100); response `{ "items": [...], "page": 0, "size": 20, "total": 134 }`; a page past the end returns an empty `items`; each list names its sort key, with `id` as tie-breaker (AD-37).
 - Every response carries `X-Request-Id`. Errors use the envelope and codes of architecture §8.
-- Policy notation (the policy map, A-01): roles `PM`, `LEAD` (Dev Lead), `DEV` (Developer). Predicates: `member` = caller is a member of the project; `self` = the resource belongs to the caller; `assignee` = the task is assigned to the caller; `adder` = the caller's role may add that member's role. A route missing from this map fails CI; the generated authorisation test (D-26) iterates the map.
+- Policy notation (the policy map, A-01): roles `PM`, `LEAD` (Dev Lead), `DEV` (Developer). Predicates: `member` = caller is a member of the project; `self` = the resource belongs to the caller; `assignee` = the task is assigned to the caller; `adder` = the caller's role may add that member's role. A route missing from this map fails CI; the generated authorisation test (AD-26) iterates the map.
 - AI endpoints never accept a session id, model, prompt, flag or any experiment setting from the client; sessions and flags are decided on the server (A-07, A-09).
 
 ## 2. Shared schemas
@@ -86,7 +86,7 @@ Mutations on an archived project return 409 `CONFLICT_STATE` (one check in `core
 | 30 | `POST /api/sprints/{id}/start` | LEAD; member | `{ version }` | 200 `Sprint` (ACTIVE) | 409 `CONFLICT_STATE` unless PLANNED, or another sprint is ACTIVE | update |
 | 31 | `POST /api/sprints/{id}/close` | LEAD; member | `{ version, carryOver: [{ taskId, to: "BACKLOG" or a PLANNED sprint id }] }` (one entry for each task not DONE) | 200 `Sprint` (CLOSED, `completedPoints` set) | 409 `CONFLICT_STATE` unless ACTIVE; 422 if a not-DONE task has no carry-over entry | sets `completedPoints` from the DONE tasks; moves carried tasks; `SPRINT_CHANGED` events |
 | 32 | `DELETE /api/sprints/{id}?version=` | LEAD; member | none | 204 | 409 `CONFLICT_STATE` unless PLANNED | soft delete; its tasks go to the backlog |
-| 33 | `GET /api/projects/{id}/progress` | any; member | none | 200 `{ pointsTotal, pointsDone, percent, unestimatedTasks, velocity: [{ sprintId, name, completedPoints }] }` | | none (computed in code, D-12) |
+| 33 | `GET /api/projects/{id}/progress` | any; member | none | 200 `{ pointsTotal, pointsDone, percent, unestimatedTasks, velocity: [{ sprintId, name, completedPoints }] }` | | none (computed in code, AD-12) |
 
 ### 3.4 PM: plans
 | # | Endpoint | Policy | Request | Response | Errors | Side effects |
@@ -105,7 +105,7 @@ Mutations on an archived project return 409 `CONFLICT_STATE` (one check in `core
 |---|---|---|---|---|---|---|
 | 42 | `GET /api/lead/projects/{id}/facts` | LEAD; member | none | 200 `Facts` (no LLM) | | none |
 | 43 | `GET /api/lead/overview` | LEAD | none | 200 list of `{ project, facts summary, latestDigest status }` for the caller's member projects only | | none |
-| 44 | `POST /api/lead/projects/{id}/digests` | LEAD; member | `{}` | 200 `Digest` (`cached: true` and no model call when the facts hash is unchanged); with suggestions it also returns `proposalId` | 429 `AI_BUSY`; the model failing is not an error: `explanation: null`, `degraded: true` (D-34) | session; one gateway call; inserts `project_digests`; a REPLAN proposal when suggestions exist |
+| 44 | `POST /api/lead/projects/{id}/digests` | LEAD; member | `{}` | 200 `Digest` (`cached: true` and no model call when the facts hash is unchanged); with suggestions it also returns `proposalId` | 429 `AI_BUSY`; the model failing is not an error: `explanation: null`, `degraded: true` (AD-34) | session; one gateway call; inserts `project_digests`; a REPLAN proposal when suggestions exist |
 | 45 | `GET /api/lead/projects/{id}/digests/latest` | LEAD; member | none | 200 `Digest` or 404 if none | | none |
 | 46 | `GET /api/lead/projects/{id}/proposals` | LEAD; member | `status?`, `page`, `size` | 200 page of `ReplanProposal` | | none |
 | 47 | `POST /api/lead/proposals/{proposalId}/approve` | LEAD; member | `{ version, suggestionIds }` (the subset to apply) | 200 `{ proposalId, status: "APPROVED", applied: [suggestionId] }` | 409 `CONFLICT_STATE` if not PENDING; 409 `CONFLICT_STATE` listing suggestions whose ids no longer fit the project | one transaction with a row lock on the proposal re-checks and applies each chosen suggestion; session `ACCEPTED` |
@@ -177,7 +177,7 @@ POST /api/dev/projects/c3d4…/standups   {}
 ```
 
 ## 5. Module interfaces (the frozen-first set, A-18)
-These four are written first and changed only by agreement of all three owners (D-11).
+These four are written first and changed only by agreement of all three owners (AD-11).
 
 ### 5.1 `LlmGateway.run(call): LlmResult`
 `LlmCall` (all fields set by server code, never by the client):
@@ -187,11 +187,11 @@ These four are written first and changed only by agreement of all three owners (
 | `caller` | `{ userId, role }` | from the authorised principal; the gateway refuses a role not allowed for the feature (`ROLE_DENIED`) |
 | `sessionId` | uuid | issued by `Sessions.open`; checked for owner, feature and OPEN state |
 | `projectId` | uuid or null | recorded on the call |
-| `sections` | list of `{ name, kind: STATIC / RETRIEVED / DYNAMIC, priority, budgetTokens, text, trusted }` | the context (D-17); `trusted: false` text goes through the full pipeline (D-25) |
+| `sections` | list of `{ name, kind: STATIC / RETRIEVED / DYNAMIC, priority, budgetTokens, text, trusted }` | the context (AD-17); `trusted: false` text goes through the full pipeline (AD-25) |
 | `output` | `{ kind: "json" with a zod schema, or "text" with maxChars }` | validated before it is returned; links, HTML and images rejected |
 | `inputHash` | string | for the hash check and the experiment result cache |
 
-`LlmResult`: success `{ ok: true, value, callId, flagged, truncated, cacheHit, promptTokens, completionTokens, costMicroUsd }`; failure `{ ok: false, code, retryAfterSeconds?, callId }` with `code` one of `AI_BUSY`, `AI_UNAVAILABLE`, `AI_DISABLED`, `REQUEST_REFUSED`, `BLOCKED_INPUT`, `ROLE_DENIED`. `run` refuses to run inside a database transaction (MP3 SD7). After the limiter admits the call (D-59), it writes the `llm_calls` row with `IN_FLIGHT` and finalises it.
+`LlmResult`: success `{ ok: true, value, callId, flagged, truncated, cacheHit, promptTokens, completionTokens, costMicroUsd }`; failure `{ ok: false, code, retryAfterSeconds?, callId }` with `code` one of `AI_BUSY`, `AI_UNAVAILABLE`, `AI_DISABLED`, `REQUEST_REFUSED`, `BLOCKED_INPUT`, `ROLE_DENIED`. `run` refuses to run inside a database transaction (MP3 SD7). After the limiter admits the call (AD-59), it writes the `llm_calls` row with `IN_FLIGHT` and finalises it.
 
 ### 5.2 `AiContext.assemble(caller, feature, targetProjectId): ContextSections`
 Returns the sections a feature may use, from the allow-list below, built only from projects where the caller is a member, with deleted rows and archived projects excluded. It throws `NotMember` (mapped to 404). Features never query these tables themselves.
