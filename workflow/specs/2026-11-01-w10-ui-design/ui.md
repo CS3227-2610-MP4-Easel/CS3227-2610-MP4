@@ -63,16 +63,16 @@ There is no left navigation (C~11). The top bar carries a **project switcher**: 
 
 Landing page after sign-in: PM goes to S3; Dev Lead goes to S16 once it exists (Tier 1: S3); Developer goes to S19. A deep link that was open when the session expired is restored after sign-in.
 
-Project tabs (inside a project). A tab that a role has no use for is hidden, not disabled (the UI hides actions as a convenience only; the server is the control, §7).
+Project tabs (inside a project), in the order shown (Plan sits between Backlog and Checkpoints, C~12). A tab that a role has no use for is hidden, not disabled (the UI hides actions as a convenience only; the server is the control, §7).
 
 | Tab | PM | Dev Lead | Developer | Screen | Tier |
 |---|---|---|---|---|---|
 | Overview | yes | yes | yes | S5 | 1 |
 | Board | yes | yes | yes | S6 | 1 |
 | Backlog | yes | yes | yes | S7 | 1 |
+| Plan | yes | no | no | S14 | 1 |
 | Checkpoints | yes | yes | yes | S9 | 1 |
 | Sprints | yes (read) | yes | yes (read) | S10 | 2 |
-| Plan | yes | no | no | S14 | 1 |
 | Health | yes (facts only) | yes | no | S17 | 1 |
 | Standups | no | yes | no | S18 | 1 |
 | My standup | no | no | yes | S20 | 1 |

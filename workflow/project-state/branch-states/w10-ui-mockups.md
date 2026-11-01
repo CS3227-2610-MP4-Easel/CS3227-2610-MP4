@@ -60,6 +60,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
 | 2026-11-01 | Draft UI reference: shell and navigation, 20 screens with contents, interactions and states, and end-to-end flows per role | W10 | 4cd429a |
+| 2026-11-01 | PM Backlog and Checkpoints boards added; Plan tab moved before Checkpoints (C~12; ui.md §3) | W10 | this commit |
 | 2026-11-01 | Left nav removed; top-bar project switcher with All projects; full-width pages (C~11; ui.md, edge-cases E45) | W10 | this commit |
 | 2026-11-01 | Role variants, dialogs, states and shared components added to the canvas; spec updated for C~6 to C~9 (ui.md, edge-cases.md E11 and E48, screens-shared, screens-project, screens-dev, flows) | W10 | this commit |
 | 2026-11-01 | All 20 screens, a global-states sheet, the close-sprint and plan-approve dialogs and shared shell components drawn on a design canvas (outside the repo); not visually verified | W10 | canvas link in Remaining |
@@ -150,3 +151,11 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Supersedes:** `ui.md` §2 left navigation and §3 left-nav table (rewritten as the switcher table); the 1200 px content cap; the icon-only nav at 1024 px.
 - **Why:** the left bar had one or two items. **All projects** in the switcher opens Projects (PM), Overview (Dev Lead) or My work (Developer), so no screen needs a side column and every page can use the full width.
 - **Canvas:** `Side` component removed; `Top` carries the switcher; board "Project switcher open (Dev Lead)" shows the menu.
+
+### C~12 — Plan tab moves before Checkpoints; PM gets its own Backlog and Checkpoints boards
+
+- **Date:** 2026-11-01
+- **Who asked:** operator (Xiao-Congchen)
+- **Supersedes:** the tab order in `ui.md` §3 (Plan was after Sprints). Order is now Overview, Board, Backlog, Plan, Checkpoints, Sprints, Health, Standups or My standup, Members, Settings.
+- **Why:** planning leads into the backlog and checkpoints, so Plan belongs next to them. The PM row of the canvas lacked Backlog and Checkpoints boards (the Checkpoints board in the Dev Lead row was drawn with the PM tabs); both now exist for each role.
+
