@@ -1,6 +1,6 @@
 # Flows: each role end to end
 
-Screens are specified in [screens-shared.md](screens-shared.md), [screens-pm.md](screens-pm.md), [screens-lead.md](screens-lead.md) and [screens-dev.md](screens-dev.md); shared rules in [ui.md](ui.md). This file strings them into the journeys the mockups must let a reviewer click through. Notation: `S5` is a screen; `→` is a navigation or a result; `[T2]` marks a Tier 2 step. Each flow ends with its failure branches.
+Screens are specified in [screens-shared.md](screens-shared.md), [screens-project.md](screens-project.md), [screens-pm.md](screens-pm.md), [screens-lead.md](screens-lead.md) and [screens-dev.md](screens-dev.md); shared rules in [ui.md](ui.md). This file strings them into the journeys the mockups must let a reviewer click through. Notation: `S5` is a screen; `→` is a navigation or a result; `[T2]` marks a Tier 2 step. Each flow ends with its failure branches.
 
 ## F1 First visit: register and sign in (all roles)
 
@@ -35,7 +35,7 @@ Failure branches:
 - One epic fails at step 5 → that card shows **Retry**; the rest continue; Approve stays disabled until it is DONE.
 - Busy at step 5 → the run pauses with a countdown and resumes.
 - A teammate approved or replaced the plan meanwhile → the 409 banner at step 7 explains and reloads.
-- The PM closes the tab at step 5 → returning to `/plan/:proposalId` (from the browser history, or from S15's **Continue plan** `[T2]`) shows each epic in its stored state.
+- The PM closes the tab at step 5 → returning to `/plan/:proposalId` (from the browser history, or from the **Continue plan** banner on S14; S15 `[T2]` lists all plans) shows each epic in its stored state.
 - **Reject** at step 7 → back to phase A.
 
 ## F3 Dev Lead: staff the project and run a sprint
@@ -56,7 +56,7 @@ Failure branches:
 
 ## F4 Dev Lead: check health and re-plan
 
-1. S3, or S16 `[T2]` → open a project → S17.
+1. S3 → S5 → **Check project health** → S17; or `[T2]` S16 → the project row → S17.
 2. The facts panel loads without any AI: progress, velocity, checkpoint risk, overload.
 3. **Generate digest** → explanation text appears under the facts. If nothing changed since the last digest, a note says so and no model runs.
 4. `[T2]` If the digest carries suggestions, the list appears: tick the ones to apply → **Apply selected** → confirmation → done; the facts reload.
@@ -70,8 +70,8 @@ Failure branches:
 
 ## F5 Dev Lead: read the team's standups
 
-1. S17 or the project tab bar → S18 (today by default; the selector also offers the next standup and earlier days).
-2. One card per developer; developers without one say "not generated". Change the date to look back.
+1. The **Standups** tab of the project → S18 (today by default; the selector also offers the next standup and **Earlier**, a list of the last 7 days).
+2. One card per developer; developers without one say "not generated". Pick an earlier day to look back.
 3. A card with `Built from task activity only` tells the Dev Lead that the AI part failed for that developer.
 
 No write actions exist on this flow.

@@ -1,6 +1,6 @@
 # Dev Lead screens (S16, S17, S18)
 
-Common states, error handling and components are in [ui.md](ui.md). The Dev Lead also uses S3 to S11 and S13 from [screens-shared.md](screens-shared.md); sprint management (S10) and checkpoint editing (S9) are theirs.
+Common states, error handling and components are in [ui.md](ui.md). The Dev Lead also uses S3 to S11 and S13 from [screens-shared.md](screens-shared.md) and [screens-project.md](screens-project.md); sprint management (S10) and checkpoint editing (S9) are theirs.
 
 ## S16 Overview (all my projects)
 
@@ -84,11 +84,11 @@ Route `/projects/:id/standups`. Dev Lead, project member. Endpoints 55, 9. Read 
 
 | Region | Content |
 |---|---|
-| Filter bar | standup day (**For today** by default, **For the next standup**, or **Earlier** for the last 7 days; ui.md §8), developer (all or one) |
+| Filter bar | standup day (**For today** by default, **For the next standup**, or **Earlier**, which lists the last 7 days with their dates, most recent first, to pick from; ui.md §8), developer (all or one) |
 | Cards | one per **developer member** of the project, in name order. A card shows `Yesterday`, `Today` and `Blockers` as bullet lists in plain text, and the badges below |
 | Badges | `Edited` when the developer changed it, `Built from task activity only` (degraded), `Flagged for review` |
 
-Developers with no standup for the selected day show a card with the line † "not generated". The screen does not show the developer's thumbs rating (it is feedback on the AI, not status).
+Developers with no standup for the selected day show a card with the line † "not generated". On Saturday and Sunday **For today** is still offered and the cards read "not generated". The screen does not show the developer's thumbs rating (it is feedback on the AI, not status).
 
 States: no developers in the project: "No developers have been added. Add them in Members." with a link; archived project: still readable.
 

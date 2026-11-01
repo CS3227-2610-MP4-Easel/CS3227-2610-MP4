@@ -1,10 +1,10 @@
 # Project Manager screens (S14, S15)
 
-Common states, error handling and components are in [ui.md](ui.md). The PM also uses S3 to S5, S7, S9, S11, S12 and S13, and the read-only facts view of S17 in [screens-lead.md](screens-lead.md), from [screens-shared.md](screens-shared.md).
+Common states, error handling and components are in [ui.md](ui.md). The PM also uses S3 to S5, S7, S9, S11, S12 and S13, and the read-only facts view of S17 in [screens-lead.md](screens-lead.md), from [screens-shared.md](screens-shared.md) and [screens-project.md](screens-project.md).
 
 ## S14 New plan
 
-Route `/projects/:id/plan` (entry) and `/projects/:id/plan/:proposalId` (a plan in progress or finished). PM, project member. The proposal id in the URL is how a PM returns to a plan (Q2 in ui.md). Endpoints 34, 35, 37, 40, 41. T2: 38, 39.
+Route `/projects/:id/plan` (entry) and `/projects/:id/plan/:proposalId` (a plan in progress or finished). PM, project member. The proposal id in the URL is how a PM returns to a plan (Q2 in ui.md). Endpoints 34, 35, 37, 40, 41, and 36 for the continue banner. T2: 38, 39.
 
 This is one screen with a single flow in four phases. The phase is decided by the proposal's data, never by local state, so a reload lands in the same place (the expansion state is stored per epic, §5).
 
@@ -14,6 +14,7 @@ This is one screen with a single flow in four phases. The phase is decided by th
 |---|---|
 | Header | "Plan with AI"; one line saying the assistant drafts an approach, checkpoints, epics and tasks that the PM reviews before anything is created |
 | Context | the project name and brief, read-only, with the note "The assistant also looks at similar epics and tasks in your other projects." |
+| Plan in progress | shown when endpoint 36 (status `PENDING`) returns a plan: the banner "You have a plan in progress. A new plan replaces it." with **Continue plan**, which opens `/plan/:proposalId` |
 | Idea box | a multi-line field, 20 to 6000 characters, live counter, placeholder with an example idea |
 | Actions | **Generate plan** (`AiButton`), **Create manually** (link to S7) |
 
@@ -79,13 +80,13 @@ Partial failure is a first-class state: the mockup draws a plan with some epics 
 | REJECTED | the plan greyed, the banner "This plan was discarded.", and **Start a new plan** |
 | SUPERSEDED | the banner "A newer plan replaced this one." with a link to it when known, otherwise **Start a new plan** |
 
-Notes: starting a new plan while another is PENDING supersedes the earlier one; phase A says so when it knows of one ("You have a plan in progress. A new plan replaces it."), which needs endpoint 36 (Q2). AI and uploaded text is plain text throughout.
+Notes: starting a new plan while another is PENDING supersedes the earlier one; phase A says so in the plan-in-progress banner (endpoint 36, Q2). AI and uploaded text is plain text throughout.
 
 States specific to this screen: loading skeleton of phase B; 404 for a proposal of another project or one that does not exist; archived project (banner; **Generate**, **Expand** and **Approve** disabled).
 
 ## S15 Plan history
 
-Route `/projects/:id/plan/history`. PM. T2. Endpoint 36.
+Route `/projects/:id/plan/history` (`history` is a reserved segment, never a proposal id). PM. T2. Endpoint 36. Status labels: Draft is `PENDING`, Approved is `APPROVED`, Rejected is `REJECTED`, Replaced is `SUPERSEDED`; the status chip on S14 uses the same labels.
 
 | Region | Content |
 |---|---|

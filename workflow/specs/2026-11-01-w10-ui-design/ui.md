@@ -2,7 +2,7 @@
 
 Draft. Reference for the W10 mockups. Realises architecture §13 (screens and states) and AD-71 (one person designs the whole UI; the others link their flows to the backend). Endpoint numbers are those of [contracts.md](../../../docs/architecture/contracts.md). Copy marked † is fixed by the architecture; all other copy is proposed and can change in the mockups.
 
-How the files fit: this file holds what every screen shares. [flows.md](flows.md) walks each role through the product end to end. The screens themselves, with their contents and interactions, are in [screens-shared.md](screens-shared.md), [screens-pm.md](screens-pm.md), [screens-lead.md](screens-lead.md) and [screens-dev.md](screens-dev.md).
+How the files fit: this file holds what every screen shares. [flows.md](flows.md) walks each role through the product end to end. The screens themselves, with their contents and interactions, are in [screens-shared.md](screens-shared.md), [screens-project.md](screens-project.md), [screens-pm.md](screens-pm.md), [screens-lead.md](screens-lead.md) and [screens-dev.md](screens-dev.md).
 
 ## 1. Screen inventory
 
@@ -15,7 +15,7 @@ Twenty screens, which cover the eleven of §13 plus the supporting ones the endp
 | S3 | Projects list | PM, Dev Lead, Developer (own member projects only) | PM: create a project | `/projects` | Projects list | 1 |
 | S4 | New project (dialog) | PM | PM: create | over `/projects` | Projects list | 1 |
 | S5 | Project overview | members: PM, Dev Lead, Developer | read only | `/projects/:id` | Project board and backlog | 1 |
-| S6 | Board | members: all roles | Dev Lead: any task's status; Developer: own tasks' status; PM, Dev Lead: add task; PM: read only | `/projects/:id/board` | Project board and backlog | 1 |
+| S6 | Board | members: all roles | Dev Lead: any task's status; Developer: own tasks' status; PM, Dev Lead: add task; PM: status read only | `/projects/:id/board` | Project board and backlog | 1 |
 | S7 | Backlog | members: all roles | PM, Dev Lead: epics and tasks; Developer: read only | `/projects/:id/backlog` | Project board and backlog | 1 |
 | S8 | Task detail (drawer) | members: all roles | PM, Dev Lead: edit; Dev Lead and assignee: status | over S6, S7, S19 (`?task=:taskId`) | Project board and backlog | 1 (history 2) |
 | S9 | Checkpoints | members: all roles | PM, Dev Lead: add, edit, delete | `/projects/:id/checkpoints` | Checkpoints and sprints | 1 (edit, delete 2) |
@@ -39,7 +39,7 @@ Every signed-in screen sits in one shell (R6: one layout component, no per-role 
 
 | Region | Content | Notes |
 |---|---|---|
-| Top bar | product name (links home); project switcher when inside a project (lists the member projects from endpoint 6); **Usage** link; user menu | the user menu shows display name, email, a **role badge** (`Project Manager`, `Dev Lead`, `Developer`) and **Sign out**. The role is read from endpoint 4 and cannot be changed in the UI |
+| Top bar | product name (links home); project switcher when inside a project (lists the member projects from endpoint 6); **Usage** link (Tier 2; hidden in Tier 1); user menu | the user menu shows display name, email, a **role badge** (`Project Manager`, `Dev Lead`, `Developer`) and **Sign out**. The role is read from endpoint 4 and cannot be changed in the UI |
 | Left navigation | role-based items (section 3) | collapses to icons below 1100 px wide |
 | Project header | project name, status chip (`Archived` shown when archived), project tabs | appears on every `/projects/:id/...` screen; tabs depend on role (section 3) |
 | Content | the screen | max width 1200 px; the board may use the full width |
@@ -67,19 +67,19 @@ Landing page after sign-in: PM goes to S3; Dev Lead goes to S16 once it exists (
 
 Project tabs (inside a project). A tab that a role has no use for is hidden, not disabled (the UI hides actions as a convenience only; the server is the control, §7).
 
-| Tab | PM | Dev Lead | Developer | Screen |
-|---|---|---|---|---|
-| Overview | yes | yes | yes | S5 |
-| Board | yes | yes | yes | S6 |
-| Backlog | yes | yes | yes | S7 |
-| Checkpoints | yes | yes | yes | S9 |
-| Sprints | yes (read) | yes | yes (read) | S10 |
-| Plan | yes | no | no | S14 |
-| Health | yes (facts only) | yes | no | S17 |
-| Standups | no | yes | no | S18 |
-| My standup | no | no | yes | S20 |
-| Members | yes | yes | yes | S11 |
-| Settings | yes | no | no | S12 |
+| Tab | PM | Dev Lead | Developer | Screen | Tier |
+|---|---|---|---|---|---|
+| Overview | yes | yes | yes | S5 | 1 |
+| Board | yes | yes | yes | S6 | 1 |
+| Backlog | yes | yes | yes | S7 | 1 |
+| Checkpoints | yes | yes | yes | S9 | 1 |
+| Sprints | yes (read) | yes | yes (read) | S10 | 2 |
+| Plan | yes | no | no | S14 | 1 |
+| Health | yes (facts only) | yes | no | S17 | 1 |
+| Standups | no | yes | no | S18 | 1 |
+| My standup | no | no | yes | S20 | 1 |
+| Members | yes | yes | yes | S11 | 1 |
+| Settings | yes | no | no | S12 | 2 |
 
 My work (S19) spans projects, so it is outside the tabs; each task in it links to its project.
 
@@ -133,7 +133,7 @@ The mockup file defines each once. Screen files refer to them by name.
 | `PageState` | all | loading, empty, error wrapper |
 | `ConfirmDialog` | all destructive actions | section 4 |
 | `RoleBadge` | shell, member lists | the three roles |
-| `StatusChip` | board, backlog, task detail | `TODO`, `IN_PROGRESS`, `IN_REVIEW`, `DONE` |
+| `StatusChip` | board, backlog, task detail | `To do`, `In progress`, `In review`, `Done` |
 | `BlockedBadge` | cards, rows, detail | red flag with the reason in a tooltip |
 | `PointsBadge` | tasks, epics | story points; "unestimated" when null |
 | `ProgressBar` | project list, overview, health | points done of total, with the percent as text |
@@ -169,31 +169,7 @@ What each role can do in the UI. Each cell is the policy map of §7; the screens
 
 ## 7. Endpoint coverage
 
-Every endpoint of contracts.md appears below, so a missing screen shows up here. Endpoint 1 (health) has no UI.
-
-| Endpoints | Screen |
-|---|---|
-| 2, 3 | S2 |
-| 4 | S1, S2, shell (role and name) |
-| 5 | S4 |
-| 6 | S3, shell project switcher, S19 |
-| 7 | S3 (progress per row, see Q1), S5 |
-| 8 | S12 |
-| 9, 10, 11 | S11; 9 also feeds assignee pickers |
-| 12, 13, 14, 15 | S9 |
-| 16, 17, 18, 19 | S7, S14 (create manually) |
-| 20, 21, 22, 23, 24, 25, 26 | S6, S7, S8, S19 |
-| 27, 28, 29, 30, 31, 32 | S10 |
-| 33 | S5, S10 |
-| 34, 35, 37, 38, 39, 40, 41 | S14 |
-| 36 | S15 (and Q2) |
-| 42 | S17, S9 |
-| 44, 45 | S17 |
-| 43 | S16 |
-| 46, 47, 48 | S17 |
-| 49, 50, 51, 52, 53, 54 | S20 |
-| 55 | S18 |
-| 56, 57 | S13 |
+Moved to [endpoint-coverage.md](endpoint-coverage.md), which maps every endpoint of contracts.md to its screens.
 
 ## 8. Decisions on the open points (operator, 2026-11-01)
 
@@ -216,8 +192,7 @@ All eight were answered by the operator. The ones that touch another owner's wor
 
 The selector sends the chosen date as `date` to endpoint 51 and 52. Each choice has its own stored standup (one per developer, project and day, AD-27), so switching between them shows each one's own content. S18 uses the same two options plus **Earlier** (the last 7 days); its default is **For today**, which is what a Dev Lead reads on the day. Contracts.md says only "`date?` (default today)": whether a future date is accepted, and how the activity window is anchored for it, is a handover to the W9 owner.
 
-**Facts for the PM (Q5).** The PM gets a read-only **Health** tab on S17: the facts panel only, with no digest panel and no suggestions. S9 shows the PM the same `RiskBadge` as the Dev Lead. The overload block is computed over the *caller's own* projects (A-08), so for a PM it covers the PM's member projects; the block keeps its line saying so. Contract consequences, for the owners of the policy map and of `lead`:
-The PM gets the whole `Facts` response, not a trimmed one: they manage the whole project, or several. Decided by the operator.
+**Facts for the PM (Q5).** The PM gets a read-only **Health** tab on S17: the facts panel only, with no digest panel and no suggestions. S9 shows the PM the same `RiskBadge` as the Dev Lead. The overload block is computed over the *caller's own* projects (A-08), so for a PM it covers the PM's member projects; the block keeps its line saying so. The PM gets the whole `Facts` response, not a trimmed one: they manage the whole project, or several. Decided by the operator. Contract consequences, for the owners of the policy map and of `lead`:
 - Endpoint 42 keeps its number but moves to the shared path `GET /api/projects/{id}/facts`, because AD-07 reserves `/api/lead` for the Dev Lead. The old `/api/lead/projects/{id}/facts` path is removed, so there is no duplicate and the endpoint count stays 57.
 - Its policy becomes `PM, LEAD; member`.
 - Architecture §7's operation table, AD-47, `contracts.md` §3.5 and the generated authorisation tests must be amended to match. The digest endpoints (44, 45) and the re-plan endpoints (46 to 48) are unchanged.

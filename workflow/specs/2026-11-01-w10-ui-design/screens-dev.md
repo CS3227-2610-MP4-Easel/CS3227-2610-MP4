@@ -1,6 +1,6 @@
 # Developer screens (S19, S20)
 
-Common states, error handling and components are in [ui.md](ui.md). The Developer also uses S3 to S9, S11 and S13 from [screens-shared.md](screens-shared.md), read-only except for the status of their own tasks.
+Common states, error handling and components are in [ui.md](ui.md). The Developer also uses S3 to S9, S11 and S13 from [screens-shared.md](screens-shared.md) and [screens-project.md](screens-project.md), read-only except for the status of their own tasks.
 
 ## S19 My work
 
