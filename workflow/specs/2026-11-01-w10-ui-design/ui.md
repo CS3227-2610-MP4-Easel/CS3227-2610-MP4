@@ -39,29 +39,27 @@ Every signed-in screen sits in one shell (R6: one layout component, no per-role 
 
 | Region | Content | Notes |
 |---|---|---|
-| Top bar | product name (links home); project switcher when inside a project (lists the member projects from endpoint 6); **Usage** link (Tier 2; hidden in Tier 1); user menu | the user menu shows display name, email, a **role badge** (`Project Manager`, `Dev Lead`, `Developer`) and **Sign out**. The role is read from endpoint 4 and cannot be changed in the UI |
-| Left navigation | role-based items (section 3) | collapses to icons below 1100 px wide |
+| Top bar | product name (links to the role home); **project switcher**, a dropdown that reads the current project name or **All projects** outside a project; **Usage** link (Tier 2; hidden in Tier 1); user menu | the user menu shows display name, email, a **role badge** (`Project Manager`, `Dev Lead`, `Developer`) and **Sign out**. The role is read from endpoint 4 and cannot be changed in the UI |
 | Project header | project name, status chip (`Archived` shown when archived), project tabs | appears on every `/projects/:id/...` screen; tabs depend on role (section 3) |
-| Content | the screen | max width 1200 px; the board may use the full width |
+| Content | the screen | full width of the window, no side column and no maximum width (C~11) |
 | Banner slot | archived banner, offline or AI notices | sits between the project header and the content |
 | Toast area | success confirmations and non-blocking errors | confirmations auto-dismiss after 4 s; errors stay until closed |
 
 **Design decisions proposed for the mockups** (change them there, not in the code):
 - Desktop first, designed for 1280 px wide. Down to 1024 px the layout is complete; below that it stacks without extra design. Mobile is not designed.
-- Light theme only for the MVP. The design tokens (colour, type, spacing, radius, elevation) are defined once in the mockup file and mirrored as CSS variables in `apps/web`.
+- Light theme only for the MVP, and light is the default. The canvas also carries a dark palette so colours can be tested; it is not a product feature (C~6). The design tokens (colour, type, spacing, radius, elevation) are defined once in the mockup file and mirrored as CSS variables in `apps/web`.
 - Status is never carried by colour alone: every chip has a text label and an icon.
 - Everything is reachable from the keyboard. The board offers a **Change status** menu on every card as the alternative to drag and drop.
 
 ## 3. Navigation by role
 
-Left navigation (outside a project):
+There is no left navigation (C~11). The top bar carries a **project switcher**: a dropdown whose first item is **All projects**, then a divider and the member projects (endpoint 6; archived ones marked read-only). Inside a project the button shows the project name; elsewhere it reads **All projects**. Choosing a project opens its Overview.
 
-| Item | PM | Dev Lead | Developer | Tier |
+| Switcher item | PM | Dev Lead | Developer | Tier |
 |---|---|---|---|---|
-| Projects (S3) | yes | yes | yes | 1 |
-| Overview (S16) | no | yes | no | 2 |
-| My work (S19) | no | no | yes | 1 |
-| Usage (S13) | yes | yes | yes | 2 |
+| All projects | opens Projects (S3) | opens Overview (S16) | opens My work (S19) | 1 (Dev Lead: S3 until S16 exists) |
+| a member project | opens its Overview (S5) | same | same | 1 |
+| Usage (S13), a separate top-bar link | yes | yes | yes | 2 |
 
 Landing page after sign-in: PM goes to S3; Dev Lead goes to S16 once it exists (Tier 1: S3); Developer goes to S19. A deep link that was open when the session expired is restored after sign-in.
 

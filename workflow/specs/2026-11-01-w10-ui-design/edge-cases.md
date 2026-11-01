@@ -19,7 +19,8 @@ IDs are permanent: never reuse or renumber. Every F requirement appears in at le
 | E8 | F2 | S3 has no projects | PM sees "No projects yet." with **New project**. Dev Lead and Developer see the † "ask your PM to add you" copy | Each role gets the next step it can take | UI |
 | E9 | F2 | S14: not every epic is DONE | **Approve plan** is disabled with the tooltip "Expand every epic first (N left)" (AD-46) | An unexpanded epic would create an epic without tasks | UI |
 | E10 | F2 | S14: a plan with some epics DONE, one FAILED and one PENDING | The FAILED card shows its reason and **Retry**. The PENDING card shows **Expand**. The other epics are unaffected. Approve stays disabled | Partial failure is the normal case for a long run | UI |
-| E11 | F2 | A task is in a closed sprint | The row and card show a lock and "Sprint closed". The drawer says "This task is frozen because its sprint is closed." | Closed sprints are frozen (A-14) | UI |
+| E11 | F2 | A task is in a closed sprint | It cannot be edited. Rows and cards carry no "Sprint closed" label (C~7). The drawer is read-only and says "This task is frozen because its sprint is closed." | Closed sprints are frozen (A-14) | UI |
+| E48 | F2 | S10: a Dev Lead closes a sprint with unfinished tasks | The dialog moves every unfinished task to the next PLANNED sprint by default, states how many tasks and points move, and asks for confirmation. A task may be sent to the backlog instead. If every task is done, the dialog says "Nothing to carry over" and closes the sprint | Unfinished work continues in the next sprint (C~8) | UI |
 | E12 | F2 | The project has no closed sprint | The forecast cells read "No forecast yet", risk reads `UNKNOWN`, and the line "Close a sprint to get a forecast." shows | A zero forecast would read as a real prediction | UI |
 | E13 | F2 | Registration was interrupted: Firebase signed up but endpoint 3 failed | The next sign-in goes to S2 at **Finish setup**, not to a second sign-up | The Firebase account must not be created twice | UI |
 | E14 | F2 | S5 of a new project | The role's three-step checklist is the main content and ticks itself from the data | The first visit shows what to do next | UI |
@@ -87,7 +88,7 @@ Each row applies only if the owner refuses the change; the mockup is drawn for t
 | E42 | N1 | A screen is viewed in greyscale | Every `StatusChip`, `RiskBadge` and `BlockedBadge` still shows its text label and its icon | Colour alone fails colour-blind users | UI |
 | E43 | N1 | A Developer moves a task without a pointer | The card's **Change status** menu is reachable with the keyboard and sends the same change as a drag | Drag and drop alone excludes keyboard users | UI |
 | E44 | N2 | A colour or spacing value appears on a screen that is not in the tokens | It is replaced by a token. Tokens are defined in one place | Three roles must look like one product | UI |
-| E45 | N2 | A role needs a different navigation | The one `AppShell` shows different items. No second shell is drawn | Per-role layout copies drift apart (R6) | UI |
+| E45 | N2 | A role needs a different navigation | The one `AppShell` changes only the target of **All projects** in the top-bar switcher. No second shell is drawn | Per-role layout copies drift apart (R6) | UI |
 
 ## Reference
 | ID | Requirement | Scenario | Expected behaviour (exact) | Why it matters | Test layer |

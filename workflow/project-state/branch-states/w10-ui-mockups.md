@@ -37,7 +37,8 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] Design tokens, shell and shared components, then all 20 screens drawn on the design canvas (https://claude.ai/artifact/1J79XZiCmPvriGrBtAP2B6), 2026-11-01.
 - [ ] Operator review of the canvas; fix details until "most details are confirmed" (C~4).
 - [ ] Then translate the confirmed canvas to a standalone prototype (stack to be chosen; `apps/web` is W1's). Tokens to mirror as CSS variables: `project/ui.css` `:root` on the canvas.
-- [ ] Not yet drawn: S14 phase D (approved/discarded/superseded views), S20 degraded standup state, tablet width (1024 px) checks. The canvas was not opened or rendered by me; nothing is visually verified.
+- [x] Drawn 2026-11-01 (C~6 to C~10): role variants (board PM/Developer/archived, backlog, checkpoints, sprints, members, overview), dialogs and forms (add task, add epic, add checkpoint, new sprint, close sprint all done, mark blocked, remove member), states (sign-in error, finish setup, empty lists, plan approved/discarded/replaced, standups Earlier, standup AI unavailable on a Friday, 1024 px icon nav).
+- [ ] Still not drawn: inline edit forms beyond the add forms, the S14 epic edit form (T2), the S6 "Show more" paging state, the offline banner on a project screen, the 403 page on its own. Nothing is visually verified: I have not opened the canvas.
 - [ ] **Handover:** tell the Dev Lead (W5) that endpoint 6 should return `ProjectDetail` items (progress per project, approved as Q1 in the W10 spec's `ui.md` §8); without it S3 calls endpoint 7 per row.
 - [ ] **Handover (permission change and endpoint move):** the PM may read the full facts (approved as Q5 and C~3). Endpoint 42 moves from `/api/lead/projects/{id}/facts` to the shared path `GET /api/projects/{id}/facts` (AD-07 reserves `/api/lead` for the Dev Lead) and its policy changes from `LEAD; member` to `PM, LEAD; member`. The number and the endpoint count (57) stay. Owners: the Dev Lead (policy map, W1) and the W8 owner (`lead` module). Amend AD-47, architecture §7 operation table, `contracts.md` §3.5, `delivery-plan.md` and `slicing.md` if they cite the path, and the generated authorisation tests (AD-26). Digest (44, 45) and re-plan (46 to 48) stay Dev Lead only.
 - [ ] **Handover:** tell the W7 owner that endpoint 36 (plan list) moves from Tier 2 to Tier 1, so the PM can continue a plan in progress (approved as Q2). Update the Tier lists in `delivery-plan.md` and `slicing.md`.
@@ -59,6 +60,8 @@ describes `INT`; read it for context and write here instead of editing it.
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
 | 2026-11-01 | Draft UI reference: shell and navigation, 20 screens with contents, interactions and states, and end-to-end flows per role | W10 | 4cd429a |
+| 2026-11-01 | Left nav removed; top-bar project switcher with All projects; full-width pages (C~11; ui.md, edge-cases E45) | W10 | this commit |
+| 2026-11-01 | Role variants, dialogs, states and shared components added to the canvas; spec updated for C~6 to C~9 (ui.md, edge-cases.md E11 and E48, screens-shared, screens-project, screens-dev, flows) | W10 | this commit |
 | 2026-11-01 | All 20 screens, a global-states sheet, the close-sprint and plan-approve dialogs and shared shell components drawn on a design canvas (outside the repo); not visually verified | W10 | canvas link in Remaining |
 | 2026-11-01 | Spec index, edge cases and implementation order written; the screen files split so each stays under 200 lines (`screens-project.md`, `endpoint-coverage.md` added). `lint.mjs spec` passes. No lenses run yet | W10 | this commit |
 
@@ -105,3 +108,45 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Who asked:** operator (Xiao-Congchen)
 - **Why:** W10 is UI design only (no data, no code), so the Tester lens adds little.
 - **Rejected:** the Medium-tier default of Implementer plus Tester.
+
+### C~6 — Light is the default theme; the dark palette on the canvas is for testing only
+
+- **Date:** 2026-11-01
+- **Who asked:** operator (Xiao-Congchen)
+- **Why:** the spec stays light-only (`ui.md` §2, non-goal "a dark theme"); the canvas keeps a dark and a light palette with a toggle so colours can be compared and tuned. Light is the default; dark is opt-in.
+- **Rejected:** shipping dark as a product theme.
+
+### C~7 — No "Sprint closed" label on cards and rows
+
+- **Date:** 2026-11-01
+- **Who asked:** operator (Xiao-Congchen): "if it is done it is done"
+- **Supersedes:** edge case E11's lock and label on rows and cards (updated). The drawer still says the task is frozen.
+- **Why:** closing a sprint moves unfinished work on (C~8), so a closed sprint holds only Done tasks and the label adds nothing.
+
+### C~8 — Closing a sprint moves unfinished tasks to the next sprint, after confirmation
+
+- **Date:** 2026-11-01
+- **Who asked:** operator (Xiao-Congchen)
+- **Why:** unfinished work should continue in the next sprint. The happy path is that every task is done in time and the sprint closes with nothing to carry over. The Dev Lead can still send a task to the backlog; with no PLANNED sprint the default is the backlog (E48).
+- **Rejected:** defaulting every unfinished task to the backlog (the first draft).
+- **Contract:** none; `carryOver` in endpoint 31 already takes a target per task, so only the UI default changes.
+
+### C~9 — Board gets a status filter; the multi-column card layout is dynamic
+
+- **Date:** 2026-11-01
+- **Who asked:** operator (Xiao-Congchen)
+- **Why:** a Dev Lead may want only In progress, or In progress and In review. The remaining columns widen and their cards flow into several columns; this is responsive layout, not a separate design. Two filtered variants are on the canvas.
+
+### C~10 — Canvas organisation: shared components at the side, role variants, states and dialogs drawn
+
+- **Date:** 2026-11-01
+- **Who asked:** operator (Xiao-Congchen)
+- **Why:** shared components (top bar, left nav, project header, task card, board view, status chip, role badge, risk badge, banner, empty state, confirm dialog, progress bar, icons) are their own boards in a column at the left, so an edit applies on every screen. Role variants, dialogs and states live in three columns to the right of the screens.
+
+### C~11 — No left navigation: the top-bar project switcher gains "All projects", and pages use the full width
+
+- **Date:** 2026-11-01
+- **Who asked:** operator (Xiao-Congchen): the left bar held too little
+- **Supersedes:** `ui.md` §2 left navigation and §3 left-nav table (rewritten as the switcher table); the 1200 px content cap; the icon-only nav at 1024 px.
+- **Why:** the left bar had one or two items. **All projects** in the switcher opens Projects (PM), Overview (Dev Lead) or My work (Developer), so no screen needs a side column and every page can use the full width.
+- **Canvas:** `Side` component removed; `Top` carries the switcher; board "Project switcher open (Dev Lead)" shows the menu.

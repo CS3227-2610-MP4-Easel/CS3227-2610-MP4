@@ -19,7 +19,7 @@ Route `/my-work`. Developer. Endpoints 6, 20, 24, 22 via S8. There is no cross-p
 | Change status | endpoint 24 `{ status, version }`; the row updates at once and reverts with the message on failure. Only assigned tasks appear, so every row is editable |
 | Mark blocked | the reason dialog of S6 (required, up to 500) then endpoint 24 |
 | Unblock | endpoint 24 `{ blocked: false }` |
-| A task in a closed sprint | the controls are replaced by a lock and "Sprint closed" |
+| A task in a closed sprint | it is Done (closing moves unfinished tasks on), so it is hidden by **Hide done** and read-only when shown; there is no "Sprint closed" label |
 
 States:
 - Empty: "No tasks are assigned to you yet. Your Dev Lead assigns tasks from the backlog."

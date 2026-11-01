@@ -15,7 +15,7 @@ Over S6, S7 or S19, opened by `?task=:taskId`. Endpoints 22, 23, 24, 9 (assignee
 
 Edit mode turns the body into the task form of S7. **Save** sends endpoint 23; **Cancel** discards. A stale version shows the reload banner of ui.md §4 inside the drawer. Closing the drawer returns to the screen underneath with its scroll position kept.
 
-States: loading skeleton; 404 "Not found"; a task in a closed sprint shows the lock and "This task is frozen because its sprint is closed."
+States: loading skeleton; 404 "Not found"; a task in a closed sprint is read-only and says "This task is frozen because its sprint is closed."
 
 ## S9 Checkpoints
 
@@ -50,8 +50,8 @@ Forms: **New or edit sprint** dialog with name, start date, end date (inclusive)
 
 **Close sprint** (endpoint 31) is a dialog:
 1. Summary line: "{n} tasks done, {points} points complete. {m} tasks not done."
-2. A table of each not-DONE task with a select: **Move to backlog** (default) or a PLANNED sprint by name.
-3. **Close sprint** sends `carryOver` with one entry per not-DONE task. If none are left, the table is hidden.
+2. A table of each not-DONE task with a select: the next PLANNED sprint by name (default) or **Backlog**. A confirmation line states how many tasks and points will move. When no PLANNED sprint exists the default is **Backlog**.
+3. **Close sprint** sends `carryOver` with one entry per not-DONE task. If none are left (the happy path), the table is hidden and the dialog reads "All {n} tasks done, {points} points complete. Nothing to carry over."
 4. Result: the sprint shows CLOSED with its `completedPoints`, and a toast "Sprint closed. Velocity: {points}."
 
 Interactions: **Start** is disabled with the tooltip "Another sprint is active" while one is ACTIVE (409 otherwise). **Delete** exists only for PLANNED sprints and says "Its tasks move to the backlog."

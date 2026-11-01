@@ -92,8 +92,9 @@ Route `/projects/:id/board`. Endpoints 20, 24, 9 (assignee names), 16 (epic name
 | Region | Content |
 |---|---|
 | Filter bar | sprint (T2; default the ACTIVE sprint, else **All tasks**), epic, assignee, **Blocked only**, **Assigned to me** |
+| Status filter | one toggle per status (`To do`, `In progress`, `In review`, `Done`) with its count, all on by default; **Show all statuses** when some are off. Hidden columns drop out and the shown columns widen, with their cards flowing into several columns (C~9) |
 | Columns | `To do`, `In progress`, `In review`, `Done`, each with a count and points sum |
-| Card | title, epic name, `PointsBadge`, assignee avatar, `BlockedBadge`, a lock when the task is in a closed sprint |
+| Card | title, epic name, `PointsBadge`, assignee avatar, `BlockedBadge`; a more icon at the top right opens the **Change status** menu where the caller may change status (no lock or sprint label) |
 
 | Interaction | Result |
 |---|---|
@@ -135,4 +136,4 @@ States:
 - Empty, PM or Dev Lead: "The backlog is empty." with **Add epic** and, for a PM, **Plan with AI**.
 - Empty, Developer: "Nothing planned yet."
 - Developers see the screen read-only (no add, no inline edit).
-- Tasks in a CLOSED sprint show a lock and cannot be edited (A-14).
+- Tasks in a CLOSED sprint cannot be edited (A-14); rows carry no lock label (C~7).

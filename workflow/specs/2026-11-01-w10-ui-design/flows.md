@@ -45,7 +45,7 @@ Failure branches:
 3. S7: review the backlog, give each task story points and an assignee (inline). Tasks without points cannot join a sprint.
 4. `[T2]` S10 → **New sprint** (name, dates) → assign tasks to it from S7 (sprint chip on each row) → **Start**.
 5. Through the sprint: S6 shows the sprint's tasks; the Dev Lead can move any task; a Developer moves their own.
-6. `[T2]` End of sprint: S10 → **Close sprint** → the carry-over table (each unfinished task: backlog or a PLANNED sprint) → confirm → velocity updates in S5 and S10.
+6. `[T2]` End of sprint: S10 → **Close sprint** → the dialog moves each unfinished task to the next sprint by default (or to the backlog) and asks for confirmation; when everything is done it just closes → velocity updates in S5 and S10.
 
 Failure branches:
 - Remove a member who still has open tasks `[T2]` → 409 message, reassign first.
@@ -90,7 +90,7 @@ Failure branches:
 - Summaries fail for some items → **Retry failed**, or generate the standup anyway.
 - Model down at step 5 → a standup built from the Developer's own task events is shown as degraded.
 - Re-upload of the same file → everything "unchanged"; **Regenerate** says nothing changed.
-- Task in a closed sprint → locked.
+- Task in a closed sprint → read-only, no label.
 
 ## F7 One run through the whole product (the demo path)
 
