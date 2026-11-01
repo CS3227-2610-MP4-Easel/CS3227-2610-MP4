@@ -152,18 +152,22 @@
 
 | Action | Path | What changes |
 |---|---|---|
-| Create | `packages/contracts/src/policy.ts` | Policy entry types, canonical operation keys, role aliases, predicates, and endpoint map derived from `contracts.md` §3. |
-| Create | `packages/contracts/src/routes.ts` | Route metadata type and registration validation. |
-| Create | `packages/contracts/test/policy.test.ts` | 57-entry completeness, role/predicate, missing-policy, and collision tests. |
+| Modify | `packages/contracts/src/policy.ts` | Policy entry types, canonical operation keys, role aliases, predicates, and endpoint map derived from `contracts.md` §3. |
+| Modify | `packages/contracts/src/routes.ts` | Route metadata type and registration validation. |
+| Modify | `packages/contracts/test/policy.test.ts` | 57-entry completeness, role/predicate, missing-policy, and collision tests. |
 
 **Checklist**
 
-- [ ] 1. Write failing policy tests for 57 unique endpoints, E4, E5, and E18.
-- [ ] 2. Add one policy entry per normative endpoint, including endpoint 24 role-specific predicates and endpoint 43 member-project scope.
-- [ ] 3. Implement route registration checks for missing policy keys, duplicate operation ids, duplicate method/path pairs, and metadata mismatch.
-- [ ] 4. Run policy tests and contracts typecheck; expect green.
-- [ ] 5. Verify the registered map uses `PM`, `DEV_LEAD`, and `DEVELOPER`, with architecture aliases translated only at the boundary.
- - [ ] 6. Update branch-state Progress and commit with subject `feat: add W1 policy and route contracts (W1)`, plus trailers `Workstream: W1` and `Task: T3`.
+- [x] 1. Write failing policy tests for 57 unique endpoints, E4, E5, and E18.
+- [x] 2. Add one policy entry per normative endpoint, including endpoint 24 role-specific predicates and endpoint 43 member-project scope.
+- [x] 3. Implement route registration checks for missing policy keys, duplicate operation ids, duplicate method/path pairs, and metadata mismatch.
+- [x] 4. Run policy tests and contracts typecheck; expect green.
+- [x] 5. Verify the registered map uses `PM`, `DEV_LEAD`, and `DEVELOPER`, with architecture aliases translated only at the boundary.
+ - [x] 6. Update branch-state Progress and commit with subject `feat: add W1 policy and route contracts (W1)`, plus trailers `Workstream: W1` and `Task: T3`.
+
+**Status:** Done
+
+**Notes for next task:** The policy map is the canonical authorization registry; route registration validates exact policy bindings before dispatch. T4 can build independently from T3 on the T1 workspace boundary.
 
 ### T4: Prisma schema and filtered client
 
