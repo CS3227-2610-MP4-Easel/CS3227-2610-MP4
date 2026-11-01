@@ -36,9 +36,10 @@ describes `INT`; read it for context and write here instead of editing it.
 - [ ] Re-check that the canvas matches the review fixes: Continue plan banner on S14 phase A, PM keeps Add task on S6, sprint controls hidden in Tier 1, project tabs now carry a Tier.
 - [x] Design tokens, shell and shared components, then all 20 screens drawn on the design canvas (https://claude.ai/artifact/1J79XZiCmPvriGrBtAP2B6), 2026-11-01.
 - [ ] Operator review of the canvas; fix details until "most details are confirmed" (C~4).
-- [ ] Then translate the confirmed canvas to a standalone prototype (stack to be chosen; `apps/web` is W1's). Tokens to mirror as CSS variables: `project/ui.css` `:root` on the canvas.
+- [ ] Then translate the confirmed canvas to a standalone prototype (Next.js 15 in `src/fe`, C~13). Tokens to mirror as CSS variables: `project/ui.css` `:root` on the canvas.
 - [x] Drawn 2026-11-01 (C~6 to C~10): role variants (board PM/Developer/archived, backlog, checkpoints, sprints, members, overview), dialogs and forms (add task, add epic, add checkpoint, new sprint, close sprint all done, mark blocked, remove member), states (sign-in error, finish setup, empty lists, plan approved/discarded/replaced, standups Earlier, standup AI unavailable on a Friday, 1024 px icon nav).
 - [ ] Still not drawn: inline edit forms beyond the add forms, the S14 epic edit form (T2), the S6 "Show more" paging state, the offline banner on a project screen, the 403 page on its own. Nothing is visually verified: I have not opened the canvas.
+- [ ] **Handover (layout):** C~13 moves the web app from `apps/web` to `src/fe`; the W1 owner amends AD-01a/b, the guardrail, the Vercel root and the monorepo layout.
 - [ ] **Handover:** tell the Dev Lead (W5) that endpoint 6 should return `ProjectDetail` items (progress per project, approved as Q1 in the W10 spec's `ui.md` §8); without it S3 calls endpoint 7 per row.
 - [ ] **Handover (permission change and endpoint move):** the PM may read the full facts (approved as Q5 and C~3). Endpoint 42 moves from `/api/lead/projects/{id}/facts` to the shared path `GET /api/projects/{id}/facts` (AD-07 reserves `/api/lead` for the Dev Lead) and its policy changes from `LEAD; member` to `PM, LEAD; member`. The number and the endpoint count (57) stay. Owners: the Dev Lead (policy map, W1) and the W8 owner (`lead` module). Amend AD-47, architecture §7 operation table, `contracts.md` §3.5, `delivery-plan.md` and `slicing.md` if they cite the path, and the generated authorisation tests (AD-26). Digest (44, 45) and re-plan (46 to 48) stay Dev Lead only.
 - [ ] **Handover:** tell the W7 owner that endpoint 36 (plan list) moves from Tier 2 to Tier 1, so the PM can continue a plan in progress (approved as Q2). Update the Tier lists in `delivery-plan.md` and `slicing.md`.
@@ -51,7 +52,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W10 | UI mockups and shell | Spec'd | [spec folder](../../specs/2026-11-01-w10-ui-design/ui.md) ([index](../../specs/2026-11-01-w10-ui-design.md), approved 2026-11-02) | — | Spec approved; T3 to T5 drawn on canvas, T6 to T9 and handovers open | — |
+| W10 | UI mockups and shell | Planned | [spec folder](../../specs/2026-11-01-w10-ui-design/ui.md) ([index](../../specs/2026-11-01-w10-ui-design.md), approved 2026-11-02) | [plan](../../plans/2026-11-02-w10-prototype.md) (approved 2026-11-02) | Spec approved; T3 to T5 drawn on canvas, T6 to T9 and handovers open | — |
 
 ---
 
@@ -65,6 +66,8 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-01 | Role variants, dialogs, states and shared components added to the canvas; spec updated for C~6 to C~9 (ui.md, edge-cases.md E11 and E48, screens-shared, screens-project, screens-dev, flows) | W10 | this commit |
 | 2026-11-01 | All 20 screens, a global-states sheet, the close-sprint and plan-approve dialogs and shared shell components drawn on a design canvas (outside the repo); not visually verified | W10 | canvas link in Remaining |
 | 2026-11-01 | Spec index, edge cases and implementation order written; the screen files split so each stays under 200 lines (`screens-project.md`, `endpoint-coverage.md` added). `lint.mjs spec` passes. Implementer lens run, Tester skipped (C~5) | W10 | 3aab4d6 |
+| 2026-11-02 | Prototype plan written and approved (gate 2); link check added at the operator's request | W10 | this commit |
+| 2026-11-02 | Web app location reversed to `src/fe` (C~13); ui.md updated | W10 | this commit |
 | 2026-11-02 | Spec approved by the operator (gate 1); Q9 closed as SD13, Q10 as SD12 | W10 | this commit |
 
 ---
@@ -159,4 +162,13 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Who asked:** operator (Xiao-Congchen)
 - **Supersedes:** the tab order in `ui.md` §3 (Plan was after Sprints). Order is now Overview, Board, Backlog, Plan, Checkpoints, Sprints, Health, Standups or My standup, Members, Settings.
 - **Why:** planning leads into the backlog and checkpoints, so Plan belongs next to them. The PM row of the canvas lacked Backlog and Checkpoints boards (the Checkpoints board in the Dev Lead row was drawn with the PM tabs); both now exist for each role.
+
+### C~13 — All source code lives under `src/`; the web app is `src/fe`, not `apps/web`
+
+- **Date:** 2026-11-02
+- **Who asked:** operator (Xiao-Congchen): "it is a project requirement that all source code be under a dedicated src folder", answering the keep-or-reverse question on the `apps/web` layout.
+- **Supersedes:** the path `apps/web` in AD-01a/AD-01b, guardrail AD-01b, architecture §3 and `decision-log.md` (Vercel project root `apps/web`). The rules stay: the UI never imports Prisma or `packages/db`, and all data access goes through the contracts client.
+- **Why:** the course requires source under a dedicated `src/` folder. The W10 prototype is built in place at `src/fe` (Next.js 15, SD13), so linking the backend later means swapping the data-layer adapter, not moving code. The rest of the monorepo (`apps/api`, `packages/*`) is for W1 to place under `src/` as well.
+- **Rejected:** `apps/web` (keeps the layout, breaks the requirement); `src/fe/mockup` (a throwaway app that has to be ported when the backend lands).
+- **Handover:** tell the W1 owner (Dev Lead) to amend AD-01a/b, the AD-01b guardrail and import test, the Vercel root, and the monorepo layout to `src/`. Not done by this branch.
 

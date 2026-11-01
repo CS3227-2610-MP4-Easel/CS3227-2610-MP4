@@ -47,7 +47,7 @@ Every signed-in screen sits in one shell (R6: one layout component, no per-role 
 
 **Design decisions proposed for the mockups** (change them there, not in the code):
 - Desktop first, designed for 1280 px wide. Down to 1024 px the layout is complete; below that it stacks without extra design. Mobile is not designed.
-- Light theme only for the MVP, and light is the default. The canvas also carries a dark palette so colours can be tested; it is not a product feature (C~6). The design tokens (colour, type, spacing, radius, elevation) are defined once in the mockup file and mirrored as CSS variables in `apps/web`.
+- Light theme only for the MVP, and light is the default. The canvas also carries a dark palette so colours can be tested; it is not a product feature (C~6). The design tokens (colour, type, spacing, radius, elevation) are defined once in the mockup file and mirrored as CSS variables in `src/fe` (C~13).
 - Status is never carried by colour alone: every chip has a text label and an icon.
 - Everything is reachable from the keyboard. The board offers a **Change status** menu on every card as the alternative to drag and drop.
 
