@@ -8,6 +8,7 @@
     "start": "next start -p 3100",
     "typecheck": "tsc --noEmit",
     "lint": "node scripts/check-data-layer.mjs",
+    "smoke": "node scripts/smoke.mjs",
     "linkcheck": "node scripts/linkcheck.mjs"
   },
   "dependencies": {

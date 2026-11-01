@@ -52,7 +52,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W10 | UI mockups and shell | In progress | [spec folder](../../specs/2026-11-01-w10-ui-design/ui.md) ([index](../../specs/2026-11-01-w10-ui-design.md), approved 2026-11-02) | [plan](../../plans/2026-11-02-w10-prototype.md) (approved 2026-11-02) | T9 in flight: data layer behind the interactive screens; move the rest, then T9f | — |
+| W10 | UI mockups and shell | In review | [spec folder](../../specs/2026-11-01-w10-ui-design/ui.md) ([index](../../specs/2026-11-01-w10-ui-design.md), approved 2026-11-02) | [plan](../../plans/2026-11-02-w10-prototype.md) (approved 2026-11-02) | T9 done; awaiting gate 3 (branch review) | — |
 
 ---
 
@@ -70,6 +70,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-02 | Epics and task creation added to the data layer; backlog (all roles), add task and epic forms, new sprint form (overlap check), My work and the Projects list (New project for the PM only) now read and write through it | W10 | this commit |
 | 2026-11-02 | Data layer `src/fe/lib/api` (typed fixtures, one function per endpoint number, in-memory store kept in sessionStorage). Board, sprints (start, close with carry-over, delete), members (add, remove with open-task refusal), checkpoints (add), standup (edit, accept, regenerate, copy, retry, example download), health (refresh, apply, dismiss), task status and blocked, archive project now work through it; toasts report each result | W10 | this commit |
 | 2026-11-02 | `src/fe` prototype: 73 canvas pages converted to React, routed by the spec URLs with a role cookie, every control wired to its screen; `linkcheck` passes for all three roles (no dead link, every screen reached). Not yet behind a data layer (T9b) | W10 | this commit |
+| 2026-11-02 | T9 verified: `npm run lint` (no fixtures/store import outside `lib/api`), `npm run typecheck`, `npm run build`, `npm run smoke` (pm 37, lead 35, dev 27 routes return 200) and `linkcheck` (no dead link, every screen reached for all three roles) all pass. Hex colours appear only in `app/canvas.css` (tokens) and the Styleguide swatch page. Canvas comparison: the CSS is reused verbatim and the Standups page was checked at 1024 px; a full side-by-side of every screen at 1280 and 1024 px was not done | W10 | this commit |
 | 2026-11-02 | Prototype plan written and approved (gate 2); link check added at the operator's request | W10 | this commit |
 | 2026-11-02 | Web app location reversed to `src/fe` (C~13); ui.md updated | W10 | this commit |
 | 2026-11-02 | Spec approved by the operator (gate 1); Q9 closed as SD13, Q10 as SD12 | W10 | this commit |
@@ -185,5 +186,5 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Planned:** SD13 and plan T9a/T9c: Tailwind theme variables, shadcn/ui, components rewritten per screen.
 - **Built:** the 73 canvas pages were converted mechanically to React (`src/fe/components/canvas/*.tsx`, from `ui.css` copied to `app/canvas.css`), so the result matches the canvas exactly and every canvas control and link carries over. Tailwind and shadcn are not installed.
 - **Why:** rewriting 73 pages by hand would diverge from the confirmed canvas and cost far more for the same look. The tokens are still CSS variables.
-- **Still open:** plan, usage, health numbers, checkpoint risk, the standups and sprint-read-only pages, and the Library Seat Booking rows of My work still hold sample data inline. Plan epic controls act on the page only (plan proposals belong to W7). Role variants are separate components picked by role (`lib/screens.ts`).
+- **Still open:** the plan screens and the Library Seat Booking rows of My work still hold sample data inline. Plan epic controls act on the page only (plan proposals belong to W7). Checkpoint risk is derived from linked epics and velocity (sprints of 14 days, no velocity until a sprint closes); the digest and suggestion texts stay canned until W7. Role variants are separate components picked by role (`lib/screens.ts`).
 
