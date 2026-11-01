@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": { "composite": true, "rootDir": "src", "outDir": "dist", "noEmit": true },
+  "include": ["src/**/*.ts"],
+  "references": [{ "path": "../contracts" }]
+}

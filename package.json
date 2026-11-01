@@ -1,0 +1,15 @@
+{
+  "name": "agile-platform",
+  "private": true,
+  "packageManager": "npm@10",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "test": "node --import tsx --test \"tests/**/*.test.ts\" \"packages/**/*.test.ts\"",
+    "typecheck": "tsc -b",
+    "lint": "tsc -b --pretty false"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

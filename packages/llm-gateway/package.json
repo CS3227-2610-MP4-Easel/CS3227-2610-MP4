@@ -1,0 +1,13 @@
+{
+  "name": "@agile/llm-gateway",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@agile/contracts": "*"
+  }
+}

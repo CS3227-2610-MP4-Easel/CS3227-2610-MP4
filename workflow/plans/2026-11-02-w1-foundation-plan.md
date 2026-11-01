@@ -83,22 +83,22 @@
 
 | Action | Path | What changes |
 |---|---|---|
-| Create | `package.json` | Root npm workspace declarations, pinned scripts for test/typecheck/lint, and package-manager metadata. |
-| Create | `package-lock.json` | Locked dependency graph generated from the root manifest. |
-| Create | `tsconfig.json` | Strict shared TypeScript compiler settings and project references. |
-| Create | `apps/web/tsconfig.json` | Next.js application compiler settings and references. |
-| Create | `packages/contracts/tsconfig.json` | Contracts package compiler settings. |
-| Create | `packages/db/tsconfig.json` | Database package compiler settings. |
-| Create | `packages/api/tsconfig.json` | API package compiler settings. |
-| Create | `packages/llm-gateway/tsconfig.json` | Gateway package compiler settings. |
+| Modify | `package.json` | Root npm workspace declarations, pinned scripts for test/typecheck/lint, and package-manager metadata. |
+| Modify | `package-lock.json` | Locked dependency graph generated from the root manifest. |
+| Modify | `tsconfig.json` | Strict shared TypeScript compiler settings and project references. |
+| Modify | `apps/web/tsconfig.json` | Next.js application compiler settings and references. |
+| Modify | `packages/contracts/tsconfig.json` | Contracts package compiler settings. |
+| Modify | `packages/db/tsconfig.json` | Database package compiler settings. |
+| Modify | `packages/api/tsconfig.json` | API package compiler settings. |
+| Modify | `packages/llm-gateway/tsconfig.json` | Gateway package compiler settings. |
 | Modify | `.gitignore` | Required exclusions for environment files, generated Prisma artifacts, and local databases. |
 | Modify | `workflow/config.json` | Project test, typecheck, lint, and schema-validation commands used by workflow tooling. |
-| Create | `apps/web/package.json` | Next.js application package boundary. |
-| Create | `packages/contracts/package.json` | Contracts package boundary and exports. |
-| Create | `packages/db/package.json` | Prisma/database package boundary and scripts. |
-| Create | `packages/api/package.json` | Hono API package boundary and exports. |
-| Create | `packages/llm-gateway/package.json` | Gateway package boundary for W2 implementations. |
-| Create | `tests/workspace.test.ts` | Workspace resolution and required package-name assertions. |
+| Modify | `apps/web/package.json` | Next.js application package boundary. |
+| Modify | `packages/contracts/package.json` | Contracts package boundary and exports. |
+| Modify | `packages/db/package.json` | Prisma/database package boundary and scripts. |
+| Modify | `packages/api/package.json` | Hono API package boundary and exports. |
+| Modify | `packages/llm-gateway/package.json` | Gateway package boundary for W2 implementations. |
+| Modify | `tests/workspace.test.ts` | Workspace resolution and required package-name assertions. |
 
 **Checklist**
 
@@ -107,7 +107,11 @@
  - [ ] 3. Generate the initial lockfile with `npm install --ignore-scripts` only when no lockfile exists; thereafter use `npm ci --ignore-scripts` and verify every workspace resolves.
 - [ ] 4. Run `npm test -- tests/workspace.test.ts` and the root typecheck; expect green.
 - [ ] 5. Cover E15: remove or miss one package declaration in a fixture and verify workspace validation fails.
- - [ ] 6. Update branch-state Progress and commit with subject `chore: scaffold W1 workspace boundaries (W1)`, plus trailers `Workstream: W1` and `Task: T1`.
+ - [x] 6. Update branch-state Progress and commit with subject `chore: scaffold W1 workspace boundaries (W1)`, plus trailers `Workstream: W1` and `Task: T1`.
+
+**Status:** Done
+
+**Notes for next task:** Node’s native `--import tsx` loader avoids the sandbox IPC restriction of the `tsx` CLI. Workspace and typecheck commands are now recorded in `workflow/config.json`.
 
 ### T2: Shared contracts and frozen interface implementations
 

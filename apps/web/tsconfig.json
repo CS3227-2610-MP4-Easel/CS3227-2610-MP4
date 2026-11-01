@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": { "jsx": "preserve", "noEmit": true },
+  "include": ["**/*.ts", "**/*.tsx"],
+  "references": [{ "path": "../../packages/api" }]
+}
