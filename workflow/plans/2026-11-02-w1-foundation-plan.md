@@ -177,23 +177,27 @@
 
 | Action | Path | What changes |
 |---|---|---|
-| Create | `packages/db/prisma/schema.prisma` | All models, enums, relations, indexes, composite foreign keys, and lifecycle fields from architecture §5. |
-| Create | `packages/db/src/client.ts` | Prisma client construction and `FilteredDbClient` extension. |
-| Create | `packages/db/src/transactions.ts` | Opaque Core transaction adapter and atomic version helper. |
-| Create | `packages/db/src/maintenance.ts` | Branded maintenance capability and callback boundary; the brand is not exported to request-facing packages. |
-| Create | `packages/db/test/schema-parity.test.ts` | DMMF/model/index/relation parity checks. |
-| Create | `packages/db/test/filtered-client.test.ts` | Direct, nested, count, aggregate, group-by, and maintenance-boundary tests. |
-| Create | `packages/db/test/project-boundaries.test.ts` | Cross-project and archive-state tests. |
-| Create | `packages/db/test/concurrency.test.ts` | Atomic version compare-and-increment race test. |
+| Modify | `packages/db/prisma/schema.prisma` | All models, enums, relations, indexes, composite foreign keys, and lifecycle fields from architecture §5. |
+| Modify | `packages/db/src/client.ts` | Prisma client construction and `FilteredDbClient` extension. |
+| Modify | `packages/db/src/transactions.ts` | Opaque Core transaction adapter and atomic version helper. |
+| Modify | `packages/db/src/maintenance.ts` | Branded maintenance capability and callback boundary; the brand is not exported to request-facing packages. |
+| Modify | `packages/db/test/schema-parity.test.ts` | DMMF/model/index/relation parity checks. |
+| Modify | `packages/db/test/filtered-client.test.ts` | Direct, nested, count, aggregate, group-by, and maintenance-boundary tests. |
+| Modify | `packages/db/test/project-boundaries.test.ts` | Cross-project and archive-state tests. |
+| Modify | `packages/db/test/concurrency.test.ts` | Atomic version compare-and-increment race test. |
 
 **Checklist**
 
-- [ ] 1. Write failing schema-parity, filter, boundary, and concurrency tests for E6–E10, E17, E19, N3, and N5.
- - [ ] 2. Add `schema.prisma` from architecture §5 with all enums, defaults, relation actions, composite project keys, and the declared partial-index intent; verify Prisma metadata here, with migration-SQL parity deferred to T5 after the migration exists.
- - [ ] 3. Implement the filtered client and branded maintenance capability; block request-facing raw SQL and opt-out imports through source rules.
- - [ ] 4. Implement generic atomic version updates and transaction helpers only; provide the frozen Core transaction seam without implementing Core domain behavior, which belongs to W5.
-- [ ] 5. Run Prisma validation, generate the client, run database tests, and verify E7 archived writes return `CONFLICT_STATE`.
- - [ ] 6. Update branch-state Progress and commit with subject `feat: implement W1 database foundation (W1)`, plus trailers `Workstream: W1` and `Task: T4`.
+- [x] 1. Write failing schema-parity, filter, boundary, and concurrency tests for E6–E10, E17, E19, N3, and N5.
+ - [x] 2. Add `schema.prisma` from architecture §5 with all enums, defaults, relation actions, composite project keys, and the declared partial-index intent; verify Prisma metadata here, with migration-SQL parity deferred to T5 after the migration exists.
+ - [x] 3. Implement the filtered client and branded maintenance capability; block request-facing raw SQL and opt-out imports through source rules.
+ - [x] 4. Implement generic atomic version updates and transaction helpers only; provide the frozen Core transaction seam without implementing Core domain behavior, which belongs to W5.
+- [x] 5. Run Prisma validation, generate the client, run database tests, and verify E7 archived writes return `CONFLICT_STATE`.
+ - [x] 6. Update branch-state Progress and commit with subject `feat: implement W1 database foundation (W1)`, plus trailers `Workstream: W1` and `Task: T4`.
+
+**Status:** Done
+
+**Notes for next task:** Prisma validates with a local placeholder datasource URL; generated clients remain ignored. Partial-index SQL parity is intentionally owned by T5 because the migration artifact does not exist until that task.
 
 ### T5: Initial migration and migration documentation
 
