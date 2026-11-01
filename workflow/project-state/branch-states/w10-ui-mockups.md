@@ -8,7 +8,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Base:** 4f5f5de
 - **Owner:** Xiao-Congchen (W10 is owned by the PM role, AD-72; member-to-role mapping is open, STATE Q1)
 - **Status:** Draft
-- **Approved:** —
+- **Approved:** Xiao-Congchen, 2026-11-02 (gate 3, branch review). Not pushed; no PR opened.
 - **Last updated:** 2026-11-01 by Claude Sonnet 5.5 — spec index, edge cases and implementation order written
 
 **Untouched:** Architecture, Conventions, Known Gaps
