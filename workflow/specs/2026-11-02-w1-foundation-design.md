@@ -1,8 +1,8 @@
 # W1 Foundation and API Skeleton Design
 
-- **Status:** Draft
+- **Status:** Approved (Dev Lead, 2026-11-02)
 - **Risk tier:** High — W1 defines the database schema, authorization contract, public API boundary, and interfaces consumed by every later slice.
-- **Workstream:** W1 | **Plan:** not written yet
+- **Workstream:** W1 | **Plan:** [implementation plan](../../plans/2026-11-02-w1-foundation-plan.md)
 - **Normative sources:** `docs/architecture/contracts.md` §§1–5 is authoritative for endpoints, schemas, errors, policy rows, and frozen interfaces; `docs/architecture/agile-platform-architecture.md` §5 is authoritative for the data model; this W1 spec is authoritative only for the implementation seams, verification, and migration procedure below.
 - **Constraints consulted:** AD-01a, AD-01b, AD-01c, AD-02, AD-33, AD-35, AD-43, AD-54, AD-55, AD-65, AD-66, AD-72, A-03, A-06, A-18; guardrails AD-01b, AD-55, AD-25, AD-32; `workflow/project-state/architecture/foundation.md`; `conventions/general.md`; `conventions/process.md`
 - **Review lenses:** Implementer, Tester, Maintainer, Attacker (public API, authorization, tenancy and untrusted request input)
