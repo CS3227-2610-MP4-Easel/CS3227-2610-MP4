@@ -232,27 +232,35 @@
 
 | Action | Path | What changes |
 |---|---|---|
-| Create | `packages/api/src/app.ts` | Hono app and route registration entry point. |
-| Create | `packages/api/src/middleware/request-id.ts` | Server-generated request ids and response/header context. |
-| Create | `packages/api/src/middleware/auth.ts` | Injected authentication, user lookup, role, membership, and predicate seams. |
-| Create | `packages/api/src/errors.ts` | Stable error-to-HTTP mapping and redacted 500 response. |
-| Create | `packages/api/src/routes/health.ts` | Database-free health route. |
-| Create | `apps/web/app/api/[[...route]]/route.ts` | Next.js adapter for the Hono app. |
-| Create | `packages/api/test/route-registration.test.ts` | Route registration and policy metadata contract tests. |
-| Create | `packages/api/test/authorization-matrix.test.ts` | Auth failure ordering and handler non-invocation tests. |
-| Create | `packages/api/test/input-validation.test.ts` | Body/path/query validation tests. |
-| Create | `packages/api/test/health.test.ts` | Public health response tests. |
-| Create | `packages/api/test/log-redaction.test.ts` | Secret and request-id redaction tests. |
+| Modify | `packages/api/src/app.ts` | Hono app and route registration entry point. |
+| Modify | `packages/api/src/index.ts` | Public API package exports for the Hono app and boundary seams. |
+| Modify | `packages/api/src/middleware/request-id.ts` | Server-generated request ids and response/header context. |
+| Modify | `packages/api/src/middleware/auth.ts` | Injected authentication, user lookup, role, membership, and predicate seams. |
+| Modify | `packages/api/src/errors.ts` | Stable error-to-HTTP mapping and redacted 500 response. |
+| Modify | `packages/api/src/routes/health.ts` | Database-free health route. |
+| Modify | `apps/web/app/api/[[...route]]/route.ts` | Next.js adapter for the Hono app. |
+| Modify | `apps/web/package.json` | API workspace dependency for the Next.js adapter. |
+| Modify | `packages/api/package.json` | Zod/API boundary dependencies. |
+| Modify | `package-lock.json` | Locked workspace dependency edges. |
+| Modify | `packages/api/test/route-registration.test.ts` | Route registration and policy metadata contract tests. |
+| Modify | `packages/api/test/authorization-matrix.test.ts` | Auth failure ordering and handler non-invocation tests. |
+| Modify | `packages/api/test/input-validation.test.ts` | Body/path/query validation tests. |
+| Modify | `packages/api/test/health.test.ts` | Public health response tests. |
+| Modify | `packages/api/test/log-redaction.test.ts` | Secret and request-id redaction tests. |
 
 **Checklist**
 
-- [ ] 1. Write failing tests for E3, E11, E13, E16, N1, N2, and N4.
-- [ ] 2. Implement server request-id generation and the protected/public middleware pipeline from `api.md`.
-- [ ] 3. Implement injected auth and policy dependency interfaces without Firebase behavior; map resolver failures to the normative error codes.
-- [ ] 4. Implement common error mapping and redacted 500 responses.
-- [ ] 5. Add the database-free health route and Next.js adapter.
-- [ ] 6. Run API tests and typecheck; verify denied requests never invoke handlers.
- - [ ] 7. Update branch-state Progress and commit with subject `feat: add W1 API boundary and health route (W1)`, plus trailers `Workstream: W1` and `Task: T6`.
+- [x] 1. Write failing tests for E3, E11, E13, E16, N1, N2, and N4.
+- [x] 2. Implement server request-id generation and the protected/public middleware pipeline from `api.md`.
+- [x] 3. Implement injected auth and policy dependency interfaces without Firebase behavior; map resolver failures to the normative error codes.
+- [x] 4. Implement common error mapping and redacted 500 responses.
+- [x] 5. Add the database-free health route and Next.js adapter.
+- [x] 6. Run API tests and typecheck; verify denied requests never invoke handlers.
+ - [x] 7. Update branch-state Progress and commit with subject `feat: add W1 API boundary and health route (W1)`, plus trailers `Workstream: W1` and `Task: T6`.
+
+**Status:** Done
+
+**Notes for next task:** The API boundary exposes only health in W1; auth and policy dependencies are injected for W4/W3. TypeScript project references emit declarations into ignored dist folders.
 
 ### T7: Cross-boundary, policy, OpenAPI, authorization, and import verification
 
