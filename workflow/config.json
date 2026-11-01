@@ -2,5 +2,10 @@
   "int_branch": "development",
   "release_branch": "main",
   "skills": ["project-state", "branch-state", "sync-project-state", "writing-specs-lite", "writing-plans-lite", "executing-plans-lite", "update-documentation", "slicing-architecture", "drafting-interfaces", "authoring-tests", "architecting-systems"],
-  "test_commands": {}
+  "test_commands": {
+    "workspace": "npm test",
+    "typecheck": "npm run typecheck",
+    "lint": "npm run lint",
+    "schema": "npm --workspace @agile/db run prisma:validate"
+  }
 }

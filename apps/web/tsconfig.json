@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": { "composite": true, "noEmit": false, "jsx": "preserve", "declaration": true, "emitDeclarationOnly": true, "outDir": "../../dist/web" },
+  "include": ["**/*.ts", "**/*.tsx"],
+  "references": [{ "path": "../../packages/api" }]
+}

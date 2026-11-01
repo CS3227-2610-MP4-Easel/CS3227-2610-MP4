@@ -36,3 +36,13 @@ yarn-error.log*
 next-env.d.ts
 
 .ws/
+.env
+.env.*
+!.env.example
+node_modules/
+dist/
+.next/
+packages/db/prisma/generated/
+packages/db/generated/
+*.db
+*.db-journal
