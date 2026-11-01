@@ -270,21 +270,25 @@
 
 | Action | Path | What changes |
 |---|---|---|
-| Create | `packages/api/test/openapi-parity.test.ts` | Route-table/OpenAPI comparison for all normative endpoint fields. |
-| Create | `packages/api/test/import-rules.test.ts` | Source-scan checks for web/database and module-boundary violations. |
-| Create | `packages/api/test/route-collision.test.ts` | Duplicate route, policy mismatch, and dispatch safety tests. |
-| Create | `packages/api/test/authorization-project-scope.test.ts` | Cross-project, role, membership, assignee, and member-project tests. |
-| Create | `packages/db/test/raw-query-boundary.test.ts` | Maintenance capability and raw-query access checks. |
-| Create | `packages/contracts/test/openapi.test.ts` | Generated OpenAPI document shape and source-record parity tests, owned by the verification task after policy records exist. |
+| Modify | `packages/api/test/openapi-parity.test.ts` | Route-table/OpenAPI comparison for all normative endpoint fields. |
+| Modify | `packages/api/test/import-rules.test.ts` | Source-scan checks for web/database and module-boundary violations. |
+| Modify | `packages/api/test/route-collision.test.ts` | Duplicate route, policy mismatch, and dispatch safety tests. |
+| Modify | `packages/api/test/authorization-project-scope.test.ts` | Cross-project, role, membership, assignee, and member-project tests. |
+| Modify | `packages/db/test/raw-query-boundary.test.ts` | Maintenance capability and raw-query access checks. |
+| Modify | `packages/contracts/test/openapi.test.ts` | Generated OpenAPI document shape and source-record parity tests, owned by the verification task after policy records exist. |
 
 **Checklist**
 
-- [ ] 1. Write failing parity and source-scan tests for N6, E4, E5, E6, E9, E12, E16, E18, and E19.
- - [ ] 2. Compare all 57 normative contract records with route metadata and the generated OpenAPI document produced by `packages/contracts/src/openapi.ts`; fail on missing, extra, or field-mismatched records.
-- [ ] 3. Run source scans for `apps/web` Prisma imports, route policy omissions, raw SQL access, and maintenance-capability leakage.
-- [ ] 4. Run cross-project and role-specific predicate tests, including endpoint 24 and endpoint 43.
-- [ ] 5. Run the complete test suite and typecheck; expect green.
- - [ ] 6. Update branch-state Progress and commit with subject `test: verify W1 contract and boundary parity (W1)`, plus trailers `Workstream: W1` and `Task: T7`.
+- [x] 1. Write failing parity and source-scan tests for N6, E4, E5, E6, E9, E12, E16, E18, and E19.
+- [x] 2. Compare all 57 normative contract records with route metadata and the generated OpenAPI document produced by `packages/contracts/src/openapi.ts`; fail on missing, extra, or field-mismatched records.
+- [x] 3. Run source scans for `apps/web` Prisma imports, route policy omissions, raw SQL access, and maintenance-capability leakage.
+- [x] 4. Run cross-project and role-specific predicate tests, including endpoint 24 and endpoint 43.
+- [x] 5. Run the complete test suite and typecheck; expect green.
+ - [x] 6. Update branch-state Progress and commit with subject `test: verify W1 contract and boundary parity (W1)`, plus trailers `Workstream: W1` and `Task: T7`.
+
+**Status:** Done
+
+**Notes for next task:** OpenAPI generation now merges methods under shared paths. Source scans enforce the web/database and raw-query boundaries; T8 only needs consumer handoff fixtures and final evidence.
 
 ### T8: Frozen-first handoff
 
