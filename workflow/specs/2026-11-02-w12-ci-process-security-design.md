@@ -1,6 +1,6 @@
 # W12 CI and Process Security Design
 
-- **Status:** Draft
+- **Status:** Approved (Dev Lead, 2026-11-02)
 - **Risk tier:** High - the work controls repository permissions, secrets, supply-chain inputs, and merge authority.
 - **Workstream:** W12 | **Plan:** —
 - **Constraints consulted:** `guardrails.md` AD-32; architecture AD-53; decision-log AD-32, A-17; architecture §14.
