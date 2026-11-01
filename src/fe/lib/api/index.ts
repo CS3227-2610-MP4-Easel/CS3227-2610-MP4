@@ -328,3 +328,13 @@ export function healthOf(d: import('./types').Db, today = '2026-11-02') {
   const overload = [...byPerson.entries()].filter(([, pts]) => pts > Math.max(avg, 8)).map(([who, pts]) => ({ who, pts }));
   return { progress: p, avg, closed: p.velocity.length, remainingAll, projectedAll: at(weeks(remainingAll)), rows, atRisk: rows.filter((r) => r.risk === 'warn' || r.risk === 'bad').length, overload };
 }
+
+// 55: standups of the whole team for one day, newest first (Dev Lead; read only).
+export async function listTeamStandups_55(date: string, person?: import('./types').Person): Promise<import('./types').TeamStandup[]> {
+  return read().teamStandups.filter((s) => s.date === date && (!person || s.person === person));
+}
+
+// 56: the signed-in user's AI sessions with token and cost totals.
+export async function listAiSessions_56(): Promise<import('./types').AiSession[]> {
+  return read().aiSessions;
+}

@@ -9,7 +9,7 @@ import { WHO, fmtDay } from './people';
 const ORDER = { ACTIVE: 0, PLANNED: 1, CLOSED: 2 } as const;
 
 // Sprint sections for the Dev Lead, read from the data layer (endpoints 27, 30, 32).
-export default function SprintList() {
+export default function SprintList({ readOnly = false }: { readOnly?: boolean }) {
   const db = useDb();
   const [busy, setBusy] = useState('');
   const hasActive = db.sprints.some((s) => s.status === 'ACTIVE');
@@ -46,8 +46,8 @@ export default function SprintList() {
               </div>
               <div className="row">
                 <span className="small muted num">{dates} · {s.status === 'CLOSED' ? `${done} pts completed` : `${pts} pts planned`}</span>
-                {s.status === 'ACTIVE' && <A className="btn sm d" href={r('SprintClose.dc.html')}>Close sprint</A>}
-                {s.status === 'PLANNED' && (
+                {!readOnly && s.status === 'ACTIVE' && <A className="btn sm d" href={r('SprintClose.dc.html')}>Close sprint</A>}
+                {!readOnly && s.status === 'PLANNED' && (
                   <>
                     <button className={`btn sm${hasActive ? ' dis' : ''}`} disabled={hasActive || busy === s.id} title={hasActive ? 'Another sprint is active' : ''} aria-disabled={hasActive} onClick={() => run(s.id, () => startSprint_30(s.id), `${s.name} started.`)}>Start</button>
                     <A className="btn sm" href={r('SprintsNew.dc.html')}><svg className="ic" aria-hidden="true"><use href="#i-edit" /></svg>Edit</A>
@@ -70,13 +70,13 @@ export default function SprintList() {
                 )}
               </div>
             ))}
-            {s.status === 'PLANNED' && hasActive && (
+            {!readOnly && s.status === 'PLANNED' && hasActive && (
               <div className="trow" style={{ background: 'var(--head)' }}>
                 <svg className="ic muted" aria-hidden="true"><use href="#i-info" /></svg>
                 <span className="small muted">Start is disabled: another sprint is active. Delete moves its tasks to the backlog.</span>
               </div>
             )}
-            {s.status === 'PLANNED' && tasks.length === 0 && (
+            {s.status === 'PLANNED' && tasks.length === 0 && !readOnly && (
               <div className="trow"><span className="small muted">No tasks yet. Assign tasks to this sprint from the Backlog.</span></div>
             )}
           </section>

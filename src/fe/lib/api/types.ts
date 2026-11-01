@@ -26,6 +26,9 @@ export type Standup = { id: string; date: string; yesterday: string[]; today: st
 export type Digest = { generatedAt: string; cached: boolean };
 export type Suggestion = { id: string; text: string; state: 'PENDING' | 'APPLIED' | 'DISMISSED' };
 
+export type TeamStandup = { date: string; person: Person; yesterday: string[]; today: string[]; blockers: string[]; outcome: 'GENERATED' | 'EDITED' | 'ACCEPTED'; activityOnly: boolean; flagged: boolean };
+export type AiSession = { id: string; feature: string; startedAt: string; outcome: 'Accepted' | 'Rejected' | 'Open'; regens: number; feedback: 'up' | 'down' | null; calls: number; prompt: number; completion: number; cost: number; elapsed: number };
+
 export type Db = {
   project: Project;
   epics: Epic[];
@@ -37,4 +40,6 @@ export type Db = {
   digest: Digest;
   suggestions: Suggestion[];
   summariesMissing: number;
+  teamStandups: TeamStandup[];
+  aiSessions: AiSession[];
 };

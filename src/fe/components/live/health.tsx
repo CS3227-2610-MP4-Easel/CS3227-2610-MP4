@@ -41,7 +41,7 @@ export default function HealthNumbers() {
                 <td className="b">{x.checkpoint.name}</td>
                 <td className="num">{fmtFull(x.checkpoint.targetDate)}</td>
                 <td className="r num">{x.remaining} pts</td>
-                <td className="num" style={x.risk === 'warn' || x.risk === 'bad' ? { color: 'var(--warn)', fontWeight: 650 } : undefined}>{x.projected ? fmtFull(x.projected) : 'No forecast'}</td>
+                <td className="num" style={x.risk === 'warn' || x.risk === 'bad' ? { color: 'var(--warn)', fontWeight: 650 } : undefined}>{x.remaining === 0 ? 'No open work' : x.projected ? fmtFull(x.projected) : 'No forecast'}</td>
                 <td><RiskBadge risk={x.risk} /></td>
               </tr>
             ))}

@@ -53,4 +53,19 @@ export const initialDb = (): Db => ({
     { id: 'g3', text: 'Ask the Dev Lead to reassign an overloaded developer', state: 'PENDING' },
   ],
   summariesMissing: 4,
+  teamStandups: [
+    { date: '2026-11-02', person: 'pn', yesterday: ['Built the menu item detail layout', 'Fixed image sizing on small phones'], today: ['Wire the detail page to the menu API', 'Start order status notification spike'], blockers: [], outcome: 'EDITED', activityOnly: false, flagged: false },
+    { date: '2026-11-02', person: 'ml', yesterday: ['Moved Cart and order summary to In review'], today: ['Pick up the cuisine filter task'], blockers: [], outcome: 'GENERATED', activityOnly: true, flagged: false },
+    { date: '2026-11-02', person: 'wo', yesterday: ['Drafted the student ID payment flow', "Asked the bursar's office for sandbox keys"], today: ['Design the QR pickup code'], blockers: ['Payment sandbox keys not received'], outcome: 'GENERATED', activityOnly: false, flagged: true },
+    ...['2026-10-30', '2026-10-29', '2026-10-28', '2026-10-27', '2026-10-26'].flatMap((date) => [
+      { date, person: 'pn' as const, yesterday: ['Finished the stall list screen'], today: ['Start the menu detail page'], blockers: [], outcome: 'ACCEPTED' as const, activityOnly: false, flagged: false },
+      { date, person: 'ml' as const, yesterday: ['Data model review'], today: ['Cart and order summary'], blockers: [], outcome: 'ACCEPTED' as const, activityOnly: false, flagged: false },
+      { date, person: 'wo' as const, yesterday: ['Sign-in with student ID'], today: ['Student ID payment'], blockers: [], outcome: 'ACCEPTED' as const, activityOnly: false, flagged: false },
+    ]),
+  ],
+  aiSessions: [
+    { id: 'a1', feature: 'Project plan', startedAt: '2026-10-30T14:02:00+08:00', outcome: 'Accepted', regens: 1, feedback: 'up', calls: 9, prompt: 31402, completion: 12330, cost: 0.193, elapsed: 58 },
+    { id: 'a2', feature: 'Project plan', startedAt: '2026-10-28T10:15:00+08:00', outcome: 'Rejected', regens: 0, feedback: 'down', calls: 4, prompt: 9880, completion: 4102, cost: 0.061, elapsed: 31 },
+    { id: 'a3', feature: 'Plan with AI', startedAt: '2026-10-27T16:40:00+08:00', outcome: 'Open', regens: 0, feedback: null, calls: 2, prompt: 6928, completion: 5472, cost: 0.0644, elapsed: 12 },
+  ],
 });
