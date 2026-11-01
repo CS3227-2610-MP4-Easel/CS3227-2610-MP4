@@ -98,6 +98,32 @@ export async function listTasks_20(): Promise<Task[]> {
   return read().tasks;
 }
 
+// 22 and 23 and 25: read, edit and delete a task
+export async function getTask_22(id: string): Promise<Task | undefined> {
+  return read().tasks.find((t) => t.id === id);
+}
+export async function updateTask_23(id: string, patch: Partial<Pick<Task, 'title' | 'description' | 'points' | 'assignee' | 'criteria'>>): Promise<Task> {
+  await wait(150);
+  if (patch.title !== undefined && !patch.title.trim()) throw new ApiError('VALIDATION', 'Title is required.');
+  let out: Task | undefined;
+  write((d) => {
+    const t = d.tasks.find((x) => x.id === id);
+    if (!t) return;
+    Object.assign(t, patch);
+    t.version++;
+    out = t;
+  });
+  if (!out) throw new ApiError('NOT_FOUND', 'Task not found.');
+  return out;
+}
+export async function deleteTask_25(id: string): Promise<void> {
+  await wait(150);
+  if (read().tasks.find((t) => t.id === id)?.status === 'done') throw new ApiError('CONFLICT_STATE', 'A done task cannot be deleted.');
+  write((d) => {
+    d.tasks = d.tasks.filter((t) => t.id !== id);
+  });
+}
+
 // 24: change a task's status or blocked flag
 export async function setTaskStatus_24(id: string, status: TaskStatus, blockedReason?: string): Promise<Task> {
   await wait(120);
@@ -259,4 +285,20 @@ export function exampleActivityFile_49(): string {
     null,
     2,
   );
+}
+
+// 33: progress and velocity, derived from the tasks and sprints (the backend computes this)
+export function progressOf(d: import('./types').Db) {
+  const pointsTotal = d.tasks.reduce((a, t) => a + (t.points || 0), 0);
+  const pointsDone = d.tasks.filter((t) => t.status === 'done').reduce((a, t) => a + (t.points || 0), 0);
+  const velocity = d.sprints
+    .filter((s) => s.status === 'CLOSED')
+    .map((s) => ({ name: s.name, points: d.tasks.filter((t) => t.sprintId === s.id && t.status === 'done').reduce((a, t) => a + (t.points || 0), 0) }));
+  return {
+    pointsTotal,
+    pointsDone,
+    percent: pointsTotal ? Math.round((pointsDone / pointsTotal) * 100) : 0,
+    unestimatedTasks: d.tasks.filter((t) => t.points == null && t.status !== 'done').length,
+    velocity,
+  };
 }
