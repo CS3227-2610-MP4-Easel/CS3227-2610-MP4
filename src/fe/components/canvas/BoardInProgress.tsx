@@ -1,0 +1,19 @@
+// @ts-nocheck
+// Generated from the design canvas page BoardInProgress.dc.html. Source of truth from here on is this file.
+import { Fragment } from 'react';
+import { A, css, r, useRole } from '../../lib/nav';
+import Top from './Top';
+import ProjectHead from './ProjectHead';
+import BoardView from './BoardView';
+
+class Logic {
+props: any;
+constructor(p: any) { this.props = p; }
+
+renderVals() { return {}; }
+}
+
+export default function BoardInProgress(props: any = {}) {
+  const v = new Logic(props).renderVals();
+  return (<><div className="app"><Top role={"lead"} project={"1"} />{" "}<div className="body"><main className="main"><ProjectHead role={"lead"} active={"board"} />{" "}<BoardView show={"prog"} open-id={"t2"} /></main></div></div></>);
+}
