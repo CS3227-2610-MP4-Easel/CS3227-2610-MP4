@@ -26,7 +26,7 @@
 | T6 | API boundary, request id, error mapping, and health route | T2, T3 | 4 | Done |
 | T7 | Cross-boundary, policy, OpenAPI, authorization, and import-rule verification seams | T2, T3, T4, T6 | 4 | Done |
 | T8 | Frozen-first handoff | T2, T3, T4, T6 | 5 | Done |
-| T9 | Review repairs and regression evidence | T2, T4, T7, T8 | 6 | In progress |
+| T9 | Review repairs and regression evidence | T2, T4, T7, T8 | 6 | Done |
 
 ## Traceability
 
@@ -354,5 +354,5 @@
 - [x] Every Traceability row has a passing test or named manual verification.
 - [x] Run `npm test`, `npm run typecheck`, Prisma validation, migration tests, OpenAPI parity, and source scans.
 - [x] Confirm the spec, task statuses, and branch-state Progress agree with reality.
-- [ ] GATE: Ask the operator to review the completed branch at Gate 3; do not push, open a PR, or merge before approval.
+- [x] GATE: Ask the operator to review the completed branch at Gate 3; do not push, open a PR, or merge before approval.
 
