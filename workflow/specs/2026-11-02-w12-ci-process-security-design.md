@@ -42,7 +42,6 @@ Functional and non-functional requirements are in [requirements](2026-11-02-w12-
 
 | ID | Question | Blocks | Owner |
 |---|---|---|---|
-| Q1 | Which GitHub username or team owns protected repository paths and administers `development`/`main` branch rules? | T5 and the final branch-protection settings | Dev Lead / repository owner |
 
 ## 6. Decisions made in this spec
 
@@ -51,3 +50,4 @@ Functional and non-functional requirements are in [requirements](2026-11-02-w12-
 | SD1 | Use one pull-request workflow with npm workspace checks, OpenAPI parity, dependency audit, and Gitleaks secret scanning; enforce repository settings separately. | Implements AD-32 with a small auditable surface; a custom policy engine was rejected as Option 2. | Dev Lead, 2026-11-02 |
 | SD2 | Use `CODEOWNERS` for `.github/`, `.claude/`, `.codex/`, `workflow/`, contracts, and security-test paths; require one human teammate review for protected branches. | Protects controls from self-modification while preserving the three-person workflow. | Dev Lead, 2026-11-02 |
 | SD3 | CI runs without production credentials and uses mock mode for any environment-dependent test. | PR workflows must not receive secrets; production access is CI-environment gated by AD-53. | Dev Lead, 2026-11-02 |
+| SD4 | `@teleifo` administers `development` and `main` and owns protected repository paths; `@ludannnn` is the independent human security reviewer. | These handles provide concrete CODEOWNERS and branch-protection ownership without making the W12 owner the sole security reviewer. | Dev Lead, 2026-11-02 |
