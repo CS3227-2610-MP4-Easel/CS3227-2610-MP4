@@ -102,11 +102,11 @@
 
 **Checklist**
 
-- [ ] 1. Write `tests/workspace.test.ts` for all five workspace packages and the root scripts; run `npm test -- tests/workspace.test.ts`; expect failure because the manifests do not exist.
-- [ ] 2. Create the root and package manifests with strict TypeScript and test scripts; keep `core` and `ai-context` as later domain modules, not new W1 workspaces.
- - [ ] 3. Generate the initial lockfile with `npm install --ignore-scripts` only when no lockfile exists; thereafter use `npm ci --ignore-scripts` and verify every workspace resolves.
-- [ ] 4. Run `npm test -- tests/workspace.test.ts` and the root typecheck; expect green.
-- [ ] 5. Cover E15: remove or miss one package declaration in a fixture and verify workspace validation fails.
+- [x] 1. Write `tests/workspace.test.ts` for all five workspace packages and the root scripts; run `npm test -- tests/workspace.test.ts`; expect failure because the manifests do not exist.
+- [x] 2. Create the root and package manifests with strict TypeScript and test scripts; keep `core` and `ai-context` as later domain modules, not new W1 workspaces.
+ - [x] 3. Generate the initial lockfile with `npm install --ignore-scripts` only when no lockfile exists; thereafter use `npm ci --ignore-scripts` and verify every workspace resolves.
+- [x] 4. Run `npm test -- tests/workspace.test.ts` and the root typecheck; expect green.
+- [x] 5. Cover E15: remove or miss one package declaration in a fixture and verify workspace validation fails.
  - [x] 6. Update branch-state Progress and commit with subject `chore: scaffold W1 workspace boundaries (W1)`, plus trailers `Workstream: W1` and `Task: T1`.
 
 **Status:** Done
@@ -121,24 +121,28 @@
 
 | Action | Path | What changes |
 |---|---|---|
-| Create | `packages/contracts/src/index.ts` | Public contract exports. |
-| Create | `packages/contracts/src/enums.ts` | Canonical role, feature, state, and error-code enums. |
-| Create | `packages/contracts/src/errors.ts` | Strict error envelope and status-code mapping. |
-| Create | `packages/contracts/src/pagination.ts` | Page/query/result schemas with bounds from `contracts.md`. |
-| Create | `packages/contracts/src/schemas.ts` | Shared request/response Zod schemas from `contracts.md` §§1–2. |
-| Create | `packages/contracts/src/frozen.ts` | `LlmGateway`, `AiContext`, `Sessions`, and `Core` type contracts from `contracts.md` §5. |
-| Create | `packages/contracts/src/openapi.ts` | OpenAPI document generation owned by the contracts package, derived from the same route and schema records. |
-| Create | `packages/contracts/test/contracts.test.ts` | Unknown-key, server-managed-field, error, pagination, and schema tests. |
-| Create | `packages/contracts/test/frozen-interfaces.test.ts` | Compile-time consumer fixtures and runtime error/cap tests. |
+| Modify | `packages/contracts/src/index.ts` | Public contract exports. |
+| Modify | `packages/contracts/src/enums.ts` | Canonical role, feature, state, and error-code enums. |
+| Modify | `packages/contracts/src/errors.ts` | Strict error envelope and status-code mapping. |
+| Modify | `packages/contracts/src/pagination.ts` | Page/query/result schemas with bounds from `contracts.md`. |
+| Modify | `packages/contracts/src/schemas.ts` | Shared request/response Zod schemas from `contracts.md` §§1–2. |
+| Modify | `packages/contracts/src/frozen.ts` | `LlmGateway`, `AiContext`, `Sessions`, and `Core` type contracts from `contracts.md` §5. |
+| Modify | `packages/contracts/src/openapi.ts` | OpenAPI document generation owned by the contracts package, derived from the same route and schema records. |
+| Modify | `packages/contracts/test/contracts.test.ts` | Unknown-key, server-managed-field, error, pagination, and schema tests. |
+| Modify | `packages/contracts/test/frozen-interfaces.test.ts` | Compile-time consumer fixtures and runtime error/cap tests. |
 
 **Checklist**
 
-- [ ] 1. Write failing tests for E1, E2, N2, and the frozen-interface consumer fixture; run the contracts package test command.
-- [ ] 2. Implement schemas and enums exactly against the normative contract source; reject unknown keys and all server-managed fields.
-- [ ] 3. Implement the frozen types and behavioral test fixtures, including gateway transaction prohibition, `NotMember`, session caps/abandonment, and strict Core apply contracts.
-- [ ] 4. Run contracts tests and package typecheck; expect green.
-- [ ] 5. Verify N2 with malformed UUID, enum, pagination, JSON, and content-type fixtures.
- - [ ] 6. Update branch-state Progress and commit with subject `feat: implement W1 shared contracts (W1)`, plus trailers `Workstream: W1` and `Task: T2`.
+- [x] 1. Write failing tests for E1, E2, N2, and the frozen-interface consumer fixture; run the contracts package test command.
+- [x] 2. Implement schemas and enums exactly against the normative contract source; reject unknown keys and all server-managed fields.
+- [x] 3. Implement the frozen types and behavioral test fixtures, including gateway transaction prohibition, `NotMember`, session caps/abandonment, and strict Core apply contracts.
+- [x] 4. Run contracts tests and package typecheck; expect green.
+ - [x] 5. Verify N2 with malformed UUID, enum, and pagination fixtures; defer malformed JSON and content-type handling to T6’s API boundary tests.
+ - [x] 6. Update branch-state Progress and commit with subject `feat: implement W1 shared contracts (W1)`, plus trailers `Workstream: W1` and `Task: T2`.
+
+**Status:** Done
+
+**Notes for next task:** Contracts own strict schemas, stable errors, pagination, frozen interfaces, and session-cap constants. API parsing and content-type behavior remain T6 responsibilities.
 
 ### T3: Policy map and route registration contract
 
