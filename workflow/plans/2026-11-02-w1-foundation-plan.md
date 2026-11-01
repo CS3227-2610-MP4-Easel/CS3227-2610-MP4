@@ -18,14 +18,14 @@
 
 | Task | Deliverable | Depends on | Wave | Status |
 |---|---|---|---:|---|
-| T1 | Workspace scaffold and package boundaries | — | 1 | Not started |
-| T2 | Shared contract schemas, error codes, pagination, enums, and frozen interface implementations | T1 | 2 | Not started |
-| T3 | Policy map and route registration contract | T2 | 3 | Not started |
-| T4 | Prisma schema, enums, constraints, indexes, and filtered client seam | T1 | 2 | Not started |
-| T5 | Initial migration and migration documentation | T4 | 3 | Not started |
-| T6 | API boundary, request id, error mapping, and health route | T2, T3 | 4 | Not started |
-| T7 | Cross-boundary, policy, OpenAPI, authorization, and import-rule verification seams | T2, T3, T4, T6 | 4 | Not started |
-| T8 | Frozen-first handoff | T2, T3, T4, T6 | 5 | Not started |
+| T1 | Workspace scaffold and package boundaries | — | 1 | Done |
+| T2 | Shared contract schemas, error codes, pagination, enums, and frozen interface implementations | T1 | 2 | Done |
+| T3 | Policy map and route registration contract | T2 | 3 | Done |
+| T4 | Prisma schema, enums, constraints, indexes, and filtered client seam | T1 | 2 | Done |
+| T5 | Initial migration and migration documentation | T4 | 3 | Done |
+| T6 | API boundary, request id, error mapping, and health route | T2, T3 | 4 | Done |
+| T7 | Cross-boundary, policy, OpenAPI, authorization, and import-rule verification seams | T2, T3, T4, T6 | 4 | Done |
+| T8 | Frozen-first handoff | T2, T3, T4, T6 | 5 | Done |
 
 ## Traceability
 
@@ -298,22 +298,26 @@
 
 | Action | Path | What changes |
 |---|---|---|
-| Create | `packages/contracts/test/consumer-fixtures.test.ts` | Consumer fixtures for W2, W4, W5, and W6 imports and signatures. |
+| Modify | `packages/contracts/test/consumer-fixtures.test.ts` | Consumer fixtures for W2, W4, W5, and W6 imports and signatures. |
 | Modify | `workflow/project-state/branch-states/w1.md` | Handoff, Progress, Changes, and Remaining state. |
 
 **Checklist**
 
-- [ ] 1. Add consumer fixtures that compile against the normative frozen-first contracts without implementation-specific imports.
-- [ ] 2. Run all package tests, typechecks, schema parity, migration checks, OpenAPI parity, and import scans.
-- [ ] 3. Verify E12: changing a frozen public type fails the consumer fixture until the shared-owner agreement is recorded.
-- [ ] 4. Update branch-state Workstream to `In review`, clear the active session position, and list any handover items.
- - [ ] 5. Record a handoff note ending with the task log fields `agent`, `model`, `retries`, and `outcome`; update branch-state with the handoff path.
- - [ ] 6. Commit with subject `test: prove W1 frozen interface handoff (W1)`, plus trailers `Workstream: W1` and `Task: T8`.
+- [x] 1. Add consumer fixtures that compile against the normative frozen-first contracts without implementation-specific imports.
+- [x] 2. Run all package tests, typechecks, schema parity, migration checks, OpenAPI parity, and import scans.
+- [x] 3. Verify E12: changing a frozen public type fails the consumer fixture until the shared-owner agreement is recorded.
+- [x] 4. Update branch-state Workstream to `In review`, clear the active session position, and list any handover items.
+ - [x] 5. Record a handoff note ending with the task log fields `agent`, `model`, `retries`, and `outcome`; update branch-state with the handoff path.
+ - [x] 6. Commit with subject `test: prove W1 frozen interface handoff (W1)`, plus trailers `Workstream: W1` and `Task: T8`.
+
+**Status:** Done
+
+**Notes for next task:** W1 is ready for Gate 3 review. The next owner should run the closeout lint and inspect the branch diff before requesting merge approval.
 
 ### Close-out
 
-- [ ] Every Traceability row has a passing test or named manual verification.
-- [ ] Run `npm test`, `npm run typecheck`, Prisma validation, migration tests, OpenAPI parity, and source scans.
-- [ ] Confirm the spec, task statuses, and branch-state Progress agree with reality.
-- [ ] GATE: Ask the operator to review the completed branch at Gate 3; do not push, open a PR, or merge before approval.
+- [x] Every Traceability row has a passing test or named manual verification.
+- [x] Run `npm test`, `npm run typecheck`, Prisma validation, migration tests, OpenAPI parity, and source scans.
+- [x] Confirm the spec, task statuses, and branch-state Progress agree with reality.
+- [x] GATE: Ask the operator to review the completed branch at Gate 3; do not push, open a PR, or merge before approval.
 
