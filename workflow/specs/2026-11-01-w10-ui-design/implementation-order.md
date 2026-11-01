@@ -12,7 +12,7 @@ Statuses in the last column are as of 2026-11-01.
 | T6 | Remaining states | S14 phase D, S20 degraded standup, the global states sheet, 1024 px width check | F2, N1 | Not started |
 | T7 | Operator review of the canvas | confirmed mockups; corrections applied | F2 | Not started |
 | T8 | Handovers | one message per owner: W5 (endpoint 6), the policy map and W8 owners (endpoint 42), W7 (endpoint 36), W9 (endpoints 51 and 52), W4 (sign-in and register are design only) | F3 | Not started |
-| T9 | Standalone prototype | the confirmed canvas as a clickable prototype on fixture data | F4, N2 | Blocked by Q9 |
+| T9 | Standalone prototype | the confirmed canvas as a Next.js clickable prototype on typed fixtures behind one data layer (SD13) | F4, N2 | Not started |
 
 ## Dependencies
 
@@ -28,4 +28,4 @@ Statuses in the last column are as of 2026-11-01.
 | T7 Operator review of the canvas | T6, T8 | - | 5 |
 | T9 Standalone prototype | T2, T7 | - | 6 |
 
-Shared-file hazards: T2 and T8 both write the branch state, so serialize those writes. T3 to T6 all draw on the one design canvas, so T4 and T5 take turns on a screen that appears in both (the Tier 2 controls of a Tier 1 screen). T7 waits for T8 so that no mockup is confirmed while a handover is unsent. T9 starts only after the owner approves the spec (T2) and Q9 is closed.
+Shared-file hazards: T2 and T8 both write the branch state, so serialize those writes. T3 to T6 all draw on the one design canvas, so T4 and T5 take turns on a screen that appears in both (the Tier 2 controls of a Tier 1 screen). T7 waits for T8 so that no mockup is confirmed while a handover is unsent. T9 starts only after the owner approves the spec (T2).

@@ -25,14 +25,14 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-01 | Claude Sonnet 5.5 | W10 | Paused | Spec index, edge cases and implementation order written; lint passes | Ask the owner for gate 1 (spec approval); close Q9 (prototype stack) and Q10 (Remove on own row) | 2026-11-01 |
+| S1 | 2026-11-01 | Claude Sonnet 5.5 | W10 | Paused | Spec approved (gate 1); canvas awaits operator review | Write the plan (`writing-plans-lite`) once the operator confirms the canvas; send the T8 handovers | 2026-11-02 |
 
 **Remaining**
 
 - [x] Operator review of the flows draft: inventory and Q1 to Q8 decided 2026-11-01 (`ui.md` §8).
 - [x] Spec index (`2026-11-01-w10-ui-design.md`), `edge-cases.md`, `implementation-order.md` written; `lint.mjs spec` passes (2026-11-01).
 - [x] Review: one Implementer lens run, findings fixed; Tester lens skipped at the operator's request (C~5).
-- [ ] Gate 1 (`writing-specs-lite`). Open: Q9 (prototype stack, blocks T9) and Q10 (Remove on the caller's own row, S11). Gate 1 needs them answered or accepted as open.
+- [x] Gate 1 (`writing-specs-lite`): approved by Xiao-Congchen, 2026-11-02. No open questions. Q9 closed 2026-11-02 as SD13 (Next.js 15 + Tailwind + shadcn prototype with a typed data layer). Q10 closed 2026-11-02 as SD12 (no Remove on a row of the caller's own role).
 - [ ] Re-check that the canvas matches the review fixes: Continue plan banner on S14 phase A, PM keeps Add task on S6, sprint controls hidden in Tier 1, project tabs now carry a Tier.
 - [x] Design tokens, shell and shared components, then all 20 screens drawn on the design canvas (https://claude.ai/artifact/1J79XZiCmPvriGrBtAP2B6), 2026-11-01.
 - [ ] Operator review of the canvas; fix details until "most details are confirmed" (C~4).
@@ -51,7 +51,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W10 | UI mockups and shell | Not started | [spec folder](../../specs/2026-11-01-w10-ui-design/ui.md) ([index](../../specs/2026-11-01-w10-ui-design.md), draft) | — | Spec drafted, lint clean; T2 spec close-out: lenses and gate 1 next | — |
+| W10 | UI mockups and shell | Spec'd | [spec folder](../../specs/2026-11-01-w10-ui-design/ui.md) ([index](../../specs/2026-11-01-w10-ui-design.md), approved 2026-11-02) | — | Spec approved; T3 to T5 drawn on canvas, T6 to T9 and handovers open | — |
 
 ---
 
@@ -64,7 +64,8 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-01 | Left nav removed; top-bar project switcher with All projects; full-width pages (C~11; ui.md, edge-cases E45) | W10 | this commit |
 | 2026-11-01 | Role variants, dialogs, states and shared components added to the canvas; spec updated for C~6 to C~9 (ui.md, edge-cases.md E11 and E48, screens-shared, screens-project, screens-dev, flows) | W10 | this commit |
 | 2026-11-01 | All 20 screens, a global-states sheet, the close-sprint and plan-approve dialogs and shared shell components drawn on a design canvas (outside the repo); not visually verified | W10 | canvas link in Remaining |
-| 2026-11-01 | Spec index, edge cases and implementation order written; the screen files split so each stays under 200 lines (`screens-project.md`, `endpoint-coverage.md` added). `lint.mjs spec` passes. No lenses run yet | W10 | this commit |
+| 2026-11-01 | Spec index, edge cases and implementation order written; the screen files split so each stays under 200 lines (`screens-project.md`, `endpoint-coverage.md` added). `lint.mjs spec` passes. Implementer lens run, Tester skipped (C~5) | W10 | 3aab4d6 |
+| 2026-11-02 | Spec approved by the operator (gate 1); Q9 closed as SD13, Q10 as SD12 | W10 | this commit |
 
 ---
 

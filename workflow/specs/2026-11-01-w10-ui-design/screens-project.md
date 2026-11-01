@@ -70,7 +70,7 @@ Route `/projects/:id/members`. Endpoints 9, 10. T2: 11.
 | Interaction | Result |
 |---|---|
 | Add | endpoint 10 `{ email }`. 201: the member appears. 200: toast "Already a member." 422: "No registered {Dev Lead or Developer} has that email." |
-| Remove (T2) | shown only on rows whose role the caller may add (PM: Dev Leads, Dev Lead: Developers). `ConfirmDialog`, endpoint 11. 409: "This person still has open tasks. Reassign them first." |
+| Remove (T2) | shown only on rows whose role the caller may add (PM: Dev Leads, Dev Lead: Developers), so never on a row of the caller's own role. `ConfirmDialog`, endpoint 11. 409: "This person still has open tasks. Reassign them first." |
 
 The panel states plainly that people register themselves with a code before they can be added. The email match is case-insensitive.
 
