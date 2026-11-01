@@ -207,18 +207,22 @@
 
 | Action | Path | What changes |
 |---|---|---|
-| Create | `packages/db/prisma/migrations/00000000000000_init/migration.sql` | Initial schema migration generated from the normative Prisma schema. |
-| Create | `packages/db/test/migration-procedure.test.ts` | Clean-database, compatibility, destructive-change, and CI-boundary checks. |
-| Create | `docs/operations/database-recovery.md` | Recovery target, Neon verification evidence format, restore rehearsal, and seed reapplication procedure. |
+| Modify | `packages/db/prisma/migrations/00000000000000_init/migration.sql` | Initial schema migration generated from the normative Prisma schema. |
+| Modify | `packages/db/test/migration-procedure.test.ts` | Clean-database, compatibility, destructive-change, and CI-boundary checks. |
+| Modify | `docs/operations/database-recovery.md` | Recovery target, Neon verification evidence format, restore rehearsal, and seed reapplication procedure. |
 
 **Checklist**
 
-- [ ] 1. Write failing migration tests for E14 and E20, including destructive-change rejection and missing recovery evidence.
-- [ ] 2. Generate the initial migration and document the exact Prisma commands from the spec.
- - [ ] 3. Add the previous-version compatibility check. Document the protected-CI migration guard as a required W12/W13 handoff; do not implement CI policy enforcement in W1.
-- [ ] 4. Document the 24-hour recovery-point and 4-hour recovery-time targets and the manual restore/forward-migration path.
-- [ ] 5. Verify migration SQL parity for partial indexes and destructive-change rules, then run the clean-database migration test and `npx prisma validate`; expect green.
- - [ ] 6. Update branch-state Progress and commit with subject `docs: record W1 migration and recovery procedure (W1)`, plus trailers `Workstream: W1` and `Task: T5`.
+- [x] 1. Write failing migration tests for E14 and E20, including destructive-change rejection and missing recovery evidence.
+- [x] 2. Generate the initial migration and document the exact Prisma commands from the spec.
+- [x] 3. Add the previous-version compatibility check. Document the protected-CI migration guard as a required W12/W13 handoff; do not implement CI policy enforcement in W1.
+- [x] 4. Document the 24-hour recovery-point and 4-hour recovery-time targets and the manual restore/forward-migration path.
+- [x] 5. Verify migration SQL parity for partial indexes and destructive-change rules, then run the clean-database migration test and `npx prisma validate`; expect green.
+ - [x] 6. Update branch-state Progress and commit with subject `docs: record W1 migration and recovery procedure (W1)`, plus trailers `Workstream: W1` and `Task: T5`.
+
+**Status:** Done
+
+**Notes for next task:** The initial SQL is generated from the validated schema, with migration-owned partial indexes appended explicitly. Protected-CI enforcement remains a W12/W13 handoff.
 
 ### T6: API boundary, request id, error mapping, and health route
 
