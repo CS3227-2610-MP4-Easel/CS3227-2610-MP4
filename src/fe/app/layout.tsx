@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import './canvas.css';
 import Icons from '../components/canvas/Icons';
 import RoleBar from '../components/role-bar';
+import { ToastHost } from '../components/live/toast';
 
 export const metadata = { title: 'Easel prototype' };
 
@@ -14,6 +15,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         </div>
         {children}
         <RoleBar />
+        <ToastHost />
       </body>
     </html>
   );

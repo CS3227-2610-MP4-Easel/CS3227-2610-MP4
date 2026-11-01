@@ -2,6 +2,7 @@
 // Generated from the design canvas page BoardView.dc.html. Source of truth from here on is this file.
 import { Fragment } from 'react';
 import { A, css, r, useRole } from '../../lib/nav';
+import { useDb } from '../../lib/api';
 import TaskCard from './TaskCard';
 
 class Logic {
@@ -9,26 +10,9 @@ props: any;
 constructor(p: any) { this.props = p; }
 
 cardsDef() {
-return {
-todo: [
-{ id: 't3', epic: 'Browse stalls and menus', title: 'Search and filter by cuisine', points: '5', who: 'ml' },
-{ id: 't7', epic: 'Pickup', title: 'QR pickup code', points: '3', who: 'wo' },
-{ id: 't8', epic: 'Pickup', title: 'Order status notifications', points: '5', who: 'pn' },
-{ id: 't6', epic: 'Order and pay', title: 'Order confirmation email', points: '', who: '' }
-],
-prog: [
-{ id: 't2', epic: 'Browse stalls and menus', title: 'Menu item detail page', points: '5', who: 'pn' },
-{ id: 't5', epic: 'Order and pay', title: 'Student ID payment', points: '8', who: 'wo', blocked: 'Blocked: waiting for sandbox keys' }
-],
-rev: [
-{ id: 't4', epic: 'Order and pay', title: 'Cart and order summary', points: '5', who: 'ml' }
-],
-done: [
-{ id: 't1', epic: 'Browse stalls and menus', title: 'Stall list screen', points: '3', who: 'pn' },
-{ id: 't9', epic: 'Foundations', title: 'Canteen data model and API', points: '5', who: 'ml' },
-{ id: 't10', epic: 'Foundations', title: 'Sign-in with student ID', points: '5', who: 'wo' }
-]
-};
+const out = { todo: [], prog: [], rev: [], done: [] };
+for (const t of this.props.tasks) out[t.status].push({ id: t.id, epic: t.epic, title: t.title, points: t.points == null ? '' : String(t.points), who: t.assignee || '', blocked: t.blockedReason });
+return out;
 }
 renderVals() {
 const all = [['todo', 'To do', '#i-circle'], ['prog', 'In progress', '#i-half'], ['rev', 'In review', '#i-eye'], ['done', 'Done', '#i-check']];
@@ -50,13 +34,14 @@ return '';
 const filters = all.map((a) => { const on = show.indexOf(a[0]) >= 0; return { label: a[1], icon: a[2], count: data[a[0]].length, on: on, off: !on, cls: on ? 'on' : '', href: hrefFor(a[0]) }; });
 const cols = all.filter((a) => show.indexOf(a[0]) >= 0).map((a) => ({
 label: a[1], icon: a[2], count: data[a[0]].length, pts: sum(a[0]),
-cards: data[a[0]].map((c) => ({ epic: c.epic, title: c.title, points: c.points, who: c.who, status: a[0], blocked: c.blocked || '', menu: c.id === openId && canEdit(c) ? 'true' : '', editable: canEdit(c) ? 'yes' : 'no' }))
+cards: data[a[0]].map((c) => ({ id: c.id, epic: c.epic, title: c.title, points: c.points, who: c.who, status: a[0], blocked: c.blocked || '', menu: c.id === openId && canEdit(c) ? 'true' : '', editable: canEdit(c) ? 'yes' : 'no' }))
 }));
 return { archived: archived, canAdd: role !== 'dev', addCls: archived ? 'dis' : '', addTip: archived ? 'Archived projects are read-only' : '', meCls: role === 'dev' ? 'on' : '', note: archived ? 'Archived projects are read-only: no drag, no status menu, no new tasks.' : notes[role], filters: filters, cols: cols, partial: cols.length < 4, colsStyle: 'grid-template-columns: repeat(' + Math.max(cols.length, 1) + ', minmax(0, 1fr))' };
 }
 }
 
 export default function BoardView(props: any = {}) {
-  const v = new Logic(props).renderVals();
-  return (<><div className="stack" style={{gap: "16px"}}>{v.archived ? (<><div className="banner b-warn"><svg className="ic" aria-hidden="true"><use href="#i-lock" /></svg><span>This project is archived and read-only.</span></div></>) : null}{" "}<div className="row wrap between"><div className="row wrap"><span className="sel">Sprint: All tasks<svg className="ic" aria-hidden="true"><use href="#i-down" /></svg></span>{" "}<span className="sel">Epic: Any<svg className="ic" aria-hidden="true"><use href="#i-down" /></svg></span>{" "}<span className="sel">Assignee: Anyone<svg className="ic" aria-hidden="true"><use href="#i-down" /></svg></span>{" "}<span className="sel"><span className="check" style={{width: "14px", height: "14px"}}></span>Blocked only</span>{" "}<span className={`sel ${v.meCls}`}><span className="check" style={{width: "14px", height: "14px"}}></span>Assigned to me</span></div>{" "}{v.canAdd ? (<><A className={`btn p ${v.addCls}`} href={r("BacklogAddTask.dc.html")} title={v.addTip}><svg className="ic" aria-hidden="true"><use href="#i-plus" /></svg>Add task</A></>) : null}</div>{" "}<div className="row wrap" role="group" aria-label="Status filter"><span className="small b muted" style={{marginRight: "4px"}}>Status</span>{" "}{(v.filters || []).map((L_f: any, i_f: number) => (<Fragment key={i_f}>{L_f.href ? <A href={r(L_f.href)} className={`sel ${L_f.cls}`} role="checkbox" aria-checked={L_f.on}>{L_f.on ? (<><svg className="ic" aria-hidden="true"><use href="#i-check" /></svg></>) : null}{" "}{L_f.off ? (<><span className="check" style={{width: "14px", height: "14px"}}></span></>) : null}{" "}<svg className="ic" aria-hidden="true"><use href={L_f.icon} /></svg>{L_f.label}<span className="num" style={{opacity: ".8"}}>{L_f.count}</span></A> : <span className={`sel ${L_f.cls}`} role="checkbox" aria-checked={L_f.on}>{L_f.on ? (<><svg className="ic" aria-hidden="true"><use href="#i-check" /></svg></>) : null}{" "}{L_f.off ? (<><span className="check" style={{width: "14px", height: "14px"}}></span></>) : null}{" "}<svg className="ic" aria-hidden="true"><use href={L_f.icon} /></svg>{L_f.label}<span className="num" style={{opacity: ".8"}}>{L_f.count}</span></span>}</Fragment>))}{" "}{v.partial ? (<><A className="btn g sm" href={r("Board.dc.html")}>Show all statuses</A></>) : null}</div>{" "}<div className="cols" style={css(v.colsStyle)}>{(v.cols || []).map((L_col: any, i_col: number) => (<Fragment key={i_col}><section className="col" aria-label={L_col.label}><div className="col-h"><svg className="ic" aria-hidden="true"><use href={L_col.icon} /></svg><span className="b">{L_col.label}</span><span className="chip c-line">{L_col.count}</span><span className="sp"></span><span className="small muted num">{L_col.pts} pts</span></div>{" "}<div className="cards">{(L_col.cards || []).map((L_c: any, i_c: number) => (<Fragment key={i_c}><TaskCard epic={L_c.epic} title={L_c.title} points={L_c.points} who={L_c.who} status={L_c.status} blocked={L_c.blocked} menu={L_c.menu} editable={L_c.editable} /></Fragment>))}</div></section></Fragment>))}</div>{" "}<div className="banner b-info"><svg className="ic" aria-hidden="true"><use href="#i-info" /></svg><span>{v.note}</span></div></div></>);
+  const db = useDb();
+  const v = new Logic({ ...props, tasks: db.tasks, archived: props.archived || db.project.status === 'ARCHIVED' ? 'yes' : '' }).renderVals();
+  return (<><div className="stack" style={{gap: "16px"}}>{v.archived ? (<><div className="banner b-warn"><svg className="ic" aria-hidden="true"><use href="#i-lock" /></svg><span>This project is archived and read-only.</span></div></>) : null}{" "}<div className="row wrap between"><div className="row wrap"><span className="sel">Sprint: All tasks<svg className="ic" aria-hidden="true"><use href="#i-down" /></svg></span>{" "}<span className="sel">Epic: Any<svg className="ic" aria-hidden="true"><use href="#i-down" /></svg></span>{" "}<span className="sel">Assignee: Anyone<svg className="ic" aria-hidden="true"><use href="#i-down" /></svg></span>{" "}<span className="sel"><span className="check" style={{width: "14px", height: "14px"}}></span>Blocked only</span>{" "}<span className={`sel ${v.meCls}`}><span className="check" style={{width: "14px", height: "14px"}}></span>Assigned to me</span></div>{" "}{v.canAdd ? (<><A className={`btn p ${v.addCls}`} href={r("BacklogAddTask.dc.html")} title={v.addTip}><svg className="ic" aria-hidden="true"><use href="#i-plus" /></svg>Add task</A></>) : null}</div>{" "}<div className="row wrap" role="group" aria-label="Status filter"><span className="small b muted" style={{marginRight: "4px"}}>Status</span>{" "}{(v.filters || []).map((L_f: any, i_f: number) => (<Fragment key={i_f}>{L_f.href ? <A href={r(L_f.href)} className={`sel ${L_f.cls}`} role="checkbox" aria-checked={L_f.on}>{L_f.on ? (<><svg className="ic" aria-hidden="true"><use href="#i-check" /></svg></>) : null}{" "}{L_f.off ? (<><span className="check" style={{width: "14px", height: "14px"}}></span></>) : null}{" "}<svg className="ic" aria-hidden="true"><use href={L_f.icon} /></svg>{L_f.label}<span className="num" style={{opacity: ".8"}}>{L_f.count}</span></A> : <span className={`sel ${L_f.cls}`} role="checkbox" aria-checked={L_f.on}>{L_f.on ? (<><svg className="ic" aria-hidden="true"><use href="#i-check" /></svg></>) : null}{" "}{L_f.off ? (<><span className="check" style={{width: "14px", height: "14px"}}></span></>) : null}{" "}<svg className="ic" aria-hidden="true"><use href={L_f.icon} /></svg>{L_f.label}<span className="num" style={{opacity: ".8"}}>{L_f.count}</span></span>}</Fragment>))}{" "}{v.partial ? (<><A className="btn g sm" href={r("Board.dc.html")}>Show all statuses</A></>) : null}</div>{" "}<div className="cols" style={css(v.colsStyle)}>{(v.cols || []).map((L_col: any, i_col: number) => (<Fragment key={i_col}><section className="col" aria-label={L_col.label}><div className="col-h"><svg className="ic" aria-hidden="true"><use href={L_col.icon} /></svg><span className="b">{L_col.label}</span><span className="chip c-line">{L_col.count}</span><span className="sp"></span><span className="small muted num">{L_col.pts} pts</span></div>{" "}<div className="cards">{(L_col.cards || []).map((L_c: any, i_c: number) => (<Fragment key={i_c}><TaskCard id={L_c.id} epic={L_c.epic} title={L_c.title} points={L_c.points} who={L_c.who} status={L_c.status} blocked={L_c.blocked} menu={L_c.menu} editable={L_c.editable} /></Fragment>))}</div></section></Fragment>))}</div>{" "}<div className="banner b-info"><svg className="ic" aria-hidden="true"><use href="#i-info" /></svg><span>{v.note}</span></div></div></>);
 }

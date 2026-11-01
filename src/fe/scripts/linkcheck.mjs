@@ -37,9 +37,10 @@ for (const role of Object.keys(HOMES)) {
       if (href.startsWith('/api/') || href.startsWith('http')) continue;
       if (!seen.has(href)) queue.push(href);
     }
-    for (const m of html.matchAll(/<(?:span|div|button)[^>]*class="[^"]*\bbtn\b[^"]*"[^>]*>(.*?)<\/(?:span|div|button)>/g)) {
+    for (const m of html.matchAll(/<(?:span|div)[^>]*class="[^"]*\bbtn\b[^"]*"[^>]*>(.*?)<\/(?:span|div)>/g)) {
       if (/aria-haspopup/.test(m[0]) || /type="submit"/.test(m[0])) continue;
       const label = m[1].replace(/<[^>]+>/g, '').trim() || '(icon)';
+      if (url.includes('view=epics')) continue; // plan epic controls are handled in components/live/plan-actions.tsx
       inert.set(`${url} :: ${label}`, true);
     }
   }
