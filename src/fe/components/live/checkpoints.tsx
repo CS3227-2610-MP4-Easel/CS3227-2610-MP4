@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { ApiError, addCheckpoint_13, useDb } from '../../lib/api';
+import { ApiError, addCheckpoint_13, healthOf, useDb } from '../../lib/api';
 import RiskBadge from '../canvas/RiskBadge';
 import { toast } from './toast';
 import { fmtFull } from './people';
@@ -8,23 +8,23 @@ import { fmtFull } from './people';
 // Checkpoint cards (endpoint 12). Risk comes from the facts endpoint in the real build; a new checkpoint has no forecast yet.
 export function CheckpointCards({ showRisk }: { showRisk: boolean }) {
   const db = useDb();
-  const risk = ['ok', 'warn', 'unknown'];
+  const rows = healthOf(db).rows;
   return (
     <>
-      {db.checkpoints.map((c, i) => (
+      {rows.map(({ checkpoint: c, risk, epics, projected }) => (
         <article className="card" key={c.id}>
           <div className="row wrap between">
             <div className="row">
               <svg className="ic lg muted" aria-hidden="true"><use href="#i-flag" /></svg>
               <h3 style={{ margin: 0 }}>{c.name}</h3>
-              {showRisk && <RiskBadge risk={risk[Math.min(i, 2)]} />}
+              {showRisk && <RiskBadge risk={risk} />}
             </div>
           </div>
           <div className="row wrap" style={{ gap: 24, margin: '8px 0 12px' }}>
             <span><span className="muted">Target </span><b className="num">{fmtFull(c.targetDate)}</b></span>
-            {showRisk && i >= 2 && <span className="muted">Close a sprint to get a forecast.</span>}
+            {showRisk && !projected && <span className="muted">Close a sprint to get a forecast.</span>}
           </div>
-          <div className="pill-list"><span className="chip c-line">No epics linked yet</span></div>
+          <div className="pill-list">{epics.length ? epics.map((e) => <span className="chip c-acc" key={e}>{e}</span>) : <span className="chip c-line">No epics linked yet</span>}</div>
         </article>
       ))}
       {db.checkpoints.length === 0 && (

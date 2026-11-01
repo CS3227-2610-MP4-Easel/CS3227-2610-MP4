@@ -10,7 +10,7 @@ constructor(p: any) { this.props = p; }
 
 renderVals() {
 const solo = this.props.risk === undefined;
-const m = { ok: ['c-ok', '#i-check', 'On track'], warn: ['c-warn', '#i-alert', 'At risk'], unknown: ['c-line', '#i-info', 'Unknown'] };
+const m = { ok: ['c-ok', '#i-check', 'On track'], warn: ['c-warn', '#i-alert', 'At risk'], bad: ['c-bad', '#i-alert', 'Off track'], unknown: ['c-line', '#i-info', 'Unknown'] };
 const x = m[solo ? 'warn' : this.props.risk] || m.unknown;
 return { cls: x[0], icon: x[1], label: x[2], wrap: solo ? 'padding: 12px; background: var(--bg)' : 'display: inline-flex' };
 }

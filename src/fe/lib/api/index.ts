@@ -302,3 +302,29 @@ export function progressOf(d: import('./types').Db) {
     velocity,
   };
 }
+
+// 12 and 33: checkpoint risk, derived from the remaining points of the linked epics against velocity.
+// A sprint is two weeks. With no closed sprint there is no velocity, so the forecast is unknown.
+const DAY = 86400000;
+export type RiskRow = { checkpoint: import('./types').Checkpoint; remaining: number; projected: string | null; risk: 'ok' | 'warn' | 'bad' | 'unknown'; epics: string[] };
+
+export function healthOf(d: import('./types').Db, today = '2026-11-02') {
+  const p = progressOf(d);
+  const last = p.velocity.slice(-3);
+  const avg = last.length ? Math.round(last.reduce((a, v) => a + v.points, 0) / last.length) : 0;
+  const open = d.tasks.filter((t) => t.status !== 'done');
+  const remainingAll = open.reduce((a, t) => a + (t.points || 0), 0);
+  const weeks = (pts: number) => (avg > 0 ? Math.ceil(pts / avg) * 14 : null);
+  const at = (days: number | null) => (days == null ? null : new Date(new Date(today).getTime() + days * DAY).toISOString().slice(0, 10));
+  const rows: RiskRow[] = d.checkpoints.map((c) => {
+    const eps = d.epics.filter((e) => e.checkpointId === c.id);
+    const remaining = open.filter((t) => eps.some((e) => e.title === t.epic)).reduce((a, t) => a + (t.points || 0), 0);
+    const projected = at(weeks(remaining));
+    const risk = projected == null ? 'unknown' : projected <= c.targetDate ? 'ok' : (new Date(projected).getTime() - new Date(c.targetDate).getTime()) / DAY > 14 ? 'bad' : 'warn';
+    return { checkpoint: c, remaining, projected, risk, epics: eps.map((e) => e.title) };
+  });
+  const byPerson = new Map<string, number>();
+  open.forEach((t) => t.assignee && byPerson.set(t.assignee, (byPerson.get(t.assignee) || 0) + (t.points || 0)));
+  const overload = [...byPerson.entries()].filter(([, pts]) => pts > Math.max(avg, 8)).map(([who, pts]) => ({ who, pts }));
+  return { progress: p, avg, closed: p.velocity.length, remainingAll, projectedAll: at(weeks(remainingAll)), rows, atRisk: rows.filter((r) => r.risk === 'warn' || r.risk === 'bad').length, overload };
+}
