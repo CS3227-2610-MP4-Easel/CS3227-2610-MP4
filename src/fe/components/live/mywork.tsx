@@ -28,7 +28,7 @@ export function MyWorkCampus() {
         const sp = db.sprints.find((s) => s.id === t.sprintId);
         return (
           <div className="trow" key={t.id} style={t.blockedReason ? { background: 'var(--danger-s)' } : undefined}>
-            <A href={r('TaskDetail.dc.html')} className="t" style={{ color: 'var(--ink)' }}>
+            <A href={`/projects/p1/board?task=${t.id}`} className="t" style={{ color: 'var(--ink)' }}>
               <div>{t.title}{t.blockedReason && <span className="chip c-bad" style={{ marginLeft: 6 }} title={t.blockedReason}><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg>Blocked</span>}</div>
               <div className="small muted">{t.epic} · {sp ? sp.name : 'No sprint'}</div>
             </A>

@@ -33,7 +33,7 @@ export default function BacklogList() {
                   {t.blockedReason && (
                     <span className="chip c-bad" title={t.blockedReason}><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg>Blocked</span>
                   )}
-                  <A className="t" href={r('TaskDetail.dc.html')}>{t.title}</A>
+                  <A className="t" href={`/projects/p1/board?task=${t.id}`}>{t.title}</A>
                   {t.assignee ? (
                     <span className="who"><span className={`av ${WHO[t.assignee].av}`} aria-hidden="true">{WHO[t.assignee].ini}</span>{WHO[t.assignee].name}</span>
                   ) : (
