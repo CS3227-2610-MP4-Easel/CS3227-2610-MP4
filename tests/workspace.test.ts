@@ -29,3 +29,10 @@ test("F1 root scripts expose test and typecheck commands", async () => {
   assert.equal(typeof manifest.scripts?.test, "string");
   assert.equal(typeof manifest.scripts?.typecheck, "string");
 });
+
+test("F1 public package entrypoints resolve for database and gateway consumers", async () => {
+  const db = await import("@agile/db");
+  const gateway = await import("@agile/llm-gateway");
+  assert.equal(typeof db.createDbClient, "function");
+  assert.equal(typeof gateway, "object");
+});

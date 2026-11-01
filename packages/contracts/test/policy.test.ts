@@ -10,6 +10,12 @@ test("F3 policy map contains exactly 57 unique normative entries", () => {
   assert.equal(new Set(policies.map((policy) => `${policy.method} ${policy.path}`)).size, 57);
 });
 
+test("W1 conventions keep operation identifiers stable and uppercase", () => {
+  const policies = getPolicyMap();
+  assert.equal(policies[0]?.operationId, "HEALTH_READ");
+  assert.equal(policies.every((policy) => /^[A-Z][A-Z0-9_]+$/.test(policy.operationId)), true);
+});
+
 test("canonical roles translate architecture aliases only at the boundary", () => {
   assert.equal(translateRoleAlias("LEAD"), "DEV_LEAD");
   assert.equal(translateRoleAlias("DEV"), "DEVELOPER");

@@ -12,6 +12,7 @@ The plan will turn these contract tasks into exact file-level work. The dependen
 | T6 | API boundary, request id, error mapping, and health route | T2, T3 | 4 | Health contract passes without auth or DB; malformed input and common errors have the specified envelope. |
 | T7 | Cross-boundary, policy, OpenAPI, authorization, and import-rule verification seams | T2, T3, T4, T6 | 4 | Tests compare all normative contract data with the route table/OpenAPI; detect web-to-db imports, route collisions, unregistered routes, denial ordering, project-boundary failures, filtered-client bypass, and policy omissions. |
 | T8 | Frozen-first handoff | T2, T3, T4, T6 | 5 | W2, W4, W5, and W6 can consume the documented types without changing their public shapes. |
+| T9 | Review repairs and regression evidence | T2, T4, T7, T8 | 6 | Late review findings are fixed with regression tests and the complete W1 verification suite is green. |
 
 ## Parallel waves
 
@@ -22,4 +23,5 @@ The plan will turn these contract tasks into exact file-level work. The dependen
 | 3 | T3, T5 | T3 owns policy registration; T5 owns migrations and schema validation. |
 | 4 | T6, T7 | T6 owns API boundary; T7 owns verification tests. |
 | 5 | T8 | Handoff documentation and branch-state update. |
+| 6 | T9 | Review-repair code, tests, and branch-state evidence. |
 

@@ -1,6 +1,7 @@
 # W1 Foundation and API Skeleton Design
 
 - **Status:** Approved (Dev Lead, 2026-11-02)
+- **Amended:** 2026-11-02 — T9 records corrective work for review findings against the existing normative contracts; no contract behavior is changed.
 - **Risk tier:** High — W1 defines the database schema, authorization contract, public API boundary, and interfaces consumed by every later slice.
 - **Workstream:** W1 | **Plan:** [implementation plan](../../plans/2026-11-02-w1-foundation-plan.md)
 - **Normative sources:** `docs/architecture/contracts.md` §§1–5 is authoritative for endpoints, schemas, errors, policy rows, and frozen interfaces; `docs/architecture/agile-platform-architecture.md` §5 is authoritative for the data model; this W1 spec is authoritative only for the implementation seams, verification, and migration procedure below.

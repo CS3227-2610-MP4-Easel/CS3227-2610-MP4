@@ -26,6 +26,7 @@
 | T6 | API boundary, request id, error mapping, and health route | T2, T3 | 4 | Done |
 | T7 | Cross-boundary, policy, OpenAPI, authorization, and import-rule verification seams | T2, T3, T4, T6 | 4 | Done |
 | T8 | Frozen-first handoff | T2, T3, T4, T6 | 5 | Done |
+| T9 | Review repairs and regression evidence | T2, T4, T7, T8 | 6 | In progress |
 
 ## Traceability
 
@@ -314,10 +315,44 @@
 
 **Notes for next task:** W1 is ready for Gate 3 review. The next owner should run the closeout lint and inspect the branch diff before requesting merge approval.
 
+### T9: Review repairs and regression evidence
+
+**Delivers:** Corrective implementation for the late W1 review findings without changing the normative contracts | **Satisfies:** F2, F5, F8, N6, E10, E12, E19 | **Depends on:** T2, T4, T7, T8 | **Wave:** 6
+
+**Files**
+
+| Action | Path | What changes |
+|---|---|---|
+| Modify | `packages/contracts/src/schemas.ts` | Complete the normative proposal, facts, digest, standup, and usage schemas. |
+| Modify | `packages/contracts/src/policy.ts` | Use stable uppercase operation identifiers required by W1 conventions. |
+| Modify | `packages/contracts/src/openapi.ts` | Emit request/response schema references and complete route metadata. |
+| Modify | `packages/db/src/client.ts` | Apply filters through the request-facing Prisma client extension. |
+| Modify | `packages/db/src/index.ts` | Restore the public database package entrypoint. |
+| Modify | `packages/llm-gateway/src/index.ts` | Restore the public gateway package entrypoint. |
+| Modify | `packages/contracts/test/contracts.test.ts` | Add schema coverage for all normative response schemas. |
+| Modify | `packages/contracts/test/openapi.test.ts` | Add operation-id and request/response schema emission coverage. |
+| Modify | `packages/contracts/test/policy.test.ts` | Assert stable uppercase operation identifiers. |
+| Modify | `packages/contracts/test/consumer-fixtures.test.ts` | Exercise concrete frozen-interface signatures without empty type assertions. |
+| Modify | `packages/db/test/filtered-client.test.ts` | Verify the client extension applies filters to ordinary reads. |
+| Modify | `tests/workspace.test.ts` | Verify public package entrypoints exist and resolve. |
+| Modify | `workflow/project-state/branch-states/w1.md` | Record repair progress, evidence, and handoff. |
+
+**Checklist**
+
+- [x] 1. Add failing regression tests for every review finding and verify the failures identify the missing behavior.
+- [x] 2. Implement the minimal contract, package-export, DB-filter, OpenAPI, and consumer-fixture repairs.
+- [x] 3. Run the full test suite, typecheck, Prisma validation, closeout lint, and diff checks.
+- [x] 4. Update branch-state with repair evidence and a fresh Gate 3 review request.
+- [x] 5. Commit with subject `fix: close W1 review gaps (W1)`, plus trailers `Workstream: W1` and `Task: T9`.
+
+**Status:** Done
+
+**Notes for next task:** The repair is ready for a fresh read-only review; no new product behavior was designed.
+
 ### Close-out
 
 - [x] Every Traceability row has a passing test or named manual verification.
 - [x] Run `npm test`, `npm run typecheck`, Prisma validation, migration tests, OpenAPI parity, and source scans.
 - [x] Confirm the spec, task statuses, and branch-state Progress agree with reality.
-- [x] GATE: Ask the operator to review the completed branch at Gate 3; do not push, open a PR, or merge before approval.
+- [ ] GATE: Ask the operator to review the completed branch at Gate 3; do not push, open a PR, or merge before approval.
 

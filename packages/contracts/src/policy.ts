@@ -13,6 +13,9 @@ export type PolicyEntry = {
   authState: AuthState;
   roles: UserRole[];
   predicate: Predicate;
+  requestSchema?: Record<string, unknown>;
+  responseSchema: Record<string, unknown>;
+  successStatus: 200 | 201 | 204;
 };
 
 export function translateRoleAlias(role: RoleAlias): UserRole {
@@ -22,8 +25,22 @@ export function translateRoleAlias(role: RoleAlias): UserRole {
 }
 
 const roles = (...values: RoleAlias[]) => values.map(translateRoleAlias);
+const operationIds = [
+  "HEALTH_READ", "AUTH_CODE_CHECK", "AUTH_REGISTER", "ME_READ", "PM_PROJECT_CREATE", "PROJECT_LIST", "PROJECT_READ", "PM_PROJECT_UPDATE", "PROJECT_MEMBER_LIST", "PROJECT_MEMBER_ADD", "PROJECT_MEMBER_REMOVE",
+  "CHECKPOINT_LIST", "CHECKPOINT_CREATE", "CHECKPOINT_UPDATE", "CHECKPOINT_DELETE", "EPIC_LIST", "EPIC_CREATE", "EPIC_UPDATE", "EPIC_DELETE", "TASK_LIST", "TASK_CREATE", "TASK_READ", "TASK_UPDATE", "TASK_STATUS_UPDATE", "TASK_DELETE", "TASK_EVENT_LIST",
+  "SPRINT_LIST", "SPRINT_CREATE", "SPRINT_UPDATE", "SPRINT_START", "SPRINT_CLOSE", "SPRINT_DELETE", "PROJECT_PROGRESS_READ", "PM_PLAN_CREATE", "PM_PROPOSAL_READ", "PM_PROPOSAL_LIST", "PM_EPIC_EXPAND", "PM_EPIC_UPDATE", "PM_EPIC_REGENERATE", "PM_PROPOSAL_APPROVE", "PM_PROPOSAL_REJECT",
+  "LEAD_FACTS_READ", "LEAD_OVERVIEW_READ", "LEAD_DIGEST_CREATE", "LEAD_DIGEST_LATEST_READ", "LEAD_PROPOSAL_LIST", "LEAD_PROPOSAL_APPROVE", "LEAD_PROPOSAL_REJECT", "DEV_UPLOAD_CREATE", "DEV_SUMMARY_CREATE", "DEV_STANDUP_CREATE", "DEV_STANDUP_MINE_READ", "DEV_STANDUP_UPDATE", "DEV_STANDUP_FEEDBACK", "LEAD_STANDUP_LIST", "USAGE_SESSION_LIST", "USAGE_SUMMARY_READ",
+] as const;
+if (operationIds.length !== 57) throw new Error("operation id map must contain exactly 57 entries");
+const successStatuses = new Map<number, 200 | 201 | 204>([
+  [3, 201], [5, 201], [10, 201], [13, 201], [17, 201], [21, 201], [28, 201], [34, 201],
+  [11, 204], [15, 204], [19, 204], [25, 204], [32, 204],
+]);
 const p = (n: number, method: PolicyEntry["method"], path: string, authState: AuthState, roleValues: RoleAlias[] = [], predicate: Predicate = "NONE"): PolicyEntry => ({
-  policyKey: `endpoint-${n}`, operationId: `endpoint${n}`, method, path, authState, roles: roles(...roleValues), predicate,
+  policyKey: `endpoint-${n}`, operationId: operationIds[n - 1], method, path, authState, roles: roles(...roleValues), predicate,
+  requestSchema: method === "GET" || method === "DELETE" ? undefined : { $ref: `#/components/schemas/${operationIds[n - 1]}Request` },
+  responseSchema: { $ref: `#/components/schemas/${operationIds[n - 1]}Response` },
+  successStatus: successStatuses.get(n) ?? 200,
 });
 
 const POLICY_MAP: PolicyEntry[] = [

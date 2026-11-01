@@ -43,5 +43,6 @@ node_modules/
 dist/
 .next/
 packages/db/prisma/generated/
+packages/db/generated/
 *.db
 *.db-journal
