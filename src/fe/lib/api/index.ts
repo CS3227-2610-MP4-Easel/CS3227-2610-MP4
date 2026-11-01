@@ -3,7 +3,7 @@
 // Screens call these and nothing else. Linking the backend replaces the bodies with calls to /api
 // through the contracts client; the signatures stay. Fixtures are used only inside this folder.
 import { read, write } from './store';
-import type { Checkpoint, Member, Sprint, Standup, Task, TaskStatus } from './types';
+import type { Checkpoint, Epic, Member, Sprint, Standup, Task, TaskStatus } from './types';
 
 export { useDb, reset as resetPrototypeData } from './store';
 export * from './types';
@@ -63,6 +63,34 @@ export async function addCheckpoint_13(name: string, targetDate: string): Promis
     d.checkpoints.sort((a, b) => a.targetDate.localeCompare(b.targetDate));
   });
   return c;
+}
+
+// 16 and 17: epics
+export async function listEpics_16(): Promise<Epic[]> {
+  return read().epics;
+}
+export async function createEpic_17(title: string, description: string, checkpointId: string | null): Promise<Epic> {
+  await wait();
+  if (!title.trim()) throw new ApiError('VALIDATION', 'Title is required.');
+  if (read().epics.some((e) => e.title.toLowerCase() === title.trim().toLowerCase())) throw new ApiError('VALIDATION', 'An epic with that title already exists.');
+  const e: Epic = { id: 'e' + (read().epics.length + 1), title: title.trim(), description, checkpointId };
+  write((d) => {
+    d.epics.push(e);
+  });
+  return e;
+}
+
+// 21: create a task
+export async function createTask_21(input: { epicId: string; title: string; description: string; criteria: string[]; points: number | null; assignee: Task['assignee'] }): Promise<Task> {
+  await wait();
+  if (!input.title.trim()) throw new ApiError('VALIDATION', 'Title is required.');
+  const epic = read().epics.find((e) => e.id === input.epicId);
+  if (!epic) throw new ApiError('VALIDATION', 'Pick an epic.');
+  const t: Task = { id: 't' + (read().tasks.length + 1), epic: epic.title, title: input.title.trim(), points: input.points, assignee: input.assignee, status: 'todo', blockedReason: '', sprintId: null, description: input.description, criteria: input.criteria.filter(Boolean), version: 1 };
+  write((d) => {
+    d.tasks.push(t);
+  });
+  return t;
 }
 
 // 20: tasks

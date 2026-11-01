@@ -3,17 +3,23 @@ import type { Db } from './types';
 // Typed fixtures standing in for the backend. Only this file and ./store.ts hold sample data.
 export const initialDb = (): Db => ({
   project: { id: 'p1', name: 'Campus Eats Mobile App', status: 'ACTIVE', version: 1 },
+  epics: [
+    { id: 'e1', title: 'Browse stalls and menus', description: 'See which stalls are open and browse their menus.', checkpointId: 'c1' },
+    { id: 'e2', title: 'Order and pay', description: 'Order ahead and pay with a student ID.', checkpointId: 'c2' },
+    { id: 'e3', title: 'Pickup', description: 'Collect an order with a code or QR.', checkpointId: 'c2' },
+    { id: 'e4', title: 'Foundations', description: 'Data model, API and sign-in.', checkpointId: null },
+  ],
   tasks: [
-    { id: 't3', epic: 'Browse stalls and menus', title: 'Search and filter by cuisine', points: 5, assignee: 'ml', status: 'todo', blockedReason: '', sprintId: 's2', version: 1 },
-    { id: 't7', epic: 'Pickup', title: 'QR pickup code', points: 3, assignee: 'wo', status: 'todo', blockedReason: '', sprintId: 's2', version: 1 },
-    { id: 't8', epic: 'Pickup', title: 'Order status notifications', points: 5, assignee: 'pn', status: 'todo', blockedReason: '', sprintId: 's3', version: 1 },
-    { id: 't6', epic: 'Order and pay', title: 'Order confirmation email', points: null, assignee: null, status: 'todo', blockedReason: '', sprintId: null, version: 1 },
-    { id: 't2', epic: 'Browse stalls and menus', title: 'Menu item detail page', points: 5, assignee: 'pn', status: 'prog', blockedReason: '', sprintId: 's2', version: 1 },
-    { id: 't5', epic: 'Order and pay', title: 'Student ID payment', points: 8, assignee: 'wo', status: 'prog', blockedReason: 'Blocked: waiting for sandbox keys', sprintId: 's2', version: 1 },
-    { id: 't4', epic: 'Order and pay', title: 'Cart and order summary', points: 5, assignee: 'ml', status: 'rev', blockedReason: '', sprintId: 's2', version: 1 },
-    { id: 't1', epic: 'Browse stalls and menus', title: 'Stall list screen', points: 3, assignee: 'pn', status: 'done', blockedReason: '', sprintId: 's1', version: 1 },
-    { id: 't9', epic: 'Foundations', title: 'Canteen data model and API', points: 5, assignee: 'ml', status: 'done', blockedReason: '', sprintId: 's1', version: 1 },
-    { id: 't10', epic: 'Foundations', title: 'Sign-in with student ID', points: 5, assignee: 'wo', status: 'done', blockedReason: '', sprintId: 's1', version: 1 },
+    { id: 't3', epic: 'Browse stalls and menus', title: 'Search and filter by cuisine', points: 5, assignee: 'ml', status: 'todo', blockedReason: '', sprintId: 's2', description: '', criteria: [], version: 1 },
+    { id: 't7', epic: 'Pickup', title: 'QR pickup code', points: 3, assignee: 'wo', status: 'todo', blockedReason: '', sprintId: 's2', description: '', criteria: [], version: 1 },
+    { id: 't8', epic: 'Pickup', title: 'Order status notifications', points: 5, assignee: 'pn', status: 'todo', blockedReason: '', sprintId: 's3', description: '', criteria: [], version: 1 },
+    { id: 't6', epic: 'Order and pay', title: 'Order confirmation email', points: null, assignee: null, status: 'todo', blockedReason: '', sprintId: null, description: '', criteria: [], version: 1 },
+    { id: 't2', epic: 'Browse stalls and menus', title: 'Menu item detail page', points: 5, assignee: 'pn', status: 'prog', blockedReason: '', sprintId: 's2', description: '', criteria: [], version: 1 },
+    { id: 't5', epic: 'Order and pay', title: 'Student ID payment', points: 8, assignee: 'wo', status: 'prog', blockedReason: 'Blocked: waiting for sandbox keys', sprintId: 's2', description: '', criteria: [], version: 1 },
+    { id: 't4', epic: 'Order and pay', title: 'Cart and order summary', points: 5, assignee: 'ml', status: 'rev', blockedReason: '', sprintId: 's2', description: '', criteria: [], version: 1 },
+    { id: 't1', epic: 'Browse stalls and menus', title: 'Stall list screen', points: 3, assignee: 'pn', status: 'done', blockedReason: '', sprintId: 's1', description: '', criteria: [], version: 1 },
+    { id: 't9', epic: 'Foundations', title: 'Canteen data model and API', points: 5, assignee: 'ml', status: 'done', blockedReason: '', sprintId: 's1', description: '', criteria: [], version: 1 },
+    { id: 't10', epic: 'Foundations', title: 'Sign-in with student ID', points: 5, assignee: 'wo', status: 'done', blockedReason: '', sprintId: 's1', description: '', criteria: [], version: 1 },
   ],
   sprints: [
     { id: 's1', name: 'Sprint 1', status: 'CLOSED', startDate: '2026-10-19', endDate: '2026-10-30', version: 1 },
@@ -28,8 +34,9 @@ export const initialDb = (): Db => ({
     { id: 'u5', name: 'Wei Ling Ong', email: 'weiling.ong@example.edu', role: 'DEVELOPER' },
   ],
   checkpoints: [
-    { id: 'c1', name: 'Prototype demo', targetDate: '2026-11-13' },
-    { id: 'c2', name: 'Beta release', targetDate: '2026-11-27' },
+    { id: 'c1', name: 'Alpha demo', targetDate: '2026-11-20' },
+    { id: 'c2', name: 'Beta release', targetDate: '2026-12-18' },
+    { id: 'c3', name: 'Launch', targetDate: '2027-01-15' },
   ],
   standup: {
     id: 'sd1',

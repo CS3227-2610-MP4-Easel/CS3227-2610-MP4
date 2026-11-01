@@ -12,9 +12,12 @@ export type Task = {
   status: TaskStatus;
   blockedReason: string;
   sprintId: string | null;
+  description: string;
+  criteria: string[];
   version: number;
 };
 
+export type Epic = { id: string; title: string; description: string; checkpointId: string | null };
 export type Sprint = { id: string; name: string; status: SprintStatus; startDate: string; endDate: string; version: number };
 export type Member = { id: string; name: string; email: string; role: 'PM' | 'DEV_LEAD' | 'DEVELOPER' };
 export type Checkpoint = { id: string; name: string; targetDate: string };
@@ -25,6 +28,7 @@ export type Suggestion = { id: string; text: string; state: 'PENDING' | 'APPLIED
 
 export type Db = {
   project: Project;
+  epics: Epic[];
   tasks: Task[];
   sprints: Sprint[];
   members: Member[];

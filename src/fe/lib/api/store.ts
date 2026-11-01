@@ -5,7 +5,7 @@ import type { Db } from './types';
 
 // The one in-memory database behind the data layer. It survives a reload through
 // sessionStorage so a click-through keeps its changes; resetPrototypeData() clears it.
-const KEY = 'easel-fe-db-v1';
+const KEY = 'easel-fe-db-v2';
 let db: Db | null = null;
 const subs = new Set<() => void>();
 
