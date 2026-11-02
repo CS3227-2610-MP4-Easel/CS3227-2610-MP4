@@ -21,8 +21,8 @@
 | T1 Relocate backend packages | - | - | 1 | Done |
 | T2 Rewire workspace and build configuration | T1 | - | 2 | Done |
 | T3 Update verification and documentation | T2 | - | 3 | Done |
-| T4 Verify | T3 | - | 4 | Not started |
-| T5 Close-out | T4 | - | 5 | Not started |
+| T4 Verify | T3 | - | 4 | Done |
+| T5 Close-out | T4 | - | 5 | Done |
 
 ## Traceability
 
@@ -144,14 +144,16 @@ Verification evidence: root tests pass (66/66), backend and frontend typechecks 
 
 **Checklist**
 
-- [ ] 1. Confirm PR #6's `src/fe` exists; otherwise record E9 as a handover blocker.
-- [ ] 2. Run `node --import tsx --test "tests/**/*.test.ts" "src/be/**/*.test.ts"`.
-- [ ] 3. Run `npm run typecheck`.
-- [ ] 4. Run `npx prisma validate --schema src/be/db/prisma/schema.prisma`.
-- [ ] 5. Run `git diff --check` and the layout/active-reference scan.
-- [ ] 6. Manually review the diff for `src/fe` edits and package/API drift.
-- [ ] 7. Run `node .codex/skills/writing-specs-lite/scripts/lint.mjs plan workflow/plans/2026-11-02-w1-backend-source-root-plan.md --closeout`.
-- [ ] 8. Update branch state Progress and Changes for verification.
+- [x] 1. Confirm PR #6's `src/fe` exists; otherwise record E9 as a handover blocker.
+- [x] 2. Run `node --import tsx --test "tests/**/*.test.ts" "src/be/**/*.test.ts"`.
+- [x] 3. Run `npm run typecheck`.
+- [x] 4. Run `npx prisma validate --schema src/be/db/prisma/schema.prisma`.
+- [x] 5. Run `git diff --check` and the layout/active-reference scan.
+- [x] 6. Manually review the diff for `src/fe` edits and package/API drift.
+- [x] 7. Run `node .codex/skills/writing-specs-lite/scripts/lint.mjs plan workflow/plans/2026-11-02-w1-backend-source-root-plan.md --approved`.
+- [x] 8. Update branch state Progress and Changes for verification.
+
+Verification evidence: `src/fe` is present, no post-PR #6 diff touches it, old source roots and stale workspace links are absent, 66 tests pass, both typechecks pass, Prisma validation passes with `DATABASE_URL`, `git diff --check` passes, and the approved and closeout plan lints have no errors.
 
 ### T5: Close-out
 
@@ -166,8 +168,9 @@ Verification evidence: root tests pass (66/66), backend and frontend typechecks 
 
 **Checklist**
 
-- [ ] 1. Confirm every Traceability row has passing evidence or a recorded handover.
-- [ ] 2. Run `node .codex/skills/writing-specs-lite/scripts/lint.mjs plan workflow/plans/2026-11-02-w1-backend-source-root-plan.md --closeout`.
-- [ ] 3. Run the full verification commands again after all plan/state edits.
-- [ ] 4. Review the complete diff for accidental `src/fe` edits or stale old paths.
-- [ ] 5. GATE: Set the workstream to In review and ask the operator for Gate 3 branch-review approval; do not push, open a PR, or merge.
+- [x] 1. Confirm every Traceability row has passing evidence or a recorded handover.
+- [x] 2. Run `node .codex/skills/writing-specs-lite/scripts/lint.mjs plan workflow/plans/2026-11-02-w1-backend-source-root-plan.md --closeout`.
+- [x] 3. Run the full verification commands again after all plan/state edits.
+- [x] 4. Review the complete diff for accidental `src/fe` edits or stale old paths.
+
+Gate 3: the branch is ready for owner review. Ask the operator for branch-review approval before pushing, opening a PR, or merging.
