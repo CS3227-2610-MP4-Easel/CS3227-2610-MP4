@@ -38,3 +38,15 @@ test("F1/E3 predicate receives the resolved assignee and transaction handle", as
   }, "Bearer token", { method: "POST", path: "/api/tasks/task/status", params: { id: "task" }, query: new URLSearchParams(), body: undefined });
   assert.deepEqual(received, { assigneeId: "developer", tx });
 });
+
+test("F3/E20 malformed selector is rejected before any predicate or handler query", async () => {
+  let evaluated = false;
+  await assert.rejects(() => authorizeRequest({ operationId: "STANDUP_UPDATE", method: "PATCH", authState: "REGISTERED", roles: ["DEVELOPER"], predicate: "SELF" }, {
+    resolvePrincipal: async () => ({ firebaseUid: "firebase", tokenClaims: {} }),
+    lookupRegisteredUser: async () => ({ firebaseUid: "firebase", userId: "user", role: "DEVELOPER" as const }),
+    resolveResource: async () => { throw new Error("NOT_FOUND"); },
+    requireMember: async () => undefined,
+    evaluatePredicate: async () => { evaluated = true; },
+  }, "Bearer token", { method: "PATCH", path: "/api/dev/standups/standup", params: { standupId: "malformed" }, query: new URLSearchParams(), body: undefined }), (error: { code?: string; status?: number }) => error.code === "NOT_FOUND" && error.status === 404);
+  assert.equal(evaluated, false);
+});

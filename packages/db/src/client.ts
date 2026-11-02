@@ -1,34 +1,10 @@
 import { PrismaClient, type Prisma } from "@prisma/client";
-
-const softDeletable = new Set(["Checkpoint", "Epic", "Sprint", "Task"]);
-const projectScoped = new Set(["ProjectMember", "Checkpoint", "Epic", "Sprint", "Task", "TaskEvent", "AiProposal", "ActivityItem", "Standup", "ProjectDigest"]);
-const nullableProjectScoped = new Set(["AiSession", "LlmCall"]);
+import { applyVisibilityToArgs, isVisibleUniqueResult, normalizeUniqueSelector } from "./visibility.js";
 const modelNames = new Map([
   ["user", "User"], ["project", "Project"], ["projectMember", "ProjectMember"], ["checkpoint", "Checkpoint"], ["epic", "Epic"], ["sprint", "Sprint"], ["task", "Task"], ["taskEvent", "TaskEvent"], ["aiProposal", "AiProposal"], ["proposalEpic", "ProposalEpic"], ["aiSession", "AiSession"], ["llmCall", "LlmCall"], ["activityItem", "ActivityItem"], ["itemSummary", "ItemSummary"], ["standup", "Standup"], ["projectDigest", "ProjectDigest"],
 ]);
 
-export function applyDefaultReadFilter(model: string, args: Record<string, unknown>) {
-  const where = { ...((args.where as Record<string, unknown> | undefined) ?? {}) };
-  if (model === "Project") where.status = "ACTIVE";
-  if (softDeletable.has(model)) where.deletedAt = null;
-  if (projectScoped.has(model)) where.project = { ...((where.project as Record<string, unknown> | undefined) ?? {}), status: "ACTIVE" };
-  if (nullableProjectScoped.has(model)) {
-    const callerOr = where.OR as Record<string, unknown>[] | undefined;
-    const existingAnd = Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : [];
-    delete where.OR;
-    where.AND = [...existingAnd, ...(callerOr ? [{ OR: callerOr }] : []), { OR: [{ projectId: null }, { project: { status: "ACTIVE" } }] }];
-  }
-  return { ...args, where };
-}
-
-function isVisibleUniqueResult(model: string, result: unknown): unknown {
-  if (!result || typeof result !== "object") return result;
-  const row = result as Record<string, unknown>;
-  if (softDeletable.has(model) && row.deletedAt !== undefined && row.deletedAt !== null) return null;
-  if (model === "Project" && row.status !== "ACTIVE") return null;
-  if ((projectScoped.has(model) || nullableProjectScoped.has(model)) && row.project && typeof row.project === "object" && (row.project as Record<string, unknown>).status !== "ACTIVE") return null;
-  return result;
-}
+export function applyDefaultReadFilter(model: string, args: Record<string, unknown>) { return applyVisibilityToArgs(model, args); }
 
 export function canUseMaintenanceCapability(): false { return false; }
 
@@ -67,7 +43,10 @@ function wrapUniqueReads<T extends object>(client: T): T {
         get(modelTarget, operation, modelReceiver) {
           if (operation !== "findUnique" && operation !== "findUniqueOrThrow") return Reflect.get(modelTarget, operation, modelReceiver);
           const findFirst = Reflect.get(modelTarget, operation === "findUnique" ? "findFirst" : "findFirstOrThrow", modelReceiver) as (args: Record<string, unknown>) => Promise<unknown>;
-          return (args: Record<string, unknown>) => findFirst({ ...args, where: applyDefaultReadFilter(model, args).where });
+          return (args: Record<string, unknown>) => {
+            const where = normalizeUniqueSelector(model, (args.where as Record<string, unknown> | undefined) ?? {});
+            return findFirst({ ...args, where });
+          };
         },
       });
     },

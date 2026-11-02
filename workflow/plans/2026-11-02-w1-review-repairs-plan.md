@@ -20,7 +20,7 @@ new roles, migrations, external integrations, or maintenance-client bypasses.
 | Task | Depends on | Can run concurrently with | Wave | Status |
 |---|---|---|---|---|
 | T1 | — | T2, T3 | 1 | Done |
-| T2 | — | T1, T3 | 1 | Not started |
+| T2 | — | T1, T3 | 1 | Done |
 | T3 | — | T1, T2 | 1 | Not started |
 | T4 | T1, T3 | — | 2 | Not started |
 | T5 | T2, T4 | — | 3 | Not started |
@@ -84,17 +84,22 @@ Resource lookups are injected and receive the transaction handle before predicat
 | Create | `packages/db/src/visibility.ts` | Immutable model/relation policy registry, recursive args transformer, selector validator, and visibility helpers. |
 | Modify | `packages/db/src/client.ts` | Apply the registry to root/nested reads, counts, aggregates, groupings, unique reads, and transaction clients. |
 | Modify | `packages/db/test/filtered-client.test.ts` | Model/relation matrix, nullable project, OR/AND, selector, hidden-row, and race regressions. |
+| Modify | `packages/db/src/transactions.ts` | Provide repeatable-read mutation transaction and row-lock/recheck seam. |
+| Modify | `packages/db/test/concurrency.test.ts` | Verify lock, recheck, and mutation ordering. |
 | Modify | `packages/api/test/authorization-project-scope.test.ts` | Request-boundary 404 and no-query behavior for malformed selectors. |
 
 **Checklist**
 
-- [ ] Write failing tests for E4-E8, E18-E20 and E25.
-- [ ] Implement `VISIBILITY_POLICY` for all 15 allowlisted models and listed relation chains.
-- [ ] Normalize all five compound selector names and reject malformed shapes before Prisma.
-- [ ] Apply filters to nested `select`/`include`, `_count`, `aggregate`, and `groupBy` without mutating writes.
-- [ ] Implement repeatable-read/row-lock mutation re-check seam and deterministic race oracle.
-- [ ] Run DB/API targeted tests and `npm run typecheck`.
-- [ ] Update branch state and commit `fix: enforce recursive request visibility (W1)`.
+- [x] Write failing tests for E4-E8, E18-E20 and E25.
+- [x] Implement `VISIBILITY_POLICY` for all 15 allowlisted models and listed relation chains.
+- [x] Normalize all five compound selector names and reject malformed shapes before Prisma.
+- [x] Apply filters to nested `select`/`include`, `_count`, `aggregate`, and `groupBy` without mutating writes.
+- [x] Implement repeatable-read/row-lock mutation re-check seam and deterministic race oracle.
+- [x] Run DB/API targeted tests and `npm run typecheck`.
+- [x] Update branch state and commit `fix: enforce recursive request visibility (W1)`.
+
+**Notes for next task:** The Prisma read extension applies registry filters recursively; unique reads are normalized to filtered `findFirst` calls.
+Mutation isolation is exposed as an injected lock/recheck seam because the request client has no raw-query bypass.
 
 ### T3: OpenAPI schema registry and parity
 

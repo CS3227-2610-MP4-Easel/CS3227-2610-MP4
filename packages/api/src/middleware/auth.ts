@@ -21,7 +21,10 @@ export async function authorizeRequest(policy: Pick<PolicyEntry, "operationId" |
   try { principal = await deps.lookupRegisteredUser(token.firebaseUid); } catch { throw new HttpError("USER_NOT_REGISTERED", 403, "The authenticated user is not registered."); }
   if (policy.roles.length > 0 && !policy.roles.includes(principal.role)) throw new HttpError("FORBIDDEN_ROLE", 403, "The user's role cannot access this operation.");
   const tx = deps.beginTransaction ? await deps.beginTransaction() : undefined;
-  const resolved = policy.predicate === "NONE" ? null : await deps.resolveResource(policy.operationId, request, tx);
+  let resolved: ResolvedResource | null = null;
+  if (policy.predicate !== "NONE") {
+    try { resolved = await deps.resolveResource(policy.operationId, request, tx); } catch { throw new HttpError("NOT_FOUND", 404, "The requested resource was not found."); }
+  }
   if (policy.predicate !== "NONE" && !resolved) throw new HttpError("NOT_FOUND", 404, "The requested resource was not found.");
   const suppliedProjectId = request.params.projectId;
   if (suppliedProjectId && resolved && resolved.kind !== "PROJECT_SET" && resolved.projectId !== suppliedProjectId) {
