@@ -23,7 +23,7 @@ new roles, migrations, external integrations, or maintenance-client bypasses.
 | T2 | — | T1, T3 | 1 | Done |
 | T3 | — | T1, T2 | 1 | Done |
 | T4 | T1, T3 | — | 2 | Done |
-| T5 | T2, T4 | — | 3 | Not started |
+| T5 | T2, T4 | — | 3 | In progress |
 
 ## Traceability
 
@@ -169,9 +169,9 @@ Standup validation is pure and clock-injected; future Monday requests retain the
 
 **Checklist**
 
-- [ ] Run named tests for E1-E25 and confirm every F/N traceability row.
-- [ ] Run `npm test` and `npm run typecheck` from the repository root.
-- [ ] Run spec lint and plan lint with approved status.
-- [ ] Review the complete branch diff for import boundaries, unresolved refs, and accidental generated files.
-- [ ] Update branch state to W1 In review, record all Changes and any Deviations, and remove completed session rows.
+- [x] Run named tests for E1-E25 and confirm every F/N traceability row.
+- [x] Run `npm test` and `npm run typecheck` from the repository root.
+- [x] Run spec lint and plan lint with approved status.
+- [x] Review the complete branch diff for import boundaries, unresolved refs, and accidental generated files.
+- [x] Update branch state to W1 In review, record all Changes and any Deviations, and remove completed session rows.
 - [ ] GATE: Ask the operator for Gate 3 branch-review approval; do not push, open a PR, or merge before approval.
