@@ -15,10 +15,11 @@ async function sourceFiles(directory: string): Promise<string[]> {
 }
 
 test("AD-01b/N4/E19 request-facing sources do not import Prisma or raw SQL", async () => {
-  const web = await sourceFiles(join(process.cwd(), "apps/web"));
-  const api = await sourceFiles(join(process.cwd(), "packages/api/src"));
+  const web = await sourceFiles(join(process.cwd(), "src/fe"));
+  const api = await sourceFiles(join(process.cwd(), "src/be/api/src"));
   for (const file of [...web, ...api]) {
     const source = await readFile(file, "utf8");
-    assert.doesNotMatch(source, /@prisma\/client|packages\/db|\$queryRaw|\$executeRaw/);
+    assert.doesNotMatch(source, /@prisma\/client|@agile\/db|\$queryRaw|\$executeRaw/);
+    assert.doesNotMatch(source, /(?:\.\.\/|\.\/)[^\n"']*(?:\/db\/|\/prisma\/)/);
   }
 });

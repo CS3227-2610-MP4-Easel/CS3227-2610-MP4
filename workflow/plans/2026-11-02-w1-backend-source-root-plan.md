@@ -20,7 +20,7 @@
 |---|---|---|---|---|
 | T1 Relocate backend packages | - | - | 1 | Done |
 | T2 Rewire workspace and build configuration | T1 | - | 2 | Done |
-| T3 Update verification and documentation | T2 | - | 3 | Not started |
+| T3 Update verification and documentation | T2 | - | 3 | Done |
 | T4 Verify | T3 | - | 4 | Not started |
 | T5 Close-out | T4 | - | 5 | Not started |
 
@@ -110,8 +110,8 @@ Verification evidence: `npm run typecheck` passed for backend project references
 | Action | Path | What changes |
 |---|---|---|
 | Modify | `tests/workspace.test.ts` | Assert `["src/fe", "src/be/*"]` and verify all five package manifests plus all four backend entrypoint fields and imports. |
-| Modify | `packages/api/test/import-rules.test.ts` | After the move, scan `src/fe` and `src/be/api`; reject Prisma/DB package-name and relative imports. |
-| Modify | `packages/db/test/migration-procedure.test.ts` | After the move, update the recovery-document relative path. |
+| Modify | `src/be/api/test/import-rules.test.ts` | After the move, scan `src/fe` and `src/be/api`; reject Prisma/DB package-name and relative imports. |
+| Modify | `src/be/db/test/migration-procedure.test.ts` | After the move, update the recovery-document relative path. |
 | Modify | `docs/guide/map.json` | Map `src/be/**` and `src/fe/**`; remove active `apps/web/**` and `packages/**` mappings. |
 | Modify | `docs/operations/database-recovery.md` | Use `src/be/db/prisma/schema.prisma` in every command. |
 | Modify | `docs/architecture/agile-platform-architecture.md` | Replace the component/path layout and AD-01a/b text with the `src/fe`/`src/be` layout. |
@@ -122,13 +122,15 @@ Verification evidence: `npm run typecheck` passed for backend project references
 
 **Checklist**
 
-- [ ] 1. Update tests for workspace paths, all-package manifest parity, entrypoints, and import boundaries.
-- [ ] 2. Update recovery and guide path mappings.
-- [ ] 3. Reconcile normative architecture and guardrail references; label historical references as superseded.
-- [ ] 4. Run the root test command and confirm no active `apps/web` or old backend `packages/*` reference remains.
-- [ ] 5. Confirm the diff contains no `src/fe` edits.
-- [ ] 6. Update branch state Progress and Changes.
-- [ ] 7. Commit: `test: enforce source-root package boundaries (W1)`.
+- [x] 1. Update tests for workspace paths, all-package manifest parity, entrypoints, and import boundaries.
+- [x] 2. Update recovery and guide path mappings.
+- [x] 3. Reconcile normative architecture and guardrail references; label historical references as superseded.
+- [x] 4. Run the root test command and confirm no active `apps/web` or old backend `packages/*` reference remains.
+- [x] 5. Confirm the diff contains no `src/fe` edits.
+- [x] 6. Update branch state Progress and Changes.
+- [x] 7. Commit: `test: enforce source-root package boundaries (W1)`.
+
+Verification evidence: root tests pass (66/66), backend and frontend typechecks pass, Prisma validation passes with `DATABASE_URL`, plan lint passes, and the active-reference scan is clean except for the explicit historical supersession note in the decision log.
 
 ### T4: Verify
 

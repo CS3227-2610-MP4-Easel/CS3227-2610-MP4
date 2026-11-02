@@ -1,7 +1,7 @@
 # Database migration and recovery procedure
 
 W1 migrations are forward-only and are applied by the protected CI environment with
-`npx prisma migrate deploy --schema packages/db/prisma/schema.prisma`. Developer shells and
+`npx prisma migrate deploy --schema src/be/db/prisma/schema.prisma`. Developer shells and
 pull-request jobs must not receive production database credentials.
 
 ## Compatibility check
@@ -15,9 +15,9 @@ are rejected.
 Local schema work uses:
 
 ```text
-npx prisma migrate dev --name <name> --schema packages/db/prisma/schema.prisma
-npx prisma generate --schema packages/db/prisma/schema.prisma
-npx prisma validate --schema packages/db/prisma/schema.prisma
+npx prisma migrate dev --name <name> --schema src/be/db/prisma/schema.prisma
+npx prisma generate --schema src/be/db/prisma/schema.prisma
+npx prisma validate --schema src/be/db/prisma/schema.prisma
 ```
 
 ## Recovery targets and evidence

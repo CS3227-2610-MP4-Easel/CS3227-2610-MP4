@@ -1,6 +1,6 @@
 # Contracts: API and module interfaces
 
-Companion to [agile-platform-architecture.md](agile-platform-architecture.md) (§6). It holds the field-level contracts that the zod schemas in `packages/contracts` implement (AD-01c). If code and this file disagree, fix the disagreement before merging; the OpenAPI file generated from the schemas is checked against the running API by a contract test (A-17).
+Companion to [agile-platform-architecture.md](agile-platform-architecture.md) (§6). It holds the field-level contracts that the zod schemas in `src/be/contracts` implement (AD-01c). If code and this file disagree, fix the disagreement before merging; the OpenAPI file generated from the schemas is checked against the running API by a contract test (A-17).
 
 Decisions cited as AD-nn are in [decision-log.md](decision-log.md); tags A-nn are delegated assumptions awaiting the team's sign-off (architecture §16).
 

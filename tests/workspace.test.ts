@@ -8,19 +8,31 @@ const expectedPackages = [
   "@agile/db",
   "@agile/api",
   "@agile/llm-gateway",
-  "@agile/web",
+  "easel-fe",
 ];
+
+const expectedBackendMetadata = {
+  "@agile/contracts": "contracts",
+  "@agile/db": "db",
+  "@agile/api": "api",
+  "@agile/llm-gateway": "llm-gateway",
+};
 
 test("F1/E15 workspace declares every W1 package boundary", async () => {
   const manifest = JSON.parse(await readFile(new URL("package.json", root), "utf8"));
-  assert.deepEqual(manifest.workspaces, ["apps/*", "packages/*"]);
+  assert.deepEqual(manifest.workspaces, ["src/fe", "src/be/*"]);
 
   for (const packageName of expectedPackages) {
-    const packagePath = packageName === "@agile/web"
-      ? new URL("apps/web/package.json", root)
-      : new URL(`packages/${packageName.slice("@agile/".length)}/package.json`, root);
+    const packagePath = packageName === "easel-fe"
+      ? new URL("src/fe/package.json", root)
+      : new URL(`src/be/${packageName.slice("@agile/".length)}/package.json`, root);
     const packageManifest = JSON.parse(await readFile(packagePath, "utf8"));
     assert.equal(packageManifest.name, packageName);
+    if (packageName in expectedBackendMetadata) {
+      assert.equal(packageManifest.main, "dist/index.js");
+      assert.equal(packageManifest.types, "dist/index.d.ts");
+      assert.equal(packageManifest.exports?.["."], "./src/index.ts");
+    }
   }
 });
 
@@ -30,9 +42,14 @@ test("F1 root scripts expose test and typecheck commands", async () => {
   assert.equal(typeof manifest.scripts?.typecheck, "string");
 });
 
-test("F1 public package entrypoints resolve for database and gateway consumers", async () => {
+test("F1/E7 public package entrypoints resolve for all backend consumers", async () => {
+  const contracts = await import("@agile/contracts");
+  const api = await import("@agile/api");
   const db = await import("@agile/db");
   const gateway = await import("@agile/llm-gateway");
+  assert.equal(typeof contracts.ProjectDetailSchema, "object");
+  assert.equal(typeof api.createApiApp, "function");
+  assert.equal(typeof api.apiApp, "object");
   assert.equal(typeof db.createDbClient, "function");
   assert.equal(typeof gateway, "object");
 });

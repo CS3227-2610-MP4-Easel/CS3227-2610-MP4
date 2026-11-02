@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 
 const migration = new URL("../prisma/migrations/00000000000000_init/migration.sql", import.meta.url);
-const recovery = new URL("../../../docs/operations/database-recovery.md", import.meta.url);
+const recovery = new URL("../../../../docs/operations/database-recovery.md", import.meta.url);
 
 test("F9/E14 initial migration is forward-only and contains project constraints", async () => {
   const sql = await readFile(migration, "utf8");
