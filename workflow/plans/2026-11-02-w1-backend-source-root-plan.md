@@ -18,7 +18,7 @@
 
 | Task | Depends on | Can run concurrently with | Wave | Status |
 |---|---|---|---|---|
-| T1 Relocate backend packages | - | - | 1 | Not started |
+| T1 Relocate backend packages | - | - | 1 | Done |
 | T2 Rewire workspace and build configuration | T1 | - | 2 | Not started |
 | T3 Update verification and documentation | T2 | - | 3 | Not started |
 | T4 Verify | T3 | - | 4 | Not started |
@@ -69,11 +69,11 @@
 
 **Checklist**
 
-- [ ] 1. Confirm PR #6's `src/fe` tree is present before deleting `apps/web`; if absent, stop with E9 rather than claiming a complete move.
-- [ ] 2. Move the four backend package trees and delete `apps/web` as one filesystem change.
-- [ ] 3. Verify the clean-tree invariant with `git status --short` and `git diff --name-status`; no partial old/new backend tree remains.
-- [ ] 4. Update branch state Progress and Changes.
-- [ ] 5. Commit: `refactor: move packages under source backend root (W1)`.
+- [x] 1. Confirm PR #6's `src/fe` tree is present before deleting `apps/web`; if absent, stop with E9 rather than claiming a complete move.
+- [x] 2. Move the four backend package trees and delete `apps/web` as one filesystem change.
+- [x] 3. Verify the clean-tree invariant with `git status --short` and `git diff --name-status`; no partial old/new backend tree remains.
+- [x] 4. Update branch state Progress and Changes.
+- [x] 5. Commit: `refactor: move packages under source backend root (W1)`.
 
 ### T2: Rewire workspace and build configuration
 
