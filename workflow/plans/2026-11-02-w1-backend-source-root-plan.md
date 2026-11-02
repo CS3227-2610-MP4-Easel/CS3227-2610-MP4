@@ -19,7 +19,7 @@
 | Task | Depends on | Can run concurrently with | Wave | Status |
 |---|---|---|---|---|
 | T1 Relocate backend packages | - | - | 1 | Done |
-| T2 Rewire workspace and build configuration | T1 | - | 2 | Not started |
+| T2 Rewire workspace and build configuration | T1 | - | 2 | Done |
 | T3 Update verification and documentation | T2 | - | 3 | Not started |
 | T4 Verify | T3 | - | 4 | Not started |
 | T5 Close-out | T4 | - | 5 | Not started |
@@ -77,7 +77,7 @@
 
 ### T2: Rewire workspace and build configuration
 
-**Delivers:** Root package/build resolution for `src/fe` plus `src/be/*`. **Satisfies:** F2, F3, N3, E2, E3, E4. **Depends on:** T1 **Wave:** 2
+**Delivers:** Root workspace resolution for `src/fe` plus `src/be/*`, backend project-reference build resolution, and a root command that also runs PR #6's standalone frontend typecheck. **Satisfies:** F2, F3, N3, E2, E3, E4. **Depends on:** T1 **Wave:** 2
 
 **Files**
 
@@ -85,19 +85,21 @@
 |---|---|---|
 | Modify | `package.json` | Set workspaces to `["src/fe", "src/be/*"]`; change the root test glob to `tests/**/*.test.ts` and `src/be/**/*.test.ts`. |
 | Modify | `package-lock.json` | Regenerate workspace links for `src/fe` and all four `src/be/*` packages; remove links to `apps/web` and `packages/*`. |
-| Modify | `tsconfig.json` | Replace project references with `src/fe`, `src/be/contracts`, `src/be/db`, `src/be/api`, and `src/be/llm-gateway`. |
-| Modify | `packages/api/tsconfig.json`, `packages/contracts/tsconfig.json`, `packages/db/tsconfig.json`, `packages/llm-gateway/tsconfig.json` | After the move, use `../../../tsconfig.json`, package-relative `src`/`dist`, and sibling contract references for API and gateway. |
-| Modify | `packages/db/package.json` | After the move, make `prisma:validate` use the explicit `prisma/schema.prisma` path. |
+| Modify | `tsconfig.json` | Replace project references with the four backend projects under `src/be`; `src/fe` remains standalone and is checked by the root npm script. |
+| Modify | `src/be/api/tsconfig.json`, `src/be/contracts/tsconfig.json`, `src/be/db/tsconfig.json`, `src/be/llm-gateway/tsconfig.json` | After the move, use `../../../tsconfig.json`, package-relative `src`/`dist`, and sibling contract references for API and gateway. |
+| Modify | `src/be/db/package.json` | Make `prisma:validate` use the explicit `prisma/schema.prisma` path. |
 | Modify | `.gitignore` | Ignore `src/be/db/prisma/generated/` and `src/be/db/generated/`. |
 
 **Checklist**
 
-- [ ] 1. Update root workspace, test, and TypeScript reference declarations.
-- [ ] 2. Update all four backend package TypeScript configs and the DB Prisma script.
-- [ ] 3. Regenerate the lockfile and assert its workspace links contain only `src/fe` and `src/be/*` for application packages.
-- [ ] 4. Run `npm run typecheck` and `npx prisma validate --schema src/be/db/prisma/schema.prisma`.
-- [ ] 5. Update branch state Progress and Changes.
-- [ ] 6. Commit: `build: rewire workspace for source-root packages (W1)`.
+- [x] 1. Update root workspace, test, and TypeScript reference declarations.
+- [x] 2. Update all four backend package TypeScript configs and the DB Prisma script.
+- [x] 3. Regenerate the lockfile and assert its workspace links contain only `src/fe` and `src/be/*` for application packages.
+- [x] 4. Run `npm run typecheck` and `npx prisma validate --schema src/be/db/prisma/schema.prisma`; the typecheck must include both backend and standalone frontend checks.
+- [x] 5. Update branch state Progress and Changes.
+- [x] 6. Commit: `build: rewire workspace for source-root packages (W1)`.
+
+Verification evidence: `npm run typecheck` passed for backend project references and the standalone `src/fe` typecheck; Prisma validation passed with `DATABASE_URL` set. The full root test command remains for T3 because the existing import-boundary, recovery-path, and workspace assertions still target pre-migration paths.
 
 ### T3: Update verification and documentation
 

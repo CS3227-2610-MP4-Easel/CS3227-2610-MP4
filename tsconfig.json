@@ -1,11 +1,10 @@
 {
   "files": [],
   "references": [
-    { "path": "apps/web" },
-    { "path": "packages/contracts" },
-    { "path": "packages/db" },
-    { "path": "packages/api" },
-    { "path": "packages/llm-gateway" }
+    { "path": "src/be/contracts" },
+    { "path": "src/be/db" },
+    { "path": "src/be/api" },
+    { "path": "src/be/llm-gateway" }
   ],
   "compilerOptions": {
     "strict": true,

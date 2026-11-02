@@ -42,7 +42,7 @@ next-env.d.ts
 node_modules/
 dist/
 .next/
-packages/db/prisma/generated/
-packages/db/generated/
+src/be/db/prisma/generated/
+src/be/db/generated/
 *.db
 *.db-journal

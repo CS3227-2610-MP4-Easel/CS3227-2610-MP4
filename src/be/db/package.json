@@ -6,7 +6,7 @@
   "exports": { ".": "./src/index.ts" },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "prisma:validate": "prisma validate"
+    "prisma:validate": "prisma validate --schema prisma/schema.prisma"
   },
   "dependencies": {
     "@prisma/client": "^6.1.0"

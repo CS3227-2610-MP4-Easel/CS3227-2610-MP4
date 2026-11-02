@@ -2,10 +2,10 @@
   "name": "agile-platform",
   "private": true,
   "packageManager": "npm@10",
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": ["src/fe", "src/be/*"],
   "scripts": {
-    "test": "node --import tsx --test \"tests/**/*.test.ts\" \"packages/**/*.test.ts\"",
-    "typecheck": "tsc -b",
+    "test": "node --import tsx --test \"tests/**/*.test.ts\" \"src/be/**/*.test.ts\"",
+    "typecheck": "tsc -b && npm --prefix src/fe run typecheck",
     "lint": "tsc -b --pretty false"
   },
   "devDependencies": {

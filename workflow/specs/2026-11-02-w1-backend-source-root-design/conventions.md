@@ -9,7 +9,8 @@
 ## Workspace and references
 
 - The root `package.json` lists `src/fe` and `src/be/*`; `src/fe` remains PR #6's package name/configuration and is not edited by this branch.
-- Root TypeScript references point to `src/fe`, `src/be/contracts`, `src/be/db`, `src/be/api`, and `src/be/llm-gateway`.
+- Root TypeScript references point to `src/be/contracts`, `src/be/db`, `src/be/api`, and `src/be/llm-gateway`; `src/fe` remains a standalone PR #6 project because its tsconfig is not composite and is not edited here.
+- The root `typecheck` script runs the backend project-reference build, then `npm --prefix src/fe run typecheck`.
 - The obsolete `apps/web` package and its `tsconfig.json` are deleted; no replacement frontend files are created here.
 - Each backend package tsconfig extends `../../../tsconfig.json`; `src/be/api` and `src/be/llm-gateway` reference `../contracts`; `src/be/db` and `src/be/contracts` have no project references. Existing `rootDir: "src"`, `outDir: "dist"`, declaration, and include settings remain package-relative.
 - `src/be/db/package.json` validates `prisma/schema.prisma` explicitly; migration and recovery commands use `src/be/db/prisma/schema.prisma` from the repository root.
@@ -17,7 +18,7 @@
 ## Exact verification commands
 
 - Root tests: `node --import tsx --test "tests/**/*.test.ts" "src/be/**/*.test.ts"`.
-- Typecheck: `npm run typecheck`.
+- Typecheck: `npm run typecheck` (backend project references, then `npm --prefix src/fe run typecheck`).
 - Prisma validation: `npx prisma validate --schema src/be/db/prisma/schema.prisma` from the repository root.
 - Package entrypoint matrix: load `@agile/api` and assert `createApiApp` and `apiApp`; load `@agile/contracts` and assert `ProjectDetailSchema`; load `@agile/db` and assert `createDbClient`; load `@agile/llm-gateway` and assert the module resolves. For each package manifest, assert the unchanged values below.
 
