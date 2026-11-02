@@ -24,4 +24,3 @@ The plan will turn these contract tasks into exact file-level work. The dependen
 | 4 | T6, T7 | T6 owns API boundary; T7 owns verification tests. |
 | 5 | T8 | Handoff documentation and branch-state update. |
 | 6 | T9 | Review-repair code, tests, and branch-state evidence. |
-

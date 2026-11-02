@@ -53,4 +53,3 @@ Predicate semantics are fixed: `MEMBER` resolves the target project membership; 
 The parity fixture expands `contracts.md` §3 into 57 route records and compares method, path, operation id, request schema, response schema, policy key, auth state, role set, predicate, and endpoint-specific error mapping with the registered route table and generated OpenAPI document. It also asserts that each endpoint appears exactly once.
 
 The frozen-first types and behavior are not restated here: `contracts.md` §5 is authoritative for `LlmGateway.run`, `AiContext.assemble`, `Sessions`, and `Core`, including result unions, Zod output schemas, `NotMember`, session caps/abandonment, transaction prohibition for gateway calls, opaque transaction handling, strict apply validation, project-id ignoring, membership/writability re-checks, and task-event writes. W1 provides compile-time consumer fixtures and runtime contract tests against that source. W2, W5, and W6 provide implementations.
-

@@ -1,4 +1,4 @@
-import { apiApp } from '../../../../be/api/src/app.js';
+import { apiApp } from '../../../../be/api/src/app';
 
 async function forward(request: Request): Promise<Response> {
   return apiApp.fetch(request);

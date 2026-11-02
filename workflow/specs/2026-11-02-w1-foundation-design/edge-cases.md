@@ -32,4 +32,3 @@
 - A maintenance query could expose or mutate soft-deleted data; the filtered client requires an explicit opt-out (E10).
 - Two concurrent writers could overwrite each other; atomic version compare-and-increment prevents lost updates (E17).
 - A duplicate route could bind a weaker policy to an existing path; registration rejects collisions before dispatch (E18).
-

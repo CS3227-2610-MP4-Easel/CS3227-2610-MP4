@@ -12,4 +12,3 @@
 - Ordinary Prisma reads, relation reads, counts, aggregates, and group-bys apply the soft-delete and archived-project filters. Request-facing code cannot use raw SQL or the maintenance-read capability.
 - Tests use an in-process mock gateway and a disposable test database or deterministic database fixture; CI does not call SoCLaaS.
 - `.env` files and generated Prisma artifacts are ignored; no credentials, tokens, registration codes, prompts, or model responses are committed. Secret scanning and process-security enforcement belong to W12.
-

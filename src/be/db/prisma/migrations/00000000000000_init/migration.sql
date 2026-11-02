@@ -535,4 +535,3 @@ ALTER TABLE "project_digests" ADD CONSTRAINT "project_digests_session_id_fkey" F
 -- W1 partial indexes required by the architecture; Prisma schema parity verifies these migration-owned predicates.
 CREATE INDEX "checkpoints_project_id_target_date_live_idx" ON "checkpoints"("project_id", "target_date") WHERE "deleted_at" IS NULL;
 CREATE INDEX "llm_calls_in_flight_lease_idx" ON "llm_calls"("lease_expires_at") WHERE "status" = 'IN_FLIGHT';
-

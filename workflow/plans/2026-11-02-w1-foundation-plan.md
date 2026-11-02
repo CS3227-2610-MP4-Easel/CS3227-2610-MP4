@@ -355,4 +355,3 @@
 - [x] Run `npm test`, `npm run typecheck`, Prisma validation, migration tests, OpenAPI parity, and source scans.
 - [x] Confirm the spec, task statuses, and branch-state Progress agree with reality.
 - [x] GATE: Ask the operator to review the completed branch at Gate 3; do not push, open a PR, or merge before approval.
-

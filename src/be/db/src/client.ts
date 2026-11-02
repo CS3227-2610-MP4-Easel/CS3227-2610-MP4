@@ -8,7 +8,9 @@ export function applyDefaultReadFilter(model: string, args: Record<string, unkno
 
 export function canUseMaintenanceCapability(): false { return false; }
 
-export type FilteredDbClient = PrismaClient;
+type RawSqlMethodName = "$queryRaw" | "$queryRawUnsafe" | "$executeRaw" | "$executeRawUnsafe";
+export type FilteredDbClient = Omit<PrismaClient, RawSqlMethodName>;
+const RAW_SQL_METHODS = new Set<RawSqlMethodName>(["$queryRaw", "$queryRawUnsafe", "$executeRaw", "$executeRawUnsafe"]);
 type ReadQuery = { model: string; args: Record<string, unknown>; query: (args: Record<string, unknown>) => Promise<unknown> };
 const filteredReadExtension = {
   query: {
@@ -53,7 +55,17 @@ function wrapUniqueReads<T extends object>(client: T): T {
   });
 }
 
+function hideRawSql<T extends object>(client: T): Omit<T, RawSqlMethodName> {
+  return new Proxy(client, {
+    get(target, property, receiver) {
+      if (typeof property === "string" && RAW_SQL_METHODS.has(property as RawSqlMethodName)) return undefined;
+      return Reflect.get(target, property, receiver);
+    },
+  }) as Omit<T, RawSqlMethodName>;
+}
+
 export function createDbClient(base: PrismaClient = new PrismaClient()): FilteredDbClient {
-  return wrapUniqueReads(base.$extends(filteredReadExtension) as unknown as FilteredDbClient);
+  const filtered = base.$extends(filteredReadExtension) as unknown as PrismaClient;
+  return wrapUniqueReads(hideRawSql(filtered));
 }
 export type ReadArgs = Prisma.TaskFindManyArgs;

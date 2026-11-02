@@ -1,4 +1,5 @@
 import { getPolicyMap } from "./policy.js";
+import { TaskStatusSchema } from "./enums.js";
 import {
   ActivityItemInputSchema, CheckpointSchema, DigestSchema, EpicSchema, FactsSchema, LeadOverviewSchema, MemberSchema, PageProjectDetailSchema,
   PlanApprovalSchema, PlanEpicSchema, PlanProposalSchema, ProgressSchema, ProjectDetailSchema, ProjectInputSchema, ProjectSchema, ReplanApprovalSchema,
@@ -30,12 +31,30 @@ function zodToJsonSchema(schema: ZodLike): OpenApiSchema {
         if (check.kind === "uuid") result.format = "uuid";
         if (check.kind === "datetime") result.format = "date-time";
         if (check.kind === "url") result.format = "uri";
+        if (check.kind === "regex") {
+          result.pattern = check.regex.source;
+          if (check.regex.source === "^\\d{4}-\\d{2}-\\d{2}$") result.format = "date";
+        }
+        if (check.kind === "startsWith") result.pattern = `^${check.value}`;
       }
       return result;
     }
-    case "ZodNumber": return { type: def.checks?.some((check: any) => check.kind === "int") ? "integer" : "number" };
+    case "ZodNumber": {
+      const result: OpenApiSchema = { type: def.checks?.some((check: any) => check.kind === "int") ? "integer" : "number" };
+      for (const check of def.checks ?? []) {
+        if (check.kind === "min") result[check.inclusive === false ? "exclusiveMinimum" : "minimum"] = check.value;
+        if (check.kind === "max") result[check.inclusive === false ? "exclusiveMaximum" : "maximum"] = check.value;
+      }
+      return result;
+    }
     case "ZodBoolean": return { type: "boolean" };
-    case "ZodArray": return { type: "array", items: zodToJsonSchema(def.type) };
+    case "ZodArray": {
+      const result: OpenApiSchema = { type: "array", items: zodToJsonSchema(def.type) };
+      if (def.minLength?.value !== null && def.minLength?.value !== undefined) result.minItems = def.minLength.value;
+      if (def.maxLength?.value !== null && def.maxLength?.value !== undefined) result.maxItems = def.maxLength.value;
+      if (def.exactLength?.value !== null && def.exactLength?.value !== undefined) result.minItems = result.maxItems = def.exactLength.value;
+      return result;
+    }
     case "ZodNullable": return { anyOf: [zodToJsonSchema(def.innerType), { type: "null" }] };
     case "ZodOptional": return zodToJsonSchema(def.innerType);
     case "ZodDefault": return zodToJsonSchema(def.innerType);
@@ -52,7 +71,7 @@ const schema = (value: ZodLike): OpenApiSchema => zodToJsonSchema(value);
 const object = (properties: Record<string, OpenApiSchema>, required: string[] = []): OpenApiSchema => ({ type: "object", properties, ...(required.length ? { required } : {}), additionalProperties: false });
 const string = (format?: string): OpenApiSchema => ({ type: "string", ...(format ? { format } : {}) });
 const uuid = string("uuid");
-const date = string("date");
+const date: OpenApiSchema = { type: "string", format: "date", pattern: "^\\d{4}-\\d{2}-\\d{2}$" };
 
 export const ProjectDetailJsonSchema = schema(ProjectDetailSchema);
 export const PageProjectDetailJsonSchema = schema(PageProjectDetailSchema);
@@ -67,11 +86,11 @@ const requestSchemas: Record<string, OpenApiSchema> = {
   EPIC_CREATE: object({ title: string(), description: { type: ["string", "null"] }, checkpointId: { anyOf: [uuid, { type: "null" }] } }, ["title"]), EPIC_UPDATE: object({ title: string(), description: { type: ["string", "null"] }, checkpointId: { anyOf: [uuid, { type: "null" }] }, position: { type: "integer" }, version: { type: "integer" } }, ["version"]),
   TASK_CREATE: object({ epicId: uuid, title: string(), description: { type: ["string", "null"] }, acceptanceCriteria: { type: "array", items: string() }, storyPoints: { anyOf: [{ type: "integer", enum: [1, 2, 3, 5, 8, 13] }, { type: "null" }] }, assigneeId: { anyOf: [uuid, { type: "null" }] } }, ["epicId", "title"]),
   TASK_UPDATE: object({ title: string(), description: { type: ["string", "null"] }, acceptanceCriteria: { type: "array", items: string() }, storyPoints: { type: ["integer", "null"] }, epicId: uuid, assigneeId: { anyOf: [uuid, { type: "null" }] }, sprintId: { anyOf: [uuid, { type: "null" }] }, version: { type: "integer" } }, ["version"]),
-  TASK_STATUS_UPDATE: object({ status: string(), blocked: { type: "boolean" }, blockedReason: { type: ["string", "null"] }, version: { type: "integer" } }, ["status", "version"]),
+  TASK_STATUS_UPDATE: object({ status: schema(TaskStatusSchema), blocked: { type: "boolean" }, blockedReason: { type: ["string", "null"] }, version: { type: "integer" } }, ["status", "version"]),
   SPRINT_CREATE: object({ name: string(), startDate: date, endDate: date }, ["name", "startDate", "endDate"]), SPRINT_UPDATE: object({ name: string(), startDate: date, endDate: date, version: { type: "integer" } }, ["version"]), SPRINT_START: object({ version: { type: "integer" } }, ["version"]), SPRINT_CLOSE: object({ version: { type: "integer" }, carryOver: { type: "array", items: object({ taskId: uuid, to: string() }, ["taskId", "to"]) } }, ["version", "carryOver"]),
   PM_PLAN_CREATE: object({ idea: { type: "string", minLength: 20, maxLength: 6000 } }, ["idea"]), PM_EPIC_UPDATE: object({ title: string(), description: string(), checkpointName: { anyOf: [string(), { type: "null" }] }, tasks: { type: "array" }, version: { type: "integer" } }, ["version"]), PM_PROPOSAL_APPROVE: object({ version: { type: "integer" } }, ["version"]), PM_PROPOSAL_REJECT: object({ version: { type: "integer" } }, ["version"]),
   LEAD_DIGEST_CREATE: object({}), LEAD_PROPOSAL_APPROVE: object({ version: { type: "integer" }, suggestionIds: { type: "array", items: uuid } }, ["version", "suggestionIds"]), LEAD_PROPOSAL_REJECT: object({ version: { type: "integer" } }, ["version"]),
-  DEV_UPLOAD_CREATE: object({ items: { type: "array", items: schema(ActivityItemInputSchema) } }, ["items"]), DEV_SUMMARY_CREATE: object({ itemIds: { type: "array", items: uuid, maxItems: 10 } }, ["itemIds"]), DEV_STANDUP_CREATE: object({ date: { anyOf: [date, { type: "null" }] } }), DEV_STANDUP_UPDATE: object({ content: schema(StandupContentSchema), version: { type: "integer" } }, ["content", "version"]), DEV_STANDUP_FEEDBACK: object({ feedback: { anyOf: [string(), { type: "null" }] }, accept: { type: "boolean" } }),
+  DEV_UPLOAD_CREATE: object({ items: { type: "array", items: schema(ActivityItemInputSchema), maxItems: 100 } }, ["items"]), DEV_SUMMARY_CREATE: object({ itemIds: { type: "array", items: uuid, maxItems: 10 } }, ["itemIds"]), DEV_STANDUP_CREATE: object({ date: { anyOf: [date, { type: "null" }] } }), DEV_STANDUP_UPDATE: object({ content: schema(StandupContentSchema), version: { type: "integer" } }, ["content", "version"]), DEV_STANDUP_FEEDBACK: object({ feedback: { anyOf: [string(), { type: "null" }] }, accept: { type: "boolean" } }),
 };
 
 const responseSchemas: Record<string, OpenApiSchema> = {

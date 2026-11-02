@@ -20,4 +20,3 @@
 - **N4 Logging:** Request logs contain the request id, status, and stable error code only; they never contain credentials, tokens, registration codes, prompt text, response text, or raw request secrets.
 - **N5 Time rules:** Instants are stored and serialized in UTC; calendar dates use `Asia/Singapore`; mutable entities start at version 1; every mutable update uses an atomic `WHERE id = ? AND version = ?` compare-and-increment and maps zero affected rows to `409 CONFLICT_VERSION`.
 - **N6 Verification:** An executable test compares generated OpenAPI method, path, operation id, request schema, response schema, and policy key with the registered route table; source scans enforce that `apps/web` does not import Prisma or `packages/db` and that routes do not omit policy entries.
-
