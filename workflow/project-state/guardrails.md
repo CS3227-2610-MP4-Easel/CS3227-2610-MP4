@@ -24,3 +24,4 @@
 | AD-55 | Authorisation only through the policy map; handlers never check roles | [log](../../docs/architecture/decision-log.md) |
 | AD-25 | All untrusted text passes the gateway pipeline; no prompt text is stored | [log](../../docs/architecture/decision-log.md) |
 | AD-32 | No secrets in the repo; production deploys and migrations only from CI | [log](../../docs/architecture/decision-log.md) |
+| C8 | All source lives under `src/`; the web app is `src/fe`, not `apps/web` (supersedes the path in AD-01b) | [C8](decisions/C8.md) |
