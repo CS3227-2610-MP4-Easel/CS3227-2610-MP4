@@ -4,6 +4,7 @@ The full chronological record of every change, newest first. One line each: what
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-02 | Developer guide first write: W10 front end (overview, setup, architecture, components, flow rules, testing) | W10 | `docs/guide/` |
 | 2026-11-02 | Folded branch state `w10-ui-mockups` | — | archive |
 | 2026-11-02 | Spec approved by the operator (gate 1); Q9 closed as SD13, Q10 as SD12 | W10 | this commit |
 | 2026-11-02 | Web app location reversed to `src/fe` (C8); ui.md updated | W10 | this commit |
