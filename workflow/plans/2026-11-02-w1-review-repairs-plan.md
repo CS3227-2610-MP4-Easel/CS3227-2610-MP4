@@ -21,7 +21,7 @@ new roles, migrations, external integrations, or maintenance-client bypasses.
 |---|---|---|---|---|
 | T1 | — | T2, T3 | 1 | Done |
 | T2 | — | T1, T3 | 1 | Done |
-| T3 | — | T1, T2 | 1 | Not started |
+| T3 | — | T1, T2 | 1 | Done |
 | T4 | T1, T3 | — | 2 | Not started |
 | T5 | T2, T4 | — | 3 | Not started |
 
@@ -116,11 +116,14 @@ Mutation isolation is exposed as an injected lock/recheck seam because the reque
 
 **Checklist**
 
-- [ ] Write failing tests for E9 and E21-E22.
-- [ ] Register every generated operation ref, using canonical domain schemas and explicit envelope adapters.
-- [ ] Emit `components.schemas` and validate every internal reference before returning a document.
-- [ ] Run contract/API targeted tests and `npm run typecheck`.
-- [ ] Update branch state and commit `fix: make generated OpenAPI references resolvable (W1)`.
+- [x] Write failing tests for E9 and E21-E22.
+- [x] Register every generated operation ref, using canonical domain schemas and explicit envelope adapters.
+- [x] Emit `components.schemas` and validate every internal reference before returning a document.
+- [x] Run contract/API targeted tests and `npm run typecheck`.
+- [x] Update branch state and commit `fix: make generated OpenAPI references resolvable (W1)`.
+
+**Notes for next task:** OpenAPI generation defaults to the canonical registry but accepts an explicit registry for isolated tests.
+References are validated recursively before the document is returned; duplicate identical registrations are harmless.
 
 ### T4: PR #6 normative contract reconciliation
 

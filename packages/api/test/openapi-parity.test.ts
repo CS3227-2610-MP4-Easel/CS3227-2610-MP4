@@ -18,4 +18,12 @@ test("N6/OpenAPI parity has exactly one generated operation per policy record", 
     if (policy?.successStatus !== 204) assert.ok(response.content["application/json"].schema.$ref);
     if (policy?.requestSchema) assert.ok(operation.requestBody.content["application/json"].schema.$ref);
   }
+  const components = document.components.schemas as Record<string, unknown>;
+  for (const operation of operations) {
+    const policy = policyByOperation.get(operation.operationId);
+    const responseRef = (operation.responses[String(policy?.successStatus ?? 200)] as any).content?.["application/json"]?.schema?.$ref as string | undefined;
+    if (responseRef) assert.ok(components[responseRef.split("/").pop()!]);
+    const requestRef = (operation.requestBody as any)?.content?.["application/json"]?.schema?.$ref as string | undefined;
+    if (requestRef) assert.ok(components[requestRef.split("/").pop()!]);
+  }
 });
