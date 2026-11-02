@@ -1,15 +1,17 @@
 type RelationCardinality = "one" | "many";
 export type VisibilityEntry = {
   softDelete: boolean;
-  projectScope: "required" | "nullable" | "root";
+  projectScope: "required" | "nullable" | "root" | "none";
+  projectPath?: string[];
   relations: Record<string, string>;
   cardinality: Record<string, RelationCardinality>;
 };
 
-const entry = (softDelete: boolean, projectScope: VisibilityEntry["projectScope"], relations: Record<string, string>, cardinality: Record<string, RelationCardinality>): VisibilityEntry => ({ softDelete, projectScope, relations, cardinality });
+const entry = (softDelete: boolean, projectScope: VisibilityEntry["projectScope"], relations: Record<string, string>, cardinality: Record<string, RelationCardinality>, projectPath?: string[]): VisibilityEntry => ({ softDelete, projectScope, relations, cardinality, ...(projectPath ? { projectPath } : {}) });
 
 export const VISIBILITY_POLICY: Readonly<Record<string, VisibilityEntry>> = Object.freeze({
   Project: entry(false, "root", { members: "ProjectMember", checkpoints: "Checkpoint", epics: "Epic", sprints: "Sprint", tasks: "Task", taskEvents: "TaskEvent", proposals: "AiProposal", sessions: "AiSession", calls: "LlmCall", activityItems: "ActivityItem", standups: "Standup", digests: "ProjectDigest" }, { members: "many", checkpoints: "many", epics: "many", sprints: "many", tasks: "many", taskEvents: "many", proposals: "many", sessions: "many", calls: "many", activityItems: "many", standups: "many", digests: "many" }),
+  User: entry(false, "none", { projectsCreated: "Project", memberships: "ProjectMember", membersAdded: "ProjectMember", tasksCreated: "Task", taskEvents: "TaskEvent", sessions: "AiSession", proposalsCreated: "AiProposal", proposalsApplied: "AiProposal", activityItems: "ActivityItem", standups: "Standup" }, { projectsCreated: "many", memberships: "many", membersAdded: "many", tasksCreated: "many", taskEvents: "many", sessions: "many", proposalsCreated: "many", proposalsApplied: "many", activityItems: "many", standups: "many" }),
   ProjectMember: entry(false, "required", { project: "Project", assignedTasks: "Task" }, { project: "one", assignedTasks: "many" }),
   Checkpoint: entry(true, "required", { project: "Project", epics: "Epic" }, { project: "one", epics: "many" }),
   Epic: entry(true, "required", { project: "Project", checkpoint: "Checkpoint", tasks: "Task" }, { project: "one", checkpoint: "one", tasks: "many" }),
@@ -17,17 +19,20 @@ export const VISIBILITY_POLICY: Readonly<Record<string, VisibilityEntry>> = Obje
   Task: entry(true, "required", { project: "Project", epic: "Epic", sprint: "Sprint", assignee: "ProjectMember", events: "TaskEvent" }, { project: "one", epic: "one", sprint: "one", assignee: "one", events: "many" }),
   TaskEvent: entry(false, "required", { task: "Task", project: "Project", actor: "User" }, { task: "one", project: "one", actor: "one" }),
   AiProposal: entry(false, "required", { project: "Project", session: "AiSession", epics: "ProposalEpic", digests: "ProjectDigest" }, { project: "one", session: "one", epics: "many", digests: "many" }),
-  ProposalEpic: entry(false, "required", { proposal: "AiProposal" }, { proposal: "one" }),
+  ProposalEpic: entry(false, "required", { proposal: "AiProposal" }, { proposal: "one" }, ["proposal", "project"]),
   AiSession: entry(false, "nullable", { user: "User", project: "Project", calls: "LlmCall", proposals: "AiProposal", standups: "Standup", digests: "ProjectDigest" }, { user: "one", project: "one", calls: "many", proposals: "many", standups: "many", digests: "many" }),
   LlmCall: entry(false, "nullable", { session: "AiSession", project: "Project", summaries: "ItemSummary" }, { session: "one", project: "one", summaries: "many" }),
   ActivityItem: entry(false, "required", { project: "Project", uploader: "User", summaries: "ItemSummary" }, { project: "one", uploader: "one", summaries: "many" }),
-  ItemSummary: entry(false, "required", { item: "ActivityItem", call: "LlmCall" }, { item: "one", call: "one" }),
+  ItemSummary: entry(false, "required", { item: "ActivityItem", call: "LlmCall" }, { item: "one", call: "one" }, ["item", "project"]),
   Standup: entry(false, "required", { project: "Project", developer: "User", session: "AiSession" }, { project: "one", developer: "one", session: "one" }),
   ProjectDigest: entry(false, "required", { project: "Project", proposal: "AiProposal", session: "AiSession" }, { project: "one", proposal: "one", session: "one" }),
 });
 
 const compoundSelectors: Readonly<Record<string, Readonly<Record<string, string>>>> = {
   ProjectMember: { projectId_userId: "projectId,userId" },
+  Checkpoint: { projectId_id: "projectId,id" },
+  Epic: { projectId_id: "projectId,id" },
+  Sprint: { projectId_id: "projectId,id" },
   ProposalEpic: { proposalId_index: "proposalId,index" },
   ActivityItem: { projectId_uploadedBy_itemType_repo_externalId: "projectId,uploadedBy,itemType,repo,externalId" },
   ItemSummary: { itemId_contentHash_guardVersion_promptVersion: "itemId,contentHash,guardVersion,promptVersion" },
@@ -60,7 +65,12 @@ function visibleWhere(model: string, callerWhere: Record<string, unknown>): Reco
   const base: Record<string, unknown> = {};
   if (policy.projectScope === "root") base.status = "ACTIVE";
   if (policy.softDelete) base.deletedAt = null;
-  if (policy.projectScope === "required") base.project = { status: "ACTIVE" };
+  if (policy.projectScope === "required") {
+    const path = policy.projectPath ?? ["project"];
+    let relation: Record<string, unknown> = { status: "ACTIVE" };
+    for (const segment of path.slice().reverse()) relation = { [segment]: relation };
+    Object.assign(base, relation);
+  }
   if (policy.projectScope === "nullable") base.OR = [{ projectId: null }, { project: { status: "ACTIVE" } }];
   const caller = { ...callerWhere };
   const callerAnd = Array.isArray(caller.AND) ? caller.AND : caller.AND ? [caller.AND] : [];
@@ -70,6 +80,39 @@ function visibleWhere(model: string, callerWhere: Record<string, unknown>): Reco
   if (callerOr || callerAnd.length > 0) return { AND: [...callerAnd, ...(callerOr ? [{ OR: callerOr }] : []), ...(Object.keys(caller).length > 0 ? [caller] : []), base] };
   if (Object.keys(caller).some((key) => key in base)) return { AND: [caller, base] };
   return { ...caller, ...base };
+}
+
+function isVisibleRecord(model: string, value: Record<string, unknown>): boolean {
+  const policy = VISIBILITY_POLICY[model];
+  if (!policy) return true;
+  if (policy.softDelete && value.deletedAt !== undefined && value.deletedAt !== null) return false;
+  if (policy.projectScope === "root" && value.status !== "ACTIVE") return false;
+  if (policy.projectScope === "required" && policy.projectPath) {
+    let current: unknown = value;
+    for (const segment of policy.projectPath) {
+      if (!isRecord(current) || !isRecord(current[segment])) return true;
+      current = current[segment];
+    }
+    if (isRecord(current) && current.status !== "ACTIVE") return false;
+  } else if (policy.projectScope === "required" && isRecord(value.project) && value.project.status !== "ACTIVE") return false;
+  return true;
+}
+
+export function sanitizeVisibleResult(model: string, value: unknown): unknown {
+  if (Array.isArray(value)) return value.map((item) => sanitizeVisibleResult(model, item)).filter((item) => item !== null);
+  if (!isRecord(value)) return value;
+  if (!isVisibleRecord(model, value)) return null;
+  const result = { ...value };
+  const policy = VISIBILITY_POLICY[model];
+  if (!policy) return result;
+  for (const [relation, target] of Object.entries(policy.relations)) {
+    if (!(relation in result)) continue;
+    const relationValue = result[relation];
+    result[relation] = Array.isArray(relationValue)
+      ? sanitizeVisibleResult(target, relationValue)
+      : relationValue === null ? null : sanitizeVisibleResult(target, relationValue);
+  }
+  return result;
 }
 
 function transformRelationValue(targetModel: string, value: unknown, cardinality: RelationCardinality): unknown {
@@ -116,11 +159,5 @@ export function applyVisibilityToArgs(model: string, args: Record<string, unknow
 }
 
 export function isVisibleUniqueResult(model: string, result: unknown): unknown {
-  if (!result || !isRecord(result)) return result;
-  const policy = VISIBILITY_POLICY[model];
-  if (!policy) return result;
-  if (policy.softDelete && result.deletedAt !== undefined && result.deletedAt !== null) return null;
-  if (policy.projectScope === "root" && result.status !== "ACTIVE") return null;
-  if (policy.projectScope !== "root" && result.project && isRecord(result.project) && result.project.status !== "ACTIVE") return null;
-  return result;
+  return sanitizeVisibleResult(model, result);
 }

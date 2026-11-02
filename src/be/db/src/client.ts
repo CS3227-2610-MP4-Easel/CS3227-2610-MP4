@@ -1,5 +1,5 @@
 import { PrismaClient, type Prisma } from "@prisma/client";
-import { applyVisibilityToArgs, isVisibleUniqueResult, normalizeUniqueSelector } from "./visibility.js";
+import { applyVisibilityToArgs, isVisibleUniqueResult, normalizeUniqueSelector, sanitizeVisibleResult } from "./visibility.js";
 const modelNames = new Map([
   ["user", "User"], ["project", "Project"], ["projectMember", "ProjectMember"], ["checkpoint", "Checkpoint"], ["epic", "Epic"], ["sprint", "Sprint"], ["task", "Task"], ["taskEvent", "TaskEvent"], ["aiProposal", "AiProposal"], ["proposalEpic", "ProposalEpic"], ["aiSession", "AiSession"], ["llmCall", "LlmCall"], ["activityItem", "ActivityItem"], ["itemSummary", "ItemSummary"], ["standup", "Standup"], ["projectDigest", "ProjectDigest"],
 ]);
@@ -13,8 +13,8 @@ type ReadQuery = { model: string; args: Record<string, unknown>; query: (args: R
 const filteredReadExtension = {
   query: {
     $allModels: {
-      async findMany({ model, args, query }: ReadQuery) { return query(applyDefaultReadFilter(model, args)); },
-      async findFirst({ model, args, query }: ReadQuery) { return query(applyDefaultReadFilter(model, args)); },
+      async findMany({ model, args, query }: ReadQuery) { return sanitizeVisibleResult(model, await query(applyDefaultReadFilter(model, args))); },
+      async findFirst({ model, args, query }: ReadQuery) { return sanitizeVisibleResult(model, await query(applyDefaultReadFilter(model, args))); },
       async count({ model, args, query }: ReadQuery) { return query(applyDefaultReadFilter(model, args)); },
       async aggregate({ model, args, query }: ReadQuery) { return query(applyDefaultReadFilter(model, args)); },
       async groupBy({ model, args, query }: ReadQuery) { return query(applyDefaultReadFilter(model, args)); },
@@ -25,7 +25,7 @@ const filteredReadExtension = {
         return result;
       },
       async findFirstOrThrow({ model, args, query }: ReadQuery) {
-        const result = await query(applyDefaultReadFilter(model, args));
+        const result = sanitizeVisibleResult(model, await query(applyDefaultReadFilter(model, args)));
         if (result === null) throw new Error("NOT_FOUND");
         return result;
       },

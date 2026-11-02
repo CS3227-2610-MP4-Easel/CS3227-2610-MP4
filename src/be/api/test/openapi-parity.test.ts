@@ -26,4 +26,9 @@ test("N6/OpenAPI parity has exactly one generated operation per policy record", 
     const requestRef = (operation.requestBody as any)?.content?.["application/json"]?.schema?.$ref as string | undefined;
     if (requestRef) assert.ok(components[requestRef.split("/").pop()!]);
   }
+  assert.deepEqual((components.AUTH_REGISTERRequest as any).required.sort(), ["code", "displayName", "role"]);
+  assert.equal((components.AUTH_REGISTERRequest as any).additionalProperties, false);
+  assert.deepEqual((components.TASK_CREATERequest as any).required, ["epicId", "title"]);
+  assert.equal((components.TASK_CREATERequest as any).additionalProperties, false);
+  assert.notEqual((components.TASK_CREATEResponse as any).additionalProperties, true);
 });

@@ -30,13 +30,18 @@ export async function authorizeRequest(policy: Pick<PolicyEntry, "operationId" |
   if (suppliedProjectId && resolved && resolved.kind !== "PROJECT_SET" && resolved.projectId !== suppliedProjectId) {
     throw new HttpError("NOT_FOUND", 404, "The requested resource was not found.");
   }
+  if (policy.predicate === "MEMBER" && resolved && resolved.kind !== "PROJECT_SET" && resolved.projectId) {
+    try { await deps.requireMember(principal.userId, resolved.projectId); } catch { throw new HttpError("NOT_FOUND", 404, "The requested resource was not found."); }
+  }
+  if (policy.predicate !== "MEMBER") {
+    try { await deps.evaluatePredicate(policy.predicate, principal, request, resolved, tx); } catch { throw new HttpError("NOT_FOUND", 404, "The requested resource was not found."); }
+  }
   if (resolved && resolved.kind !== "PROJECT_SET" && resolved.state === "ARCHIVED") {
     if (policy.method !== "GET") throw new HttpError("CONFLICT_STATE", 409, "The project or resource is archived.");
     throw new HttpError("NOT_FOUND", 404, "The requested resource was not found.");
   }
-  if (policy.predicate === "MEMBER" && resolved && resolved.kind !== "PROJECT_SET" && resolved.projectId) {
-    try { await deps.requireMember(principal.userId, resolved.projectId); } catch { throw new HttpError("NOT_FOUND", 404, "The requested resource was not found."); }
+  if (policy.predicate === "MEMBER") {
+    try { await deps.evaluatePredicate(policy.predicate, principal, request, resolved, tx); } catch { throw new HttpError("NOT_FOUND", 404, "The requested resource was not found."); }
   }
-  try { await deps.evaluatePredicate(policy.predicate, principal, request, resolved, tx); } catch { throw new HttpError("NOT_FOUND", 404, "The requested resource was not found."); }
   return { principal, resolved, tx };
 }

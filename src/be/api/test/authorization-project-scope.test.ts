@@ -25,6 +25,16 @@ test("F1/E2a archived write returns CONFLICT_STATE before predicate or handler",
   assert.equal(evaluated, false);
 });
 
+test("archived writes hide the project state from non-members", async () => {
+  await assert.rejects(() => authorizeRequest({ operationId: "TASK_UPDATE", method: "PATCH", authState: "REGISTERED", roles: ["PM"], predicate: "MEMBER" }, {
+    resolvePrincipal: async () => ({ firebaseUid: "firebase", tokenClaims: {} }),
+    lookupRegisteredUser: async () => ({ firebaseUid: "firebase", userId: "outsider", role: "PM" as const }),
+    resolveResource: async () => ({ kind: "TASK", projectId: "archived-project", state: "ARCHIVED" as const }),
+    requireMember: async () => { throw new Error("missing"); },
+    evaluatePredicate: async () => { throw new Error("must not run"); },
+  }, "Bearer token", { method: "PATCH", path: "/api/tasks/task", params: { id: "task" }, query: new URLSearchParams(), body: undefined }), (error: { code?: string; status?: number }) => error.code === "NOT_FOUND" && error.status === 404);
+});
+
 test("F1/E3 predicate receives the resolved assignee and transaction handle", async () => {
   let received: { assigneeId?: string; tx?: unknown } | undefined;
   const tx = { id: "tx" };
