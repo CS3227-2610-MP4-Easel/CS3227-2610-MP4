@@ -41,3 +41,16 @@ test("F1/E17 resolved project scope wins over a caller-supplied project id", asy
   assert.equal((principal as { principal: { userId: string } }).principal.userId, "user");
   assert.equal(checkedProjectId, "stored-project");
 });
+
+test("F5/E11 endpoint 42 authorizes PM and Dev Lead members on the new route", async () => {
+  const policy = getPolicyMap().find((entry) => entry.policyKey === "endpoint-42");
+  assert.ok(policy);
+  for (const role of ["PM", "DEV_LEAD"] as const) {
+    const result = await authorizeRequest(policy, {
+      ...deps,
+      lookupRegisteredUser: async () => ({ firebaseUid: "firebase", userId: "user", role }),
+      resolveResource: async () => ({ kind: "PROJECT", projectId: "project", state: "ACTIVE" as const }),
+    }, "Bearer token", { method: "GET", path: "/api/projects/project/facts", params: { id: "project" }, query: new URLSearchParams(), body: undefined });
+    assert.equal((result as { principal: { role: string } }).principal.role, role);
+  }
+});

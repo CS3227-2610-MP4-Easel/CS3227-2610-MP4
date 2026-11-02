@@ -22,7 +22,7 @@ new roles, migrations, external integrations, or maintenance-client bypasses.
 | T1 | — | T2, T3 | 1 | Done |
 | T2 | — | T1, T3 | 1 | Done |
 | T3 | — | T1, T2 | 1 | Done |
-| T4 | T1, T3 | — | 2 | Not started |
+| T4 | T1, T3 | — | 2 | Done |
 | T5 | T2, T4 | — | 3 | Not started |
 
 ## Traceability
@@ -144,12 +144,15 @@ References are validated recursively before the document is returned; duplicate 
 
 **Checklist**
 
-- [ ] Write failing tests for E10-E13 and E23-E24.
-- [ ] Change policy/schema definitions and update both normative architecture files.
-- [ ] Implement the exact standup date truth table and preserve AD-44's current-time activity window.
-- [ ] Verify old endpoint 42 is absent and the new route is PM/Dev Lead member-scoped.
-- [ ] Run contract/API/date targeted tests and `npm run typecheck`.
-- [ ] Update branch state and commit `fix: reconcile W1 contracts with UI handover (W1)`.
+- [x] Write failing tests for E10-E13 and E23-E24.
+- [x] Change policy/schema definitions and update both normative architecture files.
+- [x] Implement the exact standup date truth table and preserve AD-44's current-time activity window.
+- [x] Verify old endpoint 42 is absent and the new route is PM/Dev Lead member-scoped.
+- [x] Run contract/API/date targeted tests and `npm run typecheck`.
+- [x] Update branch state and commit `fix: reconcile W1 contracts with UI handover (W1)`.
+
+**Notes for next task:** Endpoint 42 is now the pre-release `/api/projects/{id}/facts` route for PM and Dev Lead members.
+Standup validation is pure and clock-injected; future Monday requests retain the current instant as the window end.
 
 ### T5: Full verification and close-out
 

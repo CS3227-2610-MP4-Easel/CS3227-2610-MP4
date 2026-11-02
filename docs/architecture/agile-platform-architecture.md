@@ -106,6 +106,7 @@ flowchart TD
 Boundary answers:
 - **Transactions** start in the service of the module that owns the tables. The proposal apply is one transaction (AD-10, A-06). No model call runs inside a database transaction.
 - **Authorization** is enforced by the policy-map gate for every route (role, plus an ownership predicate where the map names one), `requireMember` inside `core` for project-scoped data, and the gateway's check that the caller's role may run the feature. A route handler never checks roles itself. The UI hides actions as a convenience only. CI fails if a route is missing from the map (A-01).
+- **Authorization resource resolution** is performed by the module that owns the referenced table and handed to the policy-map gate as typed project, owner, assignee and target-role data. The API never treats a caller-supplied project id as authoritative for a child resource; endpoint 42 is `GET /api/projects/{id}/facts` for PM and Dev Lead members.
 - **Derived values** (progress, velocity, projected completion, checkpoints at risk, overload) are computed in pure functions in `core` (progress and velocity) and `lead` (forecast). The LLM never computes them (AD-12, AD-22).
 - **Table ownership**: one owner per table (the column above). No module queries another module's tables.
 - **Module dependency rules** are enforced by a source-scan test in CI (AD-01b, AD-25) plus the runtime membership checks inside `ai-context`; the scan alone is not relied on. Role modules (`pm`, `lead`, `dev`) do not import each other.
@@ -202,6 +203,7 @@ The field-level contracts are in [contracts.md](contracts.md): conventions, shar
 | Create, start, close, delete sprints | no | yes | no | AD-47 |
 | Generate, edit, approve or reject a PLAN | yes | no | no | AD-10, AD-21 |
 | Facts, digest, request and approve a REPLAN | no | yes | no | AD-10, AD-22 |
+| Read project facts (endpoint 42) | yes | yes | no | PR #6 handover; member-scoped |
 | Upload activity; summarise; generate or edit own standup | no | no | yes | AD-20, AD-27 |
 | Read a standup | no | their projects' developers | own only | AD-27 |
 | Usage: own sessions; platform aggregates without per-user content | yes | yes | yes | AD-47 |
@@ -375,7 +377,7 @@ Answers to the three questions:
 
 **Proposal.** `PENDING` → `APPROVED` (apply succeeded), `REJECTED` (user), `SUPERSEDED` (a newer proposal of the same kind for the same project was created while this was PENDING, or the project was archived). Terminal states do not change. **Plan epic**: `PENDING` → `IN_PROGRESS` (leased) → `DONE` or `FAILED`; an expired lease reads as PENDING; an edit of title or description resets it to PENDING; `FAILED` can be retried. **Session**: `OPEN` → `ACCEPTED` / `EDITED` (approval or standup accept or edit) / `REJECTED` / `ABANDONED` (no activity for 24 hours, set when next read).
 
-**Time.** Instants are UTC; "days" use `Asia/Singapore` (AD-37). Sprint start and end dates are inclusive calendar dates (AD-45). The standup window runs from 00:00 of the previous working day (Monday to Friday, holidays ignored) to now (AD-44). The SoCLaaS budget day and the limiter's day counts use UTC. A task `timestamp` in an upload may not be more than 24 hours in the future (A-05).
+**Time.** Instants are UTC; "days" use `Asia/Singapore` (AD-37). Sprint start and end dates are inclusive calendar dates (AD-45). Standup dates accept only today or the next allowed date: Friday→Friday/Monday, Saturday→Saturday/Monday, Sunday→Sunday/Monday, and Monday-Thursday→that day/the next calendar day. The standup activity window runs from 00:00 of the previous working day (Monday to Friday, holidays ignored) to the current instant; selecting a future Monday does not move its end into the future (AD-44). The SoCLaaS budget day and the limiter's day counts use UTC. A task `timestamp` in an upload may not be more than 24 hours in the future (A-05).
 
 **Derived values (computed in code, AD-12, AD-22; formulas are A-19).**
 - `pointsTotal` = story points of live tasks that have points; tasks without points are counted separately as `unestimatedTasks`. `pointsDone` = those with status DONE. Progress percent = `pointsDone / pointsTotal`, 0 when the total is 0.
@@ -420,6 +422,7 @@ Every screen uses live data (no mocks) through the contracts client. Common stat
 | Checkpoints and sprints (PM, Dev Lead) | 12 to 15, 27 to 33 | dates, status, `completedPoints` | sprint close shows a carry-over choice for each unfinished task |
 | New plan (PM) | 34, 37 to 41 | idea box, approach, epics with expansion state, tasks, similar-items provenance | per-epic progress and retry; edit before approve; Approve disabled until every epic is DONE; "create manually" path when AI is unavailable |
 | Project health (Dev Lead) | 42, 44 to 48 | facts, checkpoint risk, overload (own projects), digest, suggestions | choose which suggestions to apply; an out-of-date suggestion explains why |
+| Project facts (PM, Dev Lead) | 42 | facts, checkpoint risk, overload for the caller's member projects | hidden or non-member projects appear as not found |
 | Overview (Dev Lead) | 43 | one row per member project | each row links to Project health |
 | Team standups (Dev Lead) | 55 | per developer: yesterday, today, blockers | no standup yet: "not generated" |
 | My work (Developer) | 20, 24 | assigned tasks | status and blocked controls |
