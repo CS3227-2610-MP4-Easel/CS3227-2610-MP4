@@ -11,7 +11,7 @@
   "packages/**": [
     "04-components.md"
   ],
-  "apps/web/**": [
+  "src/fe/**": [
     "04-components.md"
   ],
   "tests/**": [
