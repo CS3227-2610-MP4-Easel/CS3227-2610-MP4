@@ -6,3 +6,4 @@ export * from "./frozen.js";
 export * from "./openapi.js";
 export * from "./policy.js";
 export * from "./routes.js";
+export * from "./authorization.js";
