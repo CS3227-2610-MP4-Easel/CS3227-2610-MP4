@@ -10,7 +10,11 @@
     "pretest": "npm --workspace @agile/db run prisma:generate",
     "test": "node --import tsx --test \"tests/**/*.test.ts\" \"src/be/**/*.test.ts\"",
     "typecheck": "tsc -b && npm --prefix src/fe run typecheck",
-    "lint": "tsc -b --pretty false"
+    "lint": "tsc -b --pretty false",
+    "contract": "node --import tsx --test src/be/api/test/openapi-parity.test.ts src/be/contracts/test/openapi.test.ts",
+    "scan:secrets": "node scripts/scan-secrets.mjs",
+    "check:workflows": "node scripts/check-workflows.mjs",
+    "check:agent-policy": "node scripts/check-agent-policy.mjs"
   },
   "devDependencies": {
     "react": "^19.1.0",

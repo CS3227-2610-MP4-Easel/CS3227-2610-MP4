@@ -18,7 +18,7 @@
 
 | Task | Depends on | Can run concurrently with | Wave | Status |
 |---|---|---|---|---|
-| T1 Pull-request workflow and isolated checks | W1 merged into INT | T2, T3, T4 | 1 | Not started |
+| T1 Pull-request workflow and isolated checks | W1 merged into INT | T2, T3, T4 | 1 | Done |
 | T2 Secret scanning and staged-file hook | — | T1, T3, T4 | 1 | Not started |
 | T3 Dependency audit and Action-pin verification | — | T1, T2, T4 | 1 | Not started |
 | T4 Agent policy and protected control paths | — | T1, T2, T3 | 1 | Not started |
@@ -87,13 +87,13 @@
 
 **Checklist**
 
-- [ ] 1. Write failing workflow-shape tests for E1, E2, E12, and E15; expect failure because `.github/workflows/ci.yml` and the process-security commands do not exist.
-- [ ] 2. Add the workflow with independent jobs named `workspace`, `typecheck`, `lint`, `contract`, `dependency-audit`, `secret-scan`, and `workflow-security`; each job checks out `${{ github.event.pull_request.head.sha }}` with `fetch-depth: 0` and never receives secrets.
-- [ ] 3. Add the W1-dependent npm scripts, including `contract` with the exact `src/be` test paths and explicit Prisma generation before workspace tests; use `npm ci --ignore-scripts` before checks and never execute lifecycle scripts during install.
-- [ ] 4. Run the workflow-shape tests and the W1 workspace checks; expect PASS.
-- [ ] 5. Verify the same commit twice with identical runtime/action inputs and record the required-check names and outcomes; cover N1.
-- [ ] 6. Update branch state Progress and Changes.
-- [ ] 7. GATE: Mark the task complete in branch state and use the prescribed subject `feat: add isolated W12 pull request checks (W12)`.
+- [x] 1. Write failing workflow-shape tests for E1, E2, E12, and E15; expect failure because `.github/workflows/ci.yml` and the process-security commands do not exist.
+- [x] 2. Add the workflow with independent jobs named `workspace`, `typecheck`, `lint`, `contract`, `dependency-audit`, `secret-scan`, and `workflow-security`; each job checks out `${{ github.event.pull_request.head.sha }}` with `fetch-depth: 0` and never receives secrets.
+- [x] 3. Add the W1-dependent npm scripts, including `contract` with the exact `src/be` test paths and explicit Prisma generation before workspace tests; use `npm ci --ignore-scripts` before checks and never execute lifecycle scripts during install.
+- [x] 4. Run the workflow-shape tests and the W1 workspace checks; expect PASS.
+- [x] 5. Verify the same commit twice with identical runtime/action inputs and record the required-check names and outcomes; cover N1.
+- [x] 6. Update branch state Progress and Changes.
+- [x] 7. GATE: Mark the task complete in branch state and use the prescribed subject `feat: add isolated W12 pull request checks (W12)`.
 
 ### T2: Secret scanning and staged-file hook
 
