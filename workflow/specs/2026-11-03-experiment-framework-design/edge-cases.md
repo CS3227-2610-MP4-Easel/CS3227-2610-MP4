@@ -37,7 +37,8 @@ IDs are permanent: never reuse or renumber. Every F requirement and every API er
 | ID | Requirement | Scenario | Expected behaviour (exact) | Why it matters | Test layer |
 |---|---|---|---|---|---|
 | E24 | F4 | Probe init record lists one extra plugin | abort `isolation_mismatch`, exit 4, no task prompt sent | Contaminated arm | unit |
-| E25 | F4 | Probe init record lacks the hooks set | no run starts; the gap is reported and the spec amended per runtime.md | Silent downgrade | unit |
+| E25 | F4 | Probe init record lacks one of the sets it carries (skills, agents, plugins, MCP servers or tools), or its `claude_code_version` differs from the baseline fixture | no run starts; the gap or the version difference is reported | Silent downgrade | unit |
+| E71 | F4 | Probe stream has a hook event whose hook is not a SessionStart hook declared by an arm plugin (a hook from the clone or from user settings) | abort `isolation_mismatch`, exit 4, hook name listed, no task prompt sent | Foreign hook runs | unit |
 | E26 | F17 | Agent appends to the main repo's `.git/config` | abort `containment`, exit 10, differing path listed | Hook planted for later | integration |
 | E27 | F17 | Agent writes to `~/.claude/settings.json` or another run's folder | abort `containment`, exit 10 | Cross-run contamination | integration |
 | E28 | F17 | Agent runs `env` and echoes the key into an artifact | child environment holds no key outside API-key mode; in API-key mode the artifact is redacted and `secret_in_artifact` is set | Key reaches the judge | integration |
@@ -82,7 +83,7 @@ IDs are permanent: never reuse or renumber. Every F requirement and every API er
 | E59 | F6 | `--continue` after the arm file, a plugin file or `config.json` changed; and with a session id of `--dangerously-skip-permissions` | exit 7 for the changed file; exit 3 for the invalid session id; nothing spawned | Gates skipped on resume, flag injection | unit |
 | E60 | F3 | Clone preparation | no remotes, `--no-hardlinks` used, `.claude/` holds only the arm's skills and agents, `settings*.json` removed | Write path back to the main repo, foreign hooks | integration |
 | E61 | N7 | Launcher is `claude.cmd`, `.bat` or `.ps1` | exit 3 naming the launcher | Shell injection | unit |
-| E62 | N4 | Launch of answerer, matcher and judge | flags assert no tools, no user settings, strict MCP, no plugins; probe shows empty tool, hook and MCP sets | Artifact text reaches user hooks | unit |
+| E62 | N4 | Launch of answerer, matcher and judge | flags assert no tools, no user settings, strict MCP, no plugins; probe shows empty tool and MCP sets and no hook events | Artifact text reaches user hooks | unit |
 | E63 | N5 | Timeline: run 100 s, wait 30 s, answerer call 4 s ending exactly when the wait starts | `wall_s` 100, `wait_s` 30, `answerer_s` 4, `agent_s` 66 | Overlap or rounding error | unit |
 | E64 | F17 | The run's `state.json` or a shared config file changed during a turn | every run with a turn in flight aborts `containment`, exit 10, path named | Tampered state | integration |
 | E65 | F14 | CLI result is the budget stop | reason `budget`, exit 5, not `crash` | Misclassified cost study | unit |

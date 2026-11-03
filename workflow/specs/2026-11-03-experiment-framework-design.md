@@ -1,5 +1,7 @@
 # Experiment Framework Design
 
+> Amended 2026-11-03 after the T2 spike: see branch state C~11 and D~1 (the isolation check uses a built-in baseline and observed hook events; F4, E25, E62, N4 and runtime.md § Isolation changed, E71 added).
+>
 > Amended 2026-11-03 after the plan review: see branch state C~10 (T6 depends on T3, T4 and T5; waves become six; `pricing.mjs` moves to T1; commands load from `harness/commands/`).
 
 - **Status:** Approved (Xiao-Congchen, 2026-11-03)

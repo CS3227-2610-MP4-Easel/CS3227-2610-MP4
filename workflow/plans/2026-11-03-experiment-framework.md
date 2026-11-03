@@ -17,7 +17,7 @@
 | Task | Depends on | Can run concurrently with | Wave | Status |
 |---|---|---|---|---|
 | T1 Schemas and check | - | T2 | 1 | Done |
-| T2 Isolation spike | - | T1 | 1 | Blocked |
+| T2 Isolation spike | - | T1 | 1 | Done |
 | T3 Launcher and driver | T1, T2 | T5, T8 | 2 | Not started |
 | T5 Extractor | T1, T2 | T3, T8 | 2 | Not started |
 | T8 Pilot bundle | T1, T2 | T3, T5 | 2 | Not started |
@@ -59,7 +59,7 @@ Executor note: run inline, task by task in table order. Tasks in one wave share 
 | N8 | T3, T5 | `state.test.mjs` (fault injection); `extract.test.mjs` (twice identical) |
 | E1, E2, E3, E5, E6, E7, E8, E9, E10, E56 | T1 | `schema.test.mjs`, `check.test.mjs` (one test per row) |
 | E4, E11, E12, E13, E14, E15, E16, E17, E18, E19, E20, E21, E22, E23 | T3 | `driver.test.mjs`, `classify.test.mjs`, `state.test.mjs` |
-| E24, E25, E26, E27, E28, E29, E57, E58, E59, E60, E61, E64 | T3 | `isolation.test.mjs`, `containment.test.mjs`, `spawn.test.mjs`, `clone.test.mjs`, `driver.test.mjs` |
+| E24, E25, E71, E26, E27, E28, E29, E57, E58, E59, E60, E61, E64 | T3 | `isolation.test.mjs`, `containment.test.mjs`, `spawn.test.mjs`, `clone.test.mjs`, `driver.test.mjs` |
 | E53, E54, E55, E65, E66 | T3 | `budget.test.mjs`, `driver.test.mjs` |
 | E30, E31, E32, E36, E62 | T4 | `answerer.test.mjs`, `sanitize.test.mjs`; E32 on the real model through `exp answerer --self-test` in T9 |
 | E39, E40, E41, E42, E43, E63, E69 | T5 | `extract.test.mjs`, `phases.test.mjs`, `metrics.test.mjs`; E42 on real runs in T9 |
@@ -126,9 +126,9 @@ Executor note: run inline, task by task in table order. Tasks in one wave share 
 - [x] 2. Write `run-spike.mjs` to run, from a throwaway clone of this repo: (a) a probe with `--setting-sources project --strict-mcp-config --output-format stream-json` and a one-line prompt; (b) the same with one `--plugin-dir`; (c) a resume of (a) by session id; (d) a prompt that launches one subagent; (e) one toy spec-and-plan run per arm flow (superpowers, lite, full) on a small request, recording each run's `total_cost_usd`; (f) the same flags with `claude_bin` pointing at an npm `.cmd` shim, if one exists, to see how Windows spawns it.
 - [x] 3. GATE: run the spike (real model calls). Save raw outputs under `workflow/experiments/local/spike/` (ignored by git).
 - [x] 4. Read the outputs and write `isolation.md`: which of the six sets (skills, plugins, agents, hooks, MCP servers, tools) the init record carries and how each is named; the derivation of expected sets from an arm; the reference cost field name and whether it sums across resumed invocations; where the main and subagent transcripts are and how subagents link to parents; whether duplicate message ids occur; whether OpenTelemetry can write a file in headless mode (set `CLAUDE_CODE_ENABLE_TELEMETRY` and the exporter variables, run, look); whether a `.cmd` launcher works without a shell.
-- [ ] 5. If any finding contradicts the spec (a missing set in the init record, no cost field, a flag that does not exist), stop: write a Deviation in the branch state, amend the spec with the operator (`writing-specs-lite` change control), then continue.
+- [x] 5. If any finding contradicts the spec (a missing set in the init record, no cost field, a flag that does not exist), stop: write a Deviation in the branch state, amend the spec with the operator (`writing-specs-lite` change control), then continue.
 - [x] 6. Scrub the four fixtures (remove paths, user names, keys; keep structure and ids) and verify with `exp check --secrets`.
-- [ ] 7. Fill `pricing.json` from the current Anthropic pricing page for each model the arms and judge use; record `source` and `checked`; cross-check against the table in the ponytail plugin's `hooks/ponytail-band-import.js` and note any difference. (Not ticked: filled from the CLI list-price basis and the ponytail table, which agree exactly; the pricing page was not consulted. Confirm at the T9 gate.)
+- [x] 7. Fill `pricing.json` from the current Anthropic pricing page for each model the arms and judge use; record `source` and `checked`; cross-check against the table in the ponytail plugin's `hooks/ponytail-band-import.js` and note any difference.
 - [x] 8. Record in the branch state: findings note and the three toy costs. The ceiling rule used by T8 is this plan's own choice: run ceiling = 3 times the highest toy cost of any arm; batch ceiling = 5 times the run ceiling; the operator confirms both at the T9 gate, and any extra replicates need a new confirmation.
 - [x] 9. Commit: `docs: isolation and transcript spike findings, fixtures and pricing (experiment framework)`.
 
@@ -150,7 +150,7 @@ Executor note: run inline, task by task in table order. Tasks in one wave share 
 | Create | `workflow/experiments/harness/fixtures/fake-claude.mjs` | replays a scripted conversation as the CLI would (init record, assistant messages, result JSON, budget stop, hang, crash); used by T4, T6 and T10 tests |
 | Test | `workflow/experiments/harness/clone.test.mjs` | E29, E60 |
 | Test | `workflow/experiments/harness/spawn.test.mjs` | E57, E61, N7 hostile argv |
-| Test | `workflow/experiments/harness/isolation.test.mjs` | E24, E25, E58 |
+| Test | `workflow/experiments/harness/isolation.test.mjs` | E24, E25, E58, E71 |
 | Test | `workflow/experiments/harness/classify.test.mjs` | E14, E15 |
 | Test | `workflow/experiments/harness/state.test.mjs` | E20, E21, E22, N2, N8 |
 | Test | `workflow/experiments/harness/containment.test.mjs` | hash record and compare (unit part of E26, E27, E64) |
@@ -161,10 +161,10 @@ Executor note: run inline, task by task in table order. Tasks in one wave share 
 - [ ] 1. Write `fake-claude.mjs` first (test support): it reads a script file named by `FAKE_CLAUDE_SCRIPT` and emits stream-json shaped like the T2 fixtures. Write failing `classify.test.mjs` (the six fixtures: `done`, `marker-quoted-mid-text`, `question-then-marker-last-line`, `marker-then-question-last-line`, `question`, `blank`) and implement `classify.mjs`; expect PASS. Intended rule: last non-empty line trimmed equals `EXP-DONE` means done; whitespace-only means empty; anything else is a question.
 - [ ] 2. Write failing `spawn.test.mjs`: environment keys equal the allowlist (`PATH`, `SystemRoot`, `USERPROFILE`/`HOME`, `TEMP`/`TMP`, `APPDATA`, `LOCALAPPDATA`, telemetry variables; the key only in API-key mode) and the deny flags for `WebFetch` and `WebSearch` are present (E57); `.cmd`, `.bat`, `.ps1` launchers exit 3 (E61); a session id, plugin path, model and run id containing `& | ^ " %` reach the child unchanged (N7). Implement `spawn.mjs`; expect PASS.
 - [ ] 3. Write failing `clone.test.mjs` and `containment.test.mjs`: after preparation `git remote` is empty, `--no-hardlinks` was used, `.claude/` holds only the arm's skills and agents, `settings*.json` is gone (E60), two runs get different paths (E29); the F17 hash set is recorded and a change to the main `.git/config`, a temp-home `~/.claude/settings.json`, or a run's `state.json` is reported with its path. Implement `clone.mjs`, `containment.mjs`. Commit this slice: `feat: run clone preparation and containment hashes (experiment framework)`.
-- [ ] 4. Write failing `isolation.test.mjs` with `fixtures/init-record.json`: an extra plugin gives `isolation_mismatch` before any task prompt (E24); a record lacking a set stops the run and names the gap (E25); a resumed launch carries the same isolation flags as the first (E58). Implement `isolation.mjs` following `isolation.md`; expect PASS.
-- [ ] 5. Write failing `state.test.mjs` and `budget.test.mjs`: a kill during a `state.json` write leaves the previous file (fault-injection hook) (E21, N8); `--continue` reloads spend and session id and sends `Continue from where you stopped.` when `turn_state` is `in_turn` (E20); `--continue` on a terminal run exits 2 (E22); the manifest holds every hash of N2; the CLI budget-stop result maps to `budget` (E65); `--max-budget-usd` equals ceiling minus spend; run and batch ceilings, mixed exit codes and `not_started: batch_ceiling` (E53, E54, E55, E66). Implement `state.mjs`, `budget.mjs`; expect PASS. Commit this slice: `feat: run state, manifest and budget enforcement (experiment framework)`.
+- [ ] 4. Write failing `isolation.test.mjs` with `fixtures/init-record.json`: an extra plugin gives `isolation_mismatch` before any task prompt (E24); a hook event naming a hook that no arm plugin declares for SessionStart aborts `isolation_mismatch` before any task prompt (E71); a record lacking one of its five sets, or a `claude_code_version` unlike the fixture's, stops the run and names the gap (E25); a resumed launch carries the same isolation flags as the first (E58). Implement `isolation.mjs` following `isolation.md`; expect PASS.
+- [x] 5. Write failing `state.test.mjs` and `budget.test.mjs`: a kill during a `state.json` write leaves the previous file (fault-injection hook) (E21, N8); `--continue` reloads spend and session id and sends `Continue from where you stopped.` when `turn_state` is `in_turn` (E20); `--continue` on a terminal run exits 2 (E22); the manifest holds every hash of N2; the CLI budget-stop result maps to `budget` (E65); `--max-budget-usd` equals ceiling minus spend; run and batch ceilings, mixed exit codes and `not_started: batch_ceiling` (E53, E54, E55, E66). Implement `state.mjs`, `budget.mjs`; expect PASS. Commit this slice: `feat: run state, manifest and budget enforcement (experiment framework)`.
 - [ ] 6. Write failing `driver.test.mjs` using `fake-claude.mjs`: experiment file untracked, staged only, or modified exits 7 (E12); stage `implementation` exits 8 before any clone (E11); clone path over 200 characters exits 3 (E13); two empty replies abort `turn_cap` (E16); the 41st question aborts `turn_cap` (E17); an error stop aborts `crash` (E18); a hanging turn is killed at `turn_timeout_s` and a run past `run_timeout_s` aborts `timeout`, with no orphan process (E19); `--rep 2` for an existing run exits 2 and a command without `--rep` creates the next free rep or exits 0 with a note (E23); `max_parallel` 2 never has three runs active; the child environment lacks the key outside API-key mode (E28); `--continue` after the arm file, a plugin file or `config.json` changed exits 7, and a session id of `--dangerously-skip-permissions` exits 3 (E59); an unseen approval hash exits 2 until `--yes <arm>=<hash>` (E4); a fake agent appending to the main `.git/config`, writing a temp-home `~/.claude/settings.json`, or changing the run's `state.json` mid-turn ends `aborted`, reason `containment`, exit 10, path named, and every run with a turn in flight aborts (E26, E27, E64). Run `<TEST driver>`; expect FAIL because `driver.mjs` does not exist.
-- [ ] 7. Implement `driver.mjs` slice one: preflight (F15 check, approvals, stage and path checks), clone, probe, prompt with the appended `EXP-DONE` block, classify loop, question hook (a function T4 plugs the answerer into), abort reasons `isolation_mismatch`, `turn_cap`, `crash`, `budget`. Commit: `feat: run driver loop (experiment framework)`.
+- [x] 7. Implement `driver.mjs` slice one: preflight (F15 check, approvals, stage and path checks), clone, probe, prompt with the appended `EXP-DONE` block, classify loop, question hook (a function T4 plugs the answerer into), abort reasons `isolation_mismatch`, `turn_cap`, `crash`, `budget`. Commit: `feat: run driver loop (experiment framework)`.
 - [ ] 8. Implement `driver.mjs` slice two and `commands/run.mjs`: `max_parallel` scheduling, `turn_timeout_s` and `run_timeout_s` with process-tree kill, containment checks at each turn boundary, `--continue`, `--rep` rules, `--dry`. Run `<TEST driver>`; expect PASS. Commit: `feat: parallel runs, timeouts and containment aborts (experiment framework)`.
 - [ ] 9. `<BUILD>` green; `node workflow/experiments/harness/exp.mjs run --dry` on a temp experiment prints planned run ids; update branch state: Progress, Changes line, Deviations if T2 changed a contract.
 
@@ -187,9 +187,9 @@ Executor note: run inline, task by task in table order. Tasks in one wave share 
 - [ ] 2. Implement `extract.mjs`; expect PASS.
 - [ ] 3. Write failing `phases.test.mjs`: a skill sets the phase until the next skill; a subagent type's mapping wins inside a subagent; nested subagents inherit the parent; unmatched is `other`; a map entry for a skill that never fires is not an error (E43). Implement `phases.mjs`; expect PASS.
 - [ ] 4. Write failing `metrics.test.mjs`: timeline with a 100 s run, 30 s wait and a 4 s answerer call ending exactly when the wait starts gives `wall_s` 100, `wait_s` 30, `answerer_s` 4, `agent_s` 66 (E63); rounding once per term; five cost classes stay separate and arm cost excludes the other four (N6); `peak_prompt_tok` and `cache_read_share` formulas from spec `runtime.md`; `review_rounds` counts distinct parent turns launching review-type subagents; `fix_iterations` counts Bash calls with `lint.mjs` and a non-zero exit. Implement `metrics.mjs`; expect PASS.
-- [ ] 5. Create `commands/extract.mjs`; a test runs `exp extract` on a `running` run and expects exit 2.
+- [x] 5. Create `commands/extract.mjs`; a test runs `exp extract` on a `running` run and expects exit 2.
 - [ ] 6. `<BUILD>` green; update branch state: Progress, Changes line.
-- [ ] 7. Commit: `feat: transcript extractor and metrics (experiment framework)`.
+- [x] 7. Commit: `feat: transcript extractor and metrics (experiment framework)`.
 
 ### T8: Pilot bundle
 **Delivers:** the pilot task, three arms, the superpowers plugin copy, rubric, calibration set and pilot experiment | **Satisfies:** F1, F2, F15, F16 | **Depends on:** T1, T2 | **Wave:** 2
@@ -217,9 +217,9 @@ Executor note: run inline, task by task in table order. Tasks in one wave share 
 - [ ] 2. Write `brief.md`: as a PM, add a free-text note to an epic so the team sees context; "recent notes are shown first"; "only the PM can edit a note" and later "every project member can edit notes they can see"; "a short note"; "add the endpoint under `apps/api` and the screen under `apps/web`"; nothing on what happens to a pinned note when its epic is closed or deleted; notes visible to "any project" member. Anchors below must be exact substrings.
 - [ ] 3. Write `seeded-issues.json`: `collision` (a free-text note on an epic overlaps AD-09 "comments" out of scope; anchor `free-text note`), `contradiction` (anchor `every project member can edit`), `missing_limit` (anchor `a short note`), `vague_term` (anchor `recent notes`), `wrong_path` (anchor `apps/web`), `missing_error` (anchor `pinned note`), `tenancy` (anchor `any project`); each with `blocking` set.
 - [ ] 4. Write `answer-sheet.md`: answers to likely non-seeded questions (who the PM is, epic id format, where on the epic page the note appears, auth is the existing Firebase session); deliberately silent on every seeded issue.
-- [ ] 5. Copy the installed superpowers plugin (path from `~/.claude/plugins/installed_plugins.json`) unmodified into `workflow/experiments/plugins/superpowers/`, with its licence, and write `SOURCE.md`; run `exp check --secrets` on it. The copy is never edited: its contents feed the arm's approval hash.
+- [x] 5. Copy the installed superpowers plugin (path from `~/.claude/plugins/installed_plugins.json`) unmodified into `workflow/experiments/plugins/superpowers/`, with its licence, and write `SOURCE.md`; run `exp check --secrets` on it. The copy is never edited: its contents feed the arm's approval hash.
 - [ ] 6. Write the three arm files from spec `runtime.md` § Planned arms, each with `stage`, `prompt` (a template using `{{brief}}` and `{{task_id}}` that names the skills for that arm, as `AGENTS.md` § 3 allows), `plugins` (`superpowers` only for that arm), `skills`, `agents`, `allowed_tools`, `disallowed_tools` `["WebFetch","WebSearch"]`, `permission_mode`, `model` (the `main` model from `models.json` tier `strong`), `review`, `phase_map`, `instruction_files`, `artifact_globs`, `lint` (false for `superpowers`).
-- [ ] 7. Write `rubric.md`. Intended criteria and anchors (0 = absent, 2 = partial, 4 = full): completeness (problem, goals, non-goals, components all present); testability (every requirement has an observable acceptance criterion); unambiguity (no vague terms, no choice left to the implementer); consistency (no contradiction between files, no collision with recorded decisions or guardrails); traceability (requirements map to edge cases and tasks, paths are real). Write the three calibration artifacts and `bands.json`.
+- [x] 7. Write `rubric.md`. Intended criteria and anchors (0 = absent, 2 = partial, 4 = full): completeness (problem, goals, non-goals, components all present); testability (every requirement has an observable acceptance criterion); unambiguity (no vague terms, no choice left to the implementer); consistency (no contradiction between files, no collision with recorded decisions or guardrails); traceability (requirements map to edge cases and tasks, paths are real). Write the three calibration artifacts and `bands.json`.
 - [ ] 8. Write `pilot-001.json` with `run_ceiling_usd` and `batch_ceiling_usd` from the rule recorded by T2 (3 times the highest toy cost; 5 times the run ceiling); hypotheses as one sentence each (for example "`full` finds more seeded issues than `lite` at higher cost"); `decision_rule` text; `pruning_rule` `dominance`.
 - [ ] 9. Run `node workflow/experiments/harness/exp.mjs check --secrets`; expect exit 0 with F16 satisfied (7 issues, all six required categories, anchors found); update branch state: Progress, Changes line.
 - [ ] 10. Commit the bundle: `feat: pilot task, arms, plugin copy, rubric and experiment file (experiment framework)`.
@@ -245,9 +245,9 @@ Executor note: run inline, task by task in table order. Tasks in one wave share 
 - [ ] 2. Write failing `answerer.test.mjs` with the fake CLI: a silent question gets the exact fixed text and source `assumption` (E30); non-JSON output retries once, then sends the fixed text and logs `answerer_error` (E31); the launch flags are no tools, neutral temp cwd, no session persistence, no user settings, strict MCP, no plugins, and a probe shows empty tool, hook and MCP sets (E62); the prompt contains the question and the sheet only, no repo path, key or arm id (N4). Run `<TEST answerer>`; expect FAIL.
 - [ ] 3. Implement `answerer.mjs` (random nonce per call, removed from inputs; JSON output validated) and `questions.mjs`; expect PASS.
 - [ ] 4. Plug the answerer into `driver.mjs` for `sheet` mode; add a driver test where the fake CLI asks two questions (one covered, one not) and the run reaches done with both stored.
-- [ ] 5. Write `questions.test.mjs`: each stored question has one source and, before grading, null `issue_id` and `issue_alt`; `setIssueIds` fills them and rejects an unknown issue id.
+- [x] 5. Write `questions.test.mjs`: each stored question has one source and, before grading, null `issue_id` and `issue_alt`; `setIssueIds` fills them and rejects an unknown issue id.
 - [ ] 6. Write `commands/answerer.mjs` and `answerer-fixtures.json`; a unit test with the fake CLI checks the pass rule (all silent, at least 2 of 3 covered). It runs for real in T9.
-- [ ] 7. `<BUILD>` green.
+- [x] 7. `<BUILD>` green.
 - [ ] 8. Update branch state: Progress, Changes line.
 - [ ] 9. Commit: `feat: sheet-mode answerer, question log and self-test (experiment framework)`.
 
@@ -271,9 +271,9 @@ Executor note: run inline, task by task in table order. Tasks in one wave share 
 - [ ] 2. Write failing `judge.test.mjs`: non-rubric text twice gives `judge_error`, null rubric, exit 6 (E44); two scores differing by more than 4 set `judge_unstable` (E45); an artifact containing the nonce has it removed, and an artifact telling the judge to give top marks is delimited as data (E46 unit part); the launch flags equal the answerer's because both use T3's builder (N4); `judge_same_model` is set when models match.
 - [ ] 3. Implement `artifacts.mjs` and `lintrun.mjs` (lint code always from the main checkout, never from the run clone).
 - [ ] 4. Implement `judge.mjs` (two calls per artifact, criteria order shuffled by a seeded shuffle recorded in `grades.json`; mean and gap; seeded-issue call returning an outcome per issue and `issue_id` or `issue_alt` per question).
-- [ ] 5. Implement `grade.mjs` and `commands/grade.mjs`; run `<TEST judge>` and `<TEST grade>`; expect PASS.
+- [x] 5. Implement `grade.mjs` and `commands/grade.mjs`; run `<TEST judge>` and `<TEST grade>`; expect PASS.
 - [ ] 6. Add `grade --self-test`, which scores the three calibration artifacts and checks order and bands; unit-test it with the fake CLI (it runs for real in T9).
-- [ ] 7. `<BUILD>` green.
+- [x] 7. `<BUILD>` green.
 - [ ] 8. Update branch state: Progress, Changes line.
 - [ ] 9. Commit: `feat: grader with judge and self-test (experiment framework)`.
 
@@ -297,9 +297,9 @@ Executor note: run inline, task by task in table order. Tasks in one wave share 
 - [ ] 2. Write failing `queue.test.mjs` with two fake runs: the same question at once creates one item linked to both and one answer resumes both (E34); an answer for an aborted run is stored without a resume, exit 0 (E35); `--same-as <bank-id>` sets the item's `bank_id` and both runs resume (E70); a suggestion is never applied without `--same-as`; `exp queue` shows run codes, not arm ids.
 - [ ] 3. Implement `queue.mjs` (polling every 5 seconds, resume only when `bank_id` is set); expect PASS.
 - [ ] 4. Add `bank` mode to `answerer.mjs` and the pause and resume path to `driver.mjs`; add a driver test where a bank miss pauses the run, `exp answer` resumes it, and waiting time is excluded from `agent_s`.
-- [ ] 5. Write `commands/queue.mjs` and `commands/answer.mjs`; `--audit` lists automatic matches with both texts.
+- [x] 5. Write `commands/queue.mjs` and `commands/answer.mjs`; `--audit` lists automatic matches with both texts.
 - [ ] 6. `<BUILD>` green.
-- [ ] 7. Update branch state: Progress, Changes line.
+- [x] 7. Update branch state: Progress, Changes line.
 - [ ] 8. Commit: `feat: answer bank, queue and pause-resume (experiment framework)`.
 
 ### T7: Report
@@ -319,9 +319,9 @@ Executor note: run inline, task by task in table order. Tasks in one wave share 
 - [ ] 2. Implement `stats.mjs`; expect PASS.
 - [ ] 3. Write failing `report.test.mjs`: the three CSVs have exactly the columns in spec `data-model.md` § Reports; a run without grades is listed and skipped for quality columns (E52); a credential pattern in any output exits 9 and nothing is renamed, with a git sha and a base64 header not matching (E51); aborted runs count in cost medians and `n_aborted` only.
 - [ ] 4. Implement `report.mjs` and `commands/report.mjs`; expect PASS.
-- [ ] 5. `<BUILD>` green.
+- [x] 5. `<BUILD>` green.
 - [ ] 6. Update branch state: Progress, Changes line.
-- [ ] 7. Commit: `feat: report with medians, geometric means and verdicts (experiment framework)`.
+- [x] 7. Commit: `feat: report with medians, geometric means and verdicts (experiment framework)`.
 
 ### T9: Pilot run and review
 **Delivers:** the pilot dataset and the operator's arm decision | **Satisfies:** N1, N5, F12 | **Depends on:** T3, T4, T6, T7, T8 | **Wave:** 6
@@ -339,9 +339,9 @@ Executor note: run inline, task by task in table order. Tasks in one wave share 
 - [ ] 2. GATE: ask the operator to confirm the ceilings in `pilot-001.json` (computed from the T2 toy costs) and that they are available while the batch runs; do not start real calls before the yes.
 - [ ] 3. GATE: run `exp grade --self-test` and `exp answerer --self-test` against the real model (real calls); require the order good over mediocre over bad, scores inside `bands.json`, the canary keeping its band, 3 of 3 silent and at least 2 of 3 covered answers (E32, E46); if a band is wrong, change `bands.json` once, record why in the branch state and rerun.
 - [ ] 4. GATE: run `exp run pilot-001` (9 real runs, three arms by three replicates). Do not edit files under `workflow/experiments/` during the batch.
-- [ ] 5. Run `exp grade` for every run that ended `done` (extraction runs automatically at the end of `exp run`); compare each run's extracted cost with the CLI total (E42, N1).
+- [x] 5. Run `exp grade` for every run that ended `done` (extraction runs automatically at the end of `exp run`); compare each run's extracted cost with the CLI total (E42, N1).
 - [ ] 6. Check the T9 pass criteria in spec `implementation-order.md`: at least 7 of 9 `complete`; at least 6 of 9 with a CLI reference total and all within 2 percent; no `judge_error`; coefficient of variation of `arm_cost_usd` per arm; GATE: add 2 replicates (cap 5) for any arm above 0.5 only after the operator confirms the extra spend.
-- [ ] 7. Run `exp report pilot-001`; cross-check total cost against the ponytail board's CSV for the same days and note any difference.
+- [x] 7. Run `exp report pilot-001`; cross-check total cost against the ponytail board's CSV for the same days and note any difference.
 - [ ] 8. Record the verdicts and findings in the branch state; GATE: ask the operator which arms run on W7 (top two if time is short). Do not choose for them.
 - [ ] 9. Commit the CSVs and the branch state: `docs: pilot results for the experiment framework (experiment framework)`.
 

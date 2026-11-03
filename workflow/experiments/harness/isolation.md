@@ -1,6 +1,6 @@
 # Isolation and transcript findings (T2 spike)
 
-Measured 2026-11-03 against Claude Code **2.1.316** on Windows 11, subscription login (`apiKeySource: "none"`), model `claude-sonnet-5-5`, in a throwaway clone at `../exp-runs/spike-clone`. Raw output stayed under `local/spike/` (gitignored); the scrubbed fixtures are in `fixtures/`. Spike spend: about 0.88 USD of the 3 USD limit. Items marked **PENDING Q~1** wait for the owner's decision on Deviation D~1 in the branch state; T3 does not start before that.
+Measured 2026-11-03 against Claude Code **2.1.316** on Windows 11, subscription login (`apiKeySource: "none"`), model `claude-sonnet-5-5`, in a throwaway clone at `../exp-runs/spike-clone`. Raw output stayed under `local/spike/` (gitignored); the scrubbed fixtures are in `fixtures/`. Spike spend: about 0.88 USD of the 3 USD limit. The hooks and built-in findings led to a spec amendment that the owner approved; the derivation below is now in `runtime.md` § Isolation.
 
 ## Mandated flag set (verified to run)
 
@@ -30,7 +30,7 @@ Keys: `cwd, session_id, tools, mcp_servers, model, permissionMode, slash_command
 
 `--setting-sources project` kept all user-level skills, plugins and settings out of the lists: the only non-project entries are the built-ins above. The clone's own `.claude/skills` (17) and `.claude/agents` (10) were listed in full.
 
-## Expected-set derivation (PENDING Q~1: amends runtime.md § Isolation step 2)
+## Expected-set derivation (now runtime.md § Isolation step 2)
 
 Compare as sorted sets, ignoring `config.json` `isolation_ignore`:
 
@@ -50,7 +50,7 @@ The init record carries no hooks. What the stream does carry:
 - `system/hook_started` and `system/hook_response` events (fields `hook_name` e.g. `SessionStart:startup`, `hook_event`, `outcome`), emitted **before** the init record. The probe with the superpowers plugin showed exactly one pair (its SessionStart hook, `outcome: success`, which injects text into the session). The plain probe showed none.
 - Only hooks that fired are visible. A `PreToolUse` or other event hook of a plugin appears only if the probe triggers it.
 
-Proposed replacement for the hooks set (PENDING Q~1): launch with `--include-hook-events`; the observed set is the `hook_name` values of the probe; the expected set is the SessionStart hooks declared in each arm plugin's `hooks/hooks.json` (none for the clone, whose settings are stripped); any observed hook not expected aborts as `isolation_mismatch`. Non-SessionStart hooks of an arm plugin cannot be confirmed by the probe; they are covered by the plugin directory hash in the approval (E4) and by comparing only the plugin files.
+Replacement for the hooks set (approved; now runtime.md § Isolation step 4): launch with `--include-hook-events`; the observed set is the `hook_name` values of the probe; the expected set is the SessionStart hooks declared in each arm plugin's `hooks/hooks.json` (none for the clone, whose settings are stripped); any observed hook not expected aborts as `isolation_mismatch`. Non-SessionStart hooks of an arm plugin cannot be confirmed by the probe; they are covered by the plugin directory hash in the approval (E4) and by comparing only the plugin files.
 
 ## Cost and usage
 
@@ -58,7 +58,7 @@ Proposed replacement for the hooks set (PENDING Q~1): launch with `--include-hoo
 - `usage.cache_creation` splits writes into `ephemeral_5m_input_tokens` and `ephemeral_1h_input_tokens`; most writes were 1-hour in the plain probes, 5-minute appeared with subagents. `events.csv` stores one `cache_write_tok` (their sum), but the cost needs the split, so T5 keeps the two buckets in `usage.json`.
 - Budget cap `--max-budget-usd` is **per invocation**: a resume with a 0.05 cap ran fine at a session total of 0.0855 (this invocation cost 0.0044). So "ceiling minus spend so far" in F14 is right.
 - Budget stop shape: process exit 1; result `subtype: "error_max_budget_usd"`, `terminal_reason: "budget_exhausted"`, `is_error: true`, `errors: ["Reached maximum budget ($0.01)"]`. It overshot a 0.01 cap by 0.03 (the first call cannot be cut). Fixture: `fixtures/cli-result-budget-stop.json`. A normal result has `subtype: "success"`, `terminal_reason: "completed"`.
-- Prices: `pricing.json` was filled from the CLI's own `costUSD` by an exact fit (zero residual over seven results): input 2, output 10, cache read 0.1, cache write 5m 2.5, cache write 1h 4 USD per million. The ponytail table (`hooks/ponytail-band-import.js`, entry `claude-sonnet-5-5`) gives the same five numbers, so there is no difference to note. **The Anthropic pricing page was not consulted** (no page fetch in this session); the owner should confirm the numbers at the T9 gate.
+- Prices: `pricing.json` was filled from the CLI's own `costUSD` by an exact fit (zero residual over seven results): input 2, output 10, cache read 0.1, cache write 5m 2.5, cache write 1h 4 USD per million. The ponytail table (`hooks/ponytail-band-import.js`, entry `claude-sonnet-5-5`) gives the same five numbers, so there is no difference to note. The Anthropic pricing page (platform.claude.com/docs/en/about-claude/pricing, Claude Sonnet 5.5 row) was fetched afterwards and lists the same five numbers (input 2, 5m write 2.5, 1h write 4, cache hit 0.10, output 10).
 
 ## Transcripts
 

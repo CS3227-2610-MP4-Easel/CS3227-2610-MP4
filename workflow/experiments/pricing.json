@@ -7,7 +7,7 @@
       "cache_read": 0.1,
       "cache_write_5m": 2.5,
       "cache_write_1h": 4,
-      "source": "CLI modelUsage costUSD (costBasis list), exact fit over 7 spike results with zero residual; identical to the ponytail hooks/ponytail-band-import.js table. The Anthropic pricing page was not consulted.",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing (Claude Sonnet 5.5 row); also equals the CLI costUSD list basis (exact fit over 7 results) and the ponytail band-import table",
       "checked": "2026-11-03"
     }
   }
