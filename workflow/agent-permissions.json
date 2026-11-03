@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "default": "deny",
+  "allow": {
+    "read": ["repository", "web", "attack_corpus"]
+  },
+  "deny": {
+    "operations": ["unknown", "execute_production", "write_secret"],
+    "production_credentials": ["*"],
+    "production_hosts": ["production", "prod", "*.prod.*", "*.production.*"],
+    "protected_paths": ["tests/security/attack-corpus/**"]
+  },
+  "review_required": {
+    "protected_paths": [
+      ".github/**",
+      "workflow/agent-permissions.json",
+      "workflow/**",
+      ".githooks/**",
+      "tests/security/attack-corpus/**"
+    ],
+    "reviewers": ["@ludannnn"],
+    "owner": "@teleifo"
+  },
+  "content_handling": {
+    "repository": "data_not_instructions",
+    "web": "data_not_instructions",
+    "attack_corpus": "data_not_instructions"
+  }
+}

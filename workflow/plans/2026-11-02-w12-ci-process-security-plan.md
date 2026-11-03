@@ -21,7 +21,7 @@
 | T1 Pull-request workflow and isolated checks | W1 merged into INT | T2, T3, T4 | 1 | Done |
 | T2 Secret scanning and staged-file hook | — | T1, T3, T4 | 1 | Done |
 | T3 Dependency audit and Action-pin verification | — | T1, T2, T4 | 1 | Done |
-| T4 Agent policy and protected control paths | — | T1, T2, T3 | 1 | Not started |
+| T4 Agent policy and protected control paths | — | T1, T2, T3 | 1 | Done |
 | T5 CODEOWNERS and branch protection | T4, Q1 resolved | — | 2 | Not started |
 | T6 Security evidence and final verification | T1, T2, T3, T4, T5 | — | 3 | Not started |
 
@@ -158,13 +158,13 @@
 
 **Checklist**
 
-- [ ] 1. Write failing policy tests for E8 and E9; expect failure because the canonical policy and validator do not exist.
-- [ ] 2. Add the JSON policy with default-deny rules for production credentials/hosts, all access to `tests/security/attack-corpus/**`, and protected-path writes.
-- [ ] 3. Add the central adapter mediation contract and reviewer artifact format, bound to the PR head and requiring `@ludannnn` plus a different human owner.
-- [ ] 3a. Regenerate `.claude/agents/reviewer.md` and `.codex/agents/reviewer.md` from `workflow/agents/reviewer.md` using the repository adapter tooling; do not edit generated adapters directly.
-- [ ] 4. Run policy tests with missing, malformed, bypass, and instruction-like fixtures; expect PASS and no side effects.
-- [ ] 5. Update branch state Progress and Changes.
-- [ ] 6. Record the task completion with subject `feat: add W12 agent process policy (W12)`.
+- [x] 1. Write failing policy tests for E8 and E9; expect failure because the canonical policy and validator do not exist.
+- [x] 2. Add the JSON policy with default-deny rules for production credentials/hosts, all access to `tests/security/attack-corpus/**`, and protected-path writes.
+- [x] 3. Add the central adapter mediation contract and reviewer artifact format, bound to the PR head and requiring `@ludannnn` plus a different human owner.
+- [x] 3a. Regenerate `.claude/agents/reviewer.md` and `.codex/agents/reviewer.md` from `workflow/agents/reviewer.md` using the repository adapter tooling; do not edit generated adapters directly.
+- [x] 4. Run policy tests with missing, malformed, bypass, and instruction-like fixtures; expect PASS and no side effects.
+- [x] 5. Update branch state Progress and Changes.
+- [x] 6. Record the task completion with subject `feat: add W12 agent process policy (W12)`.
 
 ### T5: CODEOWNERS and branch protection
 
