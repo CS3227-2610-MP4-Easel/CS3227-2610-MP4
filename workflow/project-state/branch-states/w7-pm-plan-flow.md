@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S2 | 2026-11-03 | Claude Sonnet 5.5 | W~1 | Active | T1 and T2 done; spec amended (C~11); wave 2 next | T3 step 1 (fake CLI and classifier); T3, T5 and T8 may run together (no shared files) | 2026-11-03 |
+| S2 | 2026-11-03 | Claude Sonnet 5.5 | W~1 | Active | T1, T2, T3 done; wave 2 continues | T5 step 1 (extractor tests on the T2 fixtures); then T8; T4 is next after T3 and may start now | 2026-11-03 |
 | S1 | 2026-11-03 | Claude Sonnet 5.5 | W~1 | Paused | Plan approved (gate 2); no task started; handed to a new session by the owner | New session: read STATE.md, guardrails.md and this file, run `lint.mjs plan workflow/plans/2026-11-03-experiment-framework.md --approved`, add your own session row, then run executing-plans-lite from T1 step 1 (T1 and T2 may run together; T2 step 1 is a GATE for the owner's spend limit) | 2026-11-03 |
 
 **Remaining**
@@ -40,7 +40,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W~1 | Experiment framework (agent-workflow evaluation) | Planned | [spec](../../specs/2026-11-03-experiment-framework-design.md) (approved 2026-11-03; amended C~10) | [plan](../../plans/2026-11-03-experiment-framework.md) (approved 2026-11-03) | Big · T1 and T2 done; wave 2 (T3, T5, T8) next | — |
+| W~1 | Experiment framework (agent-workflow evaluation) | Planned | [spec](../../specs/2026-11-03-experiment-framework-design.md) (approved 2026-11-03; amended C~10) | [plan](../../plans/2026-11-03-experiment-framework.md) (approved 2026-11-03) | Big · T1, T2, T3 done; T5 and T8 next, then T4 | — |
 | W7 | PM plan flow (proposals, pm) | Not started | — | — | untouched on this branch; spec stage needs only W1 merged, build waits on W2, W3, W5, W6 | — |
 
 ---
@@ -56,6 +56,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-03 | Spec approved at gate 1 by the owner | W~1 | this commit |
 | 2026-11-03 | Spec amended for W1 (PR #5): W7 spec stage needs only W1's frozen interfaces; pilot base_commit and config.json handling noted | W~1 | this commit |
 | 2026-11-03 | Spec revised after two review rounds: runtime.md added, containment, isolation, bank, metrics, cost and reporting rules tightened | W~1 | this commit |
+| 2026-11-03 | T3 done: classifier, spawn (native launcher only, environment allowlist, tree kill, shared no-tools builder), clone, containment hashes, isolation check, run state and manifest, approvals, budget, the run driver and `exp run` (33 driver tests with the scripted fake CLI, plus 119 others). Plan-level notes: the tools comparison ignores `allowed_tools` (they are permission rules) and ignores denied names on both sides; a batch stopped by its ceiling exits 5; the 40-question cap is a `deps.maxQuestions` seam so its test needs 4 spawns not 42; driver slices one and two were committed together; `exp run --dry` is covered by the driver test, since the real tree has no experiment until T8; `--setting-sources ""` and `--tools ""` verified on the real CLI (0.01 USD) | W~1 | this commit |
 | 2026-11-03 | Spec amended for the T2 findings (C~11): F4, E25, E62, N4 and `runtime.md` § Isolation use a built-in baseline and observed SessionStart hook events; E71 added; plan updated (E71 in T3, traceability). Pricing confirmed against the Anthropic pricing page; T2 Done | W~1 | this commit |
 | 2026-11-03 | T2 spike run for real (owner approved a 3 USD cap on the subscription login; 0.88 USD used) against Claude Code 2.1.316: findings in `harness/isolation.md`, five scrubbed fixtures, `pricing.json` filled for `claude-sonnet-5-5`. Toy costs per arm: superpowers 0.1312, lite 0.1358, full 0.2113 USD; ceilings by the plan's rule: run 0.6338, batch 3.169 USD. Key facts: `total_cost_usd` is cumulative over resumes and includes subagents (transcript sums match to the token); `--max-budget-usd` is per invocation; duplicate message ids occur; the init record has no hooks set (D~1); OpenTelemetry console export gave no output; the npm `.cmd` shim fails without a shell (EINVAL) | W~1 | this commit |
 | 2026-11-03 | T1 done: schema validators, secrets scan, cost function, `exp check` and the command loader (50 tests green). Plan-level notes: `--secrets` scans all of `EXP_ROOT` except `local/` (not only `experiments/`) so T8 can scan the plugin copy; `exp check` prints the CLI version line only once T3 adds the launcher; a task whose id starts with `pilot-` is held to F16 | W~1 | this commit |

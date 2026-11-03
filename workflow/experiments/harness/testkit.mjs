@@ -12,7 +12,7 @@ export const tmpDir = (prefix = 'exp-test-') => fs.mkdtempSync(path.join(os.tmpd
 /** Writes the script and returns a launcher object for runProcess/driver plus helpers to read the recorded calls. */
 export function fakeCli(steps, dir = tmpDir('exp-fake-')) {
   const scriptFile = path.join(dir, 'script.json');
-  fs.writeFileSync(scriptFile, JSON.stringify({ steps }));
+  fs.writeFileSync(scriptFile, JSON.stringify(Array.isArray(steps) ? { steps } : steps));
   return {
     dir,
     scriptFile,
@@ -20,6 +20,10 @@ export function fakeCli(steps, dir = tmpDir('exp-fake-')) {
     env: { FAKE_CLAUDE_SCRIPT: scriptFile },
     calls: () => {
       const f = `${scriptFile}.calls.jsonl`;
+      return fs.existsSync(f) ? fs.readFileSync(f, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l)) : [];
+    },
+    activity: () => {
+      const f = `${scriptFile}.activity.jsonl`;
       return fs.existsSync(f) ? fs.readFileSync(f, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l)) : [];
     },
     pids: () => {
@@ -37,7 +41,7 @@ export function pidAlive(pid) {
 
 import { execFileSync } from 'node:child_process';
 
-export const git = (cwd, ...args) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd, encoding: 'utf8' }).trim();
+export const git = (cwd, ...args) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'core.autocrlf=false', ...args], { cwd, encoding: 'utf8' }).trim();
 export const put = (file, data) => {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, typeof data === 'string' ? data : `${JSON.stringify(data, null, 2)}\n`);
@@ -57,7 +61,8 @@ export function makeExperimentRepo({ answerMode = 'sheet', plugin = false, tweak
   put(path.join(repoRoot, 'CLAUDE.md'), 'claude');
   put(path.join(repoRoot, '.claude', 'skills', 's1', 'SKILL.md'), 's1');
   put(path.join(repoRoot, 'src', 'app.txt'), 'app');
-  put(path.join(expRoot, 'config.json'), { worktrees_root: '../exp-runs-test', claude_bin: 'claude', auth_mode: 'login', isolation_ignore: [] });
+  const worktreesRoot = tmpDir('exp-wt-');
+  put(path.join(expRoot, 'config.json'), { worktrees_root: worktreesRoot, claude_bin: 'claude', auth_mode: 'login', isolation_ignore: [] });
   put(path.join(expRoot, 'pricing.json'), {
     schema_version: 1,
     models: { 'claude-sonnet-5-5': { input: 2, output: 10, cache_read: 0.1, cache_write_5m: 2.5, cache_write_1h: 4, source: 'test', checked: '2026-11-03' } },
@@ -91,7 +96,7 @@ export function makeExperimentRepo({ answerMode = 'sheet', plugin = false, tweak
   const sha = git(repoRoot, 'rev-parse', 'HEAD');
   const taskFile = path.join(expRoot, 'tasks', 'task-one', 'task.json');
   put(taskFile, { ...JSON.parse(fs.readFileSync(taskFile, 'utf8')), base_commit: sha });
-  const ctx = { repoRoot, expRoot, sha, home: tmpDir('exp-home-') };
+  const ctx = { repoRoot, expRoot, sha, worktreesRoot, home: tmpDir('exp-home-'), configDir: tmpDir('exp-cfg-') };
   tweak?.(ctx);
   if (commit) {
     git(repoRoot, 'add', '-A');

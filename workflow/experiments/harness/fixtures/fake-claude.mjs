@@ -18,11 +18,19 @@ if (argv.includes('--version')) {
 }
 
 const script = JSON.parse(fs.readFileSync(scriptFile, 'utf8'));
-const statePath = `${scriptFile}.state.json`;
+// per_cwd: {"-r1": [steps], "-r2": [steps]} picks the list whose key the working directory contains.
+// Counters live in one state file per list, so parallel runs (one list each) never race on a shared file.
+const key = Object.keys(script.per_cwd ?? {}).find((k) => process.cwd().includes(k)) ?? '*';
+const list = key === '*' ? script.steps : script.per_cwd[key];
+const statePath = `${scriptFile}.state${key === '*' ? '' : `.${key.replace(/[^a-z0-9]/gi, '_')}`}.json`;
 const state = fs.existsSync(statePath) ? JSON.parse(fs.readFileSync(statePath, 'utf8')) : { n: 0, sessions: {} };
-const step = script.steps[Math.min(state.n, script.steps.length - 1)];
 const index = state.n;
 state.n += 1;
+const step = list[Math.min(index, list.length - 1)];
+const activity = (o) => fs.appendFileSync(`${scriptFile}.activity.jsonl`, `${JSON.stringify(o)}
+`);
+activity({ event: 'start', pid: process.pid, t: Date.now(), cwd: process.cwd() });
+process.on('exit', () => activity({ event: 'end', pid: process.pid, t: Date.now() }));
 
 const arg = (name) => { const i = argv.indexOf(name); return i >= 0 ? argv[i + 1] : undefined; };
 const all = (name) => argv.flatMap((a, i) => (a === name ? [argv[i + 1]] : []));
