@@ -1,6 +1,16 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { SECURITY_REVIEWER, getRequiredHumanApprover, isSensitivePath, validateSecurityReview } from "../../scripts/check-security-review.mjs";
+import {
+  BOOTSTRAP_BASE_SHA,
+  BOOTSTRAP_PATHS,
+  BOOTSTRAP_TARGET_BRANCH,
+  SECURITY_REVIEWER,
+  getRequiredHumanApprover,
+  isSensitivePath,
+  parseSensitiveManifestText,
+  resolveBaseSensitivePatterns,
+  validateSecurityReview,
+} from "../../scripts/check-security-review.mjs";
 
 const headSha = "a".repeat(40);
 const sensitivePaths = [".github/workflows/ci.yml"];
@@ -43,6 +53,48 @@ test("F10 canonical manifest classification covers all control surfaces", () => 
   assert.equal(isSensitivePath("src/be/contracts/src/index.ts"), true);
   assert.equal(isSensitivePath("tests/security/attack-corpus/prompt.txt"), true);
   assert.equal(isSensitivePath("README.md"), false);
+});
+
+test("F14/E21 bootstrap uses the exact fixed rollout identity and list", () => {
+  assert.equal(BOOTSTRAP_TARGET_BRANCH, "development");
+  assert.equal(BOOTSTRAP_BASE_SHA, "7bd65440023a0123ac92445e5b6e58ec838ee57c");
+  assert.deepEqual(resolveBaseSensitivePatterns({
+    baseManifest: null,
+    baseBranch: BOOTSTRAP_TARGET_BRANCH,
+    baseSha: BOOTSTRAP_BASE_SHA,
+    prNumber: "42",
+    bootstrapPrNumber: "42",
+  }), BOOTSTRAP_PATHS);
+});
+
+test("F14/E22/E24 bootstrap rejects wrong identity, unknown keys, and duplicate keys", () => {
+  assert.throws(() => resolveBaseSensitivePatterns({
+    baseManifest: null,
+    baseBranch: "main",
+    baseSha: BOOTSTRAP_BASE_SHA,
+    prNumber: "42",
+    bootstrapPrNumber: "42",
+  }), /bootstrap requires the development target/);
+  assert.throws(() => resolveBaseSensitivePatterns({
+    baseManifest: null,
+    baseBranch: BOOTSTRAP_TARGET_BRANCH,
+    baseSha: BOOTSTRAP_BASE_SHA,
+    prNumber: "41",
+    bootstrapPrNumber: "42",
+  }), /bootstrap requires the configured pull request/);
+  assert.throws(() => parseSensitiveManifestText('{"version":1,"paths":[],"extra":true}'), /exactly version and paths/);
+  assert.throws(() => parseSensitiveManifestText('{"version":1,"version":1,"paths":[]}'), /duplicate JSON object key/);
+});
+
+test("F14/E23/E25 post-rollout missing or malformed manifests fail closed", () => {
+  assert.throws(() => resolveBaseSensitivePatterns({
+    baseManifest: null,
+    baseBranch: BOOTSTRAP_TARGET_BRANCH,
+    baseSha: "c".repeat(40),
+    prNumber: "42",
+    bootstrapPrNumber: "42",
+  }), /base sensitive-path manifest is required after bootstrap/);
+  assert.throws(() => parseSensitiveManifestText('{"version":1,"paths":["workflow/**","workflow/**"]}'), /paths must be unique/);
 });
 
 test("F13/E8 missing and stale review artifacts fail closed", () => {

@@ -37,6 +37,9 @@ test("E1/E2/E12/E15 workflow is isolated and gates on W1", async () => {
   assert.match(packageManifest.scripts?.test ?? "", /find tests src\/be -type f -name '\*\.test\.ts' -print/);
   assert.match(packageManifest.scripts?.["check:security-review"] ?? "", /check-security-review\.mjs/);
   assert.match(workflow, /npm run check:security-review -- --base-sha/);
+  assert.match(workflow, /--base-branch "\$\{\{ github\.event\.pull_request\.base\.ref \}\}"/);
+  assert.match(workflow, /--pr-number "\$\{\{ github\.event\.pull_request\.number \}\}"/);
+  assert.match(workflow, /--bootstrap-pr-number "\$\{\{ vars\.W12_BOOTSTRAP_PR_NUMBER \}\}"/);
   assert.match(packageManifest.scripts?.contract ?? "", /src\/be\/api\/test\/openapi-parity\.test\.ts/);
   assert.match(packageManifest.scripts?.contract ?? "", /src\/be\/contracts\/test\/openapi\.test\.ts/);
 });

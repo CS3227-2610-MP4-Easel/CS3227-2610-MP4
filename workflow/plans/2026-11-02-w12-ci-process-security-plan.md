@@ -25,7 +25,7 @@
 | T3 Dependency audit and Action-pin verification | — | T1, T2, T4 | 1 | Done |
 | T4 Agent policy and protected control paths | — | T1, T2, T3 | 1 | Done |
 | T5 Sensitive-path manifest, CODEOWNERS and branch protection | T4, Q1 resolved | — | 2 | Done |
-| T6 Security evidence and final verification | T1, T2, T3, T4, T5 | — | 3 | Amendment pending approval |
+| T6 Security evidence and final verification | T1, T2, T3, T4, T5 | — | 3 | In progress |
 
 ## Traceability
 
@@ -226,7 +226,7 @@
 - [x] 3. Add the workflow review fetch with only `pull-requests: read`, invoke the checker with `--reviews-file`, and verify the artifact cannot substitute for either GitHub approval.
 - [x] 4. Add regression tests for E3–E14 and E16–E20, including forged artifacts, normalized GitHub logins, dismissed/changed-request states, equal-timestamp ID tie-breaking, and multi-page responses; verify no secret canary appears in logs.
 - [x] 5. Replace the fixed `human_owner` config with the author-dependent approver mapping, amend the provider-neutral reviewer contract, regenerate the provider adapters, and add assertions that both required GitHub reviews are distinct from the PR author.
-- [ ] 5a. Add the exact normative bootstrap list, require `development`, base SHA `7bd65440023a0123ac92445e5b6e58ec838ee57c`, and PR number equal to `W12_BOOTSTRAP_PR_NUMBER`, read the head manifest by SHA with duplicate-key-aware parsing, reject unknown keys/duplicates/order changes, validate changed or deleted manifests after rollout, and ensure later missing or malformed base manifests fail closed.
+- [x] 5a. Add the exact normative bootstrap list, require `development`, base SHA `7bd65440023a0123ac92445e5b6e58ec838ee57c`, and PR number equal to `W12_BOOTSTRAP_PR_NUMBER`, read the head manifest by SHA with duplicate-key-aware parsing, reject unknown keys/duplicates/order changes, validate changed or deleted manifests after rollout, and ensure later missing or malformed base manifests fail closed.
 - [ ] 6. Run `npm test`, `npm run typecheck`, `npm run lint`, `npm --workspace @agile/db run prisma:validate`, `node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026-11-02-w12-ci-process-security-design.md --approved`, `node .claude/skills/writing-specs-lite/scripts/lint.mjs plan workflow/plans/2026-11-02-w12-ci-process-security-plan.md --approved`, and `git diff --check`.
 - [ ] 7. Update the plan, branch state, and Changes line; confirm the working tree is clean.
 - [ ] 8. Record the task completion with subject `test: verify W12 process security controls (W12)`.

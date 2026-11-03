@@ -5,6 +5,14 @@ import { spawnSync } from "node:child_process";
 export const SECURITY_REVIEWER = "@ludannnn";
 export const HUMAN_OWNER = "@teleifo";
 export const HUMAN_OWNER_FOR_DEV_LEAD = "@xiao-congchen";
+export const BOOTSTRAP_TARGET_BRANCH = "development";
+export const BOOTSTRAP_BASE_SHA = "7bd65440023a0123ac92445e5b6e58ec838ee57c";
+export const BOOTSTRAP_PATHS = Object.freeze([
+  ".github/**", "CODEOWNERS", "package.json", "package-lock.json", ".githooks/**",
+  ".gitleaks.toml", ".gitleaksignore", ".gitignore", "scripts/**", "workflow/**",
+  ".claude/**", ".codex/**", "src/be/contracts/**", "src/be/*/test/**", "tests/**",
+  "tests/security/attack-corpus/**",
+]);
 
 function normalizeLogin(value) {
   if (typeof value !== "string" || value.trim() === "") return null;
@@ -16,8 +24,12 @@ export function getRequiredHumanApprover(prAuthor) {
 }
 
 export function parseSensitiveManifest(manifest) {
-  if (!manifest || manifest.version !== 1 || !Array.isArray(manifest.paths)) {
-    throw new Error("sensitive-path manifest must contain version 1 and a paths array");
+  if (!manifest || typeof manifest !== "object" || Array.isArray(manifest)
+    || Object.keys(manifest).length !== 2
+    || !Object.prototype.hasOwnProperty.call(manifest, "version")
+    || !Object.prototype.hasOwnProperty.call(manifest, "paths")
+    || manifest.version !== 1 || !Array.isArray(manifest.paths)) {
+    throw new Error("sensitive-path manifest must contain exactly version and paths, version 1, and a paths array");
   }
   if (manifest.paths.some((path) => typeof path !== "string" || path.trim() === "")) {
     throw new Error("sensitive-path manifest paths must be non-empty strings");
@@ -26,6 +38,48 @@ export function parseSensitiveManifest(manifest) {
     throw new Error("sensitive-path manifest paths must be unique");
   }
   return manifest.paths;
+}
+
+function rejectDuplicateJsonObjectKeys(text) {
+  const objectKeys = [];
+  for (let index = 0; index < text.length; index += 1) {
+    if (text[index] === '"') {
+      const start = index;
+      index += 1;
+      while (index < text.length) {
+        if (text[index] === "\\") index += 2;
+        else if (text[index] === '"') break;
+        else index += 1;
+      }
+      if (index >= text.length) break;
+      let next = index + 1;
+      while (/\s/.test(text[next] ?? "")) next += 1;
+      if (text[next] === ":" && objectKeys.length > 0) {
+        const key = JSON.parse(text.slice(start, index + 1));
+        const keys = objectKeys.at(-1);
+        if (keys.has(key)) throw new Error(`duplicate JSON object key: ${key}`);
+        keys.add(key);
+      }
+    } else if (text[index] === "{") objectKeys.push(new Set());
+    else if (text[index] === "}") objectKeys.pop();
+  }
+}
+
+export function parseSensitiveManifestText(text) {
+  rejectDuplicateJsonObjectKeys(text);
+  return parseSensitiveManifest(JSON.parse(text));
+}
+
+export function resolveBaseSensitivePatterns({ baseManifest, baseBranch, baseSha, prNumber, bootstrapPrNumber }) {
+  if (baseManifest !== null && baseManifest !== undefined) {
+    return typeof baseManifest === "string" ? parseSensitiveManifestText(baseManifest) : parseSensitiveManifest(baseManifest);
+  }
+  if (baseBranch !== BOOTSTRAP_TARGET_BRANCH) throw new Error("bootstrap requires the development target");
+  if (baseSha === BOOTSTRAP_BASE_SHA && (!bootstrapPrNumber || String(prNumber) !== String(bootstrapPrNumber))) {
+    throw new Error("bootstrap requires the configured pull request");
+  }
+  if (baseSha !== BOOTSTRAP_BASE_SHA) throw new Error("base sensitive-path manifest is required after bootstrap");
+  return BOOTSTRAP_PATHS;
 }
 
 const LOCAL_SENSITIVE_PATTERNS = parseSensitiveManifest(JSON.parse(readFileSync("workflow/security-sensitive-paths.json", "utf8")));
@@ -115,11 +169,13 @@ function parseArgs(args) {
   const options = {};
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
-    if (["--head-sha", "--base-sha", "--pr-author", "--artifact", "--reviews-file"].includes(arg)) {
+    if (["--head-sha", "--base-sha", "--base-branch", "--pr-number", "--bootstrap-pr-number", "--pr-author", "--artifact", "--reviews-file"].includes(arg)) {
       options[arg.slice(2).replaceAll("-", "_")] = args[++index];
     } else throw new Error(`unknown security-review option: ${arg}`);
   }
-  if (!options.head_sha || !options.base_sha || !options.pr_author) throw new Error("--base-sha, --head-sha, and --pr-author are required");
+  if (!options.head_sha || !options.base_sha || !options.base_branch || !options.pr_number || !options.pr_author) {
+    throw new Error("--base-sha, --head-sha, --base-branch, --pr-number, and --pr-author are required");
+  }
   return options;
 }
 
@@ -129,10 +185,14 @@ function changedPaths(baseSha, headSha) {
   return result.stdout.split("\n").map((path) => path.trim()).filter(Boolean);
 }
 
-function baseManifest(baseSha) {
-  const result = spawnSync("git", ["show", `${baseSha}:workflow/security-sensitive-paths.json`], { encoding: "utf8" });
-  if (result.error || result.status !== 0) throw new Error("unable to resolve the base sensitive-path manifest");
-  return parseSensitiveManifest(JSON.parse(result.stdout));
+function manifestTextAtSha(sha) {
+  const result = spawnSync("git", ["show", `${sha}:workflow/security-sensitive-paths.json`], { encoding: "utf8" });
+  if (result.error || result.status !== 0) return null;
+  return result.stdout;
+}
+
+function manifestChanged(changed) {
+  return changed.includes("workflow/security-sensitive-paths.json");
 }
 
 export async function runSecurityReview(args = process.argv.slice(2)) {
@@ -142,8 +202,23 @@ export async function runSecurityReview(args = process.argv.slice(2)) {
   try { artifact = JSON.parse(await readFileAsync(artifactPath, "utf8")); }
   catch (error) { if (error?.code !== "ENOENT") throw error; }
 
-  const patterns = baseManifest(options.base_sha);
   const changed = changedPaths(options.base_sha, options.head_sha);
+  const baseText = manifestTextAtSha(options.base_sha);
+  const patterns = resolveBaseSensitivePatterns({
+    baseManifest: baseText,
+    baseBranch: options.base_branch,
+    baseSha: options.base_sha,
+    prNumber: options.pr_number,
+    bootstrapPrNumber: options.bootstrap_pr_number,
+  });
+  const headText = manifestTextAtSha(options.head_sha);
+  if (baseText === null || manifestChanged(changed)) {
+    if (headText === null) throw new Error("head sensitive-path manifest is required");
+    const headPatterns = parseSensitiveManifestText(headText);
+    if (baseText === null && JSON.stringify(headPatterns) !== JSON.stringify(BOOTSTRAP_PATHS)) {
+      throw new Error("bootstrap head manifest must match the fixed list");
+    }
+  }
   const sensitive = changed.some((path) => isSensitivePath(path, patterns));
   let reviews = null;
   if (sensitive && !options.reviews_file) throw new Error("--reviews-file is required for sensitive changes");

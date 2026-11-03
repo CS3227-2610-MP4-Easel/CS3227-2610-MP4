@@ -143,4 +143,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh api --paginate --slurp "/repos/${GITHUB_REPOSITORY}/pulls/${{ github.event.pull_request.number }}/reviews" > "$RUNNER_TEMP/pr-reviews.json"
-      - run: npm run check:security-review -- --base-sha "${{ github.event.pull_request.base.sha }}" --head-sha "${{ github.event.pull_request.head.sha }}" --pr-author "${{ github.event.pull_request.user.login }}" --reviews-file "$RUNNER_TEMP/pr-reviews.json"
+      - run: npm run check:security-review -- --base-sha "${{ github.event.pull_request.base.sha }}" --head-sha "${{ github.event.pull_request.head.sha }}" --base-branch "${{ github.event.pull_request.base.ref }}" --pr-number "${{ github.event.pull_request.number }}" --bootstrap-pr-number "${{ vars.W12_BOOTSTRAP_PR_NUMBER }}" --pr-author "${{ github.event.pull_request.user.login }}" --reviews-file "$RUNNER_TEMP/pr-reviews.json"
