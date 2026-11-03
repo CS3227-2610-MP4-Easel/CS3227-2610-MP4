@@ -4,6 +4,7 @@ The full chronological record of every change, newest first. One line each: what
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-03 | Developer guide checkpoint documented W1 source-root, contracts, filtered DB, API registration, testing, and handover seams | W1 | `docs/guide/` |
 | 2026-11-03 | Folded branch state `w1` | — | archive |
 | 2026-11-03 | Resolved follow-up blockers: Next extension resolution, runtime/type raw-SQL boundary, numeric/array/date/enum OpenAPI fidelity, and trailing blank lines; 71 tests, typechecks, Prisma validation, production build, and diff checks pass | W1 | 41d062a |
 | 2026-11-03 | Follow-up audit confirmed four remaining blockers: frontend production import resolution, runtime raw-SQL exposure, incomplete Zod-to-OpenAPI constraints, and trailing blank lines; fixes started | W1 | S11; PR #5 follow-up |

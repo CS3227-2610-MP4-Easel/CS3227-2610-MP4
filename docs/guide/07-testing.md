@@ -1,6 +1,15 @@
 # 7. Testing
 
-Front end only, from `src/fe`:
+From the repository root:
+
+| Command | Checks |
+|---|---|
+| `npm test` | root tests and all backend tests under `src/be/**/*.test.ts`; PostgreSQL integration uses `W1_INTEGRATION_DATABASE_URL` when set |
+| `npm run typecheck` | backend TypeScript project references, then the standalone `src/fe` typecheck |
+| `npm run lint` | root TypeScript build/lint boundary |
+| `npm --workspace @agile/db run prisma:validate` | validates `src/be/db/prisma/schema.prisma` |
+
+From `src/fe`, the existing frontend checks remain:
 
 | Command | Checks |
 |---|---|
