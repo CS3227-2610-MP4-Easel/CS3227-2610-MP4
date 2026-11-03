@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-03 | Claude Sonnet 5.5 (lead) + reviewer subagents | W~1 | Active | Spec revised after review rounds 1 and 2 (the cap); no open questions; gate 1 asked | On the owner yes to gate 1, write `Status: Approved (Xiao-Congchen, date)` in the spec index, run `lint.mjs spec --approved`, then start `writing-plans-lite`; on changes, fix the files and ask again | 2026-11-03 |
+| S1 | 2026-11-03 | Claude Sonnet 5.5 (lead) + reviewer subagents | W~1 | Active | Spec revised after review rounds 1 and 2 (the cap); no open questions; gate 1 asked | Owner decides whether to amend the approved spec with a provider seam (arm `provider` field and driver interface, Claude driver only in v1); then run `writing-plans-lite` against the spec and ask gate 2 | 2026-11-03 |
 
 **Remaining**
 
@@ -39,7 +39,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W~1 | Experiment framework (agent-workflow evaluation) | Spec'd | [spec](../../specs/2026-11-03-experiment-framework-design.md) (draft, reviewed twice) | — | Big · spec has no open questions; gate 1 asked | — |
+| W~1 | Experiment framework (agent-workflow evaluation) | Spec'd | [spec](../../specs/2026-11-03-experiment-framework-design.md) (approved 2026-11-03) | — | Big · gate 1 approved; plan not started, held for a provider-seam amendment decision | — |
 | W7 | PM plan flow (proposals, pm) | Not started | — | — | untouched on this branch; spec stage needs only W1 merged, build waits on W2, W3, W5, W6 | — |
 
 ---
@@ -50,6 +50,7 @@ describes `INT`; read it for context and write here instead of editing it.
 |---|---|---|---|
 | 2026-11-03 | Branch and worktree created from `INT`; branch state written | W~1 | `32b641b` |
 | 2026-11-03 | Experiment framework spec drafted (index plus six components), lint clean | W~1 | `2cc3ec3` |
+| 2026-11-03 | Spec approved at gate 1 by the owner | W~1 | this commit |
 | 2026-11-03 | Spec amended for W1 (PR #5): W7 spec stage needs only W1's frozen interfaces; pilot base_commit and config.json handling noted | W~1 | this commit |
 | 2026-11-03 | Spec revised after two review rounds: runtime.md added, containment, isolation, bank, metrics, cost and reporting rules tightened | W~1 | this commit |
 
@@ -73,3 +74,4 @@ describes `INT`; read it for context and write here instead of editing it.
 | C~6 | 2026-11-03 | The AD-31 relationship is extension, not replacement: data generation and storage only (see C~2) | Owner asked whether the AD-31 choice meant all tests run through that flow; answered no |
 | C~7 | 2026-11-03 | v1 arms are `superpowers`, `lite` and `full` as in the spec; the harness lives in `workflow/experiments/`; containment is detection plus isolation with the residual risk accepted | Owner answered the spec questions Q2, Q4 and Q5; rejected: `src/tools/experiments/` (mixes tooling into the product tree), a VM now (setup time before the freeze) |
 | C~8 | 2026-11-03 | The SoCLaaS key is not used for experiment runs; the arms run on Claude models through the Claude CLI | Owner asked whether to use it; reasons: SoCLaaS is OpenAI-compatible with open-weight models and reports no cache split, Claude Code needs the Anthropic API, and results on other models would not transfer to the Claude and Codex implementation runs; the key is also shared with the app (architecture §12) |
+| C~9 | 2026-11-03 | Gate 1 approved for the experiment framework spec (Medium tier, SD1 to SD14, lenses Implementer, Tester, Attacker) | Owner approval in chat |

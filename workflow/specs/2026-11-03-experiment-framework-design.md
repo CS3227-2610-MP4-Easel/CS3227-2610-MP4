@@ -1,6 +1,6 @@
 # Experiment Framework Design
 
-- **Status:** Draft
+- **Status:** Approved (Xiao-Congchen, 2026-11-03)
 - **Risk tier:** Medium - the harness launches agents with tool access on a developer machine, may use an API key, and sends agent output to a judge model; it touches no product data, auth or money. The Attacker lens is added for those reasons.
 - **Workstream:** new workstream (permanent id assigned at fold) | **Plan:** not written
 - **Constraints consulted:** AD-30 (generalist baseline on one comparable task), AD-31 (process telemetry), AD-23b (model experiment, Q4), AD-32 (no secrets in the repo), AD-69 (feature freeze 10 Nov), C2 (specs and plans location), C3 (owner approves own work), C8 (source under `src/`, see SD11), `AGENTS.md` § 9 (never edit `workflow/skills/`)
