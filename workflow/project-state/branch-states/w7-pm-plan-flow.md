@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-03 | Claude Sonnet 5.5 (lead) + reviewer subagents | W~1 | Active | Plan drafted and reviewed once; gate 2 asked | On the owner yes write `Status: Approved (Xiao-Congchen, date)` under the plan title, run `lint.mjs plan --approved`, set the workstream to Planned, commit the plan alone, then start `executing-plans-lite` at T1 (T1 and T2 may run together; T2 needs a spend limit from the owner first); on changes fix the plan and ask again | 2026-11-03 |
+| S1 | 2026-11-03 | Claude Sonnet 5.5 | W~1 | Paused | Plan approved (gate 2); no task started; handed to a new session by the owner | New session: read STATE.md, guardrails.md and this file, run `lint.mjs plan workflow/plans/2026-11-03-experiment-framework.md --approved`, add your own session row, then run executing-plans-lite from T1 step 1 (T1 and T2 may run together; T2 step 1 is a GATE for the owner's spend limit) | 2026-11-03 |
 
 **Remaining**
 
@@ -39,7 +39,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W~1 | Experiment framework (agent-workflow evaluation) | Spec'd | [spec](../../specs/2026-11-03-experiment-framework-design.md) (approved 2026-11-03; amended C~10) | [plan](../../plans/2026-11-03-experiment-framework.md) (draft, reviewed once) | Big · plan drafted, gate 2 pending | — |
+| W~1 | Experiment framework (agent-workflow evaluation) | Planned | [spec](../../specs/2026-11-03-experiment-framework-design.md) (approved 2026-11-03; amended C~10) | [plan](../../plans/2026-11-03-experiment-framework.md) (approved 2026-11-03) | Big · gate 2 approved; T1 next | — |
 | W7 | PM plan flow (proposals, pm) | Not started | — | — | untouched on this branch; spec stage needs only W1 merged, build waits on W2, W3, W5, W6 | — |
 
 ---
