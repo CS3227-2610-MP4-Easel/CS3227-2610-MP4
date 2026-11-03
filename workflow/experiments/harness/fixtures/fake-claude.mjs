@@ -93,7 +93,7 @@ const modelUsage = {
 };
 const base = { type: 'result', session_id: sessionId, total_cost_usd: costOf(session), modelUsage, num_turns: 1 };
 if (step.action === 'crash') {
-  out({ ...base, subtype: 'error_during_execution', is_error: true, terminal_reason: 'error', result: undefined });
+  out({ ...base, subtype: 'error_during_execution', is_error: true, terminal_reason: 'error', result: step.text });
   process.exit(1);
 }
 if (overBudget) {

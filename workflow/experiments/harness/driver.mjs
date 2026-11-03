@@ -368,7 +368,11 @@ async function executeRun(ctx, run) {
       state.overshoot_usd = overshoot;
       return abort(ctx, run, 'budget', `spend ${round4(spent)} of ${runCeiling}`);
     }
-    if (reason) return abort(ctx, run, reason, out.result?.subtype ?? `exit ${out.res.code}`);
+    if (reason) {
+      // keep the CLI's own words (a usage-limit stop reports subtype success with is_error true)
+      const said = typeof out.result?.result === 'string' ? sanitizeText(out.result.result, { max: 200 }) : '';
+      return abort(ctx, run, reason, `${out.result?.subtype ?? `exit ${out.res.code}`}${said ? `: ${said}` : ''}`);
+    }
 
     const text = out.result.result;
     const kind = classifyTurn(text);

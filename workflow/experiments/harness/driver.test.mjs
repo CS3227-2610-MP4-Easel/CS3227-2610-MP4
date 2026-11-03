@@ -568,3 +568,11 @@ test('--continue on a run killed while waiting resumes the wait and sends the an
   assert.equal(second.calls()[1].prompt, 'Only the PM.');
   assert.equal(stateOf(ctx).status, 'done');
 });
+
+test('an error stop keeps the CLI message in abort_detail (a usage-limit stop reports subtype success)', async () => {
+  const ctx = makeExperimentRepo();
+  const res = await drive(ctx, fakeCli([PROBE, { action: 'crash', text: "You've hit your 5-hour limit" }]), single);
+  assert.equal(res.exit, 6);
+  assert.equal(stateOf(ctx).abort_reason, 'crash');
+  assert.match(stateOf(ctx).abort_detail, /5-hour limit/);
+});
