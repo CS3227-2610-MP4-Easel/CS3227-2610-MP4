@@ -62,11 +62,14 @@ cannot bypass the rules, direct pushes are denied, and force pushes/deletions ar
 
 ### F10 — Sensitive-path ownership
 
-Given a pull request changes `.github/**`, `CODEOWNERS`, `package.json`, `package-lock.json`,
-`.githooks/**`, `.gitleaks.toml`, `.gitignore`, `scripts/**`, `workflow/**`, `.claude/**`,
-`.codex/**`, `src/be/contracts/**`, `src/be/*/test/**`, `tests/**`, or
-`tests/security/attack-corpus/**`, when GitHub evaluates reviewers, then `CODEOWNERS` requests the
-named human owner and the change cannot merge without that CODEOWNER review.
+Given a pull request changes any path in the canonical sensitive-path manifest
+`workflow/security-sensitive-paths.json` (`.github/**`, `CODEOWNERS`, `package.json`,
+`package-lock.json`, `.githooks/**`, `.gitleaks.toml`, `.gitleaksignore`, `.gitignore`,
+`scripts/**`, `workflow/**`, `.claude/**`, `.codex/**`, `src/be/contracts/**`,
+`src/be/*/test/**`, `tests/**`, or `tests/security/attack-corpus/**`), when GitHub evaluates
+reviewers, then `CODEOWNERS` requests the named repository owner and security reviewers, and the
+change cannot merge without the required CODEOWNER review plus the two current exact-head reviews
+specified by F13.
 
 ### F11 — Credential isolation
 
@@ -85,9 +88,14 @@ non-zero result for a detected secret. `npm run setup:hooks` configures the repo
 
 ### F13 — Security cross-review
 
-Given a change touches the agent policy, attack corpus, authorization tests, workflows, or scanner
-configuration, when the pull request is reviewed, then the security-reviewer agent produces a
-review artifact and a different human owner approves it; the author cannot be the sole reviewer.
+Given a change includes any path matching the base-branch canonical sensitive-path manifest, when
+the pull request is reviewed, then the security-reviewer agent produces a
+head-bound review artifact and `@ludannnn` submits an actual GitHub `APPROVED` review for the exact
+PR head. A different human must also submit an actual GitHub `APPROVED` review for that head. For
+a sensitive PR authored by `@teleifo`, the human approver is `@Xiao-Congchen`; for a sensitive PR
+authored by any other author, the human approver is `@teleifo`. Non-sensitive PRs follow the
+ordinary CODEOWNER rules. The author cannot be either reviewer, and a sensitive PR authored by
+`@ludannnn` fails closed because no alternate security reviewer is configured.
 
 ## Non-functional requirements
 

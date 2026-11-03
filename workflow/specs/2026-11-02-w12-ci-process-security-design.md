@@ -1,6 +1,7 @@
 # W12 CI and Process Security Design
 
-- **Status:** Approved (Dev Lead, 2026-11-02)
+- **Status:** Approved (Dev Lead, 2026-11-04)
+- **Amended 2026-11-04:** PRs authored by `@teleifo` require `@Xiao-Congchen` as the independent human approver while `@ludannnn` remains the security reviewer; see branch-state C~5.
 - **Amended 2026-11-03:** reconciled protected paths and contract-test locations with the merged W1 source-root layout; see branch-state C~3.
 - **Risk tier:** High - the work controls repository permissions, secrets, supply-chain inputs, and merge authority.
 - **Workstream:** W12 | **Plan:** —
@@ -34,6 +35,7 @@ Functional and non-functional requirements are in [requirements](2026-11-02-w12-
 ## 4. Components
 
 - [Requirements](2026-11-02-w12-ci-process-security-design/requirements.md) — observable CI and repository-control requirements.
+- [API](2026-11-02-w12-ci-process-security-design/api.md) — the review-evidence input and GitHub review verification contract.
 - [Conventions](2026-11-02-w12-ci-process-security-design/conventions.md) — workflow, permissions, review, and local-scan rules.
 - [Edge cases](2026-11-02-w12-ci-process-security-design/edge-cases.md) — failure, abuse, and recovery expectations.
 - [Implementation order](2026-11-02-w12-ci-process-security-design/implementation-order.md) — dependency order for the later plan.
@@ -52,3 +54,4 @@ Functional and non-functional requirements are in [requirements](2026-11-02-w12-
 | SD2 | Use `CODEOWNERS` for `.github/`, `.claude/`, `.codex/`, `workflow/`, contracts, and security-test paths; require one human teammate review for protected branches. | Protects controls from self-modification while preserving the three-person workflow. | Dev Lead, 2026-11-02 |
 | SD3 | CI runs without production credentials and uses mock mode for any environment-dependent test. | PR workflows must not receive secrets; production access is CI-environment gated by AD-53. | Dev Lead, 2026-11-02 |
 | SD4 | `@teleifo` administers `development` and `main` and owns protected repository paths; `@ludannnn` is the independent human security reviewer. | These handles provide concrete CODEOWNERS and branch-protection ownership without making the W12 owner the sole security reviewer. | Dev Lead, 2026-11-02 |
+| SD5 | Sensitive-path PRs require actual GitHub `APPROVED` reviews from `@ludannnn` and a different human approver. For a PR authored by `@teleifo`, that approver is `@Xiao-Congchen`; for other authors it is `@teleifo`. The JSON artifact is supporting evidence only. | The PR author cannot approve their own change; actual GitHub reviews prevent the PR from self-asserting either approval. | Dev Lead, 2026-11-04 |

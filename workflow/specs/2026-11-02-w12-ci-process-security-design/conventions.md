@@ -32,12 +32,21 @@
 
 - `.github/`, `.claude/`, `.codex/`, `workflow/`, `src/be/contracts/`, and security-test paths
   are protected by `CODEOWNERS`.
+- `workflow/security-sensitive-paths.json` is the canonical sensitive-path manifest with schema
+  `{ "version": 1, "paths": [<non-empty unique glob strings>] }`. The security-review checker
+  reads the base-branch copy, and process-security tests consume the same list; CODEOWNERS
+  coverage tests must prove that every listed pattern requests `@teleifo`, `@ludannnn`, and
+  `@Xiao-Congchen`. A missing or malformed base manifest fails closed.
 - `.github/CODEOWNERS` names `@teleifo` for protected repository paths. A teammate's human approval
   is required for protected branches; an agent review is advisory and never replaces the human approval.
 - Protected branch settings apply identically to `development` and `main`, except that deployment
   and migration jobs remain restricted to `main`'s approved environment outside W12.
-- Security-relevant AI-written changes require the security-reviewer agent and human approval from
-  `@ludannnn`; the author cannot be the sole reviewer.
+- Sensitive-path changes require the security-reviewer agent plus an actual GitHub `APPROVED`
+  review from `@ludannnn` and an additional, different human GitHub approver. When the PR author
+  is `@teleifo`, that approver is `@Xiao-Congchen`; otherwise it is `@teleifo`. Non-sensitive PRs use the ordinary CODEOWNER
+  approval rule. The author cannot be the sole reviewer, and the security reviewer and human
+  approver must be different people; CI verifies the sensitive-path approval against the exact
+  PR head.
 - Security findings may block a merge. An owner override must be recorded in the branch state and
   receive a second human review.
 
