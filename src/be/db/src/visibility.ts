@@ -61,7 +61,7 @@ export function normalizeUniqueSelector(model: string, where: Record<string, unk
 
 function visibleWhere(model: string, callerWhere: Record<string, unknown>): Record<string, unknown> {
   const policy = VISIBILITY_POLICY[model];
-  if (!policy) return { ...callerWhere };
+  if (!policy) throw new Error(`Missing visibility policy for ${model}`);
   const base: Record<string, unknown> = {};
   if (policy.projectScope === "root") base.status = "ACTIVE";
   if (policy.softDelete) base.deletedAt = null;

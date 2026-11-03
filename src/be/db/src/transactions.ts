@@ -18,10 +18,18 @@ export type MutationTransaction = {
   $transaction: <R>(callback: (tx: unknown) => Promise<R>, options?: { isolationLevel: "RepeatableRead" }) => Promise<R>;
 };
 
+/** Callbacks can run up to three times; keep external side effects outside the transaction. */
 export async function inMutationTransaction<T>(transaction: MutationTransaction, lockResource: (tx: unknown) => Promise<void>, recheck: (tx: unknown) => Promise<void>, mutate: (tx: unknown) => Promise<T>): Promise<T> {
-  return transaction.$transaction(async (tx) => {
-    await lockResource(tx);
-    await recheck(tx);
-    return mutate(tx);
-  }, { isolationLevel: "RepeatableRead" });
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await transaction.$transaction(async (tx) => {
+        await lockResource(tx);
+        await recheck(tx);
+        return mutate(tx);
+      }, { isolationLevel: "RepeatableRead" });
+    } catch (error) {
+      const code = (error as { code?: string })?.code;
+      if (attempt >= 2 || (code !== "P2034" && code !== "40001")) throw error;
+    }
+  }
 }

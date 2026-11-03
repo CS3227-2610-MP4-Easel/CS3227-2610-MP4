@@ -136,3 +136,17 @@ test("F3/E7-E8/E19-E20 compound unique selectors are normalized before findFirst
 test("F3/E20 malformed compound selectors fail closed before Prisma", () => {
   assert.throws(() => normalizeUniqueSelector("Standup", { projectId_developerId_standupDate: { projectId: "p" } }), /NOT_FOUND/);
 });
+
+test("registry covers every Prisma model and unknown models fail closed", () => {
+  assert.deepEqual([...Object.keys(VISIBILITY_POLICY), "LlmGatewayState", "RateCounter"].sort(), Prisma.dmmf.datamodel.models.map((model) => model.name).sort());
+  assert.throws(() => applyDefaultReadFilter("UnknownModel", {}), /visibility/i);
+});
+
+test('write operations filter targets and nested results', async () => {
+  let extension: any; let received: any;
+  const db = createDbClient({ $extends: (value: any) => { extension = value; return {}; } } as never);
+  void db;
+  const result = await extension.query.$allModels.update({ model: 'Task', args: { where: { id: 't' }, include: { epic: true } }, query: async (args: any) => { received = args; return { id: 't', epic: { deletedAt: new Date(), project: { status: 'ACTIVE' } } }; } });
+  assert.equal(received.where.deletedAt, null);
+  assert.equal(result.epic, null);
+});

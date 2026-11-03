@@ -7,7 +7,7 @@ import { createDbClient } from "../src/client.js";
 test("E19 maintenance capability is not exported through request-facing DB client", async () => {
   const client = await readFile(new URL("../src/client.ts", import.meta.url), "utf8");
   const maintenance = await readFile(new URL("../src/maintenance.ts", import.meta.url), "utf8");
-  assert.match(client, /Omit<PrismaClient, RawSqlMethodName>/);
+  assert.match(client, /Omit<PrismaClient, RawSqlMethodName \| "\$transaction">/);
   assert.match(maintenance, /unique symbol/);
   assert.doesNotMatch(client, /maintenance/);
 });
@@ -36,4 +36,10 @@ test("request-facing clients cannot create an unprotected extension", async () =
   const client = createDbClient(base);
   assert.equal((client as any).$extends, undefined);
   await base.$disconnect();
+});
+
+
+test('maintenance repair fails explicitly', async () => {
+  const { withMaintenanceRead } = await import('../src/maintenance.js');
+  await assert.rejects(() => withMaintenanceRead({} as never, (db) => db.executeRepair('repair')), /NOT_IMPLEMENTED/);
 });

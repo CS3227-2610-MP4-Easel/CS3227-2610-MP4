@@ -13,3 +13,10 @@ test("F3/E25 mutation re-check runs after the resource lock in a repeatable-read
   }, async (tx) => { assert.deepEqual(tx, { id: "tx" }); events.push("lock"); }, async () => { events.push("recheck"); }, async () => { events.push("mutate"); return "ok"; });
   assert.deepEqual(events, ["lock", "recheck", "mutate"]);
 });
+
+test('retries serialization failures from the whole transaction', async () => {
+  let attempts = 0;
+  const result = await inMutationTransaction({ $transaction: async (callback) => { if (++attempts < 3) throw Object.assign(new Error('conflict'), { code: 'P2034' }); return callback({}); } }, async () => {}, async () => {}, async () => 'ok');
+  assert.equal(result, 'ok');
+  assert.equal(attempts, 3);
+});
