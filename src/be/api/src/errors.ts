@@ -20,13 +20,19 @@ export function parseInput<T extends z.ZodTypeAny>(schema: T, input: unknown): z
 }
 
 export function redactLogValue(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(redactLogValue);
-  if (!value || typeof value !== "object") return value;
-  const blocked = new Set(["authorization", "password", "token", "secret", "prompt", "response", "code", "credential"]);
-  return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, blocked.has(key.toLowerCase()) ? "[REDACTED]" : redactLogValue(child)]));
+  const seen = new WeakSet<object>();
+  function visit(item: unknown): unknown {
+    if (!item || typeof item !== "object") return item;
+    if (seen.has(item)) return "[Circular]";
+    seen.add(item);
+    const result = Array.isArray(item) ? item.map(visit) : Object.fromEntries(Object.entries(item).map(([key, child]) => [key, /authorization|password|token|secret|prompt|response|code|credential|cookie|api.?key/i.test(key) ? "[REDACTED]" : visit(child)]));
+    seen.delete(item);
+    return result;
+  }
+  return visit(value);
 }
 
 export function errorResponse(error: unknown, requestId: string): Response {
-  const known = error instanceof HttpError ? error : new HttpError("INTERNAL_ERROR", 500, "Internal server error.");
+  const known = error instanceof HttpError ? error : error instanceof Error && error.message === "NOT_FOUND" ? new HttpError("NOT_FOUND", 404, "The requested resource was not found.") : error instanceof Error && error.message === "CONFLICT_STATE" ? new HttpError("CONFLICT_STATE", 409, "The project or resource is archived.") : new HttpError("INTERNAL_ERROR", 500, "Internal server error.");
   return Response.json({ error: { code: known.code, message: known.message, ...(known.details ? { details: known.details } : {}), requestId } }, { status: known.status, headers: { "X-Request-Id": requestId } });
 }

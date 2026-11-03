@@ -7,7 +7,7 @@ test("E6/E9 member predicate hides missing or cross-project resources as NOT_FOU
     resolvePrincipal: async () => ({ firebaseUid: "firebase", tokenClaims: {} }),
     lookupRegisteredUser: async () => ({ firebaseUid: "firebase", userId: "user", role: "PM" as const }),
     resolveResource: async () => ({ kind: "TASK", projectId: "project", state: "ACTIVE" as const }),
-    requireMember: async () => { throw new Error("missing"); },
+    requireMember: async () => { throw new Error("NOT_FOUND"); },
     evaluatePredicate: async () => undefined,
   };
   await assert.rejects(() => authorizeRequest({ operationId: "TASK_READ", method: "GET", authState: "REGISTERED", roles: [], predicate: "MEMBER" }, deps, "Bearer token", { method: "GET", path: "/api/tasks/task", params: { id: "task" }, query: new URLSearchParams(), body: undefined }), (error: { code?: string }) => error.code === "NOT_FOUND");
@@ -30,14 +30,14 @@ test("archived writes hide the project state from non-members", async () => {
     resolvePrincipal: async () => ({ firebaseUid: "firebase", tokenClaims: {} }),
     lookupRegisteredUser: async () => ({ firebaseUid: "firebase", userId: "outsider", role: "PM" as const }),
     resolveResource: async () => ({ kind: "TASK", projectId: "archived-project", state: "ARCHIVED" as const }),
-    requireMember: async () => { throw new Error("missing"); },
+    requireMember: async () => { throw new Error("NOT_FOUND"); },
     evaluatePredicate: async () => { throw new Error("must not run"); },
   }, "Bearer token", { method: "PATCH", path: "/api/tasks/task", params: { id: "task" }, query: new URLSearchParams(), body: undefined }), (error: { code?: string; status?: number }) => error.code === "NOT_FOUND" && error.status === 404);
 });
 
 test("F1/E3 predicate receives the resolved assignee and transaction handle", async () => {
   let received: { assigneeId?: string; tx?: unknown } | undefined;
-  const tx = { id: "tx" };
+  const tx = { id: "tx", commit: async () => undefined, rollback: async () => undefined };
   await authorizeRequest({ operationId: "TASK_STATUS_UPDATE", method: "POST", authState: "REGISTERED", roles: ["DEV_LEAD"], predicate: "MEMBER_OR_ASSIGNEE" }, {
     resolvePrincipal: async () => ({ firebaseUid: "firebase", tokenClaims: {} }),
     lookupRegisteredUser: async () => ({ firebaseUid: "firebase", userId: "user", role: "DEV_LEAD" as const }),

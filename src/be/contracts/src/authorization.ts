@@ -16,7 +16,8 @@ export type ResolvedResource = {
   projectIds: string[];
 };
 
-export type AuthorizationTransaction = unknown;
+/** A successful authorization transfers ownership to the caller, which must commit or roll back. */
+export type AuthorizationTransaction = { commit(): Promise<void>; rollback(): Promise<void> };
 export type ResourceResolver = (operationId: string, request: unknown, tx?: AuthorizationTransaction) => Promise<ResolvedResource | null>;
 export type ResourceResolverRegistry = Readonly<Record<string, ResourceResolver>>;
 export type AuthorizationPredicateInput = {
