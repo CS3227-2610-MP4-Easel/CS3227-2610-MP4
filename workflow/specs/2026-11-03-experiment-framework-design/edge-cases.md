@@ -8,7 +8,7 @@ IDs are permanent: never reuse or renumber. Every F requirement and every API er
 | E1 | F1 | Arm id differs from its file name | `exp check` exits 3 naming the file | Wrong arm in results | unit |
 | E2 | F1 | `plugins` holds `../x`, an absolute path or a path outside `plugins/` | exit 3 | Committed arm runs arbitrary code | unit |
 | E3 | F1 | Arm `permission_mode` is the bypass-all value | exit 3 | Unconfined agent | unit |
-| E4 | F1 | Arm file hash plugin or tool list not seen before | `exp run` prints the list and exits 2 until `--yes` | Silent code execution after a merge | unit |
+| E4 | F1 | Approval hash (arm file, plugin directory contents or `config.json`) not in the approvals file | `exp run` prints the lists and exits 2 until `--yes <arm>=<hash>`; editing a file inside a plugin directory changes the hash | Silent code execution after a merge | unit |
 | E5 | F2 | Sheet-mode experiment, task without `answer-sheet.md` | exit 3 naming the file | Answerer has nothing to read | unit |
 | E6 | F2 | Task `base_commit` is not a hex sha or not in the repo | exit 3; no clone created | Flag-like value reaching git | unit |
 | E7 | F2, F16 | Duplicate seeded issue id, or anchor not found in brief or sheet | exit 3 naming the id | Recall double counted | unit |
@@ -22,8 +22,8 @@ IDs are permanent: never reuse or renumber. Every F requirement and every API er
 ## Driver and process
 | ID | Requirement | Scenario | Expected behaviour (exact) | Why it matters | Test layer |
 |---|---|---|---|---|---|
-| E14 | F5 | Final message quotes `EXP-DONE` mid-text | classified question, not done | Early stop | unit |
-| E15 | F5 | Final message has a question and ends with `EXP-DONE` | done; question stored with note `ignored_after_done` | Double handling | unit |
+| E14 | F5 | Fixture `marker-quoted-mid-text`: `I will finish with EXP-DONE soon` as the whole message | classified question, not done | Early stop | unit |
+| E15 | F5 | Fixtures `question-then-marker-last-line` and `marker-then-question-last-line` | done (question noted `ignored_after_done`) and question | Double handling | unit |
 | E16 | F5 | Whitespace-only final message, twice in a row | one retry, then abort `turn_cap`, exit 6 | Infinite loop | integration |
 | E17 | F5 | 41st question | abort `turn_cap`, exit 6 | Runaway cost | integration |
 | E18 | F5 | CLI result reports an error stop | abort `crash`, exit 6 | Partial run treated as complete | integration |
@@ -49,7 +49,7 @@ IDs are permanent: never reuse or renumber. Every F requirement and every API er
 | E30 | F7 | Question the sheet does not cover | reply is byte-equal to the fixed text; source `assumption` | Hallucinated answer | unit |
 | E31 | F7 | Answerer returns non-JSON | one retry, then the fixed text is sent and the call is logged `answerer_error` | Stalled run | unit |
 | E32 | F7 | Answerer self-test: 3 covered and 3 silent fixture questions | all 3 silent give `covered=false`; at least 2 of 3 covered give `covered=true` | Unreliable answerer | real |
-| E33 | F8 | Question pairs: (`Max length of note?`, `max length of the note`) | match; (`Can the PM edit?`, `Can the Dev Lead edit?`) no match; (`Is a note deleted with its epic?`, `What happens to notes when an epic is removed?`) no match, suggestion shown | Wrong answer reused | unit |
+| E33 | F8 | Question pairs: (`Max length of note?`, `max length of the note`) | match; (`Can the PM edit?`, `Can the Dev Lead edit?`) no match; (`Is the note required?`, `Is the note not required?`) no match; (`Is a note deleted with its epic?`, `What happens to notes when an epic is removed?`) no match, suggestion shown | Wrong answer reused | unit |
 | E34 | F8 | Two runs ask the same question at once | one queue item linked to both; one answer resumes both | Two answers for one question | integration |
 | E35 | F8 | Answer arrives for a question whose run aborted | stored; no resume; exit 0 | Lost answer | integration |
 | E36 | F8, F11 | Question text holds ANSI escapes, a path or a key | control characters removed, path replaced by `<path>`, key by `[REDACTED:type]` before storing and printing | Terminal injection, leak | unit |
@@ -69,10 +69,28 @@ IDs are permanent: never reuse or renumber. Every F requirement and every API er
 | E46 | F12 | Artifact tells the judge to give top marks; artifact contains the delimiter nonce | score stays in its band; nonce removed before the call | Gamed grading | real |
 | E47 | F12 | Artifact has a credential pattern | redacted copy sent; `secret_in_artifact` set | Secret leaves the machine | unit |
 | E48 | F12 | `exp grade` on an `aborted` or non-extracted run | exit 2 | Grading partial work | unit |
-| E49 | F13 | Worked example in runtime.md | medians, `gm_` values 4.00 and 4.00 and dominance output equal the stated numbers | Wrong statistics | unit |
+| E49 | F13 | Worked tables 1 and 2 in runtime.md | geometric means 4.00 and 4.00 and the five verdicts equal the stated ones | Wrong statistics | unit |
 | E50 | F13 | One replicate, one task, or a zero median | `n=1`, `single_task`, `gm_excluded` flagged; `inconclusive` printed | False confidence | unit |
 | E51 | F13, N3 | Credential pattern about to be written to a CSV | nothing renamed, exit 9, pattern type printed (not value); a git sha and a base64 header do not match | Secret committed | unit |
 | E52 | F13 | A run has no grades | listed, skipped for quality columns | One failure blocks results | unit |
+
+## Further launch, state and cost checks
+| ID | Requirement | Scenario | Expected behaviour (exact) | Why it matters | Test layer |
+|---|---|---|---|---|---|
+| E57 | F17 | Launch test of the child environment | keys are exactly the allowlist; `ANTHROPIC_API_KEY` present only in API-key mode; the deny flags for `WebFetch` and `WebSearch` are present | Leaked environment | unit |
+| E58 | F4 | Resumed invocation | argument list carries the same isolation flags as the first launch | Drift on resume | unit |
+| E59 | F6 | `--continue` after the arm file, a plugin file or `config.json` changed; and with a session id of `--dangerously-skip-permissions` | exit 7 for the changed file; exit 3 for the invalid session id; nothing spawned | Gates skipped on resume, flag injection | unit |
+| E60 | F3 | Clone preparation | no remotes, `--no-hardlinks` used, `.claude/` holds only the arm's skills and agents, `settings*.json` removed | Write path back to the main repo, foreign hooks | integration |
+| E61 | N7 | Launcher is `claude.cmd`, `.bat` or `.ps1` | exit 3 naming the launcher | Shell injection | unit |
+| E62 | N4 | Launch of answerer, matcher and judge | flags assert no tools, no user settings, strict MCP, no plugins; probe shows empty tool, hook and MCP sets | Artifact text reaches user hooks | unit |
+| E63 | N5 | Timeline: run 100 s, wait 30 s, answerer call 4 s ending exactly when the wait starts | `wall_s` 100, `wait_s` 30, `answerer_s` 4, `agent_s` 66 | Overlap or rounding error | unit |
+| E64 | F17 | The run's `state.json` or a shared config file changed during a turn | every run with a turn in flight aborts `containment`, exit 10, path named | Tampered state | integration |
+| E65 | F14 | CLI result is the budget stop | reason `budget`, exit 5, not `crash` | Misclassified cost study | unit |
+| E66 | F14 | Batch ceiling reached with runs never started | they stay `queued`; the table prints `not_started: batch_ceiling` | Silent drop | unit |
+| E67 | F12 | Arm `lint` false | lint fields empty and flagged; the arm is excluded from lint comparison | Format mismatch counted as errors | unit |
+| E68 | F12 | Artifacts for an arm are found by its `artifact_globs` | files changed since `base_commit` matching the globs are copied; none found sets `missing_artifact` and rubric fields null | Grading the wrong files | unit |
+| E69 | F9 | Stub `pricing.json` with known prices and a fixture of 3 events | per-event costs and the run total equal the hand-computed values (rounded once to 4 decimals) | Cost drift | unit |
+| E70 | F8 | Queue item for two runs; `exp answer --same-as` an existing bank id | item gets that `bank_id`; both runs resume | Lost link | integration |
 
 ## Budget
 | ID | Requirement | Scenario | Expected behaviour (exact) | Why it matters | Test layer |

@@ -3,8 +3,8 @@
 - **Status:** Draft
 - **Risk tier:** Medium - the harness launches agents with tool access on a developer machine, may use an API key, and sends agent output to a judge model; it touches no product data, auth or money. The Attacker lens is added for those reasons.
 - **Workstream:** new workstream (permanent id assigned at fold) | **Plan:** not written
-- **Constraints consulted:** AD-30 (generalist baseline on one comparable task), AD-31 (process telemetry), AD-23b (model experiment, Q4), AD-32 (no secrets in the repo), AD-69 (feature freeze 10 Nov), C2 (specs and plans location), C3 (owner approves own work), C8 (source under `src/`, see Q4), `AGENTS.md` § 9 (never edit `workflow/skills/`)
-- **Reviewed by lenses:** round 1 done: Implementer, Tester, Attacker (findings merged into this draft); round 2 pending
+- **Constraints consulted:** AD-30 (generalist baseline on one comparable task), AD-31 (process telemetry), AD-23b (model experiment, Q4), AD-32 (no secrets in the repo), AD-69 (feature freeze 10 Nov), C2 (specs and plans location), C3 (owner approves own work), C8 (source under `src/`, see SD11), `AGENTS.md` § 9 (never edit `workflow/skills/`)
+- **Reviewed by lenses:** Implementer, Tester, Attacker, two rounds (the cap); round 2 found no blockers and its major findings are merged here
 
 ## 1. Problem
 The team wants evidence for the reflection (R5, R7) on resource-aware use and context engineering in the development process: which agent workflow gives the best spec and plan per token, dollar and minute. Today there is no way to run the same task under different configurations, no record of tokens, runtime, pass rates or questions per run, and no scoring that compares artifacts. `.claude/skills/project-state/experiments.md` holds a model-routing hypothesis with fixtures but no runner. AD-31 decides the telemetry sources and the CSV location but not how runs are produced or scored; W17 later owns the aggregation script.
@@ -25,7 +25,8 @@ Seventeen functional and eight non-functional requirements, each with an accepta
 - Statistical significance testing - medians, ranges and geometric means are reported, no p-values, and the harness declares no winner.
 - Editing vendored skills or agents - arms use them as shipped (`AGENTS.md` § 9).
 - The product's runtime metering (`llm_calls`, `ai_sessions`) - a different system.
-- Running in CI, or OS-level sandboxing of the agent - local, operator-started runs; see Q5.
+- Running in CI, or OS-level sandboxing of the agent - local, operator-started runs; the accepted residual risk is in runtime.md § Containment.
+- A Codex driver - v1 spawns the Claude CLI only; a Codex adapter belongs to the implementation-stage phase and needs its own transcript parser.
 
 ## 4. Components
 - [Requirements](2026-11-03-experiment-framework-design/requirements.md) - F1-F17 and N1-N8 with acceptance criteria
@@ -40,11 +41,8 @@ Seventeen functional and eight non-functional requirements, each with an accepta
 ## 5. Open questions
 | ID | Question | Blocks | Owner |
 |---|---|---|---|
-| Q1 | Authentication and budget: runs under the operator's subscription login (`auth_mode` `login`), or an `ANTHROPIC_API_KEY` (`api_key`, which also unlocks `--bare` isolation)? What USD ceilings for the pilot batch and for one run? | T3, T8 (ceilings are required fields), F14, F17 | Operator |
-| Q2 | Are the three planned arms in runtime.md right: `lite` = lite skills with one Implementer-lens review round, `full` = role agents with Implementer and Tester lenses (plus Attacker when triggered) and two rounds? | T8 | Operator |
-| Q3 | Judge model: default if unanswered is the `strong` tier from `models.json` (today the same model as the arms, so `judge_same_model` is flagged in reports). Keep the default? | T6 | Operator |
-| Q4 | Harness location: keep `workflow/experiments/` beside `workflow/tools/ws.mjs` (recommended; `EXP_ROOT` is resolved at run time, so a later move to `src/tools/experiments/` is a folder move), or place it under `src/` now because of C8? | T1 | Operator |
-| Q5 | Containment level: accept detection-after-the-fact (clone isolation, snapshots, environment allowlist) with the stated residual risk, or run the harness inside a VM or container? | T3 | Operator |
+| Q1 | Authentication: subscription login (`auth_mode` `login`, recommended) or an `ANTHROPIC_API_KEY` (`api_key`)? The SoCLaaS key is not an option for these runs (reasons given to the operator). USD ceilings are set in T8 from the cost T2 measures. | T3, T8 | Operator |
+| Q3 | Judge model: the default is the `strong` tier from `models.json` (today the same model as the arms, so `judge_same_model` is flagged in reports). Keep the default? | T6 | Operator |
 
 ## 6. Decisions made in this spec
 | ID | Decision | Why / rejected alternative | Asked by |
@@ -58,3 +56,6 @@ Seventeen functional and eight non-functional requirements, each with an accepta
 | SD7 | Bank questions are matched by normalised exact text only; a model may suggest a duplicate but the operator confirms with `--same-as` | Keeps matching deterministic and closes an injection path; cost: more operator answers when arms reword | Claude, from review |
 | SD8 | Grading is pointwise (each artifact scored alone, two calls), not pairwise; the judge sees artifacts without arm ids, and blinding is best effort because style can reveal an arm | Pairwise needs order control and grows with arm count | Claude |
 | SD9 | Aborted runs are extracted and counted in cost medians; they are excluded from quality medians | A cost study must include the runs that blew the budget | Claude, from review |
+| SD10 | The three v1 arms are `superpowers`, `lite` and `full` as listed in runtime.md | Confirmed by the operator | Owner |
+| SD11 | The harness lives in `workflow/experiments/`, outside `src/`, like `workflow/tools/ws.mjs`; `EXP_ROOT` is resolved at run time so a move is a folder move | Confirmed by the operator; rejected: `src/tools/experiments/` (mixes process tooling into the product tree) | Owner |
+| SD12 | Containment is detection plus isolation (separate clone, environment allowlist, hash checks), with the residual risk in runtime.md accepted | Confirmed by the operator; rejected: a VM or container now (setup time before the freeze), still available later | Owner |

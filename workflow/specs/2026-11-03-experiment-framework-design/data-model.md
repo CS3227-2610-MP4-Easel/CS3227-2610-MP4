@@ -16,6 +16,9 @@ Files on disk, no database. Paths resolve from `EXP_ROOT` ([runtime.md](runtime.
 | | allowed_tools, disallowed_tools | string[] | no | `[]`, `[WebFetch, WebSearch]` | tool names |
 | | permission_mode | enum | no | - | any value except bypass-all |
 | | model | map role to id | no | - | role `main` plus one per listed agent; every id in `pricing.json` |
+| | instruction_files | string[] | no | `["AGENTS.md","CLAUDE.md"]` | files kept in the clone besides the listed skills and agents |
+| | artifact_globs | object | no | - | `spec` and `plan`, each a list of repo-relative globs |
+| | lint | bool | no | `false` | true only for arms whose artifacts use the lite spec and plan format |
 | | review | object | no | `{lenses: [], agent_types: [], max_rounds: 0}` | `max_rounds` 0-2 |
 | | phase_map | map name to phase | no | `{}` | phases `spec`, `plan`, `review`, `other` |
 | Task (`tasks/<id>/task.json`) | id | string | no | - | `[a-z0-9-]{3,24}` |
@@ -29,17 +32,21 @@ Files on disk, no database. Paths resolve from `EXP_ROOT` ([runtime.md](runtime.
 | | answer_mode | enum | no | `sheet` | `sheet` or `bank` |
 | | max_parallel | int | no | 3 | 1-6 |
 | | run_ceiling_usd, batch_ceiling_usd | decimal | no | none | above 0, required |
-| | turn_timeout_s, run_timeout_s | int | no | 1800, 5400 | above 0 |
+| | turn_timeout_s, run_timeout_s, wait_timeout_s | int | no | 1800, 5400, 86400 | above 0 |
 | | hypotheses, decision_rule | string | no | - | text; the operator applies `decision_rule` |
 | | pruning_rule | enum | no | `dominance` | the structured rule in runtime.md |
 | Run (`local/runs/<run-id>/manifest.json`) | run_id, experiment_id, task_id, arm_id, rep | strings, int | no | - | run id format in conventions.md |
 | | status | enum | no | `queued` | see Lifecycle |
 | | abort_reason | enum | yes | null | `isolation_mismatch`, `budget`, `turn_cap`, `timeout`, `containment`, `crash` |
 | | hashes, versions, model ids, bank hash | strings | no | - | N2 |
-| | flags | string[] | no | `[]` | `truncated`, `secret_in_artifact`, `judge_same_model`, `judge_unstable`, `review_cap_exceeded` |
+| | flags | string[] | no | `[]` | `truncated`, `secret_in_artifact`, `judge_same_model`, `judge_unstable`, `judge_error`, `answerer_error`, `review_cap_exceeded` |
 | Event (`events.csv` row) | run_id, seq, message_id, agent_id, parent_id, model, phase | strings | parent null for main | - | one row per distinct message id |
 | | in_tok, out_tok, cache_read_tok, cache_write_tok | int | no | 0 | 0 or more |
 | | tools, started, ended, cost_usd | string, time, time, decimal | cost null | - | cost null only when the model is unpriced mid-run |
+| Run state (`local/runs/<id>/state.json`) | status, session_id, turn_state, turn_count, question_count, last_prompt_hash, wait_started, spend by cost class, file hashes | mixed | session_id null before the probe | - | session_id is a UUID; turn_state `idle` or `in_turn` |
+| Experiment state (`local/experiments/<id>/state.json`) | arm_codes, batch_spend_usd by cost class | map, decimal | no | assigned at first run | stable per experiment; `exp queue` shows the code, never the arm id |
+| Queue item (`local/queue/<qid>.json`) | qid, run_ids, text, suggested_bank_id, bank_id, created | strings | suggested_bank_id, bank_id null until answered | - | text sanitized; `bank_id` set by `exp answer` |
+| Approvals (`<user config dir>/exp-harness/approvals.json`) | arm_id, approval_hash | strings | no | - | hash covers the arm file, plugin directory contents and `config.json`; outside the repo |
 | Question (`questions.jsonl`) | run_id, turn, text, source, bank_id, issue_id, issue_alt, note | strings | bank_id, issue_id, issue_alt, note null | - | source in `sheet`, `bank`, `assumption`, `operator`; text capped at 2000 characters |
 | Bank entry (`bank/<id>.json`) | id, question, answer, answered_by, created, supersedes | strings | supersedes null | - | append-only |
 | Grade (`grades.json`) | lint_errors_spec, lint_errors_plan | int | no | - | |
@@ -80,9 +87,9 @@ An aborted run is extracted (its cost counts) and appears in `runs.csv` with gra
 - `local/` and the run clones are never committed.
 
 ## Reports (committed under `docs/telemetry/experiments/`)
-- `runs.csv`: run_id, experiment_id, task_id, arm_id, rep, status, abort_reason, flags, model_main, wall_s, wait_s, answerer_s, agent_s, in_tok, out_tok, cache_read_tok, cache_write_tok, peak_prompt_tok, cache_read_share, arm_cost_usd, answerer_cost_usd, matcher_cost_usd, judge_cost_usd, probe_cost_usd, overshoot_usd, questions, questions_operator, issues_raised, issues_resolved, issues_missed, lint_errors_spec, lint_errors_plan, rubric_spec, rubric_plan, rubric_gap, review_rounds, fix_iterations.
+- `runs.csv`: run_id, experiment_id, task_id, arm_id, rep, status, abort_reason, flags, model_main, wall_s, wait_s, answerer_s, agent_s, in_tok, out_tok, cache_read_tok, cache_write_tok, peak_prompt_tok, cache_read_share, arm_cost_usd, answerer_cost_usd, matcher_cost_usd, judge_cost_usd, probe_cost_usd, overshoot_usd, questions, questions_operator, issues_raised, issues_resolved, issues_found, issues_missed, lint_errors_spec, lint_errors_plan, rubric_spec, rubric_plan, rubric_gap, rubric_total, review_rounds, fix_iterations.
 - `events.csv`: the Event columns for every extracted run.
-- `medians.csv`: experiment_id, task_id, arm_id, n, n_aborted, then `med_` plus each of arm_cost_usd, agent_s, in_tok, out_tok, peak_prompt_tok, questions, issues_raised, lint_errors_spec, lint_errors_plan, rubric_spec, rubric_plan, review_rounds, fix_iterations; `min_` and `max_` for arm_cost_usd and rubric_plan; then `gm_` for arm_cost_usd, agent_s, total_tok, with `gm_excluded`, `single_task`, `inconclusive`, `dominated_by`. Aborted runs count toward cost medians and `n_aborted`, not toward quality medians.
+- `medians.csv`: experiment_id, task_id, arm_id, n, n_aborted, then `med_` plus each of arm_cost_usd, agent_s, in_tok, out_tok, peak_prompt_tok, questions, issues_found, lint_errors_spec, lint_errors_plan, rubric_spec, rubric_plan, rubric_total, review_rounds, fix_iterations; `min_` and `max_` for arm_cost_usd and rubric_total; then `gm_` for arm_cost_usd, agent_s, total_tok, with `gm_excluded`, `single_task`, `verdict` (per arm pair, see runtime.md). Aborted runs count toward cost medians and `n_aborted`, not toward quality medians.
 
 ## Migration and rollback
 - Version: `schema_version` 1 in every manifest | Existing rows: none | Regenerate committed data: no | If it fails halfway: files are written to a temp name and renamed, so the previous CSVs stay intact.

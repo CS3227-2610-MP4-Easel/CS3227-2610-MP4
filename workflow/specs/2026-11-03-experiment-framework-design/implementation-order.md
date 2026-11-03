@@ -3,8 +3,8 @@
 | ID | Task | Delivers | Satisfies |
 |---|---|---|---|
 | T1 | Schemas, layout and `exp check` | validators for config, arm, task, experiment, pricing; path and id safety; `exp check` with `--secrets` and the credential patterns; `.gitignore` entry; test command in `workflow/config.json` | F1, F2, F15, F16 (checks), N3, N7 |
-| T2 | Isolation and transcript spike (real model calls, a few cents) | verified flags for `--setting-sources`, `--plugin-dir`, MCP, permission mode; the init record's fields; the reference cost field in the JSON result; transcript location and subagent file layout; whether OpenTelemetry writes a file headless; Windows spawn of the real executable; scrubbed real fixtures committed under `harness/fixtures/`; findings note in the branch state | F4, F9, N1 |
-| T3 | Run launcher, driver and fake CLI | clone creation, probe, headless driver, marker and question rules, timeouts, process-tree kill, containment snapshots, environment allowlist, ceilings, `manifest.json`, atomic `state.json`, `--continue`, `fake-claude.mjs` | F3, F4, F5, F6, F14, F17, N2, N7, N8 |
+| T2 | Isolation and transcript spike (real model calls, a few cents) | verified flags for `--setting-sources`, `--plugin-dir`, MCP, permission mode; the init record's fields; the reference cost field in the JSON result; transcript location and subagent file layout; whether OpenTelemetry writes a file headless; Windows spawn of a native executable; the exact expected-set derivation written to `harness/isolation.md`; scrubbed real fixtures committed under `harness/fixtures/`; findings note in the branch state | F4, F9, N1 |
+| T3 | Run launcher, driver and fake CLI | clone creation and preparation (no remotes, stripped and overlaid `.claude/`, instruction files), probe, headless driver, marker and question rules, timeouts, process-tree kill, containment snapshots, environment allowlist, ceilings, `manifest.json`, atomic `state.json`, `--continue`, `fake-claude.mjs` | F3, F4, F5, F6, F14, F17, N2, N7, N8 |
 | T5 | Extractor | transcript copy and hash, dedupe, subagent linking, pricing, phases, metrics, `events.csv`, `usage.json` | F9, F10, N1, N5, N6 |
 | T8 | Pilot bundle | task `pilot-pinned-note` (brief, answer sheet, 6 or more seeded issues with anchors), three arm files per runtime.md, pilot experiment file (hypotheses, decision rule, ceilings from Q1), `rubric/rubric.md` with anchors, three calibration artifacts with bands | F1, F2, F15, F16 |
 | T4 | Sheet answerer and question log | sheet mode, fixed text, answerer self-test, question sanitizer, `questions.jsonl` | F7, F11, N4 |
@@ -31,7 +31,7 @@
 Shared-file hazards: T3 and T4 both edit `harness/driver.mjs` and T4 and T10 both edit `harness/answerer.mjs`; each pair is ordered by dependency, so they never overlap. T1 owns `harness/schema.mjs`; later tasks only import it. T6 and T7 read `grades.json` and write different files.
 
 ## T9 pass criteria
-- All 9 runs end `complete` or `aborted` with extractable data; no run ends `isolation_mismatch` or `containment` unexpectedly.
+- At least 7 of 9 runs end `complete`; every other run is `aborted` for a recorded reason that is not `isolation_mismatch`, `containment` or `crash`, and has extractable data.
 - At least 6 of 9 runs have a CLI reference total and every one is within 2 percent of the extracted arm cost.
 - The judge self-test passes and no run has `judge_error`.
 - The coefficient of variation of `arm_cost_usd` is reported per arm; above 0.5, that arm gets 2 more replicates (hard cap 5 per arm).

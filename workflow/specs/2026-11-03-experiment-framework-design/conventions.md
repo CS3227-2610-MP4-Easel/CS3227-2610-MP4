@@ -17,4 +17,4 @@ Cite existing conventions/ entries by ID; list only rules new or applied here.
 | The test command is added to `workflow/config.json` `test_commands` when T1 lands | config | new in this spec |
 | Vendored skills and agents are used as shipped; arms select among them and never edit them | arms | `AGENTS.md` § 9 |
 | Commit messages: `type: what and why (workstream)` with `Workstream:` and `Task:` trailers; trailers use the permanent id the owner assigns, never `W~1` | commits | `AGENTS.md` § 6 |
-| Process tooling sits outside `src/`, like `workflow/tools/ws.mjs`; location is open question Q4 | harness folder | C8 |
+| Process tooling sits outside `src/`, like `workflow/tools/ws.mjs`; location decided in SD11 | harness folder | C8 |
