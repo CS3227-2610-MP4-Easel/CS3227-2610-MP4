@@ -1,10 +1,12 @@
 # W12 CI and Process Security Design
 
 - **Status:** Approved (Dev Lead, 2026-11-04)
+- **Amended 2026-11-04:** T6 adds a one-time bootstrap classification when the base branch lacks the manifest; the head manifest must exactly match the fixed bootstrap list, and normal base-manifest verification remains mandatory afterward.
+- **Amended 2026-11-04:** Bootstrap is now bound to base SHA `7bd65440023a0123ac92445e5b6e58ec838ee57c`, target branch `development`, and externally configured repository variable `W12_BOOTSTRAP_PR_NUMBER`; exact manifest parsing, post-rollout validation, and reviewer evidence are specified.
 - **Amended 2026-11-04:** PRs authored by `@teleifo` require `@Xiao-Congchen` as the independent human approver while `@ludannnn` remains the security reviewer; see branch-state C~5.
 - **Amended 2026-11-03:** reconciled protected paths and contract-test locations with the merged W1 source-root layout; see branch-state C~3.
 - **Risk tier:** High - the work controls repository permissions, secrets, supply-chain inputs, and merge authority.
-- **Workstream:** W12 | **Plan:** —
+- **Workstream:** W12 | **Plan:** [implementation plan](../../plans/2026-11-02-w12-ci-process-security-plan.md)
 - **Constraints consulted:** `guardrails.md` AD-32; architecture AD-53; decision-log AD-32, A-17; architecture §14.
 - **Review lenses:** Implementer, Tester, Maintainer, Attacker.
 
@@ -31,6 +33,7 @@ Functional and non-functional requirements are in [requirements](2026-11-02-w12-
 - Signed commits, a full static-analysis suite, or runtime security monitoring — not required by AD-32's baseline.
 - Replacing the policy map, OpenAPI generator, or attack corpus — W1 and W11 own those artifacts.
 - Granting agents production access or allowing secrets in PR-triggered workflows — prohibited by AD-32 and AD-53.
+- A fully trusted first-rollout evaluator — the bootstrap checker is part of the initial PR; the residual risk and compensating human review are explicit below.
 
 ## 4. Components
 
@@ -55,3 +58,16 @@ Functional and non-functional requirements are in [requirements](2026-11-02-w12-
 | SD3 | CI runs without production credentials and uses mock mode for any environment-dependent test. | PR workflows must not receive secrets; production access is CI-environment gated by AD-53. | Dev Lead, 2026-11-02 |
 | SD4 | `@teleifo` administers `development` and `main` and owns protected repository paths; `@ludannnn` is the independent human security reviewer. | These handles provide concrete CODEOWNERS and branch-protection ownership without making the W12 owner the sole security reviewer. | Dev Lead, 2026-11-02 |
 | SD5 | Sensitive-path PRs require actual GitHub `APPROVED` reviews from `@ludannnn` and a different human approver. For a PR authored by `@teleifo`, that approver is `@Xiao-Congchen`; for other authors it is `@teleifo`. The JSON artifact is supporting evidence only. | The PR author cannot approve their own change; actual GitHub reviews prevent the PR from self-asserting either approval. | Dev Lead, 2026-11-04 |
+| SD6 | During the first rollout only, if the base branch lacks the sensitive-path manifest, T6 uses a fixed bootstrap list compiled into the checker and requires the PR manifest to match it exactly. Once the manifest exists on the base branch, the fallback is unavailable. | Allows one W12 merge without a direct protected-branch push; reading an arbitrary PR manifest is rejected because it would let the PR define its own sensitive surface. | Dev Lead, 2026-11-04 |
+| SD7 | Bootstrap is permitted only for target branch `development`, base SHA `7bd65440023a0123ac92445e5b6e58ec838ee57c`, and the pull-request number equal to externally configured repository variable `W12_BOOTSTRAP_PR_NUMBER`; the exact ordered manifest in API SD7 is normative. The variable is removed after merge. | Makes the one-time transition mechanically identifiable and prevents parallel, `main`, later-base, or deleted-manifest re-entry. | Dev Lead, 2026-11-04 |
+
+## 7. Residual bootstrap risk
+
+The first PR contains the evaluator and the manifest, so a malicious PR could attempt to change
+both. The mitigation is the immutable rollout base SHA and target-branch guard, the normative list
+recorded in the approved API contract, exact schema comparison, CODEOWNERS protection, and actual
+GitHub approvals from `@ludannnn` plus the author-dependent human approver. The first rollout is
+not equivalent to a base-branch-seeded policy; Gate 3 must record the bootstrap base SHA, target,
+configured PR number, merged head, the security-reviewer and human comparison of evaluator/list/
+manifest against the approved contract, removal of `W12_BOOTSTRAP_PR_NUMBER`, and a post-merge
+check proving that a missing base manifest no longer activates bootstrap.

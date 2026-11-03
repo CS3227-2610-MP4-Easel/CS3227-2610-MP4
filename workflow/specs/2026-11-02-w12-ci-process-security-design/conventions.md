@@ -34,9 +34,16 @@
   are protected by `CODEOWNERS`.
 - `workflow/security-sensitive-paths.json` is the canonical sensitive-path manifest with schema
   `{ "version": 1, "paths": [<non-empty unique glob strings>] }`. The security-review checker
-  reads the base-branch copy, and process-security tests consume the same list; CODEOWNERS
-  coverage tests must prove that every listed pattern requests `@teleifo`, `@ludannnn`, and
-  `@Xiao-Congchen`. A missing or malformed base manifest fails closed.
+  reads the base-branch copy after rollout, and process-security tests consume the same list;
+  CODEOWNERS coverage tests must prove that every listed pattern requests `@teleifo`, `@ludannnn`,
+  and `@Xiao-Congchen`. During the first rollout only, target `development` at base SHA
+  `7bd65440023a0123ac92445e5b6e58ec838ee57c` and PR number equal to the externally configured
+  `W12_BOOTSTRAP_PR_NUMBER` may use the fixed ordered list in API SD7 when the base manifest is
+  absent. The head manifest uses duplicate-key-aware parsing, has exactly the keys `version` and
+  `paths`, version `1`, unique non-empty strings, and the exact ordered list; whitespace and key
+  order are insignificant, path order is significant. The variable is removed after merge. Every
+  other missing or malformed base manifest fails closed, and a changed or deleted head manifest is
+  validated even after rollout.
 - `.github/CODEOWNERS` names `@teleifo` for protected repository paths. A teammate's human approval
   is required for protected branches; an agent review is advisory and never replaces the human approval.
 - Protected branch settings apply identically to `development` and `main`, except that deployment

@@ -1,6 +1,7 @@
 # W12 CI and Process Security Implementation Plan
 
 - **Status:** Approved (Dev Lead, 2026-11-04)
+- **Amended 2026-11-04:** T6 now has a one-time first-rollout bootstrap path bound to `development`, base SHA `7bd65440023a0123ac92445e5b6e58ec838ee57c`, and externally configured PR number `W12_BOOTSTRAP_PR_NUMBER`; the head manifest must exactly match the fixed list, then later runs use only validated base/head manifests.
 - **Amended 2026-11-04:** T5/T6 now implement canonical base-manifest classification and dual exact-head GitHub review verification; see W12 C~5/C~6.
 
 > **For agents:** tick `- [ ]` -> `- [x]` as each step finishes, in this file and the same commit as the work. Keep the W12 branch state Progress cell current. Spec: [W12 design](../specs/2026-11-02-w12-ci-process-security-design.md).
@@ -9,7 +10,7 @@
 
 **Goal:** Enforce the selected thin CI and process-security baseline before changes reach `development` or `main`.
 
-**In scope:** F1–F13, N1–N4, E1–E20.
+**In scope:** F1–F14, N1–N4, E1–E27.
 
 **Non-goals:** Production deployment and migrations (W13); a custom policy-as-code framework; signed commits; full static-analysis suites; runtime security monitoring; changing the policy map, OpenAPI generator, or attack corpus contents.
 
@@ -23,8 +24,8 @@
 | T2 Secret scanning and staged-file hook | — | T1, T3, T4 | 1 | Done |
 | T3 Dependency audit and Action-pin verification | — | T1, T2, T4 | 1 | Done |
 | T4 Agent policy and protected control paths | — | T1, T2, T3 | 1 | Done |
-| T5 Sensitive-path manifest, CODEOWNERS and branch protection | T4, Q1 resolved | — | 2 | In progress |
-| T6 Security evidence and final verification | T1, T2, T3, T4, T5 | — | 3 | Blocked — needs human |
+| T5 Sensitive-path manifest, CODEOWNERS and branch protection | T4, Q1 resolved | — | 2 | Done |
+| T6 Security evidence and final verification | T1, T2, T3, T4, T5 | — | 3 | Amendment pending approval |
 
 ## Traceability
 
@@ -43,6 +44,7 @@
 | F11 | T1, T6 | fork and same-repository untrusted-branch manual check |
 | F12 | T2 | staged-file hook fixture |
 | F13 | T4, T5, T6 | head-bound security-review evidence check |
+| F14 | T6 | first-rollout bootstrap manifest fixtures |
 | N1 | T1, T3, T6 | repeated-run and pinned-input evidence |
 | N2 | T1, T4, T5 | workflow/policy permission checks |
 | N3 | T1, T2, T6 | command-status and redaction verification |
@@ -67,6 +69,13 @@
 | E18 | T6 | sensitive `@ludannnn` author fail-closed case |
 | E19 | T6 | dismissed/changed-request review supersession |
 | E20 | T6 | paginated GitHub review response |
+| E21 | T6 | first-rollout exact bootstrap manifest |
+| E22 | T6 | malformed or mismatched bootstrap manifest |
+| E23 | T6 | no fallback after rollout |
+| E24 | T6 | bootstrap target/base and exact-match semantics |
+| E25 | T6 | malformed post-rollout head manifest |
+| E26 | T6 | one-time bootstrap PR identity and variable retirement |
+| E27 | T6 | independent Gate 3 comparison of bootstrap evaluator/list/manifest |
 
 ## Verification gates
 
@@ -75,7 +84,7 @@
 
 ## Gate 2
 
-- [x] **GATE:** Ask the operator to approve this implementation plan before coding. Approved by the Dev Lead on 2026-11-03; plan status and branch state updated, and approved plan lint passes.
+- [x] **GATE:** Re-ask the operator to approve this materially amended implementation plan before coding. Approved by the Dev Lead on 2026-11-04; the prior approval was superseded by the Option 2 bootstrap amendment.
 
 ---
 
@@ -196,14 +205,14 @@
 
 ### T6: Security evidence and final verification
 
-**Delivers:** Head-bound dual GitHub-review check, complete failure-case evidence, and closeout verification. **Satisfies:** F4, F5, F6, F7, F8, F9, F10, F11, F13, N1, N2, N3, N4, E3, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14, E16, E17, E18, E19, E20. **Depends on:** T1, T2, T3, T4, T5. **Wave:** 3.
+**Delivers:** Head-bound dual GitHub-review check, one-time first-rollout bootstrap, post-rollout manifest validation, complete failure-case evidence, and closeout verification. **Satisfies:** F4, F5, F6, F7, F8, F9, F10, F11, F13, F14, N1, N2, N3, N4, E3, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14, E16, E17, E18, E19, E20, E21, E22, E23, E24, E25, E26, E27. **Depends on:** T1, T2, T3, T4, T5. **Wave:** 3.
 
 **Files**
 
 | Action | Path | What changes |
 |---|---|---|
-| Modify | `scripts/check-security-review.mjs` | Read the base-branch sensitive-path manifest; normalize logins; parse and flatten the complete paginated review file; require latest exact-head `APPROVED` GitHub reviews from `@ludannnn` and the author-dependent human approver; fail closed on malformed, missing, or incomplete evidence. |
-| Modify | `tests/process-security/security-review.test.ts` | Test manifest classification, missing/stale/forged artifacts, exact-head approvals, author pairing, normalized logins, superseded states, pagination flattening, and sensitive `@ludannnn` authors; cover F13 and E16–E20. |
+| Modify | `scripts/check-security-review.mjs` | Read the base-branch manifest, or use the fixed bootstrap list only for `development` at the immutable pre-rollout base SHA and configured bootstrap PR number when the base manifest is absent; read the head manifest by SHA with duplicate-key-aware parsing, enforce exact schema/list semantics, validate changed/deleted head manifests, normalize logins, parse complete paginated reviews, and require latest exact-head approvals. |
+| Modify | `tests/process-security/security-review.test.ts` | Test bootstrap exact-match, immutable target/base/PR-number guards, missing/malformed/mismatched manifests, duplicate/unknown-key/order cases including duplicate JSON keys, post-rollout fail-closed behavior, forged artifacts, exact-head approvals, author pairing, superseded states, pagination, sensitive `@ludannnn` authors, and Gate 3 bootstrap evidence; cover F13/F14 and E16–E27. |
 | Modify | `.github/workflows/ci.yml` | Extend `workflow-security` with job-level `pull-requests: read`, `gh api --paginate --slurp` review retrieval to `$RUNNER_TEMP`, and `--reviews-file`; do not add an eighth required status. |
 | Modify | `workflow/agents/reviewer.md` | Require actual GitHub approvals from `@ludannnn` and the author-dependent human approver for sensitive paths; the artifact is supporting evidence. |
 | Modify | `workflow/config.json` | Register the canonical sensitive-path manifest and dual-review evidence contract without credentials. |
@@ -217,9 +226,11 @@
 - [x] 3. Add the workflow review fetch with only `pull-requests: read`, invoke the checker with `--reviews-file`, and verify the artifact cannot substitute for either GitHub approval.
 - [x] 4. Add regression tests for E3–E14 and E16–E20, including forged artifacts, normalized GitHub logins, dismissed/changed-request states, equal-timestamp ID tie-breaking, and multi-page responses; verify no secret canary appears in logs.
 - [x] 5. Replace the fixed `human_owner` config with the author-dependent approver mapping, amend the provider-neutral reviewer contract, regenerate the provider adapters, and add assertions that both required GitHub reviews are distinct from the PR author.
+- [ ] 5a. Add the exact normative bootstrap list, require `development`, base SHA `7bd65440023a0123ac92445e5b6e58ec838ee57c`, and PR number equal to `W12_BOOTSTRAP_PR_NUMBER`, read the head manifest by SHA with duplicate-key-aware parsing, reject unknown keys/duplicates/order changes, validate changed or deleted manifests after rollout, and ensure later missing or malformed base manifests fail closed.
 - [ ] 6. Run `npm test`, `npm run typecheck`, `npm run lint`, `npm --workspace @agile/db run prisma:validate`, `node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026-11-02-w12-ci-process-security-design.md --approved`, `node .claude/skills/writing-specs-lite/scripts/lint.mjs plan workflow/plans/2026-11-02-w12-ci-process-security-plan.md --approved`, and `git diff --check`.
 - [ ] 7. Update the plan, branch state, and Changes line; confirm the working tree is clean.
 - [ ] 8. Record the task completion with subject `test: verify W12 process security controls (W12)`.
+- [ ] 9. GATE: After the first merge, verify `development` contains the manifest, remove `W12_BOOTSTRAP_PR_NUMBER`, run missing-base and leftover-variable fixtures that fail outside the allowlisted rollout identity, and record the bootstrap base SHA, target branch, configured PR number, merged head, reviewer comparison of evaluator/list/manifest, variable removal, and result in branch state.
 
 ### Close-out
 

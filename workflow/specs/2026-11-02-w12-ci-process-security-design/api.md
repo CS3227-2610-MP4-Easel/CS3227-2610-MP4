@@ -2,15 +2,30 @@
 
 ## Security-review checker input
 
-The existing `check:security-review` command receives `--base-sha`, `--head-sha`, and
-`--pr-author`. It additionally receives `--reviews-file <path>` from the `workflow-security`
+The existing `check:security-review` command receives `--base-sha`, `--head-sha`, `--base-branch`,
+`--pr-number`, `--bootstrap-pr-number`, and `--pr-author`. It additionally receives `--reviews-file <path>` from the `workflow-security`
 job. The file contains the JSON response from the GitHub pull-request reviews endpoint for the
 current pull request.
 
 The checker reads `workflow/security-sensitive-paths.json` from `--base-sha`, validates its schema,
-and classifies the changed-path set against that base manifest. It fails closed if the base
-manifest is missing or malformed; changes to the manifest itself are sensitive because the manifest
-matches `workflow/**`.
+and classifies the changed-path set against that base manifest. For the initial rollout only, if
+`--base-branch` is `development`, `--base-sha` is
+`7bd65440023a0123ac92445e5b6e58ec838ee57c`, `--pr-number` equals the externally configured
+`--bootstrap-pr-number`, and the base manifest is absent, it uses this fixed
+bootstrap list, in this exact order:
+
+```json
+[".github/**", "CODEOWNERS", "package.json", "package-lock.json", ".githooks/**", ".gitleaks.toml", ".gitleaksignore", ".gitignore", "scripts/**", "workflow/**", ".claude/**", ".codex/**", "src/be/contracts/**", "src/be/*/test/**", "tests/**", "tests/security/attack-corpus/**"]
+```
+
+The head manifest must be parsed by a duplicate-key-aware JSON parser, then contain exactly
+`version` and `paths`, version `1`, and that exact ordered array; duplicate keys, unknown keys,
+duplicate paths, or malformed JSON fail before semantic comparison. Whitespace and object-key order
+do not matter. The checker reads the head
+manifest with `git show <head-sha>:workflow/security-sensitive-paths.json`, not from the workspace.
+For any other target/base/PR-number combination, a missing or malformed base manifest fails closed.
+If the head changes or deletes the manifest, its head copy must validate even after rollout. The
+repository variable is removed after the first W12 merge, so a second PR cannot enter bootstrap.
 
 Each review record must contain `user.login`, `state`, `commit_id`, `submitted_at`, and `id`.
 The checker normalizes both the PR-author and reviewer logins to the repository's `@handle` form
@@ -24,7 +39,9 @@ additional checker requirement.
 
 The workflow-security job sets job-level `permissions: { pull-requests: read }` while all other jobs
 retain the top-level empty permission set. It runs the preinstalled GitHub CLI with
-`GH_TOKEN: ${{ github.token }}` and `gh api --paginate --slurp "/repos/${GITHUB_REPOSITORY}/pulls/${{ github.event.pull_request.number }}/reviews"`, writes the complete nested JSON response to `$RUNNER_TEMP/pr-reviews.json`, and passes that path through `--reviews-file`. The file is outside the checked-out PR workspace and is not writable by PR files. If the endpoint fails, the file is absent, the JSON is malformed, or no matching
+`GH_TOKEN: ${{ github.token }}` and `gh api --paginate --slurp "/repos/${GITHUB_REPOSITORY}/pulls/${{ github.event.pull_request.number }}/reviews"`, writes the complete nested JSON response to `$RUNNER_TEMP/pr-reviews.json`, and passes that path through `--reviews-file` and `--base-branch`. The file is outside the checked-out PR workspace and is not writable by PR files. If the endpoint fails, the file is absent, the JSON is malformed, or no matching
 review exists, the checker exits non-zero. The artifact's reviewer identity, decision, and
 `humanApproval` object remain supporting audit metadata; actual GitHub review records are
-authoritative for both approvals.
+authoritative for both approvals. The workflow passes the event target branch, pull-request number,
+and `W12_BOOTSTRAP_PR_NUMBER` repository variable to the checker; the variable is configured only
+for the allowlisted rollout PR and is removed after that PR merges.

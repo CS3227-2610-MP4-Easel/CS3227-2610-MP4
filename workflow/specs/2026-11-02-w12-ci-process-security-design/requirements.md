@@ -97,6 +97,21 @@ authored by any other author, the human approver is `@teleifo`. Non-sensitive PR
 ordinary CODEOWNER rules. The author cannot be either reviewer, and a sensitive PR authored by
 `@ludannnn` fails closed because no alternate security reviewer is configured.
 
+### F14 — First-rollout manifest bootstrap
+
+Given the base revision does not contain `workflow/security-sensitive-paths.json`, when T6 runs
+for the initial W12 rollout targeting `development` from base SHA
+`7bd65440023a0123ac92445e5b6e58ec838ee57c` and the pull-request number equals the externally
+configured repository variable `W12_BOOTSTRAP_PR_NUMBER`, then it uses the fixed bootstrap list in API SD7 and
+requires the head revision to contain a manifest with exactly the keys `version` and `paths`,
+`version: 1`, unique non-empty string paths in the exact normative order, and no unknown keys.
+Whitespace and object-key order are insignificant after parsing; path-array order is significant.
+If the head manifest is absent, malformed, has duplicate keys or paths, contains unknown keys, or
+differs from the normative list, the check fails closed. Duplicate JSON object keys are rejected
+before semantic parsing. Any other target branch, base SHA, or pull-request number, or any later
+base revision missing the manifest, fails closed. Every head revision must also validate
+the manifest if it changes or deletes it, even when classification uses the base copy.
+
 ## Non-functional requirements
 
 ### N1 — Deterministic enforcement
