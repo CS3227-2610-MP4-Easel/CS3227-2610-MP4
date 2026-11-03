@@ -24,15 +24,19 @@ export function describePlugin(dir) {
   };
 }
 
+/**
+ * Per set: `required` (arm and plugin entries: every one must appear) and `optional` (built-ins of the CLI: feature-gated
+ * per account and session, so any of them may be absent, but nothing outside required plus optional may appear).
+ */
 export function expectedSets(arm, plugins) {
   const denied = new Set(arm.disallowed_tools ?? ['WebFetch', 'WebSearch']);
   return {
-    skills: [...BUILTIN_SKILLS, ...(arm.skills ?? []), ...plugins.flatMap((p) => p.skills.map((s) => `${p.name}:${s}`))],
-    agents: [...BUILTIN_AGENTS, ...(arm.agents ?? []), ...plugins.flatMap((p) => p.agents.map((a) => `${p.name}:${a}`))],
-    plugins: [...BUILTIN_PLUGINS, ...plugins.map((p) => p.name)],
-    mcp: [...(arm.mcp ?? [])],
+    skills: { required: [...(arm.skills ?? []), ...plugins.flatMap((p) => p.skills.map((s) => `${p.name}:${s}`))], optional: BUILTIN_SKILLS },
+    agents: { required: [...(arm.agents ?? []), ...plugins.flatMap((p) => p.agents.map((a) => `${p.name}:${a}`))], optional: BUILTIN_AGENTS },
+    plugins: { required: plugins.map((p) => p.name), optional: BUILTIN_PLUGINS },
+    mcp: { required: [...(arm.mcp ?? [])], optional: [] },
     // allowed_tools are permission rules, not extra tools; denied names are ignored on both sides.
-    tools: BASELINE_TOOLS.filter((t) => !denied.has(t)),
+    tools: { required: [], optional: BASELINE_TOOLS.filter((t) => !denied.has(t)) },
   };
 }
 
@@ -65,10 +69,11 @@ export function checkProbe({ record, hookEvents = [], arm, plugins = [], ignore 
   const obs = observedSets(record, arm);
   const skip = new Set(ignore);
   for (const set of Object.keys(exp)) {
-    const e = sorted(exp[set]).filter((n) => !skip.has(n));
+    const req = sorted(exp[set].required).filter((n) => !skip.has(n));
+    const allowed = new Set([...req, ...exp[set].optional]);
     const o = sorted(obs[set]).filter((n) => !skip.has(n));
-    const extra = o.filter((n) => !e.includes(n));
-    const missing = e.filter((n) => !o.includes(n));
+    const extra = o.filter((n) => !allowed.has(n));
+    const missing = req.filter((n) => !o.includes(n));
     if (extra.length || missing.length) problems.push({ kind: 'mismatch', set, extra, missing });
   }
   const declares = plugins.some((p) => p.sessionStartHooks > 0);

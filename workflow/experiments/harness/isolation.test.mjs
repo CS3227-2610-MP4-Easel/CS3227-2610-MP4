@@ -127,3 +127,19 @@ test('E58: probe, first launch and resumed launch share their isolation flags', 
   const resumed = isolationFlags(claudeArgs({ ...base, resume: '0e1234a8-eaf3-4e5f-a919-bea3da9e2715', maxBudgetUsd: 0.4 }));
   assert.deepEqual(resumed, probe);
 });
+
+test('built-ins are optional: a session without the feature-gated ones still passes (found by the first pilot batch)', () => {
+  const r = recorded();
+  r.skills = r.skills.filter((s) => !['slides', 'artifact-capabilities', 'artifact-diagramming'].includes(s));
+  r.agents = r.agents.filter((a) => a !== 'claude-code-guide');
+  r.tools = r.tools.filter((t) => !['Artifact', 'ArtifactComments', 'ArtifactData'].includes(t));
+  assert.equal(checkProbe({ record: r, arm: arm() }).ok, true);
+});
+
+test('built-ins being absent never excuses an extra entry or a missing arm entry', () => {
+  const r = recorded();
+  r.skills = r.skills.filter((s) => s !== 'slides' && s !== 'writing-specs-lite');
+  r.skills.push('stowaway');
+  const p = checkProbe({ record: r, arm: arm() }).problems.find((x) => x.set === 'skills');
+  assert.deepEqual([p.extra, p.missing], [['stowaway'], ['writing-specs-lite']]);
+});

@@ -32,6 +32,8 @@ Keys: `cwd, session_id, tools, mcp_servers, model, permissionMode, slash_command
 
 ## Expected-set derivation (now runtime.md § Isolation step 2)
 
+**Built-ins are optional (C~12, found by the first pilot batch).** Feature-gated built-ins (`slides`, the artifact skills, `claude-code-guide`, the `Artifact*` tools) were present in the spike session and absent in the batch session. A set therefore has `required` entries (arm and plugin entries) and `optional` ones (the built-in constants): required entries must appear, anything outside required plus optional is a mismatch.
+
 Compare as sorted sets, ignoring `config.json` `isolation_ignore`:
 
 - **skills** = built-in skills + arm `skills` + `<plugin>:<skill>` for each skill folder of each arm plugin. The built-in list is a committed constant per CLI version, taken from a plain probe of an empty clone (`fixtures/init-record.json` is the reference).
