@@ -237,5 +237,5 @@
 - [ ] Every Traceability row has passing evidence or a named manual verification.
 - [ ] W1 dependency is merged into `development`; all W12 task statuses, spec status, and branch-state Progress agree with reality.
 - [ ] The W12 branch state is set to `In review`, session rows are removed, and all Changes refs are complete.
-- [ ] **GATE:** Ask the operator to review the completed W12 branch at Gate 3; do not push, open a PR, or merge before approval.
+- [x] **GATE:** Ask the operator to review the completed W12 branch at Gate 3; approved by the Dev Lead on 2026-11-04. Push/merge still require the external bootstrap variable and GitHub approval evidence.
 - [ ] **Handover:** After merge, ask the operator for Gate 4 `sync-project-state`; report the fold at Gate 5 and ask for Gate 6 developer-guide confirmation.
