@@ -31,6 +31,8 @@ export function generateOpenApiDocument(routes: OpenApiRouteRecord[], schemas: O
       responses: { [successStatus]: response },
       "x-policy-key": route.policyKey,
     };
+    const parameters = [...route.path.matchAll(/\{([^}]+)\}/g)].map(([, name]) => ({ name, in: "path", required: true, schema: name === "index" ? { type: "integer", minimum: 0 } : { type: "string", format: "uuid" } }));
+    if (parameters.length) operation.parameters = parameters;
     if (route.requestSchema !== undefined) operation.requestBody = { required: true, content: { "application/json": { schema: requireSchema(route.requestSchema as Record<string, unknown>, "request") } } };
     path[route.method.toLowerCase()] = operation;
     paths[route.path] = path;

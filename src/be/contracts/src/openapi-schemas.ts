@@ -101,6 +101,10 @@ const responseSchemas: Record<string, OpenApiSchema> = {
   LEAD_OVERVIEW_READ: schema(LeadOverviewSchema), LEAD_DIGEST_CREATE: schema(DigestSchema), LEAD_DIGEST_LATEST_READ: schema(DigestSchema), LEAD_PROPOSAL_LIST: { type: "array", items: schema(ReplanProposalSchema) }, LEAD_PROPOSAL_APPROVE: schema(ReplanApprovalSchema), LEAD_PROPOSAL_REJECT: schema(ReplanProposalSchema), DEV_UPLOAD_CREATE: schema(UploadResponseSchema), DEV_SUMMARY_CREATE: schema(SummaryResponseSchema), DEV_STANDUP_CREATE: schema(StandupSchema), DEV_STANDUP_MINE_READ: schema(StandupSchema), DEV_STANDUP_UPDATE: schema(StandupSchema), DEV_STANDUP_FEEDBACK: schema(StandupSchema), LEAD_STANDUP_LIST: object({ items: { type: "array", items: schema(StandupSchema) }, page: { type: "integer" }, size: { type: "integer" }, total: { type: "integer" } }, ["items", "page", "size", "total"]), USAGE_SESSION_LIST: { type: "array", items: schema(UsageSessionSchema) }, USAGE_SUMMARY_READ: { type: "array", items: schema(UsageSummarySchema) },
 };
 
+for (const name of ["EPIC_LIST", "TASK_LIST", "TASK_EVENT_LIST", "PM_PROPOSAL_LIST", "LEAD_PROPOSAL_LIST", "USAGE_SESSION_LIST"]) {
+  responseSchemas[name] = object({ items: responseSchemas[name], page: { type: "integer", minimum: 0 }, size: { type: "integer", minimum: 1 }, total: { type: "integer", minimum: 0 } }, ["items", "page", "size", "total"]);
+}
+
 export function createOpenApiSchemaRegistry(entries: Iterable<readonly [string, OpenApiSchema]>): OpenApiSchemaRegistry {
   const registry: Record<string, OpenApiSchema> = {};
   for (const [name, value] of entries) {

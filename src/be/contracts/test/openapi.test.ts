@@ -2,6 +2,19 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { generateOpenApiDocument } from "../src/openapi.js";
 import { createOpenApiSchemaRegistry, OPENAPI_SCHEMA_REGISTRY } from "../src/openapi-schemas.js";
+import { getPolicyMap } from "../src/policy.js";
+
+test("every templated path declares its required parameters", () => {
+  const document = generateOpenApiDocument(getPolicyMap());
+  for (const [path, operations] of Object.entries(document.paths)) {
+    const names = [...path.matchAll(/\{([^}]+)\}/g)].map((match) => match[1]);
+    for (const operation of Object.values(operations) as any[]) {
+      assert.deepEqual((operation.parameters ?? []).map((parameter: any) => parameter.name), names);
+      for (const parameter of operation.parameters ?? []) assert.equal(parameter.required, true);
+    }
+  }
+  assert.deepEqual((document.paths["/api/pm/proposals/{proposalId}/epics/{index}"].patch as any).parameters[1].schema, { type: "integer", minimum: 0 });
+});
 
 test("OpenAPI generator merges multiple methods under one path", () => {
   const document = generateOpenApiDocument([
