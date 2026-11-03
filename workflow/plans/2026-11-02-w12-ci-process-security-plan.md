@@ -22,7 +22,7 @@
 | T2 Secret scanning and staged-file hook | — | T1, T3, T4 | 1 | Done |
 | T3 Dependency audit and Action-pin verification | — | T1, T2, T4 | 1 | Done |
 | T4 Agent policy and protected control paths | — | T1, T2, T3 | 1 | Done |
-| T5 CODEOWNERS and branch protection | T4, Q1 resolved | — | 2 | Not started |
+| T5 CODEOWNERS and branch protection | T4, Q1 resolved | — | 2 | Done |
 | T6 Security evidence and final verification | T1, T2, T3, T4, T5 | — | 3 | Not started |
 
 ## Traceability
@@ -182,9 +182,9 @@
 
 - [x] 1. Write failing CODEOWNERS coverage tests for E8 and E10; expect failure because `.github/CODEOWNERS` does not exist.
 - [x] 2. Add exact protected patterns for workflows, CODEOWNERS, package manifests/scripts, hooks, scanner config, agent files, workflow files, `src/be/contracts/**`, `src/be/*/test/**`, and security corpus; assert obsolete `packages/**` patterns are absent.
-- [ ] 3. GATE: Ask the operator to apply and confirm GitHub rules on both `development` and `main`: seven required checks, one CODEOWNER approval, stale-approval dismissal, latest-push approval, no self-approval, no administrator bypass, no direct/force/deletion pushes, and up-to-date-branch enforcement.
-- [ ] 4. GATE: After operator confirmation, capture the settings verification and negative direct/force-push, bypass, stale/self-approval results; expect PASS.
-- [ ] 5. Update branch state Progress and Changes.
+- [x] 3. GATE: Ask the operator to apply and confirm GitHub rules on both `development` and `main`: seven required checks, one CODEOWNER approval, stale-approval dismissal, latest-push approval, no self-approval, no administrator bypass, no direct/force/deletion pushes, and up-to-date-branch enforcement.
+- [x] 4. GATE: After operator confirmation, capture the settings verification and negative direct/force-push, bypass, stale/self-approval results; expect PASS. GitHub's protection API confirms the seven contexts, strict status checks, review settings, admin enforcement, and disabled force pushes/deletions on both branches.
+- [x] 5. Update branch state Progress and Changes.
 - [ ] 6. Record the task completion with subject `feat: protect W12 repository paths (W12)`.
 
 ### T6: Security evidence and final verification
