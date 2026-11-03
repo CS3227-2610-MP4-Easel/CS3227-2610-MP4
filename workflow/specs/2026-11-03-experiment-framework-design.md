@@ -41,8 +41,6 @@ Seventeen functional and eight non-functional requirements, each with an accepta
 ## 5. Open questions
 | ID | Question | Blocks | Owner |
 |---|---|---|---|
-| Q1 | Authentication: subscription login (`auth_mode` `login`, recommended) or an `ANTHROPIC_API_KEY` (`api_key`)? The SoCLaaS key is not an option for these runs (reasons given to the operator). USD ceilings are set in T8 from the cost T2 measures. | T3, T8 | Operator |
-| Q3 | Judge model: the default is the `strong` tier from `models.json` (today the same model as the arms, so `judge_same_model` is flagged in reports). Keep the default? | T6 | Operator |
 
 ## 6. Decisions made in this spec
 | ID | Decision | Why / rejected alternative | Asked by |
@@ -59,3 +57,5 @@ Seventeen functional and eight non-functional requirements, each with an accepta
 | SD10 | The three v1 arms are `superpowers`, `lite` and `full` as listed in runtime.md | Confirmed by the operator | Owner |
 | SD11 | The harness lives in `workflow/experiments/`, outside `src/`, like `workflow/tools/ws.mjs`; `EXP_ROOT` is resolved at run time so a move is a folder move | Confirmed by the operator; rejected: `src/tools/experiments/` (mixes process tooling into the product tree) | Owner |
 | SD12 | Containment is detection plus isolation (separate clone, environment allowlist, hash checks), with the residual risk in runtime.md accepted | Confirmed by the operator; rejected: a VM or container now (setup time before the freeze), still available later | Owner |
+| SD13 | Runs authenticate with the operator's subscription login (`auth_mode` `login`); USD cost is notional, computed from `pricing.json`. USD ceilings are set in T8 from the cost T2 measures | Confirmed by the operator; rejected: a dedicated API key (new credential and credit to manage), the SoCLaaS key (OpenAI-compatible open-weight models, no cache split, shared with the app, results would not transfer to Claude and Codex runs) | Owner |
+| SD14 | The judge model defaults to the `strong` tier in `models.json`; `judge_same_model` is flagged in reports when it equals the arm's main model | Confirmed by the operator; rejected: a separate judge model now (another model to configure) | Owner |

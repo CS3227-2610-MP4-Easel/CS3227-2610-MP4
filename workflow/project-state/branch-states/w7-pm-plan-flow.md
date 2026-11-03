@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-03 | Claude Sonnet 5.5 (lead) + reviewer subagents | W~1 | Active | Spec revised after review rounds 1 and 2 (the cap); open: spec Q1 (auth), Q3 (judge default) | Get the owner's answers to spec Q1 and Q3, record them in the index, run `lint.mjs spec --approved`, then ask gate 1 naming the index path, tier Medium, lenses Implementer, Tester, Attacker, and the decisions SD1 to SD12; on a yes write `Status: Approved` and start `writing-plans-lite` | 2026-11-03 |
+| S1 | 2026-11-03 | Claude Sonnet 5.5 (lead) + reviewer subagents | W~1 | Active | Spec revised after review rounds 1 and 2 (the cap); no open questions; gate 1 asked | On the owner yes to gate 1, write `Status: Approved (Xiao-Congchen, date)` in the spec index, run `lint.mjs spec --approved`, then start `writing-plans-lite`; on changes, fix the files and ask again | 2026-11-03 |
 
 **Remaining**
 
@@ -39,7 +39,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W~1 | Experiment framework (agent-workflow evaluation) | Spec'd | [spec](../../specs/2026-11-03-experiment-framework-design.md) (draft, reviewed twice) | — | Big · gate 1 pending: Q~1 (spec Q1, Q3) | — |
+| W~1 | Experiment framework (agent-workflow evaluation) | Spec'd | [spec](../../specs/2026-11-03-experiment-framework-design.md) (draft, reviewed twice) | — | Big · spec has no open questions; gate 1 asked | — |
 | W7 | PM plan flow (proposals, pm) | Not started | — | — | untouched on this branch; blocked on W1, W2, W3, W5, W6 | — |
 
 ---
