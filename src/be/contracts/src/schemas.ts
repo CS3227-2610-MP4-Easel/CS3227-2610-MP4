@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v3";
 import { ExpansionStatusSchema, FeatureSchema, ProjectStatusSchema, ProposalStatusSchema, SprintStatusSchema, TaskEventTypeSchema, TaskStatusSchema, UsageOutcomeSchema, UserRoleSchema } from "./enums.js";
 
 const uuid = z.string().uuid();

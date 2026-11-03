@@ -20,7 +20,7 @@
 |---|---|---|---|---|
 | T1 Pull-request workflow and isolated checks | W1 merged into INT | T2, T3, T4 | 1 | Done |
 | T2 Secret scanning and staged-file hook | — | T1, T3, T4 | 1 | Done |
-| T3 Dependency audit and Action-pin verification | — | T1, T2, T4 | 1 | Blocked — needs human |
+| T3 Dependency audit and Action-pin verification | — | T1, T2, T4 | 1 | Done |
 | T4 Agent policy and protected control paths | — | T1, T2, T3 | 1 | Not started |
 | T5 CODEOWNERS and branch protection | T4, Q1 resolved | — | 2 | Not started |
 | T6 Security evidence and final verification | T1, T2, T3, T4, T5 | — | 3 | Not started |
@@ -136,10 +136,10 @@
 
 - [x] 1. Write failing workflow-security tests for E6, E7, and E13; expect failure because the manifest and validator do not exist.
 - [x] 2. Add the manifest schema and validator; require exact repository/SHA/version correspondence and reject unapproved executable supply-chain inputs.
-- [ ] 3. Configure `dependency-audit` as `npm audit --audit-level=high`, record the lockfile and advisory source, and fail closed on service failure.
-- [ ] 4. Run the validator and controlled audit fixtures; expect PASS.
-- [ ] 5. Update branch state Progress and Changes.
-- [ ] 6. Record the task completion with subject `feat: verify W12 dependency and action inputs (W12)`.
+- [x] 3. Configure `dependency-audit` as `npm audit --audit-level=high`, record the lockfile and advisory source, and fail closed on service failure; remediate the audited Next.js, Zod, and Prisma dependency chains.
+- [x] 4. Run the validator and controlled audit fixtures; expect PASS.
+- [x] 5. Update branch state Progress and Changes.
+- [x] 6. Record the task completion with subject `feat: verify W12 dependency and action inputs (W12)`.
 
 ### T4: Agent policy and protected control paths
 

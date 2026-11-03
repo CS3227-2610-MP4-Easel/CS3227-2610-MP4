@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { Hono } from "hono";
-import { z } from "zod";
+import { z } from "zod/v3";
 import { policyForRoute, type RouteDefinition } from "@agile/contracts";
 import { apiApp, createApiApp, errorResponse, registerRoute, registeredRoutes, type ApiEnv, type AuthDependencies } from "../src/index.js";
 

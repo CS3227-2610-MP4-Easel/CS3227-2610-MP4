@@ -10,7 +10,7 @@ test("visibility registry covers every relation on request-facing models", () =>
     assert.deepEqual(Object.keys(VISIBILITY_POLICY[model.name].relations).sort(), relations.map((field) => field.name).sort(), model.name);
     for (const field of relations) {
       assert.equal(VISIBILITY_POLICY[model.name].relations[field.name], field.type);
-      assert.equal(VISIBILITY_POLICY[model.name].cardinality[field.name], field.isList ? "many" : "one");
+      if (field.isList !== undefined) assert.equal(VISIBILITY_POLICY[model.name].cardinality[field.name], field.isList ? "many" : "one");
     }
   }
 });

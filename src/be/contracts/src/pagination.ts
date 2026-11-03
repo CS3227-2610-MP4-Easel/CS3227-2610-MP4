@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v3";
 
 export const PageQuerySchema = z.object({
   page: z.coerce.number().int().min(0).default(0),
