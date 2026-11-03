@@ -1,17 +1,17 @@
 # Repository and process controls require the Dev Lead owner and independent security review.
-/.github/** @teleifo @ludannnn
-/CODEOWNERS @teleifo
-/package.json @teleifo
-/package-lock.json @teleifo
-/.githooks/** @teleifo @ludannnn
-/.gitleaks.toml @teleifo @ludannnn
-/.gitleaksignore @teleifo @ludannnn
-/.gitignore @teleifo
-/scripts/** @teleifo
-/workflow/** @teleifo @ludannnn
-/.claude/** @teleifo
-/.codex/** @teleifo
-/src/be/contracts/** @teleifo
-/src/be/*/test/** @teleifo
-/tests/** @teleifo
-/tests/security/attack-corpus/** @teleifo @ludannnn
+/.github/** @teleifo @ludannnn @Xiao-Congchen
+/CODEOWNERS @teleifo @ludannnn @Xiao-Congchen
+/package.json @teleifo @ludannnn @Xiao-Congchen
+/package-lock.json @teleifo @ludannnn @Xiao-Congchen
+/.githooks/** @teleifo @ludannnn @Xiao-Congchen
+/.gitleaks.toml @teleifo @ludannnn @Xiao-Congchen
+/.gitleaksignore @teleifo @ludannnn @Xiao-Congchen
+/.gitignore @teleifo @ludannnn @Xiao-Congchen
+/scripts/** @teleifo @ludannnn @Xiao-Congchen
+/workflow/** @teleifo @ludannnn @Xiao-Congchen
+/.claude/** @teleifo @ludannnn @Xiao-Congchen
+/.codex/** @teleifo @ludannnn @Xiao-Congchen
+/src/be/contracts/** @teleifo @ludannnn @Xiao-Congchen
+/src/be/*/test/** @teleifo @ludannnn @Xiao-Congchen
+/tests/** @teleifo @ludannnn @Xiao-Congchen
+/tests/security/attack-corpus/** @teleifo @ludannnn @Xiao-Congchen

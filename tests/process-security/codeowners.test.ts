@@ -2,23 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 
-const required = [
-  ".github/**",
-  "CODEOWNERS",
-  "package.json",
-  "package-lock.json",
-  ".githooks/**",
-  ".gitleaks.toml",
-  ".gitignore",
-  "scripts/**",
-  "workflow/**",
-  ".claude/**",
-  ".codex/**",
-  "src/be/contracts/**",
-  "src/be/*/test/**",
-  "tests/**",
-  "tests/security/attack-corpus/**",
-];
+const requiredOwners = ["@teleifo", "@ludannnn", "@Xiao-Congchen"];
 
 function entries(text: string) {
   return text.split("\n").filter((line) => line.trim() && !line.trim().startsWith("#")).map((line) => {
@@ -27,10 +11,19 @@ function entries(text: string) {
   });
 }
 
-test("E8/E10 CODEOWNERS covers every protected W12 path", async () => {
+test("E8/E10 CODEOWNERS covers every canonical sensitive path", async () => {
+  const manifest = JSON.parse(await readFile("workflow/security-sensitive-paths.json", "utf8"));
+  assert.deepEqual(Object.keys(manifest).sort(), ["paths", "version"]);
+  assert.equal(manifest.version, 1);
+  assert.ok(Array.isArray(manifest.paths));
+  assert.equal(new Set(manifest.paths).size, manifest.paths.length);
+
   const rows = entries(await readFile(".github/CODEOWNERS", "utf8"));
-  for (const pattern of required) assert.ok(rows.some((row) => row.pattern === pattern), `missing ${pattern}`);
+  for (const pattern of manifest.paths) {
+    const row = rows.find((candidate) => candidate.pattern === pattern);
+    assert.ok(row, `missing ${pattern}`);
+    for (const owner of requiredOwners) assert.ok(row.owners.includes(owner), `${pattern} missing ${owner}`);
+  }
   assert.ok(rows.every((row) => row.owners.includes("@teleifo")));
-  assert.ok(rows.filter((row) => row.pattern === ".github/**" || row.pattern === "workflow/**" || row.pattern === "tests/security/attack-corpus/**").every((row) => row.owners.includes("@ludannnn")));
   assert.ok(!rows.some((row) => row.pattern.startsWith("packages/")));
 });

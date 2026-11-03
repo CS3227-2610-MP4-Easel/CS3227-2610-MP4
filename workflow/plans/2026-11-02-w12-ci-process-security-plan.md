@@ -188,11 +188,11 @@
 **Checklist**
 
 - [x] 1. Write failing CODEOWNERS coverage tests for E8 and E10; expect failure because `.github/CODEOWNERS` does not exist.
-- [ ] 2. Add the canonical sensitive-path manifest and exact CODEOWNERS rows for workflows, CODEOWNERS, package manifests/scripts, hooks, scanner config, agent files, workflow files, `src/be/contracts/**`, `src/be/*/test/**`, tests, and security corpus; assert obsolete `packages/**` patterns are absent and every manifest row requests all three sensitive reviewers/owners.
+- [x] 2. Add the canonical sensitive-path manifest and exact CODEOWNERS rows for workflows, CODEOWNERS, package manifests/scripts, hooks, scanner config, agent files, workflow files, `src/be/contracts/**`, `src/be/*/test/**`, tests, and security corpus; assert obsolete `packages/**` patterns are absent and every manifest row requests all three sensitive reviewers/owners.
 - [x] 3. GATE: Ask the operator to apply and confirm GitHub rules on both `development` and `main`: seven required checks, one CODEOWNER approval, stale-approval dismissal, latest-push approval, no self-approval, no administrator bypass, no direct/force/deletion pushes, and up-to-date-branch enforcement.
 - [x] 4. GATE: After operator confirmation, capture the settings verification and negative direct/force-push, bypass, stale/self-approval results; expect PASS. GitHub's protection API confirms the seven contexts, strict status checks, review settings, admin enforcement, and disabled force pushes/deletions on both branches.
 - [x] 5. Update branch state Progress and Changes.
-- [ ] 6. Record the task completion with subject `feat: protect W12 repository paths (W12)`.
+- [x] 6. Record the task completion with subject `feat: protect W12 repository paths (W12)`.
 
 ### T6: Security evidence and final verification
 
