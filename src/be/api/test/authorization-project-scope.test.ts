@@ -60,3 +60,15 @@ test("F3/E20 malformed selector is rejected before any predicate or handler quer
   }, "Bearer token", { method: "PATCH", path: "/api/dev/standups/standup", params: { standupId: "malformed" }, query: new URLSearchParams(), body: undefined }), (error: { code?: string; status?: number }) => error.code === "NOT_FOUND" && error.status === 404);
   assert.equal(evaluated, false);
 });
+
+test("MEMBER operation whose resolver returns no project is 404, not an unchecked pass", async () => {
+  let evaluated = false;
+  await assert.rejects(() => authorizeRequest({ operationId: "TASK_READ", method: "GET", authState: "REGISTERED", roles: [], predicate: "MEMBER" }, {
+    resolvePrincipal: async () => ({ firebaseUid: "firebase", tokenClaims: {} }),
+    lookupRegisteredUser: async () => ({ firebaseUid: "firebase", userId: "user", role: "PM" as const }),
+    resolveResource: async () => ({ kind: "TASK", projectId: null, state: "ACTIVE" as const }),
+    requireMember: async () => undefined,
+    evaluatePredicate: async () => { evaluated = true; },
+  }, "Bearer token", { method: "GET", path: "/api/tasks/task", params: { id: "task" }, query: new URLSearchParams(), body: undefined }), (error: { code?: string; status?: number }) => error.code === "NOT_FOUND" && error.status === 404);
+  assert.equal(evaluated, false);
+});

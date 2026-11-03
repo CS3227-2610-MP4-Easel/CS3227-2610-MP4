@@ -31,7 +31,8 @@ export async function authorizeRequest(policy: Pick<PolicyEntry, "operationId" |
   if (suppliedProjectId && resolved && resolved.kind !== "PROJECT_SET" && resolved.projectId !== suppliedProjectId) {
     throw new HttpError("NOT_FOUND", 404, "The requested resource was not found.");
   }
-  if (policy.predicate === "MEMBER" && resolved && resolved.kind !== "PROJECT_SET" && resolved.projectId) {
+  if (policy.predicate === "MEMBER" && resolved && resolved.kind !== "PROJECT_SET") {
+    if (!resolved.projectId) throw new HttpError("NOT_FOUND", 404, "The requested resource was not found.");
     try { await deps.requireMember(principal.userId, resolved.projectId); } catch (error) { if (!(error instanceof Error) || error.message !== "NOT_FOUND") throw error; throw new HttpError("NOT_FOUND", 404, "The requested resource was not found."); }
   }
   if (policy.predicate !== "MEMBER") {
