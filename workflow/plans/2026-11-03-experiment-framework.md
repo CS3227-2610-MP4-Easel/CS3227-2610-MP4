@@ -1,6 +1,6 @@
 # Experiment Framework Implementation Plan
 
-- **Status:** Draft
+- **Status:** Approved (Xiao-Congchen, 2026-11-03)
 
 > **For agents:** tick `- [ ]` -> `- [x]` as you finish each step, in this file, in the same commit as the work. Keep the branch state's Progress cell current. Spec: [experiment framework design](../specs/2026-11-03-experiment-framework-design.md).
 
