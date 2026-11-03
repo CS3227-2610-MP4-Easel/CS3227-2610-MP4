@@ -19,7 +19,7 @@
 | Task | Depends on | Can run concurrently with | Wave | Status |
 |---|---|---|---|---|
 | T1 Pull-request workflow and isolated checks | W1 merged into INT | T2, T3, T4 | 1 | Done |
-| T2 Secret scanning and staged-file hook | — | T1, T3, T4 | 1 | Not started |
+| T2 Secret scanning and staged-file hook | — | T1, T3, T4 | 1 | Done |
 | T3 Dependency audit and Action-pin verification | — | T1, T2, T4 | 1 | Not started |
 | T4 Agent policy and protected control paths | — | T1, T2, T3 | 1 | Not started |
 | T5 CODEOWNERS and branch protection | T4, Q1 resolved | — | 2 | Not started |
@@ -112,12 +112,12 @@
 
 **Checklist**
 
-- [ ] 1. Write failing scan tests for E4, E5, E13, and E14; expect failure because the scanner/configuration/hook do not exist.
-- [ ] 2. Add `.gitleaks.toml`, the staged-file hook, and the wrapper with explicit base/head range inputs and redacted output.
-- [ ] 3. Add `setup:hooks` and verify `--no-verify` cannot bypass the CI scan.
-- [ ] 4. Run the scanner tests and verify the full tree plus PR range are covered; expect PASS.
-- [ ] 5. Update branch state Progress and Changes.
-- [ ] 6. Record the task completion with subject `feat: enforce W12 secret scanning (W12)`.
+- [x] 1. Write failing scan tests for E4, E5, E13, and E14; expect failure because the scanner/configuration/hook do not exist.
+- [x] 2. Add `.gitleaks.toml`, the staged-file hook, and the wrapper with explicit base/head range inputs and redacted output.
+- [x] 3. Add `setup:hooks` and verify `--no-verify` cannot bypass the CI scan.
+- [x] 4. Run the scanner tests and verify the full tree plus PR range are covered; expect PASS.
+- [x] 5. Update branch state Progress and Changes.
+- [x] 6. Record the task completion with subject `feat: enforce W12 secret scanning (W12)`.
 
 ### T3: Dependency audit and Action-pin verification
 

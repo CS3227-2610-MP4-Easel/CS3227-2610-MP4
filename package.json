@@ -13,6 +13,7 @@
     "lint": "tsc -b --pretty false",
     "contract": "node --import tsx --test src/be/api/test/openapi-parity.test.ts src/be/contracts/test/openapi.test.ts",
     "scan:secrets": "node scripts/scan-secrets.mjs",
+    "setup:hooks": "node scripts/setup-hooks.mjs",
     "check:workflows": "node scripts/check-workflows.mjs",
     "check:agent-policy": "node scripts/check-agent-policy.mjs"
   },
