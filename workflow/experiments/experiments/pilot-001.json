@@ -1,0 +1,20 @@
+{
+  "id": "pilot-001",
+  "task_ids": ["pilot-pinned-note"],
+  "arm_ids": ["superpowers", "lite", "full"],
+  "replicates": 3,
+  "answer_mode": "sheet",
+  "max_parallel": 3,
+  "run_ceiling_usd": 0.6338,
+  "batch_ceiling_usd": 3.169,
+  "turn_timeout_s": 1800,
+  "run_timeout_s": 5400,
+  "wait_timeout_s": 86400,
+  "hypotheses": [
+    "`full` finds more seeded issues than `lite` at a higher cost.",
+    "`superpowers` costs less than `lite` but misses the project-specific issues (collision, wrong path, tenancy).",
+    "Run-to-run variation within one arm is small enough (cost range under half the median) to compare arms with three replicates."
+  ],
+  "decision_rule": "Prune an arm only if it is dominated (higher median cost, lower median rubric total, no more seeded issues found, and non-overlapping ranges) by another arm. Among the survivors the operator picks the arms for the W7 run; the report declares no winner.",
+  "pruning_rule": "dominance"
+}
