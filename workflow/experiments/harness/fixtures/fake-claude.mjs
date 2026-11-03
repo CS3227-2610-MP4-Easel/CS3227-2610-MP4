@@ -57,7 +57,8 @@ for (const k of Object.keys(session)) session[k] += u[k];
 state.sessions[sessionId] = session;
 fs.writeFileSync(statePath, JSON.stringify(state));
 
-const out = (o) => process.stdout.write(`${JSON.stringify(o)}\n`);
+const jsonMode = arg('--output-format') === 'json';
+const out = (o) => { if (!jsonMode || o.type === 'result') process.stdout.write(`${JSON.stringify(o)}\n`); };
 for (const h of step.hook_events ?? []) out({ type: 'system', subtype: 'hook_started', ...h, session_id: sessionId });
 
 const plugins = [

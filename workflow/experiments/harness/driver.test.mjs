@@ -6,6 +6,9 @@ import { COMPLETION_BLOCK, CONTINUE_PROMPT, FIXED_ASSUMPTION, MAX_QUESTIONS, PRO
 import { approvalHash, approve, loadState, readJson, runPaths, writeJsonAtomic } from './state.mjs';
 import { isolationFlags } from './spawn.mjs';
 import { fakeCli, git, makeExperimentRepo, pidAlive, put } from './testkit.mjs';
+import { addEntry } from './bank.mjs';
+import { timeTerms } from './metrics.mjs';
+import { answerItem, loadItems, readAuto } from './queue.mjs';
 
 const NOW = () => new Date('2026-11-03T12:00:00Z');
 const runId = (rep) => runIdFor(NOW(), 'task-one', 'arm-one', rep);
@@ -18,7 +21,7 @@ async function drive(ctx, cli, opts = {}) {
   return runExperiment({
     repoRoot: ctx.repoRoot, expRoot: ctx.expRoot, experimentId: 'exp-one', filters: opts.filters ?? {}, dry: opts.dry, yes: opts.yes,
     continueRunId: opts.continueRunId,
-    deps: { launcher: cli.launcher, extraEnv: cli.env, configDir: ctx.configDir, home: ctx.home, now: NOW, ...opts.deps },
+    deps: { launcher: cli.launcher, extraEnv: cli.env, configDir: ctx.configDir, home: ctx.home, now: NOW, ...(opts.sheet ? {} : { answer: async () => ({ text: FIXED_ASSUMPTION, source: 'assumption' }) }), ...opts.deps },
   });
 }
 const stateOf = (ctx, rep = 1) => loadState(runPaths(ctx.expRoot, runId(rep)));
@@ -420,4 +423,148 @@ test('afterRun is called once per started run (the seam T5 uses for extraction)'
   const res = await drive(ctx, fakeCli([PROBE, DONE]), { filters: { rep: 1 }, deps: { afterRun: async (run) => { seen.push(run.run_id); } } });
   assert.equal(res.exit, 0);
   assert.deepEqual(seen, [runId(1)]);
+});
+
+const sheetReply = (covered, answer) => ({ text: JSON.stringify({ covered, answer }), usage: { output: 40 } });
+
+test('T4 step 4: sheet mode asks the answerer; one covered and one silent question both get stored and the run is done', async () => {
+  const ctx = makeExperimentRepo();
+  const q1 = { text: 'Who counts as the PM?' };
+  const q2 = { text: 'What is the maximum note length?' };
+  const cli = fakeCli([PROBE, q1, sheetReply(true, 'The user whose role is PM.'), q2, sheetReply(false, ''), DONE]);
+  const res = await drive(ctx, cli, { ...single, sheet: true });
+  assert.equal(res.exit, 0, res.lines.join('\n'));
+  const calls = cli.calls();
+  assert.equal(calls.length, 6);
+  assert.equal(calls[3].prompt, 'The user whose role is PM.', 'the covered answer is sent back to the agent');
+  assert.equal(calls[5].prompt, FIXED_ASSUMPTION, 'the silent question gets the fixed text');
+  assert.ok(path.basename(calls[2].cwd).startsWith('exp-neutral-'), 'the answerer ran in a neutral directory');
+  const rows = fs.readFileSync(runPaths(ctx.expRoot, runId(1)).questions, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+  assert.deepEqual(rows.map((r) => r.source), ['sheet', 'assumption']);
+  const s = stateOf(ctx);
+  assert.equal(s.status, 'done');
+  assert.ok(s.spend.answerer > 0);
+  assert.equal(s.timeline.answerer.length, 2);
+  assert.equal(readJson(runPaths(ctx.expRoot, runId(1)).manifest).flags.includes('answerer_error'), false);
+});
+
+test('T4: an unusable answerer reply flags answerer_error on the run and still continues with the fixed text', async () => {
+  const ctx = makeExperimentRepo();
+  const cli = fakeCli([PROBE, QUESTION, { text: 'no json' }, { text: 'still no json' }, DONE]);
+  const res = await drive(ctx, cli, { ...single, sheet: true });
+  assert.equal(res.exit, 0, res.lines.join('\n'));
+  assert.equal(cli.calls()[4].prompt, FIXED_ASSUMPTION);
+  assert.ok(readJson(runPaths(ctx.expRoot, runId(1)).manifest).flags.includes('answerer_error'));
+});
+
+// ---- T10: bank mode, pause and resume -------------------------------------------------------------------------
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+async function until(fn, ms = 30000) {
+  const end = Date.now() + ms;
+  for (;;) {
+    const v = fn();
+    if (v) return v;
+    if (Date.now() > end) throw new Error('timed out waiting for a condition');
+    await sleep(25);
+  }
+}
+const bankDrive = (ctx, cli, opts = {}) => drive(ctx, cli, { sheet: true, ...opts, deps: { pollMs: 25, ...opts.deps } });
+const readRows = (ctx, rep = 1) => fs.readFileSync(runPaths(ctx.expRoot, runId(rep)).questions, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+
+test('T10 step 4: a bank miss pauses the run, exp answer resumes it, and the wait is recorded and excluded', async () => {
+  const ctx = makeExperimentRepo({ answerMode: 'bank' });
+  const cli = fakeCli([PROBE, QUESTION, DONE]);
+  const finished = bankDrive(ctx, cli, single);
+  const item = await until(() => loadItems(ctx.expRoot)[0]);
+  await until(() => stateOf(ctx).status === 'waiting_operator');
+  assert.equal(stateOf(ctx).waiting_qid, item.qid);
+  await sleep(400);
+  const r = answerItem({ expRoot: ctx.expRoot, qid: item.qid, text: 'Only the PM may edit.' });
+  assert.deepEqual(r.resumable, [runId(1)]);
+  const res = await finished;
+  assert.equal(res.exit, 0, res.lines.join('\n'));
+  const s = stateOf(ctx);
+  assert.equal(s.status, 'done');
+  assert.equal(s.waiting_qid, null);
+  assert.equal(cli.calls()[2].prompt, 'Only the PM may edit.');
+  assert.equal(s.timeline.waits.length, 1);
+  const waited = Date.parse(s.timeline.waits[0].end) - Date.parse(s.timeline.waits[0].start);
+  assert.ok(waited >= 350, `wait of ${waited} ms recorded`);
+  const rows = readRows(ctx);
+  assert.deepEqual([rows[0].source, rows[0].bank_id], ['operator', 'b1']);
+  // the wait is subtracted from agent time by the metrics (E63): a 10 s run with this wait
+  const t = timeTerms({ start: 0, end: 10_000, waits: [{ start: 2000, end: 2000 + waited }] });
+  assert.equal(t.wait_s, Math.round(waited / 1000));
+  assert.equal(t.agent_s, 10 - t.wait_s - t.answerer_s);
+});
+
+test('E34 (driver): two runs asking the same question share one queue item and one answer resumes both', async () => {
+  const ctx = makeExperimentRepo({ answerMode: 'bank', experiment: { max_parallel: 2, replicates: 2 } });
+  const steps = [PROBE, { text: 'Who may edit a note?' }, DONE];
+  const cli = fakeCli({ per_cwd: { '-r1': steps, '-r2': steps } });
+  const finished = bankDrive(ctx, cli);
+  const item = await until(() => { const i = loadItems(ctx.expRoot); return i.length === 1 && i[0].run_ids.length === 2 && i[0]; });
+  await until(() => stateOf(ctx, 1).status === 'waiting_operator' && stateOf(ctx, 2).status === 'waiting_operator');
+  const r = answerItem({ expRoot: ctx.expRoot, qid: item.qid, text: 'Only the PM.' });
+  assert.equal(r.resumable.length, 2);
+  const res = await finished;
+  assert.equal(res.exit, 0, res.lines.join('\n'));
+  assert.equal(loadItems(ctx.expRoot).length, 1);
+  assert.deepEqual([readRows(ctx, 1)[0].source, readRows(ctx, 2)[0].source], ['operator', 'bank']);
+});
+
+test('an exact bank match answers at once, without waiting, and is logged for --audit', async () => {
+  const ctx = makeExperimentRepo({ answerMode: 'bank' });
+  addEntry(ctx.expRoot, { question: 'Max length of note?', answer: '500 characters.' });
+  const cli = fakeCli([PROBE, { text: 'max length of the note' }, DONE]);
+  const res = await bankDrive(ctx, cli, single);
+  assert.equal(res.exit, 0, res.lines.join('\n'));
+  assert.equal(cli.calls()[2].prompt, '500 characters.');
+  assert.deepEqual([readRows(ctx)[0].source, readRows(ctx)[0].bank_id], ['bank', 'b1']);
+  assert.equal(readAuto(ctx.expRoot).length, 1);
+  assert.equal(loadItems(ctx.expRoot).length, 0);
+  assert.equal(stateOf(ctx).timeline.waits.length, 0);
+});
+
+test('a near-duplicate waits: the model suggestion is stored on the item and not applied', async () => {
+  const ctx = makeExperimentRepo({ answerMode: 'bank' });
+  addEntry(ctx.expRoot, { question: 'Is a note deleted with its epic?', answer: 'Yes.' });
+  const cli = fakeCli([PROBE, { text: 'What happens to notes when an epic is removed?' }, { text: '{"bank_id": "b1"}' }, DONE]);
+  const finished = bankDrive(ctx, cli, single);
+  const item = await until(() => loadItems(ctx.expRoot)[0]);
+  assert.equal(item.suggested_bank_id, 'b1');
+  assert.equal(item.bank_id, null);
+  await until(() => stateOf(ctx).status === 'waiting_operator');
+  assert.ok(stateOf(ctx).spend.matcher > 0);
+  answerItem({ expRoot: ctx.expRoot, qid: item.qid, sameAs: 'b1' });
+  const res = await finished;
+  assert.equal(res.exit, 0, res.lines.join('\n'));
+  assert.equal(cli.calls()[3].prompt, 'Yes.');
+});
+
+test('wait_timeout_s: a run left waiting too long aborts timeout', async () => {
+  const ctx = makeExperimentRepo({ answerMode: 'bank', experiment: { wait_timeout_s: 1 } });
+  const res = await bankDrive(ctx, fakeCli([PROBE, QUESTION, DONE]), single);
+  assert.equal(res.exit, 6);
+  assert.equal(stateOf(ctx).abort_reason, 'timeout');
+});
+
+test('--continue on a run killed while waiting resumes the wait and sends the answer', async () => {
+  const ctx = makeExperimentRepo({ answerMode: 'bank' });
+  const first = fakeCli([PROBE, QUESTION]);
+  const run1 = bankDrive(ctx, first, { ...single, deps: { wait: 0, pollMs: 25 } });
+  const item = await until(() => loadItems(ctx.expRoot)[0]);
+  await until(() => stateOf(ctx).status === 'waiting_operator');
+  // simulate the kill: stop the first batch from answering by making its run look aborted, then restore the waiting state
+  const paths = runPaths(ctx.expRoot, runId(1));
+  const waiting = readJson(paths.state);
+  answerItem({ expRoot: ctx.expRoot, qid: item.qid, text: 'Only the PM.' });
+  await run1;
+  writeJsonAtomic(paths.state, { ...waiting, status: 'waiting_operator', waiting_qid: item.qid, abort_reason: null });
+  const second = fakeCli([PROBE, DONE]);
+  const res = await bankDrive(ctx, second, { continueRunId: runId(1) });
+  assert.equal(res.exit, 0, res.lines.join('\n'));
+  assert.equal(second.calls()[1].prompt, 'Only the PM.');
+  assert.equal(stateOf(ctx).status, 'done');
 });

@@ -44,7 +44,7 @@ export function runPaths(expRoot, runId) {
 export const newRunState = () => ({
   status: 'queued', session_id: null, turn_state: 'idle', turn_count: 0, question_count: 0, empty_streak: 0,
   last_prompt_hash: null, pending_reply: null, wait_started: null, started_at: null, ended_at: null, first_prompt_at: null,
-  cli_total_usd: null, timeline: { waits: [], answerer: [] },
+  cli_total_usd: null, waiting_qid: null, timeline: { waits: [], answerer: [] },
   spend: { arm: 0, answerer: 0, matcher: 0, judge: 0, probe: 0 }, overshoot_usd: 0, abort_reason: null, abort_detail: null, exit_code: 0,
 });
 

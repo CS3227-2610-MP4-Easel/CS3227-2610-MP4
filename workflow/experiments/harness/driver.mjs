@@ -3,12 +3,17 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { FIXED_ASSUMPTION, answerSheet } from './answerer.mjs';
 import { runCheck } from './check.mjs';
 import { classifyTurn, hasQuestionBeforeDone } from './classify.mjs';
 import { assertClonePath, clonePathFor, prepareClone } from './clone.mjs';
 import { batchPaths, diff, hashFile, snapshot } from './containment.mjs';
 import { batchReached, costFromModelUsage, evaluateRun, exitForReason, invocationCap, reasonFromResult, round4, summarize, totalOf } from './budget.mjs';
 import { checkProbe, describePlugin, describeProblems, probeParts } from './isolation.mjs';
+import { activeEntries, findExact, loadBank } from './bank.mjs';
+import { appendQuestion } from './questions.mjs';
+import { enqueue, getItem, logAuto, suggestDuplicate } from './queue.mjs';
+import { sanitizeText } from './sanitize.mjs';
 import { resolveWorktreesRoot } from './paths.mjs';
 import { ConfigError, buildEnv, claudeArgs, isUuid, parseStream, resolveLauncher, runProcess } from './spawn.mjs';
 import {
@@ -20,7 +25,7 @@ export const COMPLETION_BLOCK = 'When the artifact is complete, end your final m
 export const RETRY_PROMPT = 'Continue, ask a question, or finish with EXP-DONE';
 export const CONTINUE_PROMPT = 'Continue from where you stopped.';
 export const PROBE_PROMPT = 'Reply with exactly the word: ok';
-export const FIXED_ASSUMPTION = 'Not covered by the brief. Use your best judgement, state the assumption in the artifact, and continue.';
+export { FIXED_ASSUMPTION };
 export const MAX_QUESTIONS = 40;
 const SUPPORTED_STAGE = 'specplan';
 
@@ -46,11 +51,6 @@ export function experimentFileProblem(repoRoot, file) {
 }
 
 const renderPrompt = (arm, brief, taskId) => `${arm.prompt.replaceAll('{{brief}}', brief).replaceAll('{{task_id}}', taskId)}\n\n${COMPLETION_BLOCK}`;
-
-function appendQuestion(paths, row) {
-  fs.mkdirSync(paths.dir, { recursive: true });
-  fs.appendFileSync(paths.questions, `${JSON.stringify({ issue_id: null, issue_alt: null, bank_id: null, note: null, ...row })}\n`);
-}
 
 // ---- the batch --------------------------------------------------------------------------------------------------
 
@@ -313,7 +313,13 @@ async function executeRun(ctx, run) {
   run.manifest.versions.cli = probe.record.claude_code_version;
 
   let prompt;
-  if (run.resumed) {
+  if (run.resumed && state.waiting_qid) {
+    const item = getItem(ctx.expRoot, state.waiting_qid);
+    const a = await waitForAnswer(ctx, run, item);
+    if (a.abort) return abort(ctx, run, a.abort, a.detail);
+    appendQuestion(run.paths, { run_id: run.run_id, turn: state.turn_count, text: item.text, source: a.source, bank_id: a.bank_id });
+    prompt = a.text;
+  } else if (run.resumed) {
     prompt = state.turn_state === 'in_turn' ? CONTINUE_PROMPT : (state.next_prompt ?? CONTINUE_PROMPT);
   } else {
     prompt = renderPrompt(arm, fs.readFileSync(path.join(ctx.expRoot, 'tasks', run.task, task.brief_file), 'utf8'), run.task);
@@ -386,7 +392,8 @@ async function executeRun(ctx, run) {
     state.empty_streak = 0;
     state.question_count += 1;
     if (state.question_count > (ctx.deps.maxQuestions ?? MAX_QUESTIONS)) return abort(ctx, run, 'turn_cap', `question ${state.question_count}`);
-    const answer = await (ctx.deps.answer ?? defaultAnswer)({ run, question: String(text), state, arm, task, ctx });
+    const answer = await (ctx.deps.answer ?? answerFor)({ run, question: String(text), state, arm, task, ctx });
+    if (answer.abort) return abort(ctx, run, answer.abort, answer.detail);
     appendQuestion(run.paths, { run_id: run.run_id, turn: state.turn_count, text: String(text).slice(0, 2000), source: answer.source, bank_id: answer.bank_id ?? null, note: answer.note ?? null });
     prompt = answer.text;
     state.next_prompt = prompt;
@@ -394,8 +401,75 @@ async function executeRun(ctx, run) {
   }
 }
 
-async function defaultAnswer() {
-  return { text: FIXED_ASSUMPTION, source: 'assumption' };
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** Account a model call made outside the arm: its cost class and the time it blocked a running run. */
+function account(ctx, state, cls, r) {
+  state.spend[cls] = round4((state.spend[cls] ?? 0) + r.cost);
+  ctx.batch.spend[cls] += r.cost;
+  state.timeline.answerer.push({ start: new Date(r.start).toISOString(), end: new Date(r.end).toISOString() });
+}
+
+const toolEnv = (ctx) => buildEnv(ctx.deps.parentEnv ?? process.env, { authMode: ctx.config.auth_mode, extra: ctx.deps.extraEnv ?? {} });
+
+/** Bank mode: an exact match answers at once; otherwise the question waits in the queue for `exp answer` (F8). */
+async function bankAnswer({ run, question, state, arm, ctx }) {
+  const text = sanitizeText(question);
+  const bank = loadBank(ctx.expRoot);
+  const hit = findExact(bank, text);
+  if (hit) {
+    logAuto(ctx.expRoot, { run_id: run.run_id, run_code: run.arm, question: text, bank_id: hit.id, bank_question: hit.question });
+    return { text: hit.answer, source: 'bank', bank_id: hit.id };
+  }
+  let suggested = null;
+  if (activeEntries(bank).length) {
+    const start = Date.now();
+    const s = await suggestDuplicate({ question: text, bank, launcher: ctx.launcher, env: toolEnv(ctx), model: arm.model.main });
+    account(ctx, state, 'matcher', { cost: s.cost, start, end: Date.now() });
+    suggested = s.bank_id;
+  }
+  const item = enqueue({ expRoot: ctx.expRoot, experimentId: ctx.experiment.id, runId: run.run_id, text, suggestedBankId: suggested });
+  return waitForAnswer(ctx, run, item);
+}
+
+/** waiting_operator until the item has a bank_id; the time is recorded as a wait and excluded from agent_s. */
+async function waitForAnswer(ctx, run, item) {
+  const { state } = run;
+  state.status = 'waiting_operator';
+  state.wait_started = new Date().toISOString();
+  state.waiting_qid = item.qid;
+  persist(ctx, run);
+  const deadline = Date.now() + ctx.experiment.wait_timeout_s * 1000;
+  for (;;) {
+    const cur = getItem(ctx.expRoot, item.qid);
+    if (cur?.bank_id) {
+      const entry = loadBank(ctx.expRoot).find((e) => e.id === cur.bank_id);
+      state.timeline.waits.push({ start: state.wait_started, end: new Date().toISOString() });
+      state.status = 'running';
+      state.wait_started = null;
+      state.waiting_qid = null;
+      persist(ctx, run);
+      return { text: entry.answer, source: cur.run_ids[0] === run.run_id ? 'operator' : 'bank', bank_id: entry.id };
+    }
+    if (ctx.batch.violation) return { abort: 'containment', detail: ctx.batch.violation.join(', ') };
+    if (Date.now() >= deadline) return { abort: 'timeout', detail: 'wait_timeout_s' };
+    await sleep(ctx.deps.pollMs ?? 5000);
+  }
+}
+
+/** Sheet mode asks the answerer model; bank mode matches or waits for the operator. */
+async function answerFor(args) {
+  if (args.ctx.experiment.answer_mode === 'bank') return bankAnswer(args);
+  return sheetAnswer(args);
+}
+
+async function sheetAnswer({ run, question, state, arm, task, ctx }) {
+  const sheet = fs.readFileSync(path.join(ctx.expRoot, 'tasks', run.task, task.sheet_file), 'utf8');
+  const env = toolEnv(ctx);
+  const r = await answerSheet({ question: sanitizeText(question), sheet, launcher: ctx.launcher, env, model: arm.model.main });
+  account(ctx, state, 'answerer', r);
+  if (r.error && !run.manifest.flags.includes(r.error)) run.manifest.flags.push(r.error);
+  return { text: r.text, source: r.source };
 }
 
 export { HARNESS_VERSION };
