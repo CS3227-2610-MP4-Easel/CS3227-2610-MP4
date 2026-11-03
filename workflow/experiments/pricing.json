@@ -1,4 +1,14 @@
 {
   "schema_version": 1,
-  "models": {}
+  "models": {
+    "claude-sonnet-5-5": {
+      "input": 2,
+      "output": 10,
+      "cache_read": 0.1,
+      "cache_write_5m": 2.5,
+      "cache_write_1h": 4,
+      "source": "CLI modelUsage costUSD (costBasis list), exact fit over 7 spike results with zero residual; identical to the ponytail hooks/ponytail-band-import.js table. The Anthropic pricing page was not consulted.",
+      "checked": "2026-11-03"
+    }
+  }
 }

@@ -11,7 +11,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Approved:** —
 - **Last updated:** 2026-11-03 by Claude Sonnet 5.5 — T1 done, T2 awaiting spend-limit gate
 
-**Untouched:** Architecture, Conventions, Deviations
+**Untouched:** Architecture, Conventions
 
 ---
 
@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S2 | 2026-11-03 | Claude Sonnet 5.5 | W~1 | Blocked — needs human | T1 done; T2 step 1 is a GATE | Q~1: spend limit for the T2 spike (a few dollars at most) and confirm subscription login; T3, T5 and T8 wait on T2 | 2026-11-03 |
+| S2 | 2026-11-03 | Claude Sonnet 5.5 | W~1 | Blocked — needs human | T1 done; T2 steps 1-4 and 6-9 done, step 5 open (D~1) | Q~1: approve the amendment in D~1 (hooks set from hook events; built-in baseline in the expected sets). Then amend `runtime.md` § Isolation and `requirements.md` F4 (`writing-specs-lite` change control), tick T2 step 5, set T2 Done, re-lint the plan, and start wave 2 (T3, T5, T8) | 2026-11-03 |
 | S1 | 2026-11-03 | Claude Sonnet 5.5 | W~1 | Paused | Plan approved (gate 2); no task started; handed to a new session by the owner | New session: read STATE.md, guardrails.md and this file, run `lint.mjs plan workflow/plans/2026-11-03-experiment-framework.md --approved`, add your own session row, then run executing-plans-lite from T1 step 1 (T1 and T2 may run together; T2 step 1 is a GATE for the owner's spend limit) | 2026-11-03 |
 
 **Remaining**
@@ -40,7 +40,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W~1 | Experiment framework (agent-workflow evaluation) | Planned | [spec](../../specs/2026-11-03-experiment-framework-design.md) (approved 2026-11-03; amended C~10) | [plan](../../plans/2026-11-03-experiment-framework.md) (approved 2026-11-03) | Big · T1 done; T2 blocked on the spend-limit gate | — |
+| W~1 | Experiment framework (agent-workflow evaluation) | Planned | [spec](../../specs/2026-11-03-experiment-framework-design.md) (approved 2026-11-03; amended C~10) | [plan](../../plans/2026-11-03-experiment-framework.md) (approved 2026-11-03) | Big · T1 done; T2 findings in, blocked on Q~1 (D~1 spec amendment) | — |
 | W7 | PM plan flow (proposals, pm) | Not started | — | — | untouched on this branch; spec stage needs only W1 merged, build waits on W2, W3, W5, W6 | — |
 
 ---
@@ -56,6 +56,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-03 | Spec approved at gate 1 by the owner | W~1 | this commit |
 | 2026-11-03 | Spec amended for W1 (PR #5): W7 spec stage needs only W1's frozen interfaces; pilot base_commit and config.json handling noted | W~1 | this commit |
 | 2026-11-03 | Spec revised after two review rounds: runtime.md added, containment, isolation, bank, metrics, cost and reporting rules tightened | W~1 | this commit |
+| 2026-11-03 | T2 spike run for real (owner approved a 3 USD cap on the subscription login; 0.88 USD used) against Claude Code 2.1.316: findings in `harness/isolation.md`, five scrubbed fixtures, `pricing.json` filled for `claude-sonnet-5-5`. Toy costs per arm: superpowers 0.1312, lite 0.1358, full 0.2113 USD; ceilings by the plan's rule: run 0.6338, batch 3.169 USD. Key facts: `total_cost_usd` is cumulative over resumes and includes subagents (transcript sums match to the token); `--max-budget-usd` is per invocation; duplicate message ids occur; the init record has no hooks set (D~1); OpenTelemetry console export gave no output; the npm `.cmd` shim fails without a shell (EINVAL) | W~1 | this commit |
 | 2026-11-03 | T1 done: schema validators, secrets scan, cost function, `exp check` and the command loader (50 tests green). Plan-level notes: `--secrets` scans all of `EXP_ROOT` except `local/` (not only `experiments/`) so T8 can scan the plugin copy; `exp check` prints the CLI version line only once T3 adds the launcher; a task whose id starts with `pilot-` is held to F16 | W~1 | this commit |
 
 ---
@@ -80,3 +81,14 @@ describes `INT`; read it for context and write here instead of editing it.
 | C~8 | 2026-11-03 | The SoCLaaS key is not used for experiment runs; the arms run on Claude models through the Claude CLI | Owner asked whether to use it; reasons: SoCLaaS is OpenAI-compatible with open-weight models and reports no cache split, Claude Code needs the Anthropic API, and results on other models would not transfer to the Claude and Codex implementation runs; the key is also shared with the app (architecture §12) |
 | C~9 | 2026-11-03 | Gate 1 approved for the experiment framework spec (Medium tier, SD1 to SD14, lenses Implementer, Tester, Attacker) | Owner approval in chat |
 | C~10 | 2026-11-03 | Amend the approved spec: T6 depends on T3, T4 and T5 (fake CLI, answerer, question log), T9 moves to wave 6, `pricing.mjs` moves to T1, commands load from `harness/commands/`, T3 also satisfies F15 | Found by the plan review (Implementer lens); no behaviour changes; the owner chose "plan as is" for the provider seam, so no provider field was added; rejected: duplicating helpers in T6 to keep five waves |
+
+## 8. Deviations
+
+> Legend: `D` = Deviation, where reality diverged from a spec or plan. Not to be confused with
+> AD-nn, an Architecture Decision.
+
+| ID | Date | What diverged | Consequence | What was done | Status |
+|---|---|---|---|---|---|
+| D~1 | 2026-11-03 | Found by the T2 spike (CLI 2.1.316). (a) The `system/init` record has **no hooks set**; spec F4, E25 and `runtime.md` § Isolation assume six sets. Hook activity is visible only as `hook_started`/`hook_response` stream events for hooks that fired, before the init record. (b) The `skills`, `agents` and `plugins` lists always contain built-in entries (20 skills, 6 agents, 3 plugins) that `--setting-sources project` does not remove, so "arm skills plus plugin skills" never equals the record. | Without an amendment F4 cannot pass on any real run: E25 stops every run, and E24 would flag the built-ins. T3's `isolation.mjs` and its tests cannot be written against the current text. | T2 finished everything else. `isolation.md` records the proposed derivation: expected sets = built-in baseline (constants per CLI version, from the plain-probe fixture) + arm and plugin entries; hooks = hook names observed in the probe stream (launched with `--include-hook-events`) must be a subset of the SessionStart hooks declared by the arm's plugins; non-SessionStart plugin hooks are covered by the approval hash over the plugin directory. Spec not yet amended. | Open: waiting on Q~1 |
+
+**Q~1 (for the owner).** Approve amending F4, E25 and `runtime.md` § Isolation as in D~1 (hooks checked by observed SessionStart hook events plus the plugin hash, built-in baseline added to the expected sets)? Recommended; the alternative is to drop hooks from the comparison and rely only on the stripped clone and the plugin hash, which is weaker.

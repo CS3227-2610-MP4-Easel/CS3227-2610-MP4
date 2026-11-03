@@ -17,7 +17,7 @@
 | Task | Depends on | Can run concurrently with | Wave | Status |
 |---|---|---|---|---|
 | T1 Schemas and check | - | T2 | 1 | Done |
-| T2 Isolation spike | - | T1 | 1 | Not started |
+| T2 Isolation spike | - | T1 | 1 | Blocked |
 | T3 Launcher and driver | T1, T2 | T5, T8 | 2 | Not started |
 | T5 Extractor | T1, T2 | T3, T8 | 2 | Not started |
 | T8 Pilot bundle | T1, T2 | T3, T5 | 2 | Not started |
@@ -122,15 +122,15 @@ Executor note: run inline, task by task in table order. Tasks in one wave share 
 | Modify | `workflow/experiments/pricing.json` | models used by the three arms and the judge, five price fields, `source`, `checked` |
 
 **Checklist**
-- [ ] 1. GATE: ask the operator for a spend limit for the spike (a few dollars at most) and confirm they are on the subscription login; do not start real calls before the yes.
-- [ ] 2. Write `run-spike.mjs` to run, from a throwaway clone of this repo: (a) a probe with `--setting-sources project --strict-mcp-config --output-format stream-json` and a one-line prompt; (b) the same with one `--plugin-dir`; (c) a resume of (a) by session id; (d) a prompt that launches one subagent; (e) one toy spec-and-plan run per arm flow (superpowers, lite, full) on a small request, recording each run's `total_cost_usd`; (f) the same flags with `claude_bin` pointing at an npm `.cmd` shim, if one exists, to see how Windows spawns it.
-- [ ] 3. GATE: run the spike (real model calls). Save raw outputs under `workflow/experiments/local/spike/` (ignored by git).
-- [ ] 4. Read the outputs and write `isolation.md`: which of the six sets (skills, plugins, agents, hooks, MCP servers, tools) the init record carries and how each is named; the derivation of expected sets from an arm; the reference cost field name and whether it sums across resumed invocations; where the main and subagent transcripts are and how subagents link to parents; whether duplicate message ids occur; whether OpenTelemetry can write a file in headless mode (set `CLAUDE_CODE_ENABLE_TELEMETRY` and the exporter variables, run, look); whether a `.cmd` launcher works without a shell.
+- [x] 1. GATE: ask the operator for a spend limit for the spike (a few dollars at most) and confirm they are on the subscription login; do not start real calls before the yes.
+- [x] 2. Write `run-spike.mjs` to run, from a throwaway clone of this repo: (a) a probe with `--setting-sources project --strict-mcp-config --output-format stream-json` and a one-line prompt; (b) the same with one `--plugin-dir`; (c) a resume of (a) by session id; (d) a prompt that launches one subagent; (e) one toy spec-and-plan run per arm flow (superpowers, lite, full) on a small request, recording each run's `total_cost_usd`; (f) the same flags with `claude_bin` pointing at an npm `.cmd` shim, if one exists, to see how Windows spawns it.
+- [x] 3. GATE: run the spike (real model calls). Save raw outputs under `workflow/experiments/local/spike/` (ignored by git).
+- [x] 4. Read the outputs and write `isolation.md`: which of the six sets (skills, plugins, agents, hooks, MCP servers, tools) the init record carries and how each is named; the derivation of expected sets from an arm; the reference cost field name and whether it sums across resumed invocations; where the main and subagent transcripts are and how subagents link to parents; whether duplicate message ids occur; whether OpenTelemetry can write a file in headless mode (set `CLAUDE_CODE_ENABLE_TELEMETRY` and the exporter variables, run, look); whether a `.cmd` launcher works without a shell.
 - [ ] 5. If any finding contradicts the spec (a missing set in the init record, no cost field, a flag that does not exist), stop: write a Deviation in the branch state, amend the spec with the operator (`writing-specs-lite` change control), then continue.
-- [ ] 6. Scrub the four fixtures (remove paths, user names, keys; keep structure and ids) and verify with `exp check --secrets`.
-- [ ] 7. Fill `pricing.json` from the current Anthropic pricing page for each model the arms and judge use; record `source` and `checked`; cross-check against the table in the ponytail plugin's `hooks/ponytail-band-import.js` and note any difference.
-- [ ] 8. Record in the branch state: findings note and the three toy costs. The ceiling rule used by T8 is this plan's own choice: run ceiling = 3 times the highest toy cost of any arm; batch ceiling = 5 times the run ceiling; the operator confirms both at the T9 gate, and any extra replicates need a new confirmation.
-- [ ] 9. Commit: `docs: isolation and transcript spike findings, fixtures and pricing (experiment framework)`.
+- [x] 6. Scrub the four fixtures (remove paths, user names, keys; keep structure and ids) and verify with `exp check --secrets`.
+- [ ] 7. Fill `pricing.json` from the current Anthropic pricing page for each model the arms and judge use; record `source` and `checked`; cross-check against the table in the ponytail plugin's `hooks/ponytail-band-import.js` and note any difference. (Not ticked: filled from the CLI list-price basis and the ponytail table, which agree exactly; the pricing page was not consulted. Confirm at the T9 gate.)
+- [x] 8. Record in the branch state: findings note and the three toy costs. The ceiling rule used by T8 is this plan's own choice: run ceiling = 3 times the highest toy cost of any arm; batch ceiling = 5 times the run ceiling; the operator confirms both at the T9 gate, and any extra replicates need a new confirmation.
+- [x] 9. Commit: `docs: isolation and transcript spike findings, fixtures and pricing (experiment framework)`.
 
 ### T3: Run launcher and driver
 **Delivers:** `exp run` end to end against the fake CLI | **Satisfies:** F3, F4, F5, F6, F14, F15, F17, N2, N7, N8 | **Depends on:** T1, T2 | **Wave:** 2
