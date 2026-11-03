@@ -21,3 +21,19 @@ test("E19 request-facing DB client hides Prisma raw SQL methods at runtime", asy
   assert.equal(client.$executeRawUnsafe, undefined);
   await base.$disconnect();
 });
+
+test("interactive transaction clients hide raw SQL methods", async () => {
+  const fake = { $extends: () => ({ $transaction: async (callback: (tx: object) => Promise<unknown>) => callback({ $queryRaw: () => [], $executeRaw: () => 1 }) }) };
+  const client = createDbClient(fake as never);
+  await client.$transaction(async (tx) => {
+    assert.equal((tx as any).$queryRaw, undefined);
+    assert.equal((tx as any).$executeRaw, undefined);
+  });
+});
+
+test("request-facing clients cannot create an unprotected extension", async () => {
+  const base = new PrismaClient();
+  const client = createDbClient(base);
+  assert.equal((client as any).$extends, undefined);
+  await base.$disconnect();
+});

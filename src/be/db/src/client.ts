@@ -8,15 +8,15 @@ export function applyDefaultReadFilter(model: string, args: Record<string, unkno
 
 export function canUseMaintenanceCapability(): false { return false; }
 
-type RawSqlMethodName = "$queryRaw" | "$queryRawUnsafe" | "$executeRaw" | "$executeRawUnsafe";
+type RawSqlMethodName = "$queryRaw" | "$queryRawUnsafe" | "$executeRaw" | "$executeRawUnsafe" | "$extends";
 export type FilteredDbClient = Omit<PrismaClient, RawSqlMethodName>;
-const RAW_SQL_METHODS = new Set<RawSqlMethodName>(["$queryRaw", "$queryRawUnsafe", "$executeRaw", "$executeRawUnsafe"]);
+const RAW_SQL_METHODS = new Set<RawSqlMethodName>(["$queryRaw", "$queryRawUnsafe", "$executeRaw", "$executeRawUnsafe", "$extends"]);
 type ReadQuery = { model: string; args: Record<string, unknown>; query: (args: Record<string, unknown>) => Promise<unknown> };
 const filteredReadExtension = {
   query: {
     $allModels: {
-      async findMany({ model, args, query }: ReadQuery) { return sanitizeVisibleResult(model, await query(applyDefaultReadFilter(model, args))); },
-      async findFirst({ model, args, query }: ReadQuery) { return sanitizeVisibleResult(model, await query(applyDefaultReadFilter(model, args))); },
+      async findMany({ model, args, query }: ReadQuery) { return sanitizeVisibleResult(model, await query(applyDefaultReadFilter(model, args)), args); },
+      async findFirst({ model, args, query }: ReadQuery) { return sanitizeVisibleResult(model, await query(applyDefaultReadFilter(model, args)), args); },
       async count({ model, args, query }: ReadQuery) { return query(applyDefaultReadFilter(model, args)); },
       async aggregate({ model, args, query }: ReadQuery) { return query(applyDefaultReadFilter(model, args)); },
       async groupBy({ model, args, query }: ReadQuery) { return query(applyDefaultReadFilter(model, args)); },
@@ -27,7 +27,7 @@ const filteredReadExtension = {
         return result;
       },
       async findFirstOrThrow({ model, args, query }: ReadQuery) {
-        const result = sanitizeVisibleResult(model, await query(applyDefaultReadFilter(model, args)));
+        const result = sanitizeVisibleResult(model, await query(applyDefaultReadFilter(model, args)), args);
         if (result === null) throw new Error("NOT_FOUND");
         return result;
       },
@@ -59,6 +59,12 @@ function hideRawSql<T extends object>(client: T): Omit<T, RawSqlMethodName> {
   return new Proxy(client, {
     get(target, property, receiver) {
       if (typeof property === "string" && RAW_SQL_METHODS.has(property as RawSqlMethodName)) return undefined;
+      if (property === "$transaction") {
+        const transaction = Reflect.get(target, property, receiver) as (...args: any[]) => unknown;
+        return (input: unknown, ...options: unknown[]) => typeof input === "function"
+          ? transaction.call(target, (tx: object) => input(wrapUniqueReads(hideRawSql(tx))), ...options)
+          : transaction.call(target, input, ...options);
+      }
       return Reflect.get(target, property, receiver);
     },
   }) as Omit<T, RawSqlMethodName>;
