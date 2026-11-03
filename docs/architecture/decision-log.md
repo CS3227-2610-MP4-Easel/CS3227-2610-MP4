@@ -41,10 +41,12 @@ Companion to [agile-platform-architecture.md](agile-platform-architecture.md). T
 **Decided by:** team, 2026-10-28 (team's own choice).
 
 ### AD-01b UI framework inside the single deploy — Decided
-**Decision:** Next.js (App Router) with the Hono app mounted under `/api`. `apps/web` never imports `@prisma/client` or `packages/db`; all data access goes through the contracts client. A source-scan test enforces this.
+**Decision:** Next.js (App Router) with the Hono app mounted under `/api`. `src/fe` never imports `@prisma/client` or `@agile/db`; all data access goes through the contracts client in `src/be/contracts`. A source-scan test enforces this.
 **Reason:** accepted AI recommendation (2026-10-28).
-**Consequences:** the Hono-in-Next layout must be verified before the first deploy; one Vercel project root is `apps/web`.
+**Consequences:** the Hono-in-Next layout must be verified before the first deploy; one Vercel project root is `src/fe` and the backend packages live under `src/be/*`.
 **Decided by:** team, 2026-10-28 (accepted AI recommendation).
+
+**Path supersession (2026-11-02):** PR #6 moved the frontend to `src/fe`, and W1 moved the backend packages to `src/be/api`, `src/be/contracts`, `src/be/db`, and `src/be/llm-gateway`. This supersedes the historical `apps/web` and `packages/*` paths; the import boundary and single-deployable behavior remain unchanged.
 
 Original brief (kept for the record):
 Why now: §13 UI integration, the Vercel project layout (AD-01a), and where the authorization boundary sits (§7).
@@ -54,13 +56,13 @@ Why now: §13 UI integration, the Vercel project layout (AD-01a), and where the 
 | A. Next.js (App Router) with the Hono app mounted under `/api` through a catch-all route handler | Team knows Next 15, Tailwind and shadcn from MP3; zero-config on Vercel; routing and build in one framework | Server components can call Prisma directly and bypass the API, contracts and role checks, so the seam has to be enforced by an import rule and a test; heavier than needed for an authenticated app that needs no SSR | The team wants the familiar, well-trodden path |
 | B. Static SPA (e.g. Vite + React) served alongside the Hono app in one Vercel project | All data must go through the API, which makes the seam structural; lighter; Firebase tokens are handled client-side | Needs hand-written Vercel config (static output plus SPA rewrite plus the function); fewer documented examples; no SSR (not needed) | The team wants the seam enforced by structure rather than by a rule |
 
-Recommendation: A, because it is the lowest-risk deployment and the team already knows it, with two enforced rules: `apps/web` never imports `@prisma/client` or `packages/db`, and all data access goes through the contracts client. Confidence: medium. What would change it: no Next.js experience on the team, or a wish for a structural seam (then B).
+Recommendation: A, because it is the lowest-risk deployment and the team already knows it, with two enforced rules: `src/fe` never imports `@prisma/client` or `@agile/db`, and all data access goes through the contracts client. Confidence: medium. What would change it: no Next.js experience on the team, or a wish for a structural seam (then B).
 Evidence: the Hono-in-Next catch-all pattern and the one-project SPA-plus-Hono layout were not checked against Vercel's docs; only standalone Hono, cron and `maxDuration` were. Verify before the first deploy.
 
 ### AD-01c Contract style — Decided
-**Decision:** REST. Zod schemas in `packages/contracts` are the single source; OpenAPI is generated from them (e.g. `@hono/zod-openapi`, package and version for the spec to pin).
+**Decision:** REST. Zod schemas in `src/be/contracts` are the single source; OpenAPI is generated from them (e.g. `@hono/zod-openapi`, package and version for the spec to pin).
 **Reason:** accepted AI recommendation (2026-10-28); the OpenAPI file is the machine-readable spec handed to agents.
-**Consequences:** every endpoint is documented at field level (§6); the error envelope lives in `packages/contracts`; file upload is multipart (G-12).
+**Consequences:** every endpoint is documented at field level (§6); the error envelope lives in `src/be/contracts`; file upload is multipart (G-12).
 **Decided by:** team, 2026-10-28 (accepted AI recommendation).
 
 ### AD-06 No scheduled jobs in the MVP — Decided
@@ -74,7 +76,7 @@ Why now: §6 contracts, the work split (G-14), how agents get their specs, and f
 
 | Option | Pros | Cons | Choose when |
 |---|---|---|---|
-| A. REST with zod schemas in `packages/contracts`, OpenAPI generated from them (e.g. `@hono/zod-openapi`) | The contract is a reviewable document that spec-driven agents and tests can read; validation happens at the boundary from one source; multipart upload and the error envelope are explicit; independent of the UI language | Some boilerplate per route; a typed client is generated or hand-written | Spec-driven work and several owners matter most |
+| A. REST with zod schemas in `src/be/contracts`, OpenAPI generated from them (e.g. `@hono/zod-openapi`) | The contract is a reviewable document that spec-driven agents and tests can read; validation happens at the boundary from one source; multipart upload and the error envelope are explicit; independent of the UI language | Some boilerplate per route; a typed client is generated or hand-written | Spec-driven work and several owners matter most |
 | B. Hono RPC (`hono/client` with `@hono/zod-validator`) | End-to-end types with little code, using the framework already chosen | The contract is inferred TypeScript, so there is no OpenAPI document unless added; large route trees can slow type-checking; weaker as a written spec | Speed of development matters most |
 | C. tRPC mounted in Hono | End-to-end types and a mature ecosystem | Another framework on top of Hono; the contract is in code, not a reviewable document; file upload is awkward | The team already knows tRPC |
 
@@ -93,7 +95,7 @@ Why now: every other section depends on it (§4 components, §6 contracts, §14 
 | Option | Pros | Cons | Choose when |
 |---|---|---|---|
 | A. One Next.js app (route handlers / server actions), one deploy | Fewest moving parts; one language and one deploy | Request handlers on serverless hosting are short-lived and stateless, so a process-local limiter, scheduler and batch jobs need workarounds; the UI and API are tangled, which makes three people editing in parallel collide more | The team values deploy simplicity over parallel work, and AI calls are rare |
-| B. Monorepo (npm/pnpm workspaces): `apps/web` (Next.js UI), `apps/api` (long-lived Node REST server), `packages/contracts` (zod schemas, OpenAPI generated), `packages/llm-gateway`, `packages/db` | Each person works against agreed schemas; the contracts package is the field-level contract that spec-driven agents read; a long-lived API suits limiter, jobs and metering; module-import rules can be tested | Two deployables; more initial scaffolding | Three people building in parallel and the AI platform needs a persistent process |
+| B. Monorepo (npm/pnpm workspaces): `src/fe` (Next.js UI), `apps/api` (long-lived Node REST server), `src/be/contracts` (zod schemas, OpenAPI generated), `src/be/llm-gateway`, `src/be/db` | Each person works against agreed schemas; the contracts package is the field-level contract that spec-driven agents read; a long-lived API suits limiter, jobs and metering; module-import rules can be tested | Two deployables; more initial scaffolding | Three people building in parallel and the AI platform needs a persistent process |
 | C. Same monorepo as B, with tRPC instead of REST | End-to-end types with little code | The contract lives in code, not in a reviewable OpenAPI document; harder for non-TS clients and for contract-first specs | The whole team is TS-only and wants minimal ceremony |
 | B′. Monorepo with the same packages as B, but one deployable: a single Hono app (UI served by Next.js with Hono mounted under `/api`, or a static SPA plus Hono) on one Vercel project | One project, one URL, no CORS; keeps the contracts package and module boundaries for parallel work; Hono's `hono/vercel` adapter is a common pattern | Runs as serverless functions, so the gateway's limiter, breaker and caps cannot rely on process memory and must move to the DB (G-17 would be rejected); batch jobs run through Vercel Cron within `maxDuration`; the Next.js-plus-Hono combination was not checked in Vercel's docs, only standalone Hono | Hosting on Vercel alone is a hard preference and the team accepts DB-backed limiter state |
 
@@ -148,7 +150,7 @@ Why now: R1, R3 and R5 all run through it; the three role features register agai
 
 | Option | Pros | Cons | Choose when |
 |---|---|---|---|
-| A. Port the MP3 gateway design to a TS package (`packages/llm-gateway`): keep the pure guards (sanitize, PII, injection flag, output validation), scheduler with caps, breaker and fallback; replace the MP3 audit-string with a queryable `llm_calls` table | Reviewed design with an Attacker lens already done; pure logic ports cleanly; gives direct reuse evidence for the reflection | Translation work; Java-specific parts (Spring conditions, transaction guard) must be re-thought | You want a security-reviewed baseline |
+| A. Port the MP3 gateway design to a TS package (`src/be/llm-gateway`): keep the pure guards (sanitize, PII, injection flag, output validation), scheduler with caps, breaker and fallback; replace the MP3 audit-string with a queryable `llm_calls` table | Reviewed design with an Attacker lens already done; pure logic ports cleanly; gives direct reuse evidence for the reflection | Translation work; Java-specific parts (Spring conditions, transaction guard) must be re-thought | You want a security-reviewed baseline |
 | B. Thin client (OpenAI-compatible SDK) plus new guard code | Quickest start | Re-derives security decisions MP3 already made; weaker R3 story | Time is very short |
 | C. Run an existing proxy (e.g. LiteLLM) in front | Budgets, routing and logging out of the box | Another service to deploy and secure; Python, not TS; custom guards still needed; SoCLaaS key semantics need checking | Many providers, many teams |
 
@@ -210,7 +212,7 @@ Recommendation: A. Confidence: medium-high. What would change it: a short deadli
 Evidence: the resource-aware notes list ticket status changes, comments and PR text as standup input; comments are the only listed input A leaves out (G-12 covers uploaded PR/commit text).
 
 ### AD-10 Where AI-generated plans wait for approval — Decided
-**Decision:** a single `ai_proposals` table shared by the PM plan and the Dev Lead re-plan: kind (PLAN, REPLAN), project, payload JSON validated against a `packages/contracts` schema, status (PENDING, APPROVED, REJECTED, SUPERSEDED), and a link to the LLM call. Approval applies the payload in one transaction.
+**Decision:** a single `ai_proposals` table shared by the PM plan and the Dev Lead re-plan: kind (PLAN, REPLAN), project, payload JSON validated against a `src/be/contracts` schema, status (PENDING, APPROVED, REJECTED, SUPERSEDED), and a link to the LLM call. Approval applies the payload in one transaction.
 **Reason:** accepted AI recommendation (2026-10-28).
 **Consequences:** payload schemas are contracts (§6); the apply step is idempotent per proposal (§9, §10); a partial edit regenerates only that part.
 **Decided by:** team, 2026-10-28 (accepted AI recommendation).
@@ -240,7 +242,7 @@ Work packages (sizes are AI estimates: M = 2, L = 3; to be refined with the team
 
 | WP | Content | Size | Needs |
 |---|---|---|---|
-| E | Monorepo scaffold, `packages/contracts`, CI, dev/prod environments, deploy | M | none |
+| E | Monorepo scaffold, `src/be/contracts`, CI, dev/prod environments, deploy | M | none |
 | A | Firebase auth, registration codes, RBAC and membership checks | M | E |
 | B | Domain core: API and UI for project, epic, task, sprint, checkpoint, member, event, and the `ai_proposals` apply step | L | E, A (can use stubs) |
 | C | Gateway guards: sanitize, PII, injection flag, prompt builder, output validator | M | E |
@@ -408,7 +410,7 @@ Recommendation: A, with the id issued by the server (never accepted from the cli
 Evidence: none external; design reasoning, and the cost of a bad answer is the team's own observation.
 
 ### AD-20 Developer activity input for the MVP — Decided
-**Decision:** the Developer uploads a structured JSON file of activity items (`type` commit or pr, `id`, `title`, `body`, `author`, `timestamp`, `url`, `files` as names only). No diffs. The schema lives in `packages/contracts`. A documented helper script builds the file from `git log` and `gh pr list --json`. A later GitHub import produces the same shape.
+**Decision:** the Developer uploads a structured JSON file of activity items (`type` commit or pr, `id`, `title`, `body`, `author`, `timestamp`, `url`, `files` as names only). No diffs. The schema lives in `src/be/contracts`. A documented helper script builds the file from `git log` and `gh pr list --json`. A later GitHub import produces the same shape.
 **Reason:** accepted AI recommendation (2026-10-28).
 **Consequences:** the upload is a multipart or JSON contract with size and item-count limits (§6); each item is hashed for the summary cache (AD-18); how `author` maps to a user, and the limits, go in G-22; titles and bodies are untrusted text (G-18).
 **Decided by:** team, 2026-10-28 (accepted AI recommendation).
@@ -418,7 +420,7 @@ Why now: G-12. It fixes what the Developer feature can see, the largest token co
 
 | Option | Pros | Cons | Choose when |
 |---|---|---|---|
-| A. Upload a structured JSON file of activity items. Each item: `type` (commit or pr), `id` (sha or PR number), `title`, `body`, `author`, `timestamp`, `url`, `files` (names only). No diffs. The zod schema lives in `packages/contracts`; a helper script that builds the file from `git log` and `gh pr list --json` is documented | Validated at the boundary; small and predictable token cost; each item has a content hash for the summary cache (AD-18); GitHub import later reads the same shape | The user must produce the file; commit messages and PR bodies are untrusted text | MVP, with GitHub later |
+| A. Upload a structured JSON file of activity items. Each item: `type` (commit or pr), `id` (sha or PR number), `title`, `body`, `author`, `timestamp`, `url`, `files` (names only). No diffs. The zod schema lives in `src/be/contracts`; a helper script that builds the file from `git log` and `gh pr list --json` is documented | Validated at the boundary; small and predictable token cost; each item has a content hash for the summary cache (AD-18); GitHub import later reads the same shape | The user must produce the file; commit messages and PR bodies are untrusted text | MVP, with GitHub later |
 | B. Upload raw `git log` or PR export text and let the LLM parse it | Easiest for the user | Parsing costs tokens; errors; a bigger injection surface | Not suitable |
 | C. Option A plus patch or diff files | Richer summaries | Diffs are the largest token sink; the budget is hard to hold | A reason to analyse code, not work items |
 
@@ -660,7 +662,7 @@ Recommendation: A. Confidence: high. What would change it: a very short deadline
 Evidence: MP3's `AGENTS.md` (required `checkstyle` and `build` checks on both branches).
 
 ### AD-33 Error envelope and status mapping — Decided
-**Decision:** the envelope `{ "error": { "code", "message", "details": [{ "field", "message" }], "requestId" } }` with a stable machine-readable `code` held in `packages/contracts`. Mapping: malformed JSON or wrong content type 400; field validation 422 `VALIDATION_FAILED`; missing or invalid token 401; wrong role for the URL namespace 403; resource missing or outside the caller's projects 404; version mismatch, invalid state transition or duplicate 409; upload too large 413; limiter or cap 429 with `Retry-After`; unexpected 500 with only the `requestId`.
+**Decision:** the envelope `{ "error": { "code", "message", "details": [{ "field", "message" }], "requestId" } }` with a stable machine-readable `code` held in `src/be/contracts`. Mapping: malformed JSON or wrong content type 400; field validation 422 `VALIDATION_FAILED`; missing or invalid token 401; wrong role for the URL namespace 403; resource missing or outside the caller's projects 404; version mismatch, invalid state transition or duplicate 409; upload too large 413; limiter or cap 429 with `Retry-After`; unexpected 500 with only the `requestId`.
 **Reason:** accepted AI recommendation (2026-10-28).
 **Consequences:** the complete code list and a condition-to-code table per endpoint go in §8 and §6; the request id is logged with the status and code, never credentials or prompts.
 **Decided by:** team, 2026-10-28 (accepted AI recommendation).
@@ -680,7 +682,7 @@ Evidence: web-service profile; MP3's error handling (request id logged with a sa
 ### AD-34 How AI failures reach the user — Decided
 **Decision:** a per-feature outcome. PM: an error (`AI_UNAVAILABLE` 503, or `AI_BUSY` 429 with `Retry-After`), and the UI offers manual creation; no placeholder plan can be approved. Dev Lead: the computed facts are always returned, with `explanation: null` and `degraded: true`. Developer: a deterministic standup built from task events and item titles, marked `degraded: true`.
 **Reason:** accepted AI recommendation (2026-10-28).
-**Consequences:** three response shapes in `packages/contracts`; a `degraded` outcome is logged on `llm_calls`/`ai_sessions`; failure matrices per workflow in §9.
+**Consequences:** three response shapes in `src/be/contracts`; a `degraded` outcome is logged on `llm_calls`/`ai_sessions`; failure matrices per workflow in §9.
 **Decided by:** team, 2026-10-28 (accepted AI recommendation).
 
 Original brief (kept for the record):

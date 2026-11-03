@@ -4,13 +4,13 @@
 
 ## Now
 
-Nothing built yet *(planned)*. Firebase ID token verified server-side on every request; the application role comes from `users`, never from a claim. Registration codes (13+ characters, constant-time compare, per-IP limited by an HMAC of the IP) gate sign-up. Owns `users` and `rate_counters`.
+W1 exposes the authorization seams used by auth and downstream domain modules. Firebase ID tokens will be verified server-side on every request; the application role comes from `users`, never from a claim. Registration codes (13+ characters, constant-time compare, per-IP limited by an HMAC of the IP) gate sign-up. Owns `users` and `rate_counters`; W4 still implements principal resolution, registration, and lookup.
 
 ## Paths
 
 | Path | Role |
 |---|---|
-| `packages/api/auth (planned)` | token verification, registration, codes, requireMember, rate_counters hit() |
+| `src/be/api/auth (planned)` | token verification, registration, codes, requireMember, rate_counters hit() |
 
 ## Decisions
 

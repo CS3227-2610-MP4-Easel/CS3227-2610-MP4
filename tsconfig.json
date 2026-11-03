@@ -1,0 +1,17 @@
+{
+  "files": [],
+  "references": [
+    { "path": "src/be/contracts" },
+    { "path": "src/be/db" },
+    { "path": "src/be/api" },
+    { "path": "src/be/llm-gateway" }
+  ],
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "skipLibCheck": true,
+    "noEmit": true
+  }
+}

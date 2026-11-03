@@ -1,17 +1,17 @@
 {
   "_comment": "docs/guide/map.json: source-path glob -> guide section files. `ws guide-targets <paths...>` prints the sections to read for a set of changed paths. Edit as the codebase grows.",
-  "packages/contracts/**": [
+  "src/be/contracts/**": [
     "03-architecture.md",
     "04-components.md"
   ],
-  "packages/db/**": [
+  "src/be/db/**": [
     "03-architecture.md",
     "04-components.md"
   ],
-  "packages/**": [
+  "src/be/**": [
     "04-components.md"
   ],
-  "apps/web/**": [
+  "src/fe/**": [
     "04-components.md"
   ],
   "tests/**": [

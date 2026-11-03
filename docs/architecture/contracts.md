@@ -1,6 +1,6 @@
 # Contracts: API and module interfaces
 
-Companion to [agile-platform-architecture.md](agile-platform-architecture.md) (§6). It holds the field-level contracts that the zod schemas in `packages/contracts` implement (AD-01c). If code and this file disagree, fix the disagreement before merging; the OpenAPI file generated from the schemas is checked against the running API by a contract test (A-17).
+Companion to [agile-platform-architecture.md](agile-platform-architecture.md) (§6). It holds the field-level contracts that the zod schemas in `src/be/contracts` implement (AD-01c). If code and this file disagree, fix the disagreement before merging; the OpenAPI file generated from the schemas is checked against the running API by a contract test (A-17).
 
 Decisions cited as AD-nn are in [decision-log.md](decision-log.md); tags A-nn are delegated assumptions awaiting the team's sign-off (architecture §16).
 
@@ -21,6 +21,7 @@ Decisions cited as AD-nn are in [decision-log.md](decision-log.md); tags A-nn ar
 | `User` | `id`, `email`, `displayName` (1 to 100), `role` (`PM` / `DEV_LEAD` / `DEVELOPER`) |
 | `Project` | `id`, `name` (1 to 200), `brief` (null or at most 4000), `status` (`ACTIVE` / `ARCHIVED`), `createdBy`, `createdAt`, `updatedAt`, `version` |
 | `ProjectDetail` | `Project` plus `progress`: `{ pointsTotal, pointsDone, percent, unestimatedTasks }` |
+| `PageProjectDetail` | `{ items: ProjectDetail[], page, size, total }` |
 | `Member` | `userId`, `displayName`, `role`, `addedAt` |
 | `Checkpoint` | `id`, `projectId`, `name` (1 to 200), `targetDate`, `createdAt`, `updatedAt`, `version` |
 | `Epic` | `id`, `projectId`, `checkpointId` (null), `title` (1 to 200), `description` (null, at most 4000), `position`, `taskCount`, `pointsTotal`, `createdAt`, `updatedAt`, `version` |
@@ -53,7 +54,7 @@ Columns: policy (roles; predicate), request, response, errors beyond the common 
 | # | Endpoint | Policy | Request | Response | Errors | Side effects |
 |---|---|---|---|---|---|---|
 | 5 | `POST /api/pm/projects` | PM | `{ name, brief? }` | 201 `Project` | | inserts project and the creator's membership |
-| 6 | `GET /api/projects` | any role; member | query `page`, `size`, `status` | 200 page of `Project`, newest first | | none |
+| 6 | `GET /api/projects` | any role; member | query `page`, `size`, `status` | 200 page of `ProjectDetail`, newest first, `{ items, page, size, total }` | | none |
 | 7 | `GET /api/projects/{projectId}` | any role; member | none | 200 `ProjectDetail` | | none |
 | 8 | `PATCH /api/pm/projects/{projectId}` | PM; member | `{ name?, brief?, status?: "ARCHIVED", version }` | 200 `Project` | 409 `CONFLICT_VERSION` | archived projects become read-only |
 | 9 | `GET /api/projects/{projectId}/members` | any role; member | none | 200 list of `Member` | | none |
@@ -103,7 +104,7 @@ Mutations on an archived project return 409 `CONFLICT_STATE` (one check in `core
 ### 3.5 Dev Lead: facts, digest, re-plan
 | # | Endpoint | Policy | Request | Response | Errors | Side effects |
 |---|---|---|---|---|---|---|
-| 42 | `GET /api/lead/projects/{id}/facts` | LEAD; member | none | 200 `Facts` (no LLM) | | none |
+| 42 | `GET /api/projects/{id}/facts` (`PROJECT_FACTS_READ`) | PM or LEAD; member | none | 200 `Facts` (no LLM) | 404 for a hidden, missing or non-member project | none |
 | 43 | `GET /api/lead/overview` | LEAD | none | 200 list of `{ project, facts summary, latestDigest status }` for the caller's member projects only | | none |
 | 44 | `POST /api/lead/projects/{id}/digests` | LEAD; member | `{}` | 200 `Digest` (`cached: true` and no model call when the facts hash is unchanged); with suggestions it also returns `proposalId` | 429 `AI_BUSY`; the model failing is not an error: `explanation: null`, `degraded: true` (AD-34) | session; one gateway call; inserts `project_digests`; a REPLAN proposal when suggestions exist |
 | 45 | `GET /api/lead/projects/{id}/digests/latest` | LEAD; member | none | 200 `Digest` or 404 if none | | none |
@@ -116,7 +117,7 @@ Mutations on an archived project return 409 `CONFLICT_STATE` (one check in `core
 |---|---|---|---|---|---|---|
 | 49 | `POST /api/dev/projects/{id}/uploads` | DEV; member | `{ items: [ActivityItemInput] }` (at most 1 MB, at most 100 items) | 200 `{ received, created, updated, unchanged, rejected: [{ index, reason }], needsSummary: [itemId] }` | 413 `PAYLOAD_TOO_LARGE`; 422 `VALIDATION_FAILED` | upserts `activity_items` for the uploader; no model call |
 | 50 | `POST /api/dev/projects/{id}/summaries` | DEV; member; items are the caller's own | `{ itemIds }` (at most 10) | 200 `{ summaries: [{ itemId, oneLiner, cached }], failed: [itemId] }` | 429 `AI_BUSY`; 503 `AI_UNAVAILABLE` | one gateway call for the uncached items; inserts `item_summaries` |
-| 51 | `POST /api/dev/projects/{id}/standups` | DEV; member | `{ date? }` (default today) | 200 `Standup` (`cached: true` when the input hash is unchanged); on model failure a code-built standup with `degraded: true` | 429 `AI_BUSY` | session; at most one gateway call; upserts `standups` |
+| 51 | `POST /api/dev/projects/{id}/standups` | DEV; member | `{ date? }` (omitted date defaults to today in `Asia/Singapore`; Friday accepts Friday or Monday, Saturday accepts Saturday or Monday, Sunday accepts Sunday or Monday, Monday-Thursday accept that day or the next calendar day) | 200 `Standup` (`cached: true` when the input hash is unchanged); on model failure a code-built standup with `degraded: true` | 422 `VALIDATION_FAILED` for malformed, previous or later dates; 429 `AI_BUSY` | session; at most one gateway call; upserts `standups` |
 | 52 | `GET /api/dev/projects/{id}/standups/mine` | DEV; member; self | `date?` | 200 `Standup` or 404 | | none |
 | 53 | `PATCH /api/dev/standups/{standupId}` | DEV; self | `{ content, version }` (plain text lines) | 200 `Standup` (`outcome: "EDITED"`) | 409 version | updates content; session closed `EDITED` |
 | 54 | `POST /api/dev/standups/{standupId}/feedback` | DEV; self | `{ feedback?: "UP" or "DOWN" or null, accept?: true }` | 200 `Standup` | | `accept` closes the session `ACCEPTED` |
