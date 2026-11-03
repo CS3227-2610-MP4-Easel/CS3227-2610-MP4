@@ -15,7 +15,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 ---
 
-**Scope.** Two things share this branch. (1) W7 PM plan flow, the owner's slice: **not started**, blocked on W1 (in review), then W2, W3, W5, W6. (2) A new workstream, `W~1` Experiment framework: a harness and schema to run the same task under different agent-workflow configurations and compare tokens, cost, runtime, pass rates and artifact quality. The framework goes in first because it needs none of W7's dependencies; W7 later becomes its first test subject. Worktree: `../CS3227-2610-MP4-w7`.
+**Scope.** Two things share this branch. (1) W7 PM plan flow, the owner's slice: **not started**. Its spec and plan need only W1's frozen interfaces (W1 is in review as PR #5, not yet merged); W2, W3, W5 and W6 gate its build. (2) A new workstream, `W~1` Experiment framework: a harness and schema to run the same task under different agent-workflow configurations and compare tokens, cost, runtime, pass rates and artifact quality. The framework goes in first because it needs none of W7's dependencies; W7 later becomes its first test subject. Worktree: `../CS3227-2610-MP4-w7`.
 
 ---
 
@@ -30,7 +30,7 @@ describes `INT`; read it for context and write here instead of editing it.
 **Remaining**
 
 - [ ] Spec for W~1, then gate 1; then plan, gate 2.
-- [ ] W7 itself: wait for W1 to merge, then W2, W3, W5, W6 (STATE.md §3).
+- [ ] When PR #5 (W1) merges: merge `development` into this branch and move Base, then T1 of the framework; the pilot `base_commit` is the post-W1 `development` commit. W7's own spec and plan can then be run through the framework; its build waits for W2, W3, W5, W6 (STATE.md §3).
 - [ ] **Handover:** tell the Dev Lead that W~1 overlaps W17 (telemetry aggregation script, AD-31) and AD-23b / Q4 (model experiment).
 
 ---
@@ -40,7 +40,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
 | W~1 | Experiment framework (agent-workflow evaluation) | Spec'd | [spec](../../specs/2026-11-03-experiment-framework-design.md) (draft, reviewed twice) | — | Big · spec has no open questions; gate 1 asked | — |
-| W7 | PM plan flow (proposals, pm) | Not started | — | — | untouched on this branch; blocked on W1, W2, W3, W5, W6 | — |
+| W7 | PM plan flow (proposals, pm) | Not started | — | — | untouched on this branch; spec stage needs only W1 merged, build waits on W2, W3, W5, W6 | — |
 
 ---
 
@@ -50,6 +50,7 @@ describes `INT`; read it for context and write here instead of editing it.
 |---|---|---|---|
 | 2026-11-03 | Branch and worktree created from `INT`; branch state written | W~1 | `32b641b` |
 | 2026-11-03 | Experiment framework spec drafted (index plus six components), lint clean | W~1 | `2cc3ec3` |
+| 2026-11-03 | Spec amended for W1 (PR #5): W7 spec stage needs only W1's frozen interfaces; pilot base_commit and config.json handling noted | W~1 | this commit |
 | 2026-11-03 | Spec revised after two review rounds: runtime.md added, containment, isolation, bank, metrics, cost and reporting rules tightened | W~1 | this commit |
 
 ---

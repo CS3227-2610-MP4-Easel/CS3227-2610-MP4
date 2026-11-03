@@ -2,11 +2,11 @@
 
 | ID | Task | Delivers | Satisfies |
 |---|---|---|---|
-| T1 | Schemas, layout and `exp check` | validators for config, arm, task, experiment, pricing; path and id safety; `exp check` with `--secrets` and the credential patterns; `.gitignore` entry; test command in `workflow/config.json` | F1, F2, F15, F16 (checks), N3, N7 |
+| T1 | Schemas, layout and `exp check` | validators for config, arm, task, experiment, pricing; path and id safety; `exp check` with `--secrets` and the credential patterns; `.gitignore` entry; an `experiments` entry (`node --test workflow/experiments/`) in `workflow/config.json` `test_commands`, added on top of W1's entries (root `npm test` does not run `*.test.mjs`) | F1, F2, F15, F16 (checks), N3, N7 |
 | T2 | Isolation and transcript spike (real model calls, a few cents) | verified flags for `--setting-sources`, `--plugin-dir`, MCP, permission mode; the init record's fields; the reference cost field in the JSON result; transcript location and subagent file layout; whether OpenTelemetry writes a file headless; Windows spawn of a native executable; the exact expected-set derivation written to `harness/isolation.md`; scrubbed real fixtures committed under `harness/fixtures/`; findings note in the branch state | F4, F9, N1 |
 | T3 | Run launcher, driver and fake CLI | clone creation and preparation (no remotes, stripped and overlaid `.claude/`, instruction files), probe, headless driver, marker and question rules, timeouts, process-tree kill, containment snapshots, environment allowlist, ceilings, `manifest.json`, atomic `state.json`, `--continue`, `fake-claude.mjs` | F3, F4, F5, F6, F14, F17, N2, N7, N8 |
 | T5 | Extractor | transcript copy and hash, dedupe, subagent linking, pricing, phases, metrics, `events.csv`, `usage.json` | F9, F10, N1, N5, N6 |
-| T8 | Pilot bundle | task `pilot-pinned-note` (brief, answer sheet, 6 or more seeded issues with anchors), three arm files per runtime.md, pilot experiment file (hypotheses, decision rule, ceilings from Q1), `rubric/rubric.md` with anchors, three calibration artifacts with bands | F1, F2, F15, F16 |
+| T8 | Pilot bundle | task `pilot-pinned-note` (brief, answer sheet, 6 or more seeded issues with anchors), three arm files per runtime.md, pilot `base_commit` = the `development` commit that contains W1's merge (a pinned W1 tip sha only if W1 is still unmerged when T8 starts), brief and sheet written against the `src/be/*` and `src/fe` layout, pilot experiment file (hypotheses, decision rule, ceilings from Q1), `rubric/rubric.md` with anchors, three calibration artifacts with bands | F1, F2, F15, F16 |
 | T4 | Sheet answerer and question log | sheet mode, fixed text, answerer self-test, question sanitizer, `questions.jsonl` | F7, F11, N4 |
 | T6 | Grader | lint runner (from the main checkout), credential scan, seeded-issue judge, two-call rubric, review rounds, fix iterations, judge self-test on the calibration set | F12, N3, N4 |
 | T10 | Bank, queue and pause-resume | bank, exact matcher, model suggestion, `exp queue`, `exp answer`, polling resume | F8, F11, N4 |
@@ -38,4 +38,6 @@ Shared-file hazards: T3 and T4 both edit `harness/driver.mjs` and T4 and T10 bot
 - The operator reads `runs.csv`, `medians.csv` and the dominated-arms list and decides which arms run on W7.
 
 ## Cut line and schedule
-The pilot needs T1 to T9 without T10. T10 is needed only for the real W7 comparison. Nine tasks in five waves must land before the 10 Nov freeze; if time runs short, T10 and the OpenTelemetry cross-check move to the real-run plan. The real W7 task bundle and its run are not part of this plan: they start when W1 and its dependencies have merged, and get their own spec and plan.
+The pilot needs T1 to T9 without T10. T10 is needed only for the real W7 comparison. Nine tasks in five waves must land before the 10 Nov freeze; if time runs short, T10 and the OpenTelemetry cross-check move to the real-run plan. The real W7 task bundle and its run are not part of this plan: they start when W1 has merged, and get their own spec and plan.
+
+Branch order: merge `development` into this branch once W1 lands and before T1, so the `workflow/config.json` and `.gitignore` edits sit on W1's versions of those files.

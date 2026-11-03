@@ -14,7 +14,7 @@ Cite existing conventions/ entries by ID; list only rules new or applied here.
 | Raw transcripts, `otel.log`, artifacts, bank and questions stay under `local/`; `.gitignore` lists `workflow/experiments/local/`; `exp check` asserts `git check-ignore` covers `local/` and `worktrees_root` | secrets rule | AD-32 |
 | The CLI keeps its own transcript store after a run; it holds the same text and is not cleaned by the harness (retention is the operator's) | transcripts | new in this spec |
 | Tests: `*.test.mjs` beside the module, run with `node --test`; a fake CLI `harness/fixtures/fake-claude.mjs` (set through `config.json` `claude_bin`) replays scripted transcripts so no test spends money; real model calls happen only in T2 and T9 | harness tests | new in this spec |
-| The test command is added to `workflow/config.json` `test_commands` when T1 lands | config | new in this spec |
+| An `experiments` test command is added to `workflow/config.json` `test_commands` when T1 lands; root `npm test` covers `tests/` and `src/be/` only | config | new in this spec |
 | Vendored skills and agents are used as shipped; arms select among them and never edit them | arms | `AGENTS.md` § 9 |
 | Commit messages: `type: what and why (workstream)` with `Workstream:` and `Task:` trailers; trailers use the permanent id the owner assigns, never `W~1` | commits | `AGENTS.md` § 6 |
 | Process tooling sits outside `src/`, like `workflow/tools/ws.mjs`; location decided in SD11 | harness folder | C8 |

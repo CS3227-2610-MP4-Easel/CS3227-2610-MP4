@@ -9,7 +9,7 @@
 ## 1. Problem
 The team wants evidence for the reflection (R5, R7) on resource-aware use and context engineering in the development process: which agent workflow gives the best spec and plan per token, dollar and minute. Today there is no way to run the same task under different configurations, no record of tokens, runtime, pass rates or questions per run, and no scoring that compares artifacts. `.claude/skills/project-state/experiments.md` holds a model-routing hypothesis with fixtures but no runner. AD-31 decides the telemetry sources and the CSV location but not how runs are produced or scored; W17 later owns the aggregation script.
 
-Desired: a local harness that runs one task under N arms (configurations) with R replicates each, in isolated clones, controls how the agents' questions are answered, extracts per-call usage from the transcripts, scores the artifacts, and writes CSVs under `docs/telemetry/experiments/`. The first build covers the spec-and-plan stage only, because feature freeze is 10 Nov (AD-69). The real subject is W7, once W1 and its dependencies land; a synthetic pilot task proves the harness first and prunes arms, but does not pick the winner. This framework extends AD-31 (its OpenTelemetry export is one input; results land where AD-31 puts them) and governs data generation and storage plus its own run flow; it does not change how normal development sessions run.
+Desired: a local harness that runs one task under N arms (configurations) with R replicates each, in isolated clones, controls how the agents' questions are answered, extracts per-call usage from the transcripts, scores the artifacts, and writes CSVs under `docs/telemetry/experiments/`. The first build covers the spec-and-plan stage only, because feature freeze is 10 Nov (AD-69). The real subject is W7: its spec and plan need only W1's frozen interfaces (`src/be/contracts/src/frozen.ts`), so that run can start once W1 merges (W2, W3, W5 and W6 gate W7's build, not this comparison); a synthetic pilot task proves the harness first and prunes arms, but does not pick the winner. This framework extends AD-31 (its OpenTelemetry export is one input; results land where AD-31 puts them) and governs data generation and storage plus its own run flow; it does not change how normal development sessions run.
 
 ## 2. Goals
 Seventeen functional and eight non-functional requirements, each with an acceptance criterion: [requirements.md](2026-11-03-experiment-framework-design/requirements.md). Summary:
@@ -20,7 +20,7 @@ Seventeen functional and eight non-functional requirements, each with an accepta
 
 ## 3. Non-goals
 - Implementation-stage, ablation-ladder and model-tier runners - later phases; the schema reserves the stage values and v1 rejects them with exit 8.
-- The real W7 task bundle and run - a separate spec and plan once W1 and its dependencies merge.
+- The real W7 task bundle and run - a separate spec and plan once W1 merges.
 - A web dashboard or board - the ponytail board stays a manual cost cross-check only.
 - Statistical significance testing - medians, ranges and geometric means are reported, no p-values, and the harness declares no winner.
 - Editing vendored skills or agents - arms use them as shipped (`AGENTS.md` § 9).
