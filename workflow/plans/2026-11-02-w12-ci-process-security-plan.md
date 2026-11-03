@@ -1,6 +1,7 @@
 # W12 CI and Process Security Implementation Plan
 
-- **Status:** Approved (Dev Lead, 2026-11-03)
+- **Status:** Approved (Dev Lead, 2026-11-04)
+- **Amended 2026-11-04:** T5/T6 now implement canonical base-manifest classification and dual exact-head GitHub review verification; see W12 C~5/C~6.
 
 > **For agents:** tick `- [ ]` -> `- [x]` as each step finishes, in this file and the same commit as the work. Keep the W12 branch state Progress cell current. Spec: [W12 design](../specs/2026-11-02-w12-ci-process-security-design.md).
 
@@ -8,7 +9,7 @@
 
 **Goal:** Enforce the selected thin CI and process-security baseline before changes reach `development` or `main`.
 
-**In scope:** F1–F13, N1–N4, E1–E15.
+**In scope:** F1–F13, N1–N4, E1–E20.
 
 **Non-goals:** Production deployment and migrations (W13); a custom policy-as-code framework; signed commits; full static-analysis suites; runtime security monitoring; changing the policy map, OpenAPI generator, or attack corpus contents.
 
@@ -22,7 +23,7 @@
 | T2 Secret scanning and staged-file hook | — | T1, T3, T4 | 1 | Done |
 | T3 Dependency audit and Action-pin verification | — | T1, T2, T4 | 1 | Done |
 | T4 Agent policy and protected control paths | — | T1, T2, T3 | 1 | Done |
-| T5 CODEOWNERS and branch protection | T4, Q1 resolved | — | 2 | Done |
+| T5 Sensitive-path manifest, CODEOWNERS and branch protection | T4, Q1 resolved | — | 2 | In progress |
 | T6 Security evidence and final verification | T1, T2, T3, T4, T5 | — | 3 | Blocked — needs human |
 
 ## Traceability
@@ -61,6 +62,11 @@
 | E13 | T2, T3, T6 | scan/audit configuration protection checks |
 | E14 | T1, T2, T6 | redacted failure logs |
 | E15 | T1 | W1 dependency gate check |
+| E16 | T6 | sensitive `@teleifo` author-approver pairing |
+| E17 | T6 | forged artifact without two current GitHub reviews |
+| E18 | T6 | sensitive `@ludannnn` author fail-closed case |
+| E19 | T6 | dismissed/changed-request review supersession |
+| E20 | T6 | paginated GitHub review response |
 
 ## Verification gates
 
@@ -174,14 +180,15 @@
 
 | Action | Path | What changes |
 |---|---|---|
-| Create | `.github/CODEOWNERS` | Assign `@teleifo` to the canonical protected paths (`src/be/contracts/**`, `src/be/*/test/**`, and the process-security paths) and require independent security review by `@ludannnn` for security-sensitive paths. |
-| Create | `tests/process-security/codeowners.test.ts` | Verify every protected path is covered and owner/reviewer entries are concrete; cover E8 and E10. |
+| Create | `workflow/security-sensitive-paths.json` | Define the versioned `{version: 1, paths: [...]}` canonical sensitive-path manifest consumed from the base revision by T6. |
+| Modify | `.github/CODEOWNERS` | Assign `@teleifo`, `@ludannnn`, and `@Xiao-Congchen` to every canonical sensitive path; retain the repository owner on other protected paths. |
+| Modify | `tests/process-security/codeowners.test.ts` | Verify every protected path is covered and owner/reviewer entries are concrete; cover E8 and E10. |
 | Modify | `workflow/project-state/branch-states/w12.md` | Record the GitHub settings evidence and any owner handoff. |
 
 **Checklist**
 
 - [x] 1. Write failing CODEOWNERS coverage tests for E8 and E10; expect failure because `.github/CODEOWNERS` does not exist.
-- [x] 2. Add exact protected patterns for workflows, CODEOWNERS, package manifests/scripts, hooks, scanner config, agent files, workflow files, `src/be/contracts/**`, `src/be/*/test/**`, and security corpus; assert obsolete `packages/**` patterns are absent.
+- [ ] 2. Add the canonical sensitive-path manifest and exact CODEOWNERS rows for workflows, CODEOWNERS, package manifests/scripts, hooks, scanner config, agent files, workflow files, `src/be/contracts/**`, `src/be/*/test/**`, tests, and security corpus; assert obsolete `packages/**` patterns are absent and every manifest row requests all three sensitive reviewers/owners.
 - [x] 3. GATE: Ask the operator to apply and confirm GitHub rules on both `development` and `main`: seven required checks, one CODEOWNER approval, stale-approval dismissal, latest-push approval, no self-approval, no administrator bypass, no direct/force/deletion pushes, and up-to-date-branch enforcement.
 - [x] 4. GATE: After operator confirmation, capture the settings verification and negative direct/force-push, bypass, stale/self-approval results; expect PASS. GitHub's protection API confirms the seven contexts, strict status checks, review settings, admin enforcement, and disabled force pushes/deletions on both branches.
 - [x] 5. Update branch state Progress and Changes.
@@ -189,25 +196,30 @@
 
 ### T6: Security evidence and final verification
 
-**Delivers:** Head-bound security-review check, complete failure-case evidence, and closeout verification. **Satisfies:** F4, F5, F6, F7, F8, F9, F10, F11, F13, N1, N3, N4, E3, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14. **Depends on:** T1, T2, T3, T4, T5. **Wave:** 3.
+**Delivers:** Head-bound dual GitHub-review check, complete failure-case evidence, and closeout verification. **Satisfies:** F4, F5, F6, F7, F8, F9, F10, F11, F13, N1, N2, N3, N4, E3, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14, E16, E17, E18, E19, E20. **Depends on:** T1, T2, T3, T4, T5. **Wave:** 3.
 
 **Files**
 
 | Action | Path | What changes |
 |---|---|---|
-| Create | `scripts/check-security-review.mjs` | Verify a fresh security-review artifact is present for the exact PR head, authored by the security reviewer, and paired with independent human approval for sensitive paths. |
-| Create | `tests/process-security/security-review.test.ts` | Test missing, stale, self-authored, and valid review artifacts; cover F13 and E8–E10. |
-| Modify | `.github/workflows/ci.yml` | Extend the existing `workflow-security` check with head-bound security-review evidence; do not add an eighth required status. |
+| Modify | `scripts/check-security-review.mjs` | Read the base-branch sensitive-path manifest; normalize logins; parse and flatten the complete paginated review file; require latest exact-head `APPROVED` GitHub reviews from `@ludannnn` and the author-dependent human approver; fail closed on malformed, missing, or incomplete evidence. |
+| Modify | `tests/process-security/security-review.test.ts` | Test manifest classification, missing/stale/forged artifacts, exact-head approvals, author pairing, normalized logins, superseded states, pagination flattening, and sensitive `@ludannnn` authors; cover F13 and E16–E20. |
+| Modify | `.github/workflows/ci.yml` | Extend `workflow-security` with job-level `pull-requests: read`, `gh api --paginate --slurp` review retrieval to `$RUNNER_TEMP`, and `--reviews-file`; do not add an eighth required status. |
+| Modify | `workflow/agents/reviewer.md` | Require actual GitHub approvals from `@ludannnn` and the author-dependent human approver for sensitive paths; the artifact is supporting evidence. |
+| Modify | `workflow/config.json` | Register the canonical sensitive-path manifest and dual-review evidence contract without credentials. |
+| Modify | `.claude/agents/reviewer.md`, `.codex/agents/reviewer.md` | Regenerate provider adapters from the amended reviewer contract. |
 | Modify | `workflow/project-state/branch-states/w12.md` | Record verification results, changes, and final handoff. |
 
 **Checklist**
 
-- [x] 1. Write failing security-review tests for missing, stale, self-authored, and valid artifacts; expect failure because the checker does not exist.
-- [x] 2. Add the head-bound security-review checker and invoke it from the existing `workflow-security` check; fail closed when sensitive paths change without current evidence.
-- [x] 3. Run all E3–E14 fixtures and verify no secret canary appears in logs.
-- [ ] 4. Run `npm test`, `npm run typecheck`, `npm run lint`, `npm --workspace @agile/db run prisma:validate`, `node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026-11-02-w12-ci-process-security-design.md --approved`, `node .claude/skills/writing-specs-lite/scripts/lint.mjs plan workflow/plans/2026-11-02-w12-ci-process-security-plan.md --approved`, and `git diff --check`.
-- [ ] 5. Update the plan, branch state, and Changes line; confirm the working tree is clean.
-- [ ] 6. Record the task completion with subject `test: verify W12 process security controls (W12)`.
+- [ ] 1. Extend the security-review tests with failing cases for missing/stale/forged artifacts, exact-head GitHub reviews, author pairing, review-state precedence, pagination, and sensitive `@ludannnn` authors; expect failure because the amended checker contract is not implemented.
+- [ ] 2. Add the base-manifest sensitive-path classifier, normalized author-dependent approver selection, review-file parser, and deterministic latest-state evaluator; fail closed when sensitive paths change without two current exact-head approvals.
+- [ ] 3. Add the workflow review fetch with only `pull-requests: read`, invoke the checker with `--reviews-file`, and verify the artifact cannot substitute for either GitHub approval.
+- [ ] 4. Add regression tests for E3–E14 and E16–E20, including forged artifacts, normalized GitHub logins, dismissed/changed-request states, equal-timestamp ID tie-breaking, and multi-page responses; verify no secret canary appears in logs.
+- [ ] 5. Replace the fixed `human_owner` config with the author-dependent approver mapping, amend the provider-neutral reviewer contract, regenerate the provider adapters, and add assertions that both required GitHub reviews are distinct from the PR author.
+- [ ] 6. Run `npm test`, `npm run typecheck`, `npm run lint`, `npm --workspace @agile/db run prisma:validate`, `node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026-11-02-w12-ci-process-security-design.md --approved`, `node .claude/skills/writing-specs-lite/scripts/lint.mjs plan workflow/plans/2026-11-02-w12-ci-process-security-plan.md --approved`, and `git diff --check`.
+- [ ] 7. Update the plan, branch state, and Changes line; confirm the working tree is clean.
+- [ ] 8. Record the task completion with subject `test: verify W12 process security controls (W12)`.
 
 ### Close-out
 
