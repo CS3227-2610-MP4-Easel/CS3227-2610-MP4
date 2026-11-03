@@ -4,7 +4,7 @@
 
 ## Now
 
-Nothing built yet *(planned)*. UI only: no database or Prisma import (enforced by a test), no business rules, role checks are a convenience not a control. All screens use live data through the contracts client. One person designs the whole UI as mockups (AD-71) and the others link their flows to the backend. AI text is rendered as plain text.
+The `src/fe` Next.js prototype is merged and remains free of Prisma/database imports. Its catch-all API adapter forwards requests to the Hono app so `/api/health` and backend routes are reachable; business rules and authorization remain server-side. The remaining screens use the contracts client and are handed from mock data to live backend flows by their owning workstreams.
 
 ## Paths
 
@@ -20,7 +20,9 @@ Architecture decisions that shaped this area (`AD-nn`, full reasoning in the dec
 |---|---|---|---|
 | AD-01b | 2026-10-29 | Next.js UI with Hono mounted under /api; src/fe never imports Prisma | [decision-log](../../../docs/architecture/decision-log.md) |
 | AD-71 | 2026-10-29 | One person designs the entire UI as mockups; others link flows | [decision-log](../../../docs/architecture/decision-log.md) |
+| C24 | 2026-11-02 | Remove the obsolete frontend scaffold | [C24](../decisions/C24.md) |
+| C26 | 2026-11-03 | Permit the minimal health-route adapter | [C26](../decisions/C26.md) |
 
 ## Target Link and Drift
 
-Realises [architecture §13](../../../docs/architecture/agile-platform-architecture.md); work package UI (mockups and shell), per role owner for flows in [delivery-plan.md](../../../docs/architecture/delivery-plan.md). Drift: none known (nothing is built).
+Realises [architecture §13](../../../docs/architecture/agile-platform-architecture.md); work package UI (mockups and shell), per role owner for flows in [delivery-plan.md](../../../docs/architecture/delivery-plan.md). Drift: the current prototype still uses mock data for feature flows while W4–W9 connect the live backend.

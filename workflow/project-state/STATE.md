@@ -2,11 +2,11 @@
 
 **Hot file — read in full every session.** `guardrails.md` beside it is also always loaded. Everything else (`architecture/`, `conventions/`, `decisions/`, `deviations/`, `lessons/`, `ledger/`) is read by ID or area, only when the task touches it. On `INT` this file changes only through `sync-project-state` (or an owner hotfix); on a branch, read it and write the branch state instead (`branch-state` skill).
 
-- **Phase:** Pre-implementation. The architecture passed its readiness gate for the first slice on 2026-10-29; the W10 clickable prototype (`src/fe`) is merged, no backend code yet.
+- **Phase:** Pre-implementation. The architecture passed its readiness gate for the first slice on 2026-10-29; the W10 clickable prototype and W1 backend foundation/API skeleton are merged, while feature work remains.
 - **Stack:** TypeScript monorepo, Next.js App Router with a Hono API under `/api`, Prisma, Postgres (Neon), Firebase Auth, Vercel (Hobby), NUS SoCLaaS
 - **Branch:** `INT` = `development`; `main` is the release branch. This file describes `INT` only.
-- **Last updated:** 2026-11-02 by ws fold — folded w10-ui-mockups
-- **Last verified against repo:** 2026-11-02
+- **Last updated:** 2026-11-03 by Codex — folded w1
+- **Last verified against repo:** 2026-11-03
 - **Developer guide:** seeded 2026-11-02 from W10, [guide](../../docs/guide/index.md)
 - **Deadline:** 13 Nov 2026. Feature freeze end of 10 Nov (AD-69), production deploy 11 Nov (AD-70).
 
@@ -34,13 +34,17 @@ node workflow/tools/ws.mjs doctor   # node, git, state tree, hooks
 node workflow/tools/ws.mjs pack implementer --area <area>   # what to read
 ```
 
-No build or test commands yet; add them to `workflow/config.json` `test_commands` when the monorepo exists.
+Verification commands are configured in `workflow/config.json`: `npm test`, `npm run typecheck`, `npm run lint`, and `npm --workspace @agile/db run prisma:validate`.
 
 **Upcoming** — in priority order. **The first row is the next action.**
 
 | Item | Kind | Context / done when | Source | Added |
 |---|---|---|---|---|
-| W1 Spec for the foundation and the frozen-first set | Workstream | contracts + policy map, `LlmGateway.run` + mock, `AiContext.assemble`, `Sessions`, `Core` signatures frozen (A-18) | delivery-plan P0 | 2026-10-31 |
+| W5 `requireMember` and project/core resolver seams | Post-merge | implement filtered compound membership lookup and register W5 resource resolvers | handed over from w1 | 2026-11-03 |
+| W4 principal, user lookup and route registration | Post-merge | supply `resolvePrincipal`, `lookupRegisteredUser`, dependencies, and append W4 routes to `ROUTES` | handed over from w1 | 2026-11-03 |
+| W2/W7/W9 resource resolvers | Post-merge | implement session/usage, proposal, activity/summary/standup resolvers and register them | handed over from w1 | 2026-11-03 |
+| W9 SELF membership check | Post-merge | ensure removed developers cannot access endpoints 52–54 through owner-only resolution | handed over from w1 | 2026-11-03 |
+| W5 ADDER target-role semantics | Post-merge | resolve target roles and preserve 422/NOT_FOUND behavior for endpoints 10 and 11 | handed over from w1 | 2026-11-03 |
 | W13 Deploy hello-world calling SoCLaaS `GET /v1/models` | Todo | answers G-26, G-32, G-33 with something running | delivery-plan P0 | 2026-10-31 |
 
 ---
@@ -49,7 +53,7 @@ No build or test commands yet; add them to `workflow/config.json` `test_commands
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W1 | Foundation and API skeleton | Not started | — | — | Tier 1 · Big · owner Dev Lead · first | — |
+| W1 | Foundation and API skeleton | Done | [review-repairs spec](../../specs/2026-11-02-w1-review-repairs-design.md); [backend source-root spec](../../specs/2026-11-02-w1-backend-source-root-design.md) | [review-repairs plan](../../plans/2026-11-02-w1-review-repairs-plan.md); [source-root plan](../../plans/2026-11-02-w1-backend-source-root-plan.md) | Merged 2026-11-03; resolver/auth handovers remain | Awaiting confirmation |
 | W2 | Gateway runtime and mock | Not started | — | — | Tier 1 · Big · owner Developer · after W1 signature | — |
 | W3 | Guards (untrusted-text pipeline) | Not started | — | — | Tier 1 · Big · owner Developer · after W2 | — |
 | W4 | Auth and registration | Not started | — | — | Tier 1 · Big · owner Developer · after W1 | — |
@@ -99,6 +103,13 @@ Status: `Not started` · `Spec'd` · `Planned` · `Building` · `Blocked — nee
 | C17 | Inventory and open points of the UI reference approved; standup day is a two-option selector | [C17](decisions/C17.md) |
 | C18 | No "Sprint closed" label on cards and rows | [C18](decisions/C18.md) |
 | C19 | Closing a sprint moves unfinished tasks to the next sprint, after confirmation | [C19](decisions/C19.md) |
+| C20 | Existing architecture contracts remain normative | [C20](decisions/C20.md) |
+| C21 | Shared facts endpoint contract | [C21](decisions/C21.md) |
+| C22 | Source-root monorepo | [C22](decisions/C22.md) |
+| C23 | Backend-only source-root migration | [C23](decisions/C23.md) |
+| C24 | Remove the obsolete frontend scaffold | [C24](decisions/C24.md) |
+| C25 | Separate frontend typechecking | [C25](decisions/C25.md) |
+| C26 | Permit the minimal health-route adapter | [C26](decisions/C26.md) |
 
 ---
 
@@ -116,5 +127,5 @@ Status: `Not started` · `Spec'd` · `Planned` · `Building` · `Blocked — nee
 
 The Done ledger is **[`ledger/done-ledger.md`](ledger/done-ledger.md)**, newest first.
 
-- **Latest entry:** 2026-11-02
-- **Entries (live file):** 19
+- **Latest entry:** 2026-11-03
+- **Entries (live file):** 93
