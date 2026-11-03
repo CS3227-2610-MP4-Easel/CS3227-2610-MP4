@@ -20,8 +20,16 @@ export function validateWorkflowText(text, pins, file = "workflow.yml") {
   if (/\b(?:curl|wget)\b[^\n|]*\|\s*(?:sh|bash)\b/i.test(text)) {
     errors.push(`${file}: remote bootstrap commands are forbidden`);
   }
-  if (/^\s*permissions:\s*\n(?:\s+[^\n]+\n)*?\s+\w+:\s*write\b/m.test(text)) {
-    errors.push(`${file}: write permissions are forbidden in pull-request workflows`);
+  const lines = text.split("\n");
+  for (let index = 0; index < lines.length; index += 1) {
+    if (!/^[ \t]*permissions:[ \t]*$/.test(lines[index])) continue;
+    for (let next = index + 1; next < lines.length && /^[ \t]+/.test(lines[next]); next += 1) {
+      if (/^[ \t]+\w+:[ \t]*write\b/.test(lines[next])) {
+        errors.push(`${file}: write permissions are forbidden in pull-request workflows`);
+        index = next;
+        break;
+      }
+    }
   }
   for (const match of text.matchAll(/^\s*image:\s*([^\s#]+)/gm)) {
     if (!match[1].includes("@sha256:")) errors.push(`${file}: container image ${match[1]} is not pinned by digest`);

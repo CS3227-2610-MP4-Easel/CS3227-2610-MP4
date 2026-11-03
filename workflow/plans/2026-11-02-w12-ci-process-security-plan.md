@@ -180,7 +180,7 @@
 
 | Action | Path | What changes |
 |---|---|---|
-| Create | `workflow/security-sensitive-paths.json` | Define the versioned `{version: 1, paths: [...]}` canonical sensitive-path manifest consumed from the base revision by T6. |
+| Modify | `workflow/security-sensitive-paths.json` | Maintain the versioned `{version: 1, paths: [...]}` canonical sensitive-path manifest consumed from the base revision by T6. |
 | Modify | `.github/CODEOWNERS` | Assign `@teleifo`, `@ludannnn`, and `@Xiao-Congchen` to every canonical sensitive path; retain the repository owner on other protected paths. |
 | Modify | `tests/process-security/codeowners.test.ts` | Verify every protected path is covered and owner/reviewer entries are concrete; cover E8 and E10. |
 | Modify | `workflow/project-state/branch-states/w12.md` | Record the GitHub settings evidence and any owner handoff. |
@@ -212,11 +212,11 @@
 
 **Checklist**
 
-- [ ] 1. Extend the security-review tests with failing cases for missing/stale/forged artifacts, exact-head GitHub reviews, author pairing, review-state precedence, pagination, and sensitive `@ludannnn` authors; expect failure because the amended checker contract is not implemented.
-- [ ] 2. Add the base-manifest sensitive-path classifier, normalized author-dependent approver selection, review-file parser, and deterministic latest-state evaluator; fail closed when sensitive paths change without two current exact-head approvals.
-- [ ] 3. Add the workflow review fetch with only `pull-requests: read`, invoke the checker with `--reviews-file`, and verify the artifact cannot substitute for either GitHub approval.
-- [ ] 4. Add regression tests for E3–E14 and E16–E20, including forged artifacts, normalized GitHub logins, dismissed/changed-request states, equal-timestamp ID tie-breaking, and multi-page responses; verify no secret canary appears in logs.
-- [ ] 5. Replace the fixed `human_owner` config with the author-dependent approver mapping, amend the provider-neutral reviewer contract, regenerate the provider adapters, and add assertions that both required GitHub reviews are distinct from the PR author.
+- [x] 1. Extend the security-review tests with failing cases for missing/stale/forged artifacts, exact-head GitHub reviews, author pairing, review-state precedence, pagination, and sensitive `@ludannnn` authors; expect failure because the amended checker contract is not implemented.
+- [x] 2. Add the base-manifest sensitive-path classifier, normalized author-dependent approver selection, review-file parser, and deterministic latest-state evaluator; fail closed when sensitive paths change without two current exact-head approvals.
+- [x] 3. Add the workflow review fetch with only `pull-requests: read`, invoke the checker with `--reviews-file`, and verify the artifact cannot substitute for either GitHub approval.
+- [x] 4. Add regression tests for E3–E14 and E16–E20, including forged artifacts, normalized GitHub logins, dismissed/changed-request states, equal-timestamp ID tie-breaking, and multi-page responses; verify no secret canary appears in logs.
+- [x] 5. Replace the fixed `human_owner` config with the author-dependent approver mapping, amend the provider-neutral reviewer contract, regenerate the provider adapters, and add assertions that both required GitHub reviews are distinct from the PR author.
 - [ ] 6. Run `npm test`, `npm run typecheck`, `npm run lint`, `npm --workspace @agile/db run prisma:validate`, `node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026-11-02-w12-ci-process-security-design.md --approved`, `node .claude/skills/writing-specs-lite/scripts/lint.mjs plan workflow/plans/2026-11-02-w12-ci-process-security-plan.md --approved`, and `git diff --check`.
 - [ ] 7. Update the plan, branch state, and Changes line; confirm the working tree is clean.
 - [ ] 8. Record the task completion with subject `test: verify W12 process security controls (W12)`.

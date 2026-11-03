@@ -11,8 +11,13 @@
   "process_security": {
     "agent_policy": "workflow/agent-permissions.json",
     "policy_validator": "npm run check:agent-policy",
+    "sensitive_path_manifest": "workflow/security-sensitive-paths.json",
     "security_review_artifact": "workflow/security-reviews/{pr-head}.json",
     "security_reviewer": "@ludannnn",
-    "human_owner": "@teleifo"
+    "human_approver_by_pr_author": {
+      "@teleifo": "@Xiao-Congchen",
+      "default": "@teleifo"
+    },
+    "approval_source": "github_pull_request_reviews"
   }
 }

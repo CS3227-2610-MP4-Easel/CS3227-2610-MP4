@@ -123,6 +123,8 @@ jobs:
 
   workflow-security:
     runs-on: ubuntu-24.04
+    permissions:
+      pull-requests: read
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -137,4 +139,8 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run check:workflows
       - run: npm run check:agent-policy
-      - run: npm run check:security-review -- --base-sha "${{ github.event.pull_request.base.sha }}" --head-sha "${{ github.event.pull_request.head.sha }}" --pr-author "${{ github.event.pull_request.user.login }}"
+      - name: Fetch pull request reviews
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --paginate --slurp "/repos/${GITHUB_REPOSITORY}/pulls/${{ github.event.pull_request.number }}/reviews" > "$RUNNER_TEMP/pr-reviews.json"
+      - run: npm run check:security-review -- --base-sha "${{ github.event.pull_request.base.sha }}" --head-sha "${{ github.event.pull_request.head.sha }}" --pr-author "${{ github.event.pull_request.user.login }}" --reviews-file "$RUNNER_TEMP/pr-reviews.json"
