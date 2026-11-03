@@ -1,6 +1,6 @@
 # W12 CI and Process Security Implementation Plan
 
-- **Status:** Draft (Gate 2 pending)
+- **Status:** Approved (Dev Lead, 2026-11-03)
 
 > **For agents:** tick `- [ ]` -> `- [x]` as each step finishes, in this file and the same commit as the work. Keep the W12 branch state Progress cell current. Spec: [W12 design](../specs/2026-11-02-w12-ci-process-security-design.md).
 
