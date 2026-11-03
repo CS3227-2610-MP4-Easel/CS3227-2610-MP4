@@ -16,6 +16,7 @@
     "setup:hooks": "node scripts/setup-hooks.mjs",
     "check:workflows": "node scripts/check-workflows.mjs",
     "check:agent-policy": "node scripts/check-agent-policy.mjs",
+    "check:security-review": "node scripts/check-security-review.mjs",
     "audit:dependencies": "npm audit --audit-level=high"
   },
   "devDependencies": {

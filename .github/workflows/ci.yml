@@ -137,3 +137,4 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run check:workflows
       - run: npm run check:agent-policy
+      - run: npm run check:security-review -- --base-sha "${{ github.event.pull_request.base.sha }}" --head-sha "${{ github.event.pull_request.head.sha }}" --pr-author "${{ github.event.pull_request.user.login }}"

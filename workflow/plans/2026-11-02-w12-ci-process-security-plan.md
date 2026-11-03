@@ -23,7 +23,7 @@
 | T3 Dependency audit and Action-pin verification | — | T1, T2, T4 | 1 | Done |
 | T4 Agent policy and protected control paths | — | T1, T2, T3 | 1 | Done |
 | T5 CODEOWNERS and branch protection | T4, Q1 resolved | — | 2 | Done |
-| T6 Security evidence and final verification | T1, T2, T3, T4, T5 | — | 3 | Not started |
+| T6 Security evidence and final verification | T1, T2, T3, T4, T5 | — | 3 | In progress |
 
 ## Traceability
 
@@ -202,8 +202,8 @@
 
 **Checklist**
 
-- [ ] 1. Write failing security-review tests for missing, stale, self-authored, and valid artifacts; expect failure because the checker does not exist.
-- [ ] 2. Add the head-bound security-review checker and invoke it from the existing `workflow-security` check; fail closed when sensitive paths change without current evidence.
+- [x] 1. Write failing security-review tests for missing, stale, self-authored, and valid artifacts; expect failure because the checker does not exist.
+- [x] 2. Add the head-bound security-review checker and invoke it from the existing `workflow-security` check; fail closed when sensitive paths change without current evidence.
 - [ ] 3. Run all E3–E14 fixtures and verify no secret canary appears in logs.
 - [ ] 4. Run `npm test`, `npm run typecheck`, `npm run lint`, `npm --workspace @agile/db run prisma:validate`, `node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026-11-02-w12-ci-process-security-design.md --approved`, `node .claude/skills/writing-specs-lite/scripts/lint.mjs plan workflow/plans/2026-11-02-w12-ci-process-security-plan.md --approved`, and `git diff --check`.
 - [ ] 5. Update the plan, branch state, and Changes line; confirm the working tree is clean.

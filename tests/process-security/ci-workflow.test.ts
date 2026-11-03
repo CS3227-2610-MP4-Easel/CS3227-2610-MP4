@@ -35,6 +35,8 @@ test("E1/E2/E12/E15 workflow is isolated and gates on W1", async () => {
 
   const packageManifest = JSON.parse(await readFile(new URL("package.json", root), "utf8"));
   assert.match(packageManifest.scripts?.test ?? "", /find tests src\/be -type f -name '\*\.test\.ts' -print/);
+  assert.match(packageManifest.scripts?.["check:security-review"] ?? "", /check-security-review\.mjs/);
+  assert.match(workflow, /npm run check:security-review -- --base-sha/);
   assert.match(packageManifest.scripts?.contract ?? "", /src\/be\/api\/test\/openapi-parity\.test\.ts/);
   assert.match(packageManifest.scripts?.contract ?? "", /src\/be\/contracts\/test\/openapi\.test\.ts/);
 });
