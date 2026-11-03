@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S2 | 2026-11-03 | Claude Sonnet 5.5 | W~1 | Blocked — needs human | T1 to T8 and T10 done and committed once the build is green; T9 steps 1-2 are gates | T9 step 1 (build, `exp check --secrets`, dry run), then step 2 GATE: confirm the ceilings in `pilot-001.json` and that you are available while the batch runs | 2026-11-03 |
+| S2 | 2026-11-03 | Claude Sonnet 5.5 | W~1 | Blocked — needs human | T1 to T8 and T10 done and committed (235 tests green); T9 step 1 done except the dry-run list, which needs the arm approvals | Q~2: approve the three arm hashes (E4), confirm the ceilings in `pilot-001.json` (run 0.6338, batch 3.169 USD) and that you are available while the batch runs; then T9 step 3 (self-tests, real calls) | 2026-11-03 |
 | S1 | 2026-11-03 | Claude Sonnet 5.5 | W~1 | Paused | Plan approved (gate 2); no task started; handed to a new session by the owner | New session: read STATE.md, guardrails.md and this file, run `lint.mjs plan workflow/plans/2026-11-03-experiment-framework.md --approved`, add your own session row, then run executing-plans-lite from T1 step 1 (T1 and T2 may run together; T2 step 1 is a GATE for the owner's spend limit) | 2026-11-03 |
 
 **Remaining**
