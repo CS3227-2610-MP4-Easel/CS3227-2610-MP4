@@ -1,6 +1,7 @@
 # W12 CI and Process Security Design
 
 - **Status:** Approved (Dev Lead, 2026-11-02)
+- **Amended 2026-11-03:** reconciled protected paths and contract-test locations with the merged W1 source-root layout; see branch-state C~3.
 - **Risk tier:** High - the work controls repository permissions, secrets, supply-chain inputs, and merge authority.
 - **Workstream:** W12 | **Plan:** —
 - **Constraints consulted:** `guardrails.md` AD-32; architecture AD-53; decision-log AD-32, A-17; architecture §14.

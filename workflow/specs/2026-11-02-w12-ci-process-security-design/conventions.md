@@ -30,7 +30,7 @@
 
 ## Review ownership
 
-- `.github/`, `.claude/`, `.codex/`, `workflow/`, `packages/contracts/`, and security-test paths
+- `.github/`, `.claude/`, `.codex/`, `workflow/`, `src/be/contracts/`, and security-test paths
   are protected by `CODEOWNERS`.
 - `.github/CODEOWNERS` names `@teleifo` for protected repository paths. A teammate's human approval
   is required for protected branches; an agent review is advisory and never replaces the human approval.

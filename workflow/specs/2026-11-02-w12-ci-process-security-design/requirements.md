@@ -64,7 +64,7 @@ cannot bypass the rules, direct pushes are denied, and force pushes/deletions ar
 
 Given a pull request changes `.github/**`, `CODEOWNERS`, `package.json`, `package-lock.json`,
 `.githooks/**`, `.gitleaks.toml`, `.gitignore`, `scripts/**`, `workflow/**`, `.claude/**`,
-`.codex/**`, `packages/contracts/**`, `packages/*/test/**`, `tests/**`, or
+`.codex/**`, `src/be/contracts/**`, `src/be/*/test/**`, `tests/**`, or
 `tests/security/attack-corpus/**`, when GitHub evaluates reviewers, then `CODEOWNERS` requests the
 named human owner and the change cannot merge without that CODEOWNER review.
 
