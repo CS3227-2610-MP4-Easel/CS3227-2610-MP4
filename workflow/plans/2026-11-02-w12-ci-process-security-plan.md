@@ -69,7 +69,7 @@
 
 ## Gate 2
 
-- [ ] **GATE:** Ask the operator to approve this implementation plan before coding. On approval, mark the plan `Approved`, update the W12 branch state, and rerun the approved plan lint.
+- [x] **GATE:** Ask the operator to approve this implementation plan before coding. Approved by the Dev Lead on 2026-11-03; plan status and branch state updated, and approved plan lint passes.
 
 ---
 
@@ -82,14 +82,14 @@
 | Action | Path | What changes |
 |---|---|---|
 | Create | `.github/workflows/ci.yml` | Define `pull_request` validation for `development` and `main`, `ubuntu-24.04`, Node `20.19.5`, npm `10.8.2`, `permissions: {}`, `persist-credentials: false`, no environments/secrets, and the seven exact check contexts from the spec. |
-| Modify | `package.json` | Add the exact `check:workflows`, `check:agent-policy`, `scan:secrets`, and `contract` scripts; `contract` runs `node --import tsx --test src/be/api/test/openapi-parity.test.ts src/be/contracts/test/openapi.test.ts`. |
+| Modify | `package.json` | Add the explicit Prisma generation pretest, the exact `check:workflows`, `check:agent-policy`, `scan:secrets`, and `contract` scripts; `contract` runs `node --import tsx --test src/be/api/test/openapi-parity.test.ts src/be/contracts/test/openapi.test.ts`. |
 | Test | `tests/process-security/ci-workflow.test.ts` | Assert trigger, head SHA checkout, permissions, no `pull_request_target`, no secrets/environments, stable job names, and W1 dependency gating; cover E1, E2, E12, E15. |
 
 **Checklist**
 
 - [ ] 1. Write failing workflow-shape tests for E1, E2, E12, and E15; expect failure because `.github/workflows/ci.yml` and the process-security commands do not exist.
 - [ ] 2. Add the workflow with independent jobs named `workspace`, `typecheck`, `lint`, `contract`, `dependency-audit`, `secret-scan`, and `workflow-security`; each job checks out `${{ github.event.pull_request.head.sha }}` with `fetch-depth: 0` and never receives secrets.
-- [ ] 3. Add the W1-dependent npm scripts, including `contract` with the exact `src/be` test paths; use `npm ci --ignore-scripts` before checks and never execute lifecycle scripts during install.
+- [ ] 3. Add the W1-dependent npm scripts, including `contract` with the exact `src/be` test paths and explicit Prisma generation before workspace tests; use `npm ci --ignore-scripts` before checks and never execute lifecycle scripts during install.
 - [ ] 4. Run the workflow-shape tests and the W1 workspace checks; expect PASS.
 - [ ] 5. Verify the same commit twice with identical runtime/action inputs and record the required-check names and outcomes; cover N1.
 - [ ] 6. Update branch state Progress and Changes.

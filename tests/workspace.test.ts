@@ -42,6 +42,13 @@ test("F1 root scripts expose test and typecheck commands", async () => {
   assert.equal(typeof manifest.scripts?.typecheck, "string");
 });
 
+test("F1 clean installs generate Prisma Client before workspace tests", async () => {
+  const rootManifest = JSON.parse(await readFile(new URL("package.json", root), "utf8"));
+  const dbManifest = JSON.parse(await readFile(new URL("src/be/db/package.json", root), "utf8"));
+  assert.match(rootManifest.scripts?.pretest ?? "", /@agile\/db.*prisma:generate/);
+  assert.match(dbManifest.scripts?.["prisma:generate"] ?? "", /prisma generate/);
+});
+
 test("F1/E7 public package entrypoints resolve for all backend consumers", async () => {
   const contracts = await import("@agile/contracts");
   const api = await import("@agile/api");

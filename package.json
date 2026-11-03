@@ -7,6 +7,7 @@
     "src/be/*"
   ],
   "scripts": {
+    "pretest": "npm --workspace @agile/db run prisma:generate",
     "test": "node --import tsx --test \"tests/**/*.test.ts\" \"src/be/**/*.test.ts\"",
     "typecheck": "tsc -b && npm --prefix src/fe run typecheck",
     "lint": "tsc -b --pretty false"
