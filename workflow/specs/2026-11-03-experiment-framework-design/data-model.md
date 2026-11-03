@@ -39,7 +39,7 @@ Files on disk, no database. Paths resolve from `EXP_ROOT` ([runtime.md](runtime.
 | | status | enum | no | `queued` | see Lifecycle |
 | | abort_reason | enum | yes | null | `isolation_mismatch`, `budget`, `turn_cap`, `timeout`, `containment`, `crash` |
 | | hashes, versions, model ids, bank hash | strings | no | - | N2 |
-| | flags | string[] | no | `[]` | `truncated`, `secret_in_artifact`, `judge_same_model`, `judge_unstable`, `judge_error`, `answerer_error`, `review_cap_exceeded` |
+| | flags | string[] | no | `[]` | `truncated`, `secret_in_artifact`, `judge_same_model`, `judge_unstable`, `judge_error`, `answerer_error`, `review_cap_exceeded`, `missing_artifact`, `lint_not_applicable` |
 | Event (`events.csv` row) | run_id, seq, message_id, agent_id, parent_id, model, phase | strings | parent null for main | - | one row per distinct message id |
 | | in_tok, out_tok, cache_read_tok, cache_write_tok | int | no | 0 | 0 or more |
 | | tools, started, ended, cost_usd | string, time, time, decimal | cost null | - | cost null only when the model is unpriced mid-run |

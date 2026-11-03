@@ -21,10 +21,10 @@
 | T3 Launcher and driver | T1, T2 | T5, T8 | 2 | Done |
 | T5 Extractor | T1, T2 | T3, T8 | 2 | Done |
 | T8 Pilot bundle | T1, T2 | T3, T5 | 2 | Done |
-| T4 Sheet answerer | T3 | - | 3 | Not started |
-| T6 Grader | T3, T4, T5 | T10 | 4 | Not started |
-| T10 Bank and queue | T4 | T6 | 4 | Not started |
-| T7 Report | T5, T6 | - | 5 | Not started |
+| T4 Sheet answerer | T3 | - | 3 | Done |
+| T6 Grader | T3, T4, T5 | T10 | 4 | Done |
+| T10 Bank and queue | T4 | T6 | 4 | Done |
+| T7 Report | T5, T6 | - | 5 | Done |
 | T9 Pilot run and review | T3, T4, T6, T7, T8 | - | 6 | Not started |
 
 Executor note: run inline, task by task in table order. Tasks in one wave share no files, so a wave may be split across subagents, one per task. T3 is the largest task (about 17 files); commit it per slice (steps 3, 5, 7, 8) rather than once. Task order differs from the numbering: T10 comes before T7.
@@ -241,15 +241,15 @@ Executor note: run inline, task by task in table order. Tasks in one wave share 
 | Test | `workflow/experiments/harness/questions.test.mjs` | F11 row shape, `setIssueIds` |
 
 **Checklist**
-- [ ] 1. Write failing `sanitize.test.mjs`: ANSI escapes and control characters removed, text capped at 2000 characters, `S:\repo\a.txt`, `\\host\share\x` and `/home/u/proj/f` become `<path>`, a key becomes `[REDACTED:type]` (E36). Implement `sanitize.mjs`; expect PASS.
-- [ ] 2. Write failing `answerer.test.mjs` with the fake CLI: a silent question gets the exact fixed text and source `assumption` (E30); non-JSON output retries once, then sends the fixed text and logs `answerer_error` (E31); the launch flags are no tools, neutral temp cwd, no session persistence, no user settings, strict MCP, no plugins, and a probe shows empty tool, hook and MCP sets (E62); the prompt contains the question and the sheet only, no repo path, key or arm id (N4). Run `<TEST answerer>`; expect FAIL.
-- [ ] 3. Implement `answerer.mjs` (random nonce per call, removed from inputs; JSON output validated) and `questions.mjs`; expect PASS.
-- [ ] 4. Plug the answerer into `driver.mjs` for `sheet` mode; add a driver test where the fake CLI asks two questions (one covered, one not) and the run reaches done with both stored.
-- [ ] 5. Write `questions.test.mjs`: each stored question has one source and, before grading, null `issue_id` and `issue_alt`; `setIssueIds` fills them and rejects an unknown issue id.
-- [ ] 6. Write `commands/answerer.mjs` and `answerer-fixtures.json`; a unit test with the fake CLI checks the pass rule (all silent, at least 2 of 3 covered). It runs for real in T9.
-- [ ] 7. `<BUILD>` green.
-- [ ] 8. Update branch state: Progress, Changes line.
-- [ ] 9. Commit: `feat: sheet-mode answerer, question log and self-test (experiment framework)`.
+- [x] 1. Write failing `sanitize.test.mjs`: ANSI escapes and control characters removed, text capped at 2000 characters, `S:\repo\a.txt`, `\\host\share\x` and `/home/u/proj/f` become `<path>`, a key becomes `[REDACTED:type]` (E36). Implement `sanitize.mjs`; expect PASS.
+- [x] 2. Write failing `answerer.test.mjs` with the fake CLI: a silent question gets the exact fixed text and source `assumption` (E30); non-JSON output retries once, then sends the fixed text and logs `answerer_error` (E31); the launch flags are no tools, neutral temp cwd, no session persistence, no user settings, strict MCP, no plugins, and a probe shows empty tool, hook and MCP sets (E62); the prompt contains the question and the sheet only, no repo path, key or arm id (N4). Run `<TEST answerer>`; expect FAIL.
+- [x] 3. Implement `answerer.mjs` (random nonce per call, removed from inputs; JSON output validated) and `questions.mjs`; expect PASS.
+- [x] 4. Plug the answerer into `driver.mjs` for `sheet` mode; add a driver test where the fake CLI asks two questions (one covered, one not) and the run reaches done with both stored.
+- [x] 5. Write `questions.test.mjs`: each stored question has one source and, before grading, null `issue_id` and `issue_alt`; `setIssueIds` fills them and rejects an unknown issue id.
+- [x] 6. Write `commands/answerer.mjs` and `answerer-fixtures.json`; a unit test with the fake CLI checks the pass rule (all silent, at least 2 of 3 covered). It runs for real in T9.
+- [x] 7. `<BUILD>` green.
+- [x] 8. Update branch state: Progress, Changes line.
+- [x] 9. Commit: `feat: sheet-mode answerer, question log and self-test (experiment framework)`.
 
 ### T6: Grader
 **Delivers:** `exp grade` and the judge self-test | **Satisfies:** F11, F12, N3, N4 | **Depends on:** T3, T4, T5 | **Wave:** 4
@@ -267,15 +267,15 @@ Executor note: run inline, task by task in table order. Tasks in one wave share 
 | Test | `workflow/experiments/harness/grade.test.mjs` | E38, E47, E48, E67, E68 |
 
 **Checklist**
-- [ ] 1. Write failing `grade.test.mjs`: `exp grade` on an `aborted` or non-extracted run exits 2 (E48); an arm with `lint` false leaves lint fields empty and flagged (E67); artifacts are found by globs and none found sets `missing_artifact` with null rubric (E68); a credential pattern in an artifact is redacted in the copy sent to the judge and sets `secret_in_artifact` (E47); a question matching two seeded issues stores the closer in `issue_id` and the other in `issue_alt` through T4's `setIssueIds` (E38). Run `<TEST grade>`; expect FAIL.
-- [ ] 2. Write failing `judge.test.mjs`: non-rubric text twice gives `judge_error`, null rubric, exit 6 (E44); two scores differing by more than 4 set `judge_unstable` (E45); an artifact containing the nonce has it removed, and an artifact telling the judge to give top marks is delimited as data (E46 unit part); the launch flags equal the answerer's because both use T3's builder (N4); `judge_same_model` is set when models match.
-- [ ] 3. Implement `artifacts.mjs` and `lintrun.mjs` (lint code always from the main checkout, never from the run clone).
-- [ ] 4. Implement `judge.mjs` (two calls per artifact, criteria order shuffled by a seeded shuffle recorded in `grades.json`; mean and gap; seeded-issue call returning an outcome per issue and `issue_id` or `issue_alt` per question).
-- [ ] 5. Implement `grade.mjs` and `commands/grade.mjs`; run `<TEST judge>` and `<TEST grade>`; expect PASS.
-- [ ] 6. Add `grade --self-test`, which scores the three calibration artifacts and checks order and bands; unit-test it with the fake CLI (it runs for real in T9).
-- [ ] 7. `<BUILD>` green.
-- [ ] 8. Update branch state: Progress, Changes line.
-- [ ] 9. Commit: `feat: grader with judge and self-test (experiment framework)`.
+- [x] 1. Write failing `grade.test.mjs`: `exp grade` on an `aborted` or non-extracted run exits 2 (E48); an arm with `lint` false leaves lint fields empty and flagged (E67); artifacts are found by globs and none found sets `missing_artifact` with null rubric (E68); a credential pattern in an artifact is redacted in the copy sent to the judge and sets `secret_in_artifact` (E47); a question matching two seeded issues stores the closer in `issue_id` and the other in `issue_alt` through T4's `setIssueIds` (E38). Run `<TEST grade>`; expect FAIL.
+- [x] 2. Write failing `judge.test.mjs`: non-rubric text twice gives `judge_error`, null rubric, exit 6 (E44); two scores differing by more than 4 set `judge_unstable` (E45); an artifact containing the nonce has it removed, and an artifact telling the judge to give top marks is delimited as data (E46 unit part); the launch flags equal the answerer's because both use T3's builder (N4); `judge_same_model` is set when models match.
+- [x] 3. Implement `artifacts.mjs` and `lintrun.mjs` (lint code always from the main checkout, never from the run clone).
+- [x] 4. Implement `judge.mjs` (two calls per artifact, criteria order shuffled by a seeded shuffle recorded in `grades.json`; mean and gap; seeded-issue call returning an outcome per issue and `issue_id` or `issue_alt` per question).
+- [x] 5. Implement `grade.mjs` and `commands/grade.mjs`; run `<TEST judge>` and `<TEST grade>`; expect PASS.
+- [x] 6. Add `grade --self-test`, which scores the three calibration artifacts and checks order and bands; unit-test it with the fake CLI (it runs for real in T9).
+- [x] 7. `<BUILD>` green.
+- [x] 8. Update branch state: Progress, Changes line.
+- [x] 9. Commit: `feat: grader with judge and self-test (experiment framework)`.
 
 ### T10: Bank and queue
 **Delivers:** `bank` answer mode with pause and resume | **Satisfies:** F8, F11, N4 | **Depends on:** T4 | **Wave:** 4
@@ -293,14 +293,14 @@ Executor note: run inline, task by task in table order. Tasks in one wave share 
 | Test | `workflow/experiments/harness/queue.test.mjs` | E34, E35, E70 |
 
 **Checklist**
-- [ ] 1. Write failing `bank.test.mjs`: the pair table of E33 (`Max length of note?` and `max length of the note` match; `Can the PM edit?` and `Can the Dev Lead edit?` do not; `Is the note required?` and `Is the note not required?` do not; the two rewordings about epic removal do not match and a suggestion is shown); `exp answer` with empty text, 4001 characters or an unknown id exits 2 and stores nothing (E37). Expect FAIL; implement `bank.mjs`; expect PASS.
-- [ ] 2. Write failing `queue.test.mjs` with two fake runs: the same question at once creates one item linked to both and one answer resumes both (E34); an answer for an aborted run is stored without a resume, exit 0 (E35); `--same-as <bank-id>` sets the item's `bank_id` and both runs resume (E70); a suggestion is never applied without `--same-as`; `exp queue` shows run codes, not arm ids.
-- [ ] 3. Implement `queue.mjs` (polling every 5 seconds, resume only when `bank_id` is set); expect PASS.
-- [ ] 4. Add `bank` mode to `answerer.mjs` and the pause and resume path to `driver.mjs`; add a driver test where a bank miss pauses the run, `exp answer` resumes it, and waiting time is excluded from `agent_s`.
-- [ ] 5. Write `commands/queue.mjs` and `commands/answer.mjs`; `--audit` lists automatic matches with both texts.
-- [ ] 6. `<BUILD>` green.
-- [ ] 7. Update branch state: Progress, Changes line.
-- [ ] 8. Commit: `feat: answer bank, queue and pause-resume (experiment framework)`.
+- [x] 1. Write failing `bank.test.mjs`: the pair table of E33 (`Max length of note?` and `max length of the note` match; `Can the PM edit?` and `Can the Dev Lead edit?` do not; `Is the note required?` and `Is the note not required?` do not; the two rewordings about epic removal do not match and a suggestion is shown); `exp answer` with empty text, 4001 characters or an unknown id exits 2 and stores nothing (E37). Expect FAIL; implement `bank.mjs`; expect PASS.
+- [x] 2. Write failing `queue.test.mjs` with two fake runs: the same question at once creates one item linked to both and one answer resumes both (E34); an answer for an aborted run is stored without a resume, exit 0 (E35); `--same-as <bank-id>` sets the item's `bank_id` and both runs resume (E70); a suggestion is never applied without `--same-as`; `exp queue` shows run codes, not arm ids.
+- [x] 3. Implement `queue.mjs` (polling every 5 seconds, resume only when `bank_id` is set); expect PASS.
+- [x] 4. Add `bank` mode to `answerer.mjs` and the pause and resume path to `driver.mjs`; add a driver test where a bank miss pauses the run, `exp answer` resumes it, and waiting time is excluded from `agent_s`.
+- [x] 5. Write `commands/queue.mjs` and `commands/answer.mjs`; `--audit` lists automatic matches with both texts.
+- [x] 6. `<BUILD>` green.
+- [x] 7. Update branch state: Progress, Changes line.
+- [x] 8. Commit: `feat: answer bank, queue and pause-resume (experiment framework)`.
 
 ### T7: Report
 **Delivers:** `exp report` | **Satisfies:** F13, N3 | **Depends on:** T5, T6 | **Wave:** 5
@@ -315,13 +315,13 @@ Executor note: run inline, task by task in table order. Tasks in one wave share 
 | Test | `workflow/experiments/harness/report.test.mjs` | E51, E52, columns of data-model.md |
 
 **Checklist**
-- [ ] 1. Write failing `stats.test.mjs`: worked table 1 gives geometric means 4.00 and 4.00; worked table 2 gives `dominated(X by Y)`, `dominated(X by Z)`, Z vs Y `inconclusive`, and every pair with W `inconclusive` (E49); one replicate, one task or a zero median set `n=1`, `single_task`, `gm_excluded` and print `inconclusive` (E50). Run `<TEST stats>`; expect FAIL.
-- [ ] 2. Implement `stats.mjs`; expect PASS.
-- [ ] 3. Write failing `report.test.mjs`: the three CSVs have exactly the columns in spec `data-model.md` § Reports; a run without grades is listed and skipped for quality columns (E52); a credential pattern in any output exits 9 and nothing is renamed, with a git sha and a base64 header not matching (E51); aborted runs count in cost medians and `n_aborted` only.
-- [ ] 4. Implement `report.mjs` and `commands/report.mjs`; expect PASS.
-- [ ] 5. `<BUILD>` green.
-- [ ] 6. Update branch state: Progress, Changes line.
-- [ ] 7. Commit: `feat: report with medians, geometric means and verdicts (experiment framework)`.
+- [x] 1. Write failing `stats.test.mjs`: worked table 1 gives geometric means 4.00 and 4.00; worked table 2 gives `dominated(X by Y)`, `dominated(X by Z)`, Z vs Y `inconclusive`, and every pair with W `inconclusive` (E49); one replicate, one task or a zero median set `n=1`, `single_task`, `gm_excluded` and print `inconclusive` (E50). Run `<TEST stats>`; expect FAIL.
+- [x] 2. Implement `stats.mjs`; expect PASS.
+- [x] 3. Write failing `report.test.mjs`: the three CSVs have exactly the columns in spec `data-model.md` § Reports; a run without grades is listed and skipped for quality columns (E52); a credential pattern in any output exits 9 and nothing is renamed, with a git sha and a base64 header not matching (E51); aborted runs count in cost medians and `n_aborted` only.
+- [x] 4. Implement `report.mjs` and `commands/report.mjs`; expect PASS.
+- [x] 5. `<BUILD>` green.
+- [x] 6. Update branch state: Progress, Changes line.
+- [x] 7. Commit: `feat: report with medians, geometric means and verdicts (experiment framework)`.
 
 ### T9: Pilot run and review
 **Delivers:** the pilot dataset and the operator's arm decision | **Satisfies:** N1, N5, F12 | **Depends on:** T3, T4, T6, T7, T8 | **Wave:** 6
