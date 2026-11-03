@@ -20,7 +20,7 @@
 
 | ID | Constraint | File |
 |---|---|---|
-| AD-01b | `apps/web` never imports Prisma or `packages/db` | [log](../../docs/architecture/decision-log.md) |
+| AD-01b | `src/fe` never imports Prisma or `@agile/db` | [log](../../docs/architecture/decision-log.md) |
 | AD-55 | Authorisation only through the policy map; handlers never check roles | [log](../../docs/architecture/decision-log.md) |
 | AD-25 | All untrusted text passes the gateway pipeline; no prompt text is stored | [log](../../docs/architecture/decision-log.md) |
 | AD-32 | No secrets in the repo; production deploys and migrations only from CI | [log](../../docs/architecture/decision-log.md) |

@@ -1,0 +1,445 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+
+enum UserRole {
+  PM
+  DEV_LEAD
+  DEVELOPER
+}
+enum ProjectStatus {
+  ACTIVE
+  ARCHIVED
+}
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  IN_REVIEW
+  DONE
+}
+enum SprintStatus {
+  PLANNED
+  ACTIVE
+  CLOSED
+}
+enum ProposalKind {
+  PLAN
+  REPLAN
+}
+enum ProposalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUPERSEDED
+}
+enum ExpansionStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+  FAILED
+}
+enum Feature {
+  PM_PLAN_OUTLINE
+  PM_PLAN_EXPAND
+  LEAD_DIGEST
+  DEV_SUMMARY
+  DEV_STANDUP
+}
+enum SessionOutcome {
+  OPEN
+  ACCEPTED
+  EDITED
+  REJECTED
+  ABANDONED
+}
+enum LlmCallStatus {
+  IN_FLIGHT
+  OK
+  SCHEMA_FAIL
+  UPSTREAM_ERROR
+  TIMEOUT
+  REFUSED
+  BLOCKED_INPUT
+  RATE_LIMITED
+  BUDGET_BLOCKED
+  CACHE_HIT
+}
+enum TaskEventType {
+  CREATED
+  STATUS_CHANGED
+  ASSIGNEE_CHANGED
+  BLOCKED
+  UNBLOCKED
+  POINTS_CHANGED
+  SPRINT_CHANGED
+}
+enum ActivityItemType {
+  COMMIT
+  PR
+}
+
+model User {
+  id String @id @default(uuid()) @db.Uuid
+  firebaseUid String @unique @map("firebase_uid")
+  email String @unique
+  displayName String @map("display_name")
+  role UserRole
+  createdAt DateTime @default(now()) @map("created_at")
+  projectsCreated Project[] @relation("project_creator")
+  memberships ProjectMember[]
+  membersAdded ProjectMember[] @relation("member_adder")
+  tasksCreated Task[] @relation("task_creator")
+  taskEvents TaskEvent[]
+  sessions AiSession[]
+  proposalsCreated AiProposal[] @relation("proposal_creator")
+  proposalsApplied AiProposal[] @relation("proposal_applier")
+  activityItems ActivityItem[]
+  standups Standup[]
+  @@map("users")
+}
+
+model Project {
+  id String @id @default(uuid()) @db.Uuid
+  name String
+  brief String?
+  status ProjectStatus @default(ACTIVE)
+  createdBy String @map("created_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  version Int @default(1)
+  creator User @relation("project_creator", fields: [createdBy], references: [id])
+  members ProjectMember[]
+  checkpoints Checkpoint[]
+  epics Epic[]
+  sprints Sprint[]
+  tasks Task[]
+  taskEvents TaskEvent[]
+  proposals AiProposal[]
+  sessions AiSession[]
+  calls LlmCall[]
+  activityItems ActivityItem[]
+  standups Standup[]
+  digests ProjectDigest[]
+  @@index([status])
+  @@map("projects")
+}
+
+model ProjectMember {
+  projectId String @map("project_id") @db.Uuid
+  userId String @map("user_id") @db.Uuid
+  addedBy String @map("added_by") @db.Uuid
+  addedAt DateTime @default(now()) @map("added_at")
+  project Project @relation(fields: [projectId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+  adder User @relation("member_adder", fields: [addedBy], references: [id])
+  assignedTasks Task[] @relation("task_assignee")
+  @@id([projectId, userId])
+  @@index([userId])
+  @@map("project_members")
+}
+
+model Checkpoint {
+  id String @id @default(uuid()) @db.Uuid
+  projectId String @map("project_id") @db.Uuid
+  name String
+  targetDate DateTime @map("target_date") @db.Date
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  version Int @default(1)
+  deletedAt DateTime? @map("deleted_at")
+  project Project @relation(fields: [projectId], references: [id])
+  epics Epic[]
+  @@unique([projectId, id])
+  @@index([projectId, targetDate])
+  @@map("checkpoints")
+}
+
+model Epic {
+  id String @id @default(uuid()) @db.Uuid
+  projectId String @map("project_id") @db.Uuid
+  checkpointId String? @map("checkpoint_id") @db.Uuid
+  title String
+  description String?
+  position Int
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  version Int @default(1)
+  deletedAt DateTime? @map("deleted_at")
+  project Project @relation(fields: [projectId], references: [id])
+  checkpoint Checkpoint? @relation(fields: [projectId, checkpointId], references: [projectId, id])
+  tasks Task[]
+  @@unique([projectId, id])
+  @@index([projectId])
+  @@index([checkpointId])
+  @@map("epics")
+}
+
+model Sprint {
+  id String @id @default(uuid()) @db.Uuid
+  projectId String @map("project_id") @db.Uuid
+  name String
+  startDate DateTime @map("start_date") @db.Date
+  endDate DateTime @map("end_date") @db.Date
+  status SprintStatus @default(PLANNED)
+  completedPoints Int? @map("completed_points")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  version Int @default(1)
+  deletedAt DateTime? @map("deleted_at")
+  project Project @relation(fields: [projectId], references: [id])
+  tasks Task[]
+  @@unique([projectId, id])
+  @@index([projectId, startDate])
+  @@map("sprints")
+}
+
+model Task {
+  id String @id @default(uuid()) @db.Uuid
+  projectId String @map("project_id") @db.Uuid
+  epicId String @map("epic_id") @db.Uuid
+  sprintId String? @map("sprint_id") @db.Uuid
+  assigneeId String? @map("assignee_id") @db.Uuid
+  title String
+  description String?
+  acceptanceCriteria Json @default("[]") @map("acceptance_criteria")
+  status TaskStatus @default(TODO)
+  blocked Boolean @default(false)
+  blockedReason String? @map("blocked_reason")
+  storyPoints Int? @map("story_points")
+  doneAt DateTime? @map("done_at")
+  createdBy String @map("created_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  version Int @default(1)
+  deletedAt DateTime? @map("deleted_at")
+  project Project @relation(fields: [projectId], references: [id])
+  epic Epic @relation(fields: [projectId, epicId], references: [projectId, id])
+  sprint Sprint? @relation(fields: [projectId, sprintId], references: [projectId, id])
+  assignee ProjectMember? @relation("task_assignee", fields: [projectId, assigneeId], references: [projectId, userId])
+  creator User @relation("task_creator", fields: [createdBy], references: [id])
+  events TaskEvent[]
+  @@index([projectId, status])
+  @@index([assigneeId])
+  @@index([epicId])
+  @@index([sprintId])
+  @@map("tasks")
+}
+
+model TaskEvent {
+  id BigInt @id @default(autoincrement())
+  taskId String @map("task_id") @db.Uuid
+  projectId String @map("project_id") @db.Uuid
+  actorId String @map("actor_id") @db.Uuid
+  type TaskEventType
+  fromValue String? @map("from_value")
+  toValue String? @map("to_value")
+  at DateTime @default(now())
+  task Task @relation(fields: [taskId], references: [id])
+  project Project @relation(fields: [projectId], references: [id])
+  actor User @relation(fields: [actorId], references: [id])
+  @@index([projectId, at])
+  @@index([taskId, at])
+  @@map("task_events")
+}
+
+model AiProposal {
+  id String @id @default(uuid()) @db.Uuid
+  projectId String @map("project_id") @db.Uuid
+  kind ProposalKind
+  status ProposalStatus @default(PENDING)
+  payload Json
+  sessionId String @map("session_id") @db.Uuid
+  createdBy String @map("created_by") @db.Uuid
+  appliedBy String? @map("applied_by") @db.Uuid
+  appliedAt DateTime? @map("applied_at")
+  flagged Boolean @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  version Int @default(1)
+  project Project @relation(fields: [projectId], references: [id])
+  session AiSession @relation(fields: [sessionId], references: [id])
+  creator User @relation("proposal_creator", fields: [createdBy], references: [id])
+  applier User? @relation("proposal_applier", fields: [appliedBy], references: [id])
+  epics ProposalEpic[]
+  digests ProjectDigest[]
+  @@index([projectId, status])
+  @@index([sessionId])
+  @@map("ai_proposals")
+}
+
+model ProposalEpic {
+  proposalId String @map("proposal_id") @db.Uuid
+  index Int
+  title String
+  description String
+  checkpointName String? @map("checkpoint_name")
+  contentHash String @map("content_hash")
+  expansionStatus ExpansionStatus @default(PENDING) @map("expansion_status")
+  leaseExpiresAt DateTime? @map("lease_expires_at")
+  tasks Json?
+  error String?
+  version Int @default(1)
+  updatedAt DateTime @updatedAt @map("updated_at")
+  proposal AiProposal @relation(fields: [proposalId], references: [id])
+  @@id([proposalId, index])
+  @@map("proposal_epics")
+}
+
+model AiSession {
+  id String @id @default(uuid()) @db.Uuid
+  feature Feature
+  userId String @map("user_id") @db.Uuid
+  projectId String? @map("project_id") @db.Uuid
+  env String
+  startedAt DateTime @default(now()) @map("started_at")
+  lastActivityAt DateTime @default(now()) @map("last_activity_at")
+  endedAt DateTime? @map("ended_at")
+  outcome SessionOutcome @default(OPEN)
+  regenerateCount Int @default(0) @map("regenerate_count")
+  feedback String?
+  user User @relation(fields: [userId], references: [id])
+  project Project? @relation(fields: [projectId], references: [id])
+  calls LlmCall[]
+  proposals AiProposal[]
+  standups Standup[]
+  digests ProjectDigest[]
+  @@index([userId, startedAt])
+  @@index([feature, startedAt])
+  @@map("ai_sessions")
+}
+
+model LlmCall {
+  id String @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  sessionId String? @map("session_id") @db.Uuid
+  userId String @map("user_id") @db.Uuid
+  role UserRole
+  projectId String? @map("project_id") @db.Uuid
+  env String
+  feature Feature
+  model String
+  promptVersion String @map("prompt_version")
+  status LlmCallStatus
+  leaseExpiresAt DateTime? @map("lease_expires_at")
+  promptTokens Int? @map("prompt_tokens")
+  completionTokens Int? @map("completion_tokens")
+  totalTokens Int? @map("total_tokens")
+  attempts Int
+  latencyMs Int? @map("latency_ms")
+  estimatedPromptTokens Int @map("estimated_prompt_tokens")
+  sectionTokens Json @map("section_tokens")
+  prefixHash String @map("prefix_hash")
+  inputHash String @map("input_hash")
+  flagged Boolean
+  truncated Boolean
+  costMicrousd BigInt? @map("cost_microusd")
+  experiment Json
+  session AiSession? @relation(fields: [sessionId], references: [id])
+  project Project? @relation(fields: [projectId], references: [id])
+  summaries ItemSummary[]
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([feature, createdAt])
+  @@index([sessionId])
+  @@index([leaseExpiresAt])
+  @@map("llm_calls")
+}
+
+model LlmGatewayState {
+  key String @id
+  value Json
+  updatedAt DateTime @updatedAt @map("updated_at")
+  @@map("llm_gateway_state")
+}
+model RateCounter {
+  key String @id
+  windowStart DateTime @map("window_start")
+  count Int
+  @@map("rate_counters")
+}
+
+model ActivityItem {
+  id String @id @default(uuid()) @db.Uuid
+  projectId String @map("project_id") @db.Uuid
+  uploadedBy String @map("uploaded_by") @db.Uuid
+  itemType ActivityItemType @map("item_type")
+  repo String @default("")
+  externalId String @map("external_id")
+  title String
+  body String?
+  bodyTruncated Boolean @default(false) @map("body_truncated")
+  occurredAt DateTime @map("occurred_at")
+  url String?
+  files Json
+  contentHash String @map("content_hash")
+  flagged Boolean
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  project Project @relation(fields: [projectId], references: [id])
+  uploader User @relation(fields: [uploadedBy], references: [id])
+  summaries ItemSummary[]
+  @@unique([projectId, uploadedBy, itemType, repo, externalId])
+  @@index([projectId, uploadedBy, occurredAt])
+  @@map("activity_items")
+}
+
+model ItemSummary {
+  id String @id @default(uuid()) @db.Uuid
+  itemId String @map("item_id") @db.Uuid
+  contentHash String @map("content_hash")
+  guardVersion String @map("guard_version")
+  promptVersion String @map("prompt_version")
+  oneLiner String @map("one_liner")
+  flagged Boolean
+  callId String @map("call_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  item ActivityItem @relation(fields: [itemId], references: [id])
+  call LlmCall @relation(fields: [callId], references: [id])
+  @@unique([itemId, contentHash, guardVersion, promptVersion])
+  @@map("item_summaries")
+}
+
+model Standup {
+  id String @id @default(uuid()) @db.Uuid
+  projectId String @map("project_id") @db.Uuid
+  developerId String @map("developer_id") @db.Uuid
+  standupDate DateTime @map("standup_date") @db.Date
+  content Json
+  inputHash String @map("input_hash")
+  degraded Boolean
+  flagged Boolean
+  outcome String?
+  feedback String?
+  sessionId String @map("session_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  version Int @default(1)
+  project Project @relation(fields: [projectId], references: [id])
+  developer User @relation(fields: [developerId], references: [id])
+  session AiSession @relation(fields: [sessionId], references: [id])
+  @@unique([projectId, developerId, standupDate])
+  @@map("standups")
+}
+
+model ProjectDigest {
+  id String @id @default(uuid()) @db.Uuid
+  projectId String @map("project_id") @db.Uuid
+  facts Json
+  factsHash String @map("facts_hash")
+  explanation String?
+  degraded Boolean
+  flagged Boolean
+  proposalId String? @map("proposal_id") @db.Uuid
+  sessionId String? @map("session_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  project Project @relation(fields: [projectId], references: [id])
+  proposal AiProposal? @relation(fields: [proposalId], references: [id])
+  session AiSession? @relation(fields: [sessionId], references: [id])
+  @@index([projectId, createdAt])
+  @@map("project_digests")
+}

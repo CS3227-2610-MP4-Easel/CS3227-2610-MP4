@@ -1,0 +1,19 @@
+{
+  "name": "agile-platform",
+  "private": true,
+  "packageManager": "npm@10",
+  "workspaces": [
+    "src/fe",
+    "src/be/*"
+  ],
+  "scripts": {
+    "test": "node --import tsx --test \"tests/**/*.test.ts\" \"src/be/**/*.test.ts\"",
+    "typecheck": "tsc -b && npm --prefix src/fe run typecheck",
+    "lint": "tsc -b --pretty false"
+  },
+  "devDependencies": {
+    "react": "^19.1.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
