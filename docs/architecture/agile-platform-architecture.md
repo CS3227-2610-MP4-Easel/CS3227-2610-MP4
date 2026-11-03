@@ -36,7 +36,7 @@ Given on 2026-10-29: the deadline is 13 November 2026 (G-01); Vercel is on the f
 | R3 | Security of the AI features and of the development process | `llm-gateway/guard`, `ai-context`, the policy map (§4, §7); CI and repository settings (AD-32, A-17) | threats T1 to T11 (decision log AD-25); policy map in contracts.md | Four test layers plus attack success criteria (AD-26, A-17); secret scan and branch protection (AD-32) | Design decided |
 | R4 | Deployed online; development and production separated | Vercel Preview and Production, separate Neon, Firebase and SoCLaaS resources (AD-29, A-11) | environment variables per tier | Two live URLs; a startup assertion that tier, Firebase project, database host and `env` match | Design decided; checks open (G-26, G-27, G-29, G-32) |
 | R5 | Context engineering and resource-aware use, in the app and the process | `llm-gateway/metering` (`llm_calls`, `ai_sessions`), section budgets, caches (AD-15 to AD-19, AD-24) | `llm_calls`, `ai_sessions`, contracts.md §3.7 | Usage page; experiments (G-23); telemetry CSV (AD-31) | Contracts written; experiments open |
-| R6 | Simple UI; shared components designed with SRP and DRY | `packages/contracts`, `packages/db`, module boundaries (§4) | one schema, one error shape, one policy map | Import-rule tests (AD-01b, AD-25, A-03) | Design decided; UI plan in §13 |
+| R6 | Simple UI; shared components designed with SRP and DRY | `src/be/contracts`, `src/be/db`, module boundaries (§4) | one schema, one error shape, one policy map | Import-rule tests (AD-01b, AD-25, A-03) | Design decided; UI plan in §13 |
 | R7 | Reflection document | `docs/reflection.md` | none | the document | Not started |
 
 ## 3. Context and dependencies
@@ -67,19 +67,19 @@ One repository, one deployable per tier (AD-01a). Dependency direction runs down
 
 ```mermaid
 flowchart TD
-  web[apps/web: UI only] --> contracts[packages/contracts]
+  web[src/fe: UI only] --> contracts[src/be/contracts]
   web --> apimount["/api catch-all route"]
-  apimount --> api[packages/api: Hono app]
+  apimount --> api[src/be/api: Hono app]
   api --> policy[policy map + role gate]
   api --> roles["pm / lead / dev modules"]
   roles --> proposals[proposals]
   roles --> aictx[ai-context]
   roles --> core[core]
-  roles --> gateway[packages/llm-gateway]
+  roles --> gateway[src/be/llm-gateway]
   proposals --> core
   proposals --> gateway
   aictx --> core
-  core --> db[packages/db]
+  core --> db[src/be/db]
   gateway --> db
   proposals --> db
   api --> auth[auth]
@@ -90,10 +90,10 @@ flowchart TD
 
 | Component | Owns (data and behaviour) | Must not own | Work package |
 |---|---|---|---|
-| `apps/web` | pages, components, the contracts client, role-based navigation | any database or Prisma import (tested, AD-01b); business rules; role checks as a security control | per role owner |
-| `packages/contracts` | zod schemas, error codes, OpenAPI generation, the **policy map** (allowed roles and ownership predicate per operation), the upload and proposal payload schemas | logic with side effects | E |
-| `packages/db` | Prisma schema and migrations, the client with a default extension that excludes soft-deleted rows and archived projects (opt-out must be explicit, A-13) | business rules | E |
-| `packages/api` (Hono app) | route registration; middleware: request id, token check, user lookup (registered), the policy-map gate, error mapping | domain logic in route handlers | E |
+| `src/fe` | pages, components, the contracts client, role-based navigation | any database or Prisma import (tested, AD-01b); business rules; role checks as a security control | per role owner |
+| `src/be/contracts` | zod schemas, error codes, OpenAPI generation, the **policy map** (allowed roles and ownership predicate per operation), the upload and proposal payload schemas | logic with side effects | E |
+| `src/be/db` | Prisma schema and migrations, the client with a default extension that excludes soft-deleted rows and archived projects (opt-out must be explicit, A-13) | business rules | E |
+| `src/be/api` (Hono app) | route registration; middleware: request id, token check, user lookup (registered), the policy-map gate, error mapping | domain logic in route handlers | E |
 | `auth` | `users`, `rate_counters` (with the exported `hit(key, windowSeconds, limit)` used by the gateway and the registration routes); token verification; registration and codes; the membership helper `requireMember` | project data | A |
 | `core` | `projects`, `project_members`, `checkpoints`, `epics`, `sprints`, `tasks`, `task_events`; progress and velocity functions; `assertWritable`; `applyPlan` and `applyReplan` (called by `proposals` with a transaction handle) | AI calls; prompts | B |
 | `proposals` | `ai_proposals`, `proposal_epics`; payload validation; the claim-and-apply protocol (A-06) | writing domain tables directly | B |
@@ -106,10 +106,11 @@ flowchart TD
 Boundary answers:
 - **Transactions** start in the service of the module that owns the tables. The proposal apply is one transaction (AD-10, A-06). No model call runs inside a database transaction.
 - **Authorization** is enforced by the policy-map gate for every route (role, plus an ownership predicate where the map names one), `requireMember` inside `core` for project-scoped data, and the gateway's check that the caller's role may run the feature. A route handler never checks roles itself. The UI hides actions as a convenience only. CI fails if a route is missing from the map (A-01).
+- **Authorization resource resolution** is performed by the module that owns the referenced table and handed to the policy-map gate as typed project, owner, assignee and target-role data. The API never treats a caller-supplied project id as authoritative for a child resource; endpoint 42 is `GET /api/projects/{id}/facts` for PM and Dev Lead members.
 - **Derived values** (progress, velocity, projected completion, checkpoints at risk, overload) are computed in pure functions in `core` (progress and velocity) and `lead` (forecast). The LLM never computes them (AD-12, AD-22).
 - **Table ownership**: one owner per table (the column above). No module queries another module's tables.
 - **Module dependency rules** are enforced by a source-scan test in CI (AD-01b, AD-25) plus the runtime membership checks inside `ai-context`; the scan alone is not relied on. Role modules (`pm`, `lead`, `dev`) do not import each other.
-- **Frozen first** (A-18): `packages/contracts` with the policy map, `LlmGateway.run` with its mock mode, `AiContext.assemble`, and `Sessions`, all specified in contracts.md §5, before the role slices start.
+- **Frozen first** (A-18): `src/be/contracts` with the policy map, `LlmGateway.run` with its mock mode, `AiContext.assemble`, and `Sessions`, all specified in contracts.md §5, before the role slices start.
 
 ## 5. Data model
 Identifiers are UUIDs unless stated. Timestamps are `timestamptz` in UTC; calendar dates are `date` values read in the application time zone (AD-37). `version` is an integer starting at 1 on every mutable entity listed (AD-35).
@@ -182,7 +183,7 @@ erDiagram
 Migrations: decided in the spec (G-28, AD-66).
 
 ## 6. Interfaces and contracts
-The field-level contracts are in [contracts.md](contracts.md): conventions, shared schemas, 57 endpoints with caller policy, request, response, errors and side effects, examples, and the four frozen-first module interfaces (`LlmGateway.run`, `AiContext.assemble`, `Sessions`, `Core`). The caller-policy column is the policy map that `packages/contracts` implements (A-01).
+The field-level contracts are in [contracts.md](contracts.md): conventions, shared schemas, 57 endpoints with caller policy, request, response, errors and side effects, examples, and the four frozen-first module interfaces (`LlmGateway.run`, `AiContext.assemble`, `Sessions`, `Core`). The caller-policy column is the policy map that `src/be/contracts` implements (A-01).
 
 ## 7. Identity, permissions and trust boundaries
 **Authentication (AD-03).** The browser signs in with Firebase and sends `Authorization: Bearer <ID token>`. The API verifies the token on every request against Google's public keys: algorithm RS256, issuer and audience from the tier's Firebase project id (library chosen in the spec). Claims used: `sub` and `email`. The application role comes from `users`, never from a claim or the client. After verification the middleware loads the `users` row before the policy gate. Email verification and account disabling are Firebase configuration (AD-57): a token that passes verification belongs to a verified, enabled account, so the application keeps no verified or disabled state and has no `EMAIL_NOT_VERIFIED` or `USER_DISABLED` path. This assumes the Firebase project is configured to issue tokens only to such accounts.
@@ -202,6 +203,7 @@ The field-level contracts are in [contracts.md](contracts.md): conventions, shar
 | Create, start, close, delete sprints | no | yes | no | AD-47 |
 | Generate, edit, approve or reject a PLAN | yes | no | no | AD-10, AD-21 |
 | Facts, digest, request and approve a REPLAN | no | yes | no | AD-10, AD-22 |
+| Read project facts (endpoint 42) | yes | yes | no | PR #6 handover; member-scoped |
 | Upload activity; summarise; generate or edit own standup | no | no | yes | AD-20, AD-27 |
 | Read a standup | no | their projects' developers | own only | AD-27 |
 | Usage: own sessions; platform aggregates without per-user content | yes | yes | yes | AD-47 |
@@ -213,7 +215,7 @@ The field-level contracts are in [contracts.md](contracts.md): conventions, shar
 **Trust boundaries.**
 | Input | Source | Treated as | Validated where |
 |---|---|---|---|
-| Request body, query, path | any client | untrusted | zod schema from `packages/contracts`; unknown fields rejected |
+| Request body, query, path | any client | untrusted | zod schema from `src/be/contracts`; unknown fields rejected |
 | Firebase ID token | client | untrusted until verified | auth middleware |
 | PM idea; task titles and descriptions; retrieved item titles | users | untrusted text when sent to a model | gateway pipeline (AD-25) |
 | Uploaded activity file | Developer | untrusted file and text | size, item limits and schema (AD-38), then the pipeline; `flagged` stored on the item, summary and standup |
@@ -375,7 +377,7 @@ Answers to the three questions:
 
 **Proposal.** `PENDING` → `APPROVED` (apply succeeded), `REJECTED` (user), `SUPERSEDED` (a newer proposal of the same kind for the same project was created while this was PENDING, or the project was archived). Terminal states do not change. **Plan epic**: `PENDING` → `IN_PROGRESS` (leased) → `DONE` or `FAILED`; an expired lease reads as PENDING; an edit of title or description resets it to PENDING; `FAILED` can be retried. **Session**: `OPEN` → `ACCEPTED` / `EDITED` (approval or standup accept or edit) / `REJECTED` / `ABANDONED` (no activity for 24 hours, set when next read).
 
-**Time.** Instants are UTC; "days" use `Asia/Singapore` (AD-37). Sprint start and end dates are inclusive calendar dates (AD-45). The standup window runs from 00:00 of the previous working day (Monday to Friday, holidays ignored) to now (AD-44). The SoCLaaS budget day and the limiter's day counts use UTC. A task `timestamp` in an upload may not be more than 24 hours in the future (A-05).
+**Time.** Instants are UTC; "days" use `Asia/Singapore` (AD-37). Sprint start and end dates are inclusive calendar dates (AD-45). Standup dates accept only today or the next allowed date: Friday→Friday/Monday, Saturday→Saturday/Monday, Sunday→Sunday/Monday, and Monday-Thursday→that day/the next calendar day. The standup activity window runs from 00:00 of the previous working day (Monday to Friday, holidays ignored) to the current instant; selecting a future Monday does not move its end into the future (AD-44). The SoCLaaS budget day and the limiter's day counts use UTC. A task `timestamp` in an upload may not be more than 24 hours in the future (A-05).
 
 **Derived values (computed in code, AD-12, AD-22; formulas are A-19).**
 - `pointsTotal` = story points of live tasks that have points; tasks without points are counted separately as `unestimatedTasks`. `pointsDone` = those with status DONE. Progress percent = `pointsDone / pointsTotal`, 0 when the total is 0.
@@ -420,6 +422,7 @@ Every screen uses live data (no mocks) through the contracts client. Common stat
 | Checkpoints and sprints (PM, Dev Lead) | 12 to 15, 27 to 33 | dates, status, `completedPoints` | sprint close shows a carry-over choice for each unfinished task |
 | New plan (PM) | 34, 37 to 41 | idea box, approach, epics with expansion state, tasks, similar-items provenance | per-epic progress and retry; edit before approve; Approve disabled until every epic is DONE; "create manually" path when AI is unavailable |
 | Project health (Dev Lead) | 42, 44 to 48 | facts, checkpoint risk, overload (own projects), digest, suggestions | choose which suggestions to apply; an out-of-date suggestion explains why |
+| Project facts (PM, Dev Lead) | 42 | facts, checkpoint risk, overload for the caller's member projects | hidden or non-member projects appear as not found |
 | Overview (Dev Lead) | 43 | one row per member project | each row links to Project health |
 | Team standups (Dev Lead) | 55 | per developer: yesterday, today, blockers | no standup yet: "not generated" |
 | My work (Developer) | 20, 24 | assigned tasks | status and blocked controls |
@@ -455,8 +458,8 @@ Final decisions only. Options, recommendations and the reasoning are in [decisio
 | ID | Decision | Decided by |
 |---|---|---|
 | AD-01a | Monorepo deployed as one Vercel project per tier with a single Hono API app | team's own choice |
-| AD-01b | Next.js (App Router) UI with the Hono app mounted under `/api`; `apps/web` never imports Prisma or `packages/db` (tested) | accepted AI recommendation |
-| AD-01c | REST; zod schemas in `packages/contracts` are the single source; OpenAPI is generated from them | accepted AI recommendation |
+| AD-01b | Next.js (App Router) UI with the Hono app mounted under `/api`; `src/fe` never imports Prisma or `src/be/db` (tested) | accepted AI recommendation |
+| AD-01c | REST; zod schemas in `src/be/contracts` are the single source; OpenAPI is generated from them | accepted AI recommendation |
 | AD-02 | PostgreSQL with Prisma | team's own choice |
 | AD-03 | Firebase Auth; the ID token is verified server-side; the role is read from our database | team's own choice |
 | AD-04 | Port the MP3 gateway design to a TypeScript package; replace the audit string with a queryable table | accepted AI recommendation |
@@ -511,7 +514,7 @@ Final decisions only. Options, recommendations and the reasoning are in [decisio
 | AD-52 | Until the model experiment (AD-23b), the MP3 trio (`gemma4:26b`, `qwen3.5:9b`, `llama3.1:8b`) is the model set | confirmed by the team |
 | AD-53 | Deploy path and secret scoping of A-11: production deploys only from the protected `main` after required checks; production migrations from an approved GitHub Environment job; dev secrets scoped to the `development` branch; other previews in mock mode; AD-29 and AD-32 are consistent, not in conflict | decided by the team, 2026-10-29 |
 | AD-54 | Composite foreign keys keep every reference inside one project; an assignee must be a member (A-02) | approved by the team, 2026-10-29 |
-| AD-55 | The policy map in `packages/contracts` is the one authorisation mechanism (A-01) | approved by the team, 2026-10-29 |
+| AD-55 | The policy map in `src/be/contracts` is the one authorisation mechanism (A-01) | approved by the team, 2026-10-29 |
 | AD-56 | Retrieval stays across the PM's member projects, titles only, provenance shown, per-feature allow-list (A-08) | approved by the team, 2026-10-29 |
 | AD-57 | Out of scope: email-verification enforcement and disabling users in our code; both are Firebase configuration | decided by the team, 2026-10-29 |
 | AD-58 | Two SoCLaaS keys: one for production, one for development (local use and previews use the dev key or mock mode) | decided by the team, 2026-10-29 (local and preview use is the AI reading) |
@@ -536,7 +539,7 @@ Final decisions only. Options, recommendations and the reasoning are in [decisio
 
 | ID | Assumption | Review items | Used in |
 |---|---|---|---|
-| A-01 (Decided, AD-55) | A policy map in `packages/contracts` (allowed roles plus ownership predicate per operation) is the one authorisation mechanism; CI fails on a route missing from it; the generated test iterates it | C-01, C-16 | §4, §7, contracts.md |
+| A-01 (Decided, AD-55) | A policy map in `src/be/contracts` (allowed roles plus ownership predicate per operation) is the one authorisation mechanism; CI fails on a route missing from it; the generated test iterates it | C-01, C-16 | §4, §7, contracts.md |
 | A-02 (Decided, AD-54) | Composite foreign keys keep every reference inside one project; an assignee must be a member; removing a member with open tasks is refused | C-17 | §5 |
 | A-03 (Decided, AD-62) | Modules interact only through exported functions; `proposals` calls `core.applyPlan` and `applyReplan` with a transaction handle; the usage queries and `closeSession` are exported by the gateway | C-18 | §4 |
 | A-04 (Decided, AD-59) | Limiter: the fixed-window counter table `rate_counters`; per-user and global per-minute and per-day keys (starting values are configuration); the client timeout is below `maxDuration` | C-08, C-19 | §5, §10, §12 |

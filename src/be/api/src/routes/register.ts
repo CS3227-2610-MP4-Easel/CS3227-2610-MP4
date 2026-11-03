@@ -1,0 +1,51 @@
+import type { Hono } from "hono";
+import type { z } from "zod";
+import { policyForRoute, validateRouteRegistration, type ApiContext, type RouteDefinition } from "@agile/contracts";
+import { parseInput, parseJsonBody } from "../errors.js";
+import { authorizeRequest, type AuthDependencies } from "../middleware/auth.js";
+
+export type ApiEnv = { Variables: { requestId: string } };
+
+const registered = new WeakMap<object, RouteDefinition[]>();
+const isSchema = (value: unknown): value is z.ZodTypeAny => Boolean(value) && typeof (value as { safeParse?: unknown }).safeParse === "function";
+const honoPath = (path: string) => path.replace(/\{(\w+)\}/g, ":$1");
+
+/** Routes registered on `app` through `registerRoute`; `apiApp` must contain nothing else. */
+export function registeredRoutes(app: Hono<ApiEnv>): readonly RouteDefinition[] { return registered.get(app) ?? []; }
+
+/** Every route goes through the policy map: authorize, parse, run the handler, then commit or roll back
+ * the authorization transaction. Throws at registration for a missing/duplicate/mismatched policy,
+ * or for a non-public route when `deps` are not supplied. */
+export function registerRoute(app: Hono<ApiEnv>, route: RouteDefinition, deps?: AuthDependencies): void {
+  const existing = registered.get(app) ?? [];
+  validateRouteRegistration([...existing, route]);
+  const policy = policyForRoute(route.policyKey);
+  if (policy.authState !== "PUBLIC" && !deps) throw new Error(`authorization dependencies are required for ${route.operationId}`);
+  registered.set(app, [...existing, route]);
+
+  app.on(route.method, honoPath(route.path), async (c) => {
+    const url = new URL(c.req.url);
+    const request = { method: route.method, path: url.pathname, params: c.req.param() as Record<string, string>, query: url.searchParams, body: undefined as unknown };
+    // Authorization runs before input parsing, so a malformed protected request without a valid token is a 401, not a 422.
+    const scope = await authorizeRequest(policy, deps as AuthDependencies, c.req.header("authorization"), request);
+    let settled = false;
+    try {
+      const input = {
+        params: isSchema(route.paramsSchema) ? parseInput(route.paramsSchema, request.params) : request.params,
+        query: isSchema(route.querySchema) ? parseInput(route.querySchema, Object.fromEntries(url.searchParams)) : Object.fromEntries(url.searchParams),
+        body: isSchema(route.bodySchema) ? parseInput(route.bodySchema, await parseJsonBody(c.req.raw)) : undefined,
+      };
+      const principal = scope.principal && "userId" in scope.principal ? scope.principal : undefined;
+      const context: ApiContext = { requestId: c.get("requestId"), request: { ...request, body: input.body }, input, ...(principal ? { principal } : {}) };
+      const response = await route.handler(context);
+      if (scope.tx) {
+        settled = true;
+        await (response.status >= 400 ? scope.tx.rollback() : scope.tx.commit());
+      }
+      return response;
+    } catch (error) {
+      if (scope.tx && !settled) await scope.tx.rollback();
+      throw error;
+    }
+  });
+}

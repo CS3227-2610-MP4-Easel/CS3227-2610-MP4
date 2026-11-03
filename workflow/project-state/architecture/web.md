@@ -10,7 +10,7 @@ Nothing built yet *(planned)*. UI only: no database or Prisma import (enforced b
 
 | Path | Role |
 |---|---|
-| `apps/web` | Next.js App Router pages, components, contracts client, role-based navigation |
+| `src/fe` | Next.js App Router pages, components, contracts client, role-based navigation |
 
 ## Decisions
 
@@ -18,7 +18,7 @@ Architecture decisions that shaped this area (`AD-nn`, full reasoning in the dec
 
 | ID | Date | One-line decision | File |
 |---|---|---|---|
-| AD-01b | 2026-10-29 | Next.js UI with Hono mounted under /api; apps/web never imports Prisma | [decision-log](../../../docs/architecture/decision-log.md) |
+| AD-01b | 2026-10-29 | Next.js UI with Hono mounted under /api; src/fe never imports Prisma | [decision-log](../../../docs/architecture/decision-log.md) |
 | AD-71 | 2026-10-29 | One person designs the entire UI as mockups; others link flows | [decision-log](../../../docs/architecture/decision-log.md) |
 
 ## Target Link and Drift

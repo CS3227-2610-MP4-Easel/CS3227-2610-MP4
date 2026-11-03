@@ -10,7 +10,7 @@ Nothing built yet *(planned)*. Firebase ID token verified server-side on every r
 
 | Path | Role |
 |---|---|
-| `packages/api/auth (planned)` | token verification, registration, codes, requireMember, rate_counters hit() |
+| `src/be/api/auth (planned)` | token verification, registration, codes, requireMember, rate_counters hit() |
 
 ## Decisions
 
