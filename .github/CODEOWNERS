@@ -5,6 +5,7 @@
 /package-lock.json @teleifo
 /.githooks/** @teleifo @ludannnn
 /.gitleaks.toml @teleifo @ludannnn
+/.gitleaksignore @teleifo @ludannnn
 /.gitignore @teleifo
 /scripts/** @teleifo
 /workflow/** @teleifo @ludannnn

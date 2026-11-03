@@ -21,7 +21,7 @@ test("E13 CI scans require both immutable PR range endpoints", () => {
 });
 
 test("E5 narrow allowlist output and E14 failures redact secret-like values", () => {
-  assert.equal(redactOutput("token=ghp_abcdefghijklmnopqrstuvwxyz123456"), "token=[REDACTED]");
+  assert.equal(redactOutput("token=fixture-secret-value"), "token=[REDACTED]");
   assert.equal(redactOutput("password: super-secret-value"), "password: [REDACTED]");
 });
 

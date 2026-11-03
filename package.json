@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "pretest": "npm --workspace @agile/db run prisma:generate",
-    "test": "node --import tsx --test \"tests/**/*.test.ts\" \"src/be/**/*.test.ts\"",
+    "test": "node --import tsx --test $(find tests src/be -type f -name '*.test.ts' -print)",
     "typecheck": "tsc -b && npm --prefix src/fe run typecheck",
     "lint": "tsc -b --pretty false",
     "contract": "node --import tsx --test src/be/api/test/openapi-parity.test.ts src/be/contracts/test/openapi.test.ts",
