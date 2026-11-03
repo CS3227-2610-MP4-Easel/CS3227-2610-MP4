@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** Xiao-Congchen (PM)
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-03 by Claude Sonnet 5.5 — plan written, spec dependencies amended
+- **Last updated:** 2026-11-03 by Claude Sonnet 5.5 — T1 done, T2 awaiting spend-limit gate
 
 **Untouched:** Architecture, Conventions, Deviations
 
@@ -25,6 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
+| S2 | 2026-11-03 | Claude Sonnet 5.5 | W~1 | Blocked — needs human | T1 done; T2 step 1 is a GATE | Q~1: spend limit for the T2 spike (a few dollars at most) and confirm subscription login; T3, T5 and T8 wait on T2 | 2026-11-03 |
 | S1 | 2026-11-03 | Claude Sonnet 5.5 | W~1 | Paused | Plan approved (gate 2); no task started; handed to a new session by the owner | New session: read STATE.md, guardrails.md and this file, run `lint.mjs plan workflow/plans/2026-11-03-experiment-framework.md --approved`, add your own session row, then run executing-plans-lite from T1 step 1 (T1 and T2 may run together; T2 step 1 is a GATE for the owner's spend limit) | 2026-11-03 |
 
 **Remaining**
@@ -39,7 +40,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W~1 | Experiment framework (agent-workflow evaluation) | Planned | [spec](../../specs/2026-11-03-experiment-framework-design.md) (approved 2026-11-03; amended C~10) | [plan](../../plans/2026-11-03-experiment-framework.md) (approved 2026-11-03) | Big · gate 2 approved; T1 next | — |
+| W~1 | Experiment framework (agent-workflow evaluation) | Planned | [spec](../../specs/2026-11-03-experiment-framework-design.md) (approved 2026-11-03; amended C~10) | [plan](../../plans/2026-11-03-experiment-framework.md) (approved 2026-11-03) | Big · T1 done; T2 blocked on the spend-limit gate | — |
 | W7 | PM plan flow (proposals, pm) | Not started | — | — | untouched on this branch; spec stage needs only W1 merged, build waits on W2, W3, W5, W6 | — |
 
 ---
@@ -55,6 +56,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-03 | Spec approved at gate 1 by the owner | W~1 | this commit |
 | 2026-11-03 | Spec amended for W1 (PR #5): W7 spec stage needs only W1's frozen interfaces; pilot base_commit and config.json handling noted | W~1 | this commit |
 | 2026-11-03 | Spec revised after two review rounds: runtime.md added, containment, isolation, bank, metrics, cost and reporting rules tightened | W~1 | this commit |
+| 2026-11-03 | T1 done: schema validators, secrets scan, cost function, `exp check` and the command loader (50 tests green). Plan-level notes: `--secrets` scans all of `EXP_ROOT` except `local/` (not only `experiments/`) so T8 can scan the plugin copy; `exp check` prints the CLI version line only once T3 adds the launcher; a task whose id starts with `pilot-` is held to F16 | W~1 | this commit |
 
 ---
 

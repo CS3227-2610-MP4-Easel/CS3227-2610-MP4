@@ -6,6 +6,7 @@
     "workspace": "npm test",
     "typecheck": "npm run typecheck",
     "lint": "npm run lint",
-    "schema": "npm --workspace @agile/db run prisma:validate"
+    "schema": "npm --workspace @agile/db run prisma:validate",
+    "experiments": "node --test \"workflow/experiments/**/*.test.mjs\""
   }
 }

@@ -16,7 +16,7 @@
 <!-- Status: Not started / In progress / Done / Blocked / Post-merge (a human step after the merge) -->
 | Task | Depends on | Can run concurrently with | Wave | Status |
 |---|---|---|---|---|
-| T1 Schemas and check | - | T2 | 1 | Not started |
+| T1 Schemas and check | - | T2 | 1 | Done |
 | T2 Isolation spike | - | T1 | 1 | Not started |
 | T3 Launcher and driver | T1, T2 | T5, T8 | 2 | Not started |
 | T5 Extractor | T1, T2 | T3, T8 | 2 | Not started |
@@ -97,15 +97,15 @@ Executor note: run inline, task by task in table order. Tasks in one wave share 
 | Test | `workflow/experiments/harness/pricing.test.mjs` | hand-computed event and run cost under a stub price table |
 
 **Checklist**
-- [ ] 1. Write failing `schema.test.mjs`: arm id differs from file name (E1); `plugins` of `../x`, an absolute path or a path outside `plugins/` (E2); bypass-all `permission_mode` (E3); non-hex or missing `base_commit` (E6); duplicate seeded issue id (E7); arm stage differs from task stage (E8); `review.max_rounds` 3 (E9); arm model absent from pricing (E10); `isolation_ignore` naming a plugin or hook (F1). Run `<TEST schema>`; expect FAIL because `schema.mjs` does not exist.
-- [ ] 2. Implement `paths.mjs` and `schema.mjs` (hand-written validators returning `{ok, errors[]}`; ids `[a-z0-9-]{3,24}`; paths relative with no `..`; a resolved path must stay inside its root). Intended shape: `export function validateArm(obj, {fileName, pricing})`.
-- [ ] 3. Run `<TEST schema>`; expect PASS.
-- [ ] 4. Write failing `secrets.test.mjs` (the six patterns from spec `runtime.md` § Credential patterns, one positive each, the two negatives, redaction) and `pricing.test.mjs` (three events under a stub price table with hand-computed costs; the run total rounded once); implement `secrets.mjs` and `pricing.mjs`. Intended cost shape: `(in*p.input + out*p.output + cr*p.cache_read + cw5*p.cache_write_5m + cw1*p.cache_write_1h) / 1e6`. Expect PASS.
-- [ ] 5. Write failing `check.test.mjs` on a temp `EXP_ROOT`: sheet-mode experiment with a task lacking `answer-sheet.md` exits 3 (E5); bank-mode with no seeded file is clean (F2); pilot seeded set with fewer than 6 issues or a missing category exits 3 (E56, F16); an anchor not found in brief or sheet exits 3; `--secrets` with a planted `sk-ant-` string exits 9; `local/` not covered by `git check-ignore` is reported.
-- [ ] 6. Implement `check.mjs`, `commands/check.mjs` and `exp.mjs` (directory loader); run `<TEST check>`; expect PASS.
-- [ ] 7. Create `config.json`, `pricing.json`, `README.md`; modify `.gitignore` and `workflow/config.json`; run `node workflow/experiments/harness/exp.mjs check`; expect exit 0; confirm `git check-ignore -v workflow/experiments/local/x` matches.
-- [ ] 8. `<BUILD>` green; update branch state: Progress, Changes line.
-- [ ] 9. Commit: `feat: schemas, cost function, layout and exp check for the experiment framework (experiment framework)`.
+- [x] 1. Write failing `schema.test.mjs`: arm id differs from file name (E1); `plugins` of `../x`, an absolute path or a path outside `plugins/` (E2); bypass-all `permission_mode` (E3); non-hex or missing `base_commit` (E6); duplicate seeded issue id (E7); arm stage differs from task stage (E8); `review.max_rounds` 3 (E9); arm model absent from pricing (E10); `isolation_ignore` naming a plugin or hook (F1). Run `<TEST schema>`; expect FAIL because `schema.mjs` does not exist.
+- [x] 2. Implement `paths.mjs` and `schema.mjs` (hand-written validators returning `{ok, errors[]}`; ids `[a-z0-9-]{3,24}`; paths relative with no `..`; a resolved path must stay inside its root). Intended shape: `export function validateArm(obj, {fileName, pricing})`.
+- [x] 3. Run `<TEST schema>`; expect PASS.
+- [x] 4. Write failing `secrets.test.mjs` (the six patterns from spec `runtime.md` § Credential patterns, one positive each, the two negatives, redaction) and `pricing.test.mjs` (three events under a stub price table with hand-computed costs; the run total rounded once); implement `secrets.mjs` and `pricing.mjs`. Intended cost shape: `(in*p.input + out*p.output + cr*p.cache_read + cw5*p.cache_write_5m + cw1*p.cache_write_1h) / 1e6`. Expect PASS.
+- [x] 5. Write failing `check.test.mjs` on a temp `EXP_ROOT`: sheet-mode experiment with a task lacking `answer-sheet.md` exits 3 (E5); bank-mode with no seeded file is clean (F2); pilot seeded set with fewer than 6 issues or a missing category exits 3 (E56, F16); an anchor not found in brief or sheet exits 3; `--secrets` with a planted `sk-ant-` string exits 9; `local/` not covered by `git check-ignore` is reported.
+- [x] 6. Implement `check.mjs`, `commands/check.mjs` and `exp.mjs` (directory loader); run `<TEST check>`; expect PASS.
+- [x] 7. Create `config.json`, `pricing.json`, `README.md`; modify `.gitignore` and `workflow/config.json`; run `node workflow/experiments/harness/exp.mjs check`; expect exit 0; confirm `git check-ignore -v workflow/experiments/local/x` matches.
+- [x] 8. `<BUILD>` green; update branch state: Progress, Changes line.
+- [x] 9. Commit: `feat: schemas, cost function, layout and exp check for the experiment framework (experiment framework)`.
 
 ### T2: Isolation and transcript spike
 **Delivers:** verified CLI facts, scrubbed fixtures, `pricing.json` filled, per-arm toy costs | **Satisfies:** F4, F9, N1 | **Depends on:** - | **Wave:** 1
