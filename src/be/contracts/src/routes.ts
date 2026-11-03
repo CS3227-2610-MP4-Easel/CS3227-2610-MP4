@@ -11,7 +11,7 @@ export type RouteDefinition = {
   policyKey: string;
   handler: (context: ApiContext) => Promise<Response>;
 };
-export type ApiContext = { requestId: string; request: { method: string; path: string; params: Record<string, string>; query: URLSearchParams; body: unknown }; principal?: { firebaseUid: string; userId: string; role: "PM" | "DEV_LEAD" | "DEVELOPER" } };
+export type ApiContext = { requestId: string; request: { method: string; path: string; params: Record<string, string>; query: URLSearchParams; body: unknown }; /** Values parsed by the route's params/query/body schemas; the raw `request` is unvalidated. */ input: { params: unknown; query: unknown; body: unknown }; principal?: { firebaseUid: string; userId: string; role: "PM" | "DEV_LEAD" | "DEVELOPER" } };
 
 export function validateRouteRegistration(routes: RouteDefinition[]): void {
   const policies = getPolicyMap();

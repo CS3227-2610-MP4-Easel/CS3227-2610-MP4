@@ -1,3 +1,6 @@
-import type { Context } from "hono";
+import type { RouteDefinition } from "@agile/contracts";
 
-export function healthRoute(c: Context) { return c.json({ status: "UP" }, 200); }
+export const healthRoute: RouteDefinition = {
+  operationId: "HEALTH_READ", method: "GET", path: "/api/health", policyKey: "endpoint-1", responseSchema: {},
+  handler: async () => Response.json({ status: "UP" }, { status: 200 }),
+};
