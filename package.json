@@ -15,7 +15,8 @@
     "scan:secrets": "node scripts/scan-secrets.mjs",
     "setup:hooks": "node scripts/setup-hooks.mjs",
     "check:workflows": "node scripts/check-workflows.mjs",
-    "check:agent-policy": "node scripts/check-agent-policy.mjs"
+    "check:agent-policy": "node scripts/check-agent-policy.mjs",
+    "audit:dependencies": "npm audit --audit-level=high"
   },
   "devDependencies": {
     "react": "^19.1.0",
