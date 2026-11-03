@@ -1,5 +1,7 @@
 # Experiment Framework Design
 
+> Amended 2026-11-03 after the plan review: see branch state C~10 (T6 depends on T3, T4 and T5; waves become six; `pricing.mjs` moves to T1; commands load from `harness/commands/`).
+
 - **Status:** Approved (Xiao-Congchen, 2026-11-03)
 - **Risk tier:** Medium - the harness launches agents with tool access on a developer machine, may use an API key, and sends agent output to a judge model; it touches no product data, auth or money. The Attacker lens is added for those reasons.
 - **Workstream:** new workstream (permanent id assigned at fold) | **Plan:** not written

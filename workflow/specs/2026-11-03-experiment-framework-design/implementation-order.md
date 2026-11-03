@@ -2,10 +2,10 @@
 
 | ID | Task | Delivers | Satisfies |
 |---|---|---|---|
-| T1 | Schemas, layout and `exp check` | validators for config, arm, task, experiment, pricing; path and id safety; `exp check` with `--secrets` and the credential patterns; `.gitignore` entry; an `experiments` entry (`node --test workflow/experiments/`) in `workflow/config.json` `test_commands`, added on top of W1's entries (root `npm test` does not run `*.test.mjs`) | F1, F2, F15, F16 (checks), N3, N7 |
+| T1 | Schemas, layout and `exp check` | validators for config, arm, task, experiment, pricing; `pricing.mjs` (cost from the four token buckets, used by T3 and T5); the command loader in `exp.mjs`; path and id safety; `exp check` with `--secrets` and the credential patterns; `.gitignore` entry; an `experiments` entry (`node --test workflow/experiments/`) in `workflow/config.json` `test_commands`, added on top of W1's entries (root `npm test` does not run `*.test.mjs`) | F1, F2, F15, F16 (checks), N3, N7 |
 | T2 | Isolation and transcript spike (real model calls, a few cents) | verified flags for `--setting-sources`, `--plugin-dir`, MCP, permission mode; the init record's fields; the reference cost field in the JSON result; transcript location and subagent file layout; whether OpenTelemetry writes a file headless; Windows spawn of a native executable; the exact expected-set derivation written to `harness/isolation.md`; scrubbed real fixtures committed under `harness/fixtures/`; findings note in the branch state | F4, F9, N1 |
-| T3 | Run launcher, driver and fake CLI | clone creation and preparation (no remotes, stripped and overlaid `.claude/`, instruction files), probe, headless driver, marker and question rules, timeouts, process-tree kill, containment snapshots, environment allowlist, ceilings, `manifest.json`, atomic `state.json`, `--continue`, `fake-claude.mjs` | F3, F4, F5, F6, F14, F17, N2, N7, N8 |
-| T5 | Extractor | transcript copy and hash, dedupe, subagent linking, pricing, phases, metrics, `events.csv`, `usage.json` | F9, F10, N1, N5, N6 |
+| T3 | Run launcher, driver and fake CLI (fake CLI used by T4, T6 and T10) | clone creation and preparation (no remotes, stripped and overlaid `.claude/`, instruction files), probe, headless driver, marker and question rules, timeouts, process-tree kill, containment snapshots, environment allowlist, ceilings, `manifest.json`, atomic `state.json`, `--continue`, `fake-claude.mjs` | F3, F4, F5, F6, F14, F15, F17, N2, N7, N8 |
+| T5 | Extractor | transcript copy and hash, dedupe, subagent linking, phases, metrics, `events.csv`, `usage.json` | F9, F10, N1, N5, N6 |
 | T8 | Pilot bundle | task `pilot-pinned-note` (brief, answer sheet, 6 or more seeded issues with anchors), three arm files per runtime.md, pilot `base_commit` = the `development` commit that contains W1's merge (a pinned W1 tip sha only if W1 is still unmerged when T8 starts), brief and sheet written against the `src/be/*` and `src/fe` layout, pilot experiment file (hypotheses, decision rule, ceilings from Q1), `rubric/rubric.md` with anchors, three calibration artifacts with bands | F1, F2, F15, F16 |
 | T4 | Sheet answerer and question log | sheet mode, fixed text, answerer self-test, question sanitizer, `questions.jsonl` | F7, F11, N4 |
 | T6 | Grader | lint runner (from the main checkout), credential scan, seeded-issue judge, two-call rubric, review rounds, fix iterations, judge self-test on the calibration set | F12, N3, N4 |
@@ -22,13 +22,13 @@
 | T3 Launcher and driver | T1, T2 | T5, T8 | 2 |
 | T5 Extractor | T1, T2 | T3, T8 | 2 |
 | T8 Pilot bundle | T1, T2 | T3, T5 | 2 |
-| T4 Sheet answerer | T3 | T6 | 3 |
-| T6 Grader | T5 | T4 | 3 |
-| T7 Report | T5, T6 | T10 | 4 |
-| T10 Bank and queue | T4 | T7 | 4 |
-| T9 Pilot run and review | T3, T4, T6, T7, T8 | - | 5 |
+| T4 Sheet answerer | T3 | - | 3 |
+| T6 Grader | T3, T4, T5 | T10 | 4 |
+| T10 Bank and queue | T4 | T6 | 4 |
+| T7 Report | T5, T6 | - | 5 |
+| T9 Pilot run and review | T3, T4, T6, T7, T8 | - | 6 |
 
-Shared-file hazards: T3 and T4 both edit `harness/driver.mjs` and T4 and T10 both edit `harness/answerer.mjs`; each pair is ordered by dependency, so they never overlap. T1 owns `harness/schema.mjs`; later tasks only import it. T6 and T7 read `grades.json` and write different files.
+Shared-file hazards: Each command is its own file under `harness/commands/`, loaded by `exp.mjs`, so no two concurrent tasks edit one file. T3 and T4 both edit `harness/driver.mjs` and T4 and T10 both edit `harness/answerer.mjs`; each pair is ordered by dependency, so they never overlap. T1 owns `harness/schema.mjs`; later tasks only import it. T6 and T7 read `grades.json` and write different files.
 
 ## T9 pass criteria
 - At least 7 of 9 runs end `complete`; every other run is `aborted` for a recorded reason that is not `isolation_mismatch`, `containment` or `crash`, and has extractable data.
@@ -38,6 +38,6 @@ Shared-file hazards: T3 and T4 both edit `harness/driver.mjs` and T4 and T10 bot
 - The operator reads `runs.csv`, `medians.csv` and the dominated-arms list and decides which arms run on W7.
 
 ## Cut line and schedule
-The pilot needs T1 to T9 without T10. T10 is needed only for the real W7 comparison. Nine tasks in five waves must land before the 10 Nov freeze; if time runs short, T10 and the OpenTelemetry cross-check move to the real-run plan. The real W7 task bundle and its run are not part of this plan: they start when W1 has merged, and get their own spec and plan.
+The pilot needs T1 to T9 without T10. T10 is needed only for the real W7 comparison. Nine tasks in six waves must land before the 10 Nov freeze; if time runs short, T10 and the OpenTelemetry cross-check move to the real-run plan. The real W7 task bundle and its run are not part of this plan: they start when W1 has merged, and get their own spec and plan.
 
 Branch order: merge `development` into this branch once W1 lands and before T1, so the `workflow/config.json` and `.gitignore` edits sit on W1's versions of those files.
