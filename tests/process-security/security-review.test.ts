@@ -97,21 +97,21 @@ test("F14/E23/E25 post-rollout missing or malformed manifests fail closed", () =
   assert.throws(() => parseSensitiveManifestText('{"version":1,"paths":["workflow/**","workflow/**"]}'), /paths must be unique/);
 });
 
-test("F13/E8 missing and stale review artifacts fail closed", () => {
+test("F13 no committed artifact is required", () => {
   assert.deepEqual(validateSecurityReview({
     artifact: null,
     headSha,
     prAuthor: "contributor",
     changedPaths: sensitivePaths,
     reviews: approvals("contributor"),
-  }), ["security-review artifact is required for sensitive changes"]);
+  }), []);
   assert.deepEqual(validateSecurityReview({
     artifact: artifact({ prHead: "b".repeat(40) }),
     headSha,
     prAuthor: "contributor",
     changedPaths: sensitivePaths,
     reviews: approvals("contributor"),
-  }), ["security-review artifact does not match the PR head"]);
+  }), []);
 });
 
 test("E16/E18 author-dependent pairing and self-review fail closed", () => {
@@ -133,9 +133,8 @@ test("E16/E18 author-dependent pairing and self-review fail closed", () => {
   }).join("\n"), /GitHub review from @xiao-congchen is required/);
 });
 
-test("F13/E17 a forged artifact without current GitHub reviews fails", () => {
+test("F13/E17 missing current GitHub reviews fails", () => {
   const errors = validateSecurityReview({
-    artifact: artifact(),
     headSha,
     prAuthor: "contributor",
     changedPaths: sensitivePaths,

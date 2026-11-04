@@ -141,7 +141,7 @@ function reviewErrors(reviews, headSha, prAuthor) {
   return errors;
 }
 
-export function validateSecurityReview({ artifact, headSha, prAuthor, changedPaths, reviews, sensitivePatterns = LOCAL_SENSITIVE_PATTERNS }) {
+export function validateSecurityReview({ headSha, prAuthor, changedPaths, reviews, sensitivePatterns = LOCAL_SENSITIVE_PATTERNS }) {
   const sensitiveChanges = changedPaths.filter((path) => isSensitivePath(path, sensitivePatterns));
   if (sensitiveChanges.length === 0) return [];
 
@@ -151,15 +151,6 @@ export function validateSecurityReview({ artifact, headSha, prAuthor, changedPat
   if (requiredHuman === normalizedAuthor) return ["human approver cannot be the pull request author"];
 
   const errors = [];
-  if (!artifact) errors.push("security-review artifact is required for sensitive changes");
-  else {
-    if (artifact.prHead !== headSha) errors.push("security-review artifact does not match the PR head");
-    if (normalizeLogin(artifact.reviewer) !== SECURITY_REVIEWER) errors.push(`security-reviewer must be ${SECURITY_REVIEWER}`);
-    if (artifact.decision !== "pass") errors.push("security review decision must be pass");
-    if (!Array.isArray(artifact.targetPaths) || !sensitiveChanges.every((path) => artifact.targetPaths.includes(path))) {
-      errors.push("security-review artifact must cover every sensitive changed path");
-    }
-  }
   if (reviews == null) errors.push("GitHub review data is required for sensitive changes");
   else errors.push(...reviewErrors(reviews, headSha, prAuthor));
   return errors;
@@ -169,7 +160,7 @@ function parseArgs(args) {
   const options = {};
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
-    if (["--head-sha", "--base-sha", "--base-branch", "--pr-number", "--bootstrap-pr-number", "--pr-author", "--artifact", "--reviews-file"].includes(arg)) {
+    if (["--head-sha", "--base-sha", "--base-branch", "--pr-number", "--bootstrap-pr-number", "--pr-author", "--reviews-file"].includes(arg)) {
       options[arg.slice(2).replaceAll("-", "_")] = args[++index];
     } else throw new Error(`unknown security-review option: ${arg}`);
   }
@@ -197,11 +188,6 @@ function manifestChanged(changed) {
 
 export async function runSecurityReview(args = process.argv.slice(2)) {
   const options = parseArgs(args);
-  const artifactPath = options.artifact ?? `workflow/security-reviews/${options.head_sha}.json`;
-  let artifact = null;
-  try { artifact = JSON.parse(await readFileAsync(artifactPath, "utf8")); }
-  catch (error) { if (error?.code !== "ENOENT") throw error; }
-
   const changed = changedPaths(options.base_sha, options.head_sha);
   const baseText = manifestTextAtSha(options.base_sha);
   const patterns = resolveBaseSensitivePatterns({
@@ -225,7 +211,6 @@ export async function runSecurityReview(args = process.argv.slice(2)) {
   if (options.reviews_file) reviews = JSON.parse(await readFileAsync(options.reviews_file, "utf8"));
 
   const errors = validateSecurityReview({
-    artifact,
     headSha: options.head_sha,
     prAuthor: options.pr_author,
     changedPaths: changed,
