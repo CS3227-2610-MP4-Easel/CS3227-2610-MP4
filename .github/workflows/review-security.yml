@@ -1,0 +1,49 @@
+name: Review Security
+
+on:
+  pull_request:
+    branches: [development, main]
+    types: [opened, synchronize, reopened]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+
+permissions: {}
+
+jobs:
+  workflow-security:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Fetch pull request head objects
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: git fetch --no-tags origin "pull/${PR_NUMBER}/head"
+      - name: Verify current pull request head
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          EVENT_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          current_head=$(gh api "/repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" --jq '.head.sha')
+          test "$current_head" = "$EVENT_HEAD_SHA"
+      - name: Fetch pull request reviews
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --paginate --slurp "/repos/${GITHUB_REPOSITORY}/pulls/${{ github.event.pull_request.number }}/reviews" > "$RUNNER_TEMP/pr-reviews.json"
+      - name: Check current sensitive reviews
+        run: |
+          node scripts/check-security-review.mjs \
+            --base-sha "${{ github.event.pull_request.base.sha }}" \
+            --head-sha "${{ github.event.pull_request.head.sha }}" \
+            --base-branch "${{ github.event.pull_request.base.ref }}" \
+            --pr-number "${{ github.event.pull_request.number }}" \
+            --bootstrap-pr-number "${{ vars.W12_BOOTSTRAP_PR_NUMBER }}" \
+            --pr-author "${{ github.event.pull_request.user.login }}" \
+            --reviews-file "$RUNNER_TEMP/pr-reviews.json"
