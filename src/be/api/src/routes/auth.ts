@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { policyForRoute, type RouteDefinition } from "@agile/contracts";
-import { checkRegistrationCode, clientIpKey, type AuthRuntime, type RatePurpose } from "@agile/auth";
+import { checkRegistrationCode, clientIpKey, getUser, type AuthRuntime, type RatePurpose } from "@agile/auth";
 import { errorResponse, HttpError } from "../errors.js";
 
 const MAX_BODY_BYTES = 4096;
@@ -65,6 +65,11 @@ export function authRoutes(runtime: () => AuthRuntime): RouteDefinition[] {
         if (!checkRegistrationCode(codes, role, code)) throw new HttpError("REGISTRATION_CODE_INVALID", 403, "The registration code is not valid for this role.");
         return Response.json({ valid: true });
       },
+    },
+    {
+      ...route("endpoint-4"),
+      responseSchema: {},
+      handler: async ({ principal }) => Response.json(await getUser(runtime().db, principal!.userId)),
     },
   ];
 }

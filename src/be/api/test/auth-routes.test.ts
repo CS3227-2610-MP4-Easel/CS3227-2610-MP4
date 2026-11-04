@@ -210,3 +210,33 @@ test("E50 unconfigured routes are 500", async () => {
   assert.equal(response.status, 500);
   assert.equal((await body(response)).error.code, "INTERNAL_ERROR");
 });
+
+// Me (endpoint 4): the db fake serves both the role lookup (by firebaseUid) and getUser (by id).
+type FullRow = Row & { email: string; displayName: string; createdAt: Date };
+const storedRow: FullRow = { id: "00000000-0000-4000-8000-000000000001", firebaseUid: "uid-1", role: "DEV_LEAD", email: "stored@b.test", displayName: "Stored Name", createdAt: new Date(0) };
+const meRuntime = (rows: FullRow[], failing = false) => {
+  const db = { user: { findUnique: async ({ where }: { where: { firebaseUid?: string; id?: string } }) => {
+    if (failing) throw new Error("db down");
+    return rows.find((r) => (where.id ? r.id === where.id : r.firebaseUid === where.firebaseUid)) ?? null;
+  } } } as unknown as FilteredDbClient;
+  return { ...fakeRuntime().runtime, db, lookupRegisteredUser: createLookupRegisteredUser(db) };
+};
+const me = (runtime: AuthRuntime, authorization = "Bearer good") => authApp(runtime).request("http://localhost/api/me", { headers: { authorization } });
+
+test("E19 me returns the stored row", async () => {
+  const response = await me(meRuntime([storedRow]));
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { id: storedRow.id, email: "stored@b.test", displayName: "Stored Name", role: "DEV_LEAD" });
+});
+
+test("E5 token without row is 403 USER_NOT_REGISTERED on /api/me", async () => {
+  const response = await me(meRuntime([storedRow]), "Bearer norow");
+  assert.equal(response.status, 403);
+  assert.equal((await body(response)).error.code, "USER_NOT_REGISTERED");
+});
+
+test("E46 lookup database failure is 500 on /api/me", async () => {
+  const response = await me(meRuntime([storedRow], true));
+  assert.equal(response.status, 500);
+  assert.equal((await body(response)).error.code, "INTERNAL_ERROR");
+});

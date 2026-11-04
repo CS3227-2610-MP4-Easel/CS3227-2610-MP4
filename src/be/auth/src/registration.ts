@@ -21,6 +21,11 @@ export async function createUser(db: FilteredDbClient, user: NewUser): Promise<U
 
 /** The caller's own row for endpoint 4; throws `Error("USER_NOT_REGISTERED")` if it is gone. */
 export async function getUser(db: FilteredDbClient, userId: string): Promise<User> {
-  void db; void userId;
-  throw new Error("NOT_IMPLEMENTED");
+  const row = await db.user.findUnique({ where: { id: userId }, select: USER_FIELDS });
+  if (!row) throw new Error("USER_NOT_REGISTERED");
+  return toUser(row);
 }
+
+const USER_FIELDS = { id: true, email: true, displayName: true, role: true } as const;
+/** Only the contract's fields, so internal columns such as `firebase_uid` never reach a response. */
+const toUser = ({ id, email, displayName, role }: User): User => ({ id, email, displayName, role });
