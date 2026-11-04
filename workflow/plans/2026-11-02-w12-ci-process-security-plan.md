@@ -1,6 +1,7 @@
 # W12 CI and Process Security Implementation Plan
 
-- **Status:** Approved (Dev Lead, 2026-11-04)
+- **Status:** Approved (Dev Lead, 2026-11-05)
+- **Amended 2026-11-05:** Add T7 for trusted review-event re-evaluation and findings 3–5 hardening; prior Gate 2 approval does not cover this material amendment.
 - **Amended 2026-11-04:** T6 no longer requires a committed security-review artifact; two current exact-head GitHub approvals are the complete sensitive-path approval evidence. Prior Gate 1 and Gate 2 approvals are superseded for this amendment.
 - **Amended 2026-11-04:** T6 now has a one-time first-rollout bootstrap path bound to `development`, base SHA `7bd65440023a0123ac92445e5b6e58ec838ee57c`, and externally configured PR number `W12_BOOTSTRAP_PR_NUMBER`; the head manifest must exactly match the fixed list, then later runs use only validated base/head manifests.
 - **Amended 2026-11-04:** T5/T6 now implement canonical base-manifest classification and dual exact-head GitHub review verification; see W12 C~5/C~6.
@@ -11,7 +12,7 @@
 
 **Goal:** Enforce the selected thin CI and process-security baseline before changes reach `development` or `main`.
 
-**In scope:** F1–F14, N1–N4, E1–E27.
+**In scope:** F1–F18, N1–N4, E1–E35.
 
 **Non-goals:** Production deployment and migrations (W13); a custom policy-as-code framework; signed commits; full static-analysis suites; runtime security monitoring; changing the policy map, OpenAPI generator, or attack corpus contents.
 
@@ -27,6 +28,7 @@
 | T4 Agent policy and protected control paths | — | T1, T2, T3 | 1 | Done |
 | T5 Sensitive-path manifest, CODEOWNERS and branch protection | T4, Q1 resolved | — | 2 | Done |
 | T6 Security evidence and final verification | T1, T2, T3, T4, T5 | — | 3 | In progress |
+| T7 Trusted review re-evaluation and checker hardening | T1, T6 | — | 4 | Done |
 
 ## Traceability
 
@@ -77,6 +79,18 @@
 | E25 | T6 | malformed post-rollout head manifest |
 | E26 | T6 | one-time bootstrap PR identity and variable retirement |
 | E27 | T6 | independent Gate 3 comparison of bootstrap evaluator/list/manifest |
+| F15 | T7 | trusted review-event workflow fixtures |
+| F16 | T7 | CLI invalid-base and bootstrap-identity fixtures |
+| F17 | T7 | rename source/destination classification fixture |
+| F18 | T7 | Node test-discovery fixture |
+| E28 | T7 | review submission re-evaluation |
+| E29 | T7 | review dismissal/edit re-evaluation |
+| E30 | T7 | CLI argument binding failure |
+| E31 | T7 | rename-safe sensitive classification |
+| E32 | T7 | Windows-shell-independent test discovery |
+| E33 | T7 | stale review-event head fails closed |
+| E34 | T7 | review API or fork object failure |
+| E35 | T7 | non-sensitive review-event pass |
 
 ## Verification gates
 
@@ -85,7 +99,7 @@
 
 ## Gate 2
 
-- [x] **GATE:** Re-ask the operator to approve this materially amended implementation plan before coding. Approved by the Dev Lead on 2026-11-04; the prior approval was superseded by the artifact-removal amendment.
+- [x] **GATE:** Ask the operator to approve this materially amended implementation plan before coding. Approved by the Dev Lead on 2026-11-05.
 
 ---
 
@@ -232,6 +246,39 @@
 - [x] 7. Update the plan, branch state, and Changes line; confirm the working tree is clean.
 - [ ] 8. Record the task completion with subject `test: verify W12 process security controls (W12)`.
 - [ ] 9. GATE: After the first merge, verify `development` contains the manifest, remove `W12_BOOTSTRAP_PR_NUMBER`, run missing-base and leftover-variable fixtures that fail outside the allowlisted rollout identity, and record the bootstrap base SHA, target branch, configured PR number, merged head, reviewer comparison of evaluator/list/manifest, variable removal, and result in branch state.
+
+### T7: Trusted review re-evaluation and checker hardening
+
+**Delivers:** Review-event reruns from a trusted workflow, correct base-argument binding, rename-safe
+sensitive-path classification, and shell-independent test discovery. **Satisfies:** F15, F16, F17,
+F18, E28, E29, E30, E31, E32. **Depends on:** T1, T6. **Wave:** 4.
+
+**Files**
+
+| Action | Path | What changes |
+|---|---|---|
+| Modify | `.github/workflows/review-security.yml` | Add the trusted workflow for PR `opened`, `synchronize`, `reopened` and review `submitted`, `edited`, `dismissed`; require `contents: read` plus `pull-requests: read`, use the immutable base SHA and Git-object inputs, compare the event head with the current PR API head, and publish the sole required `workflow-security` check context. This file must be independently landed on the default branch before it can protect a PR. |
+| Modify | `scripts/check-workflows.mjs` | Map dashed CLI names to the camel-case validator options, fail closed when the supplied base revision or bootstrap identity is invalid, and allow only this named review workflow with the exact review trigger/activity types. |
+| Modify | `scripts/check-security-review.mjs` | Request `--no-renames --name-status` and classify both source and destination paths for rename records. |
+| Modify | `scripts/discover-tests.mjs` | Recursively list and lexicographically sort `.test.ts` files under `tests` and `src/be` for Node's test runner. |
+| Modify | `package.json` | Replace POSIX command substitution in `npm test` with the Node discovery helper. |
+| Test | `tests/process-security/ci-workflow.test.ts` | Assert the trusted review/PR triggers, activity types, read-only permission, current-head check, sole `workflow-security` job, and no PR-head script execution. |
+| Test | `tests/process-security/workflow-security.test.ts` | Exercise CLI base-argument binding and invalid-base fail-closed behavior. |
+| Test | `tests/process-security/security-review.test.ts` | Exercise rename source/destination classification. |
+| Modify | `tests/process-security/test-discovery.test.ts` | Assert sorted recursive discovery and the package script's shell-independent form. |
+| Modify | `workflow/project-state/branch-states/w12.md` | Record the amendment, verification, and task completion. |
+
+**Checklist**
+
+- [x] 1. Write failing tests for E28–E35 and run the focused process-security suite; confirm each fails for the current implementation.
+- [x] 2. Add the trusted review-event workflow and its base-revision/object-data contract; verify it never invokes PR-controlled npm scripts or workflow files and grants only `contents: read` plus `pull-requests: read`.
+- [x] 3. Correct checker CLI mapping and add invalid-base/bootstrap identity regression tests.
+- [x] 4. Make changed-path collection rename-safe and add source/destination classification coverage.
+- [x] 5. Add Node test discovery, update `npm test`, and verify sorted recursive coverage.
+- [x] 6. Run the focused suite, including the real workflow-directory validator and CLI entry points, then `npm test`, `npm run typecheck`, `npm run lint`, `npm --workspace @agile/db run prisma:validate`, spec/plan lint, and `git diff --check`.
+- [x] 7. Update branch state and tick this task's checklist.
+- [x] 8. Commit: `fix: close W12 review re-evaluation gaps (W12)`.
+- [ ] 9. GATE: Independently land `review-security.yml` on the default branch, then submit/edit/dismiss a review and verify a fresh `workflow-security` result for the exact PR head.
 
 ### Close-out
 

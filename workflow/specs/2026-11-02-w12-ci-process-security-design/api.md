@@ -44,3 +44,24 @@ review exists, the checker exits non-zero. No committed security-review artifact
 actual GitHub review records are authoritative and sufficient for both approvals. The workflow passes the event target branch, pull-request number,
 and `W12_BOOTSTRAP_PR_NUMBER` repository variable to the checker; the variable is configured only
 for the allowlisted rollout PR and is removed after that PR merges.
+
+## Trusted review-event workflow
+
+The trusted workflow is triggered by `pull_request_review` activity types `submitted`, `edited`, and
+`dismissed`. It is a pre-merge rollout prerequisite: the workflow must already be present on the
+default branch through an independently protected change before it can rerun this PR's gate.
+GitHub loads this workflow from the default branch, not from the PR head. It checks out
+the trusted workflow revision, obtains the PR head SHA and base SHA from the event payload, and
+fetches the PR head Git objects without executing package scripts, workflow files, or checkers from
+the PR. It runs the trusted base revision's checker against the Git object range and writes the
+review response to a runner-temporary file. The job has only `contents: read` and
+`pull-requests: read` permissions and publishes the `workflow-security` check context.
+
+The checker CLI maps dashed options to the validator's camel-case option names before calling the
+validator. A missing or invalid base revision, bootstrap identity, or PR head causes a non-zero
+exit. Changed-path classification uses `git diff --no-renames --name-status`; a rename is therefore
+represented by separate `D` and `A` records, and both paths are classified independently.
+
+The root `npm test` script invokes a repository Node-based test-discovery helper rather than shell
+command substitution. The helper recursively lists `.test.ts` files beneath `tests` and `src/be`,
+sorts them lexicographically, and passes them as arguments to Node's test runner.

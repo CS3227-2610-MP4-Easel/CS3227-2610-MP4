@@ -6,8 +6,10 @@ import {
   BOOTSTRAP_BASE_SHA,
   resolveActionPins,
   validateCiWorkflowContract,
+  validateWorkflowDirectory,
   validateWorkflowText,
 } from "../../scripts/check-workflows.mjs";
+import { spawnSync } from "node:child_process";
 
 const root = new URL("../../", import.meta.url);
 
@@ -211,7 +213,7 @@ test("F1 workflow topology requires all checks and security steps", () => {
     "  secret-scan:",
     "    steps:",
     "      - run: npm run scan:secrets",
-    "  workflow-security:",
+    "  workflow-security-pr:",
     "    steps:",
     "      - run: npm run check:workflows",
   ].join("\n");
@@ -226,4 +228,15 @@ test("F1 workflow topology requires all checks and security steps", () => {
 test("E6 dependency-audit remains the exact high-severity npm command", async () => {
   const manifest = JSON.parse(await readFile(new URL("package.json", root), "utf8"));
   assert.equal(manifest.scripts?.["audit:dependencies"], "npm audit --audit-level=high");
+});
+
+test("F16 CLI rejects an invalid base revision instead of ignoring the option", () => {
+  const result = spawnSync(process.execPath, ["scripts/check-workflows.mjs", "--base-sha", "c".repeat(40), "--base-branch", "development", "--pr-number", "9", "--bootstrap-pr-number", "9"], {
+    encoding: "utf8",
+  });
+  assert.notEqual(result.status, 0);
+});
+
+test("F15 trusted review workflow passes the real workflow-directory validator", async () => {
+  assert.deepEqual(await validateWorkflowDirectory(".", { baseSha: process.env.BASE_SHA ?? "8c19768157bdd3d4998961fafddcbe6aefd8885e", baseBranch: "development", prNumber: "9", bootstrapPrNumber: "9" }), []);
 });

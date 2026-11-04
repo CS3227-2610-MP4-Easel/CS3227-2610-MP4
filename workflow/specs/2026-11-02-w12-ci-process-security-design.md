@@ -1,6 +1,7 @@
 # W12 CI and Process Security Design
 
-- **Status:** Approved (Dev Lead, 2026-11-04)
+- **Status:** Approved (Dev Lead, 2026-11-05)
+- **Amended 2026-11-05:** Findings 2–5 add trusted review-event re-evaluation, CLI base-argument coverage, rename-safe sensitive-path classification, and cross-platform test discovery; Gate 1 approval is required before implementation.
 - **Amended 2026-11-04:** T6 no longer requires a committed security-review JSON artifact; current exact-head GitHub approvals from `@ludannnn` and the author-dependent human approver are the complete sensitive-path approval evidence.
 - **Amended 2026-11-04:** T6 adds a one-time bootstrap classification when the base branch lacks the manifest; the head manifest must exactly match the fixed bootstrap list, and normal base-manifest verification remains mandatory afterward.
 - **Amended 2026-11-04:** Bootstrap is now bound to base SHA `7bd65440023a0123ac92445e5b6e58ec838ee57c`, target branch `development`, and externally configured repository variable `W12_BOOTSTRAP_PR_NUMBER`; exact manifest parsing, post-rollout validation, and reviewer evidence are specified.
@@ -61,6 +62,7 @@ Functional and non-functional requirements are in [requirements](2026-11-02-w12-
 | SD5 | Sensitive-path PRs require actual GitHub `APPROVED` reviews from `@ludannnn` and a different human approver. For a PR authored by `@teleifo`, that approver is `@Xiao-Congchen`; for other authors it is `@teleifo`. No committed review artifact is required. | The PR author cannot approve their own change; GitHub's current exact-head review records are the authoritative and sufficient approval evidence. | Dev Lead, 2026-11-04 |
 | SD6 | During the first rollout only, if the base branch lacks the sensitive-path manifest, T6 uses a fixed bootstrap list compiled into the checker and requires the PR manifest to match it exactly. Once the manifest exists on the base branch, the fallback is unavailable. | Allows one W12 merge without a direct protected-branch push; reading an arbitrary PR manifest is rejected because it would let the PR define its own sensitive surface. | Dev Lead, 2026-11-04 |
 | SD7 | Bootstrap is permitted only for target branch `development`, base SHA `7bd65440023a0123ac92445e5b6e58ec838ee57c`, and the pull-request number equal to externally configured repository variable `W12_BOOTSTRAP_PR_NUMBER`; the exact ordered manifest in API SD7 is normative. The variable is removed after merge. | Makes the one-time transition mechanically identifiable and prevents parallel, `main`, later-base, or deleted-manifest re-entry. | Dev Lead, 2026-11-04 |
+| SD8 | Review approval changes are re-evaluated by a separate trusted `pull_request_review` workflow on `submitted`, `edited`, and `dismissed`; it runs the checker from the trusted base workflow revision and reads the PR head only through Git objects. Findings 3–5 are fixed in the existing checker and test command. | Prevents stale approval status while keeping PR-controlled workflow and scripts out of the review-event enforcement path. | Dev Lead, 2026-11-05 |
 
 ## 7. Residual bootstrap risk
 

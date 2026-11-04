@@ -11,6 +11,7 @@ import {
   resolveBaseSensitivePatterns,
   validateSecurityReview,
 } from "../../scripts/check-security-review.mjs";
+import { classifyChangedPathRecords } from "../../scripts/check-security-review.mjs";
 
 const headSha = "a".repeat(40);
 const sensitivePaths = [".github/workflows/ci.yml"];
@@ -204,4 +205,11 @@ test("F13 non-sensitive changes do not require security evidence", () => {
     changedPaths: ["README.md"],
     reviews: null,
   }), []);
+});
+
+test("F17 rename records classify both source and destination paths", () => {
+  assert.deepEqual(classifyChangedPathRecords("R100\t.github/workflows/ci.yml\tREADME.md\n"), [
+    ".github/workflows/ci.yml",
+    "README.md",
+  ]);
 });

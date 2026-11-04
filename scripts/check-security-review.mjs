@@ -177,10 +177,22 @@ function parseArgs(args) {
   return options;
 }
 
+export function classifyChangedPathRecords(output) {
+  const paths = [];
+  for (const line of output.split("\n")) {
+    if (!line.trim()) continue;
+    const fields = line.split("\t");
+    const status = fields[0] ?? "";
+    if (/^[RC]/.test(status)) paths.push(...fields.slice(1, 3));
+    else if (fields[1]) paths.push(fields[1]);
+  }
+  return paths.filter(Boolean);
+}
+
 function changedPaths(baseSha, headSha) {
-  const result = spawnSync("git", ["diff", "--name-only", `${baseSha}..${headSha}`], { encoding: "utf8" });
+  const result = spawnSync("git", ["diff", "--no-renames", "--name-status", `${baseSha}..${headSha}`], { encoding: "utf8" });
   if (result.error || result.status !== 0) throw new Error("unable to resolve the pull request commit range");
-  return result.stdout.split("\n").map((path) => path.trim()).filter(Boolean);
+  return classifyChangedPathRecords(result.stdout);
 }
 
 function manifestTextAtSha(sha) {

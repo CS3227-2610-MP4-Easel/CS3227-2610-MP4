@@ -2,6 +2,10 @@
 
 ## Workflow
 
+- Review approval changes are re-evaluated by a separate trusted `pull_request_review` workflow
+  for `submitted`, `edited`, and `dismissed`; the workflow runs the checker from the trusted base
+  revision and reads PR content only as Git object data.
+
 - The primary workflow is triggered by `pull_request` for `development` and `main` and is stored
   under `.github/workflows/`; it never uses `pull_request_target` or a deployment trigger.
 - It uses `ubuntu-24.04`, Node `20.19.5`, npm `10.8.2`, and the repository's committed
@@ -58,6 +62,9 @@
   receive a second human review.
 
 ## Local scan
+
+- Repository test discovery is implemented in Node and must not depend on shell-specific command
+  substitution; discovered test paths are sorted before invocation.
 
 - The documented staged-file command is the same Gitleaks configuration used in CI.
 - `.githooks/pre-commit` runs `npm run scan:secrets -- --staged`, and `npm run setup:hooks` sets

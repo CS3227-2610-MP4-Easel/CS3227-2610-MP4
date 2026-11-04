@@ -8,6 +8,7 @@
 | T4 | Add the canonical agent-permission policy, validator, and protected-path rules | F8, F13, N2, N4 | — | T1, T2, T3 | 1 |
 | T5 | Add the canonical sensitive-path manifest, CODEOWNERS, and record the protected-branch settings after Q1 is resolved | F9, F10, N2, N4 | T4, Q1 | — | 2 |
 | T6 | Verify credential isolation, one-time first-rollout manifest bootstrap, post-rollout manifest validation, failure cases, current dual GitHub reviews, author-specific approval pairing, and complete CI evidence | F11, F13, F14, N1, N2, N3 | T1, T2, T3, T4, T5 | — | 3 |
+| T7 | Re-evaluate review changes from a trusted workflow and close checker/test-command gaps | F15, F16, F17, F18, E28, E29, E30, E31, E32 | T1, T6 | — | 4 |
 
 ## Dependency notes
 

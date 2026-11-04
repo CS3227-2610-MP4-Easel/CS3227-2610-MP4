@@ -12,7 +12,6 @@ const REQUIRED_CI_COMMANDS = Object.freeze({
   contract: "npm run contract",
   "dependency-audit": "npm run audit:dependencies",
   "secret-scan": "npm run scan:secrets",
-  "workflow-security": "npm run check:workflows",
 });
 export const BOOTSTRAP_BASE_SHA = "7bd65440023a0123ac92445e5b6e58ec838ee57c";
 export const BOOTSTRAP_ACTION_PINS = Object.freeze({
@@ -84,11 +83,22 @@ export function validateWorkflowText(text, pins, file = "workflow.yml") {
     : Array.isArray(triggerValue)
       ? triggerValue
       : triggerValue && typeof triggerValue === "object" ? Object.keys(triggerValue) : [];
+  const trustedReviewWorkflow = file === ".github/workflows/review-security.yml";
   if (triggers.some((trigger) => ["deployment", "deployment_status"].includes(trigger))) {
     errors.push(`${file}: deployment trigger is forbidden in pull-request workflows`);
   }
-  if (triggers.length !== 1 || triggers[0] !== "pull_request") {
+  const allowedTriggers = trustedReviewWorkflow ? ["pull_request", "pull_request_review"] : ["pull_request"];
+  if (triggers.length !== allowedTriggers.length || triggers.some((trigger) => !allowedTriggers.includes(trigger))) {
     errors.push(`${file}: only the pull_request trigger is allowed (found: ${triggers.join(", ") || "none"})`);
+  }
+  if (trustedReviewWorkflow) {
+    const reviewTypes = workflow.on?.pull_request_review?.types;
+    if (!Array.isArray(reviewTypes)
+      || reviewTypes.length !== 3
+      || new Set(reviewTypes).size !== 3
+      || !["submitted", "edited", "dismissed"].every((type) => reviewTypes.includes(type))) {
+      errors.push(`${file}: pull_request_review must allow exactly submitted, edited, and dismissed`);
+    }
   }
   const jobs = workflow.jobs && typeof workflow.jobs === "object" ? workflow.jobs : {};
   const permissionValues = [workflow.permissions, ...Object.values(jobs).map((job) => job?.permissions)];
@@ -184,12 +194,12 @@ export function validateCiWorkflowContract(text, file = "ci.yml") {
       .join("\n");
     if (!containsCommand(runs, command)) errors.push(`${file}: job ${jobName} must run ${command}`);
   }
-  const securityRuns = (Array.isArray(jobs["workflow-security"]?.steps) ? jobs["workflow-security"].steps : [])
+  const securityRuns = (Array.isArray(jobs["workflow-security-pr"]?.steps) ? jobs["workflow-security-pr"].steps : [])
     .map((step) => step?.run)
     .filter((run) => typeof run === "string")
     .join("\n");
   for (const command of ["npm run check:agent-policy", "npm run check:security-review"]) {
-    if (!containsCommand(securityRuns, command)) errors.push(`${file}: workflow-security must run ${command}`);
+    if (!containsCommand(securityRuns, command)) errors.push(`${file}: workflow-security-pr must run ${command}`);
   }
   return errors;
 }
@@ -215,11 +225,20 @@ export async function validateWorkflowDirectory(root = ".", options = {}) {
 
 function parseArgs(args) {
   const options = {};
+  const optionNames = {
+    "--base-sha": "baseSha",
+    "--base-branch": "baseBranch",
+    "--pr-number": "prNumber",
+    "--bootstrap-pr-number": "bootstrapPrNumber",
+  };
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
-    if (["--base-sha", "--base-branch", "--pr-number", "--bootstrap-pr-number"].includes(arg)) {
-      options[arg.slice(2).replaceAll("-", "_")] = args[++index];
+    if (Object.prototype.hasOwnProperty.call(optionNames, arg)) {
+      options[optionNames[arg]] = args[++index];
     } else throw new Error(`unknown workflow-check option: ${arg}`);
+  }
+  if (!options.baseSha || !options.baseBranch || !options.prNumber) {
+    throw new Error("--base-sha, --base-branch, and --pr-number are required");
   }
   return options;
 }

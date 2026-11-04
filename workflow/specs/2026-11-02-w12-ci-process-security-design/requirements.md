@@ -111,6 +111,32 @@ before semantic parsing. Any other target branch, base SHA, or pull-request numb
 base revision missing the manifest, fails closed. Every head revision must also validate
 the manifest if it changes or deletes it, even when classification uses the base copy.
 
+### F15 — Review-event re-evaluation
+
+Given a sensitive pull request receives a review submission, review edit, or review dismissal, when
+the trusted workflow runs, then it publishes the sole required `workflow-security` result using the
+same exact-head approval rules as the pull-request workflow. It also runs for PR opened,
+synchronize, and reopened events, runs from the trusted base revision, treats PR files only as Git
+object data, and fails closed when the event head is no longer the current PR head.
+
+### F16 — Workflow checker CLI argument binding
+
+Given `check:workflows` receives `--base-sha`, `--base-branch`, `--pr-number`, and
+`--bootstrap-pr-number`, when its command-line entry point runs, then each value reaches the
+corresponding validator option and an invalid base SHA or bootstrap identity fails closed.
+
+### F17 — Rename-safe sensitive path classification
+
+Given a sensitive file is renamed or moved to a non-sensitive path, when the security-review
+checker classifies the PR range, then both the source and destination paths are considered and the
+change requires sensitive review.
+
+### F18 — Cross-platform test discovery
+
+Given a contributor runs `npm test` on Windows using the default npm shell, when tests are
+discovered, then the command does not depend on POSIX command substitution and discovers every
+`.test.ts` file under `tests` and `src/be`.
+
 ## Non-functional requirements
 
 ### N1 — Deterministic enforcement
@@ -132,5 +158,6 @@ failure output as a standard GitHub Actions log without printing credentials or 
 
 ### N4 — Reviewability
 
-The complete W12 control surface is limited to repository files, GitHub repository settings, and
-one pull-request workflow; no new server, database table, or runtime endpoint is introduced.
+The complete W12 control surface is limited to repository files, GitHub repository settings, one
+PR workflow, and one trusted review-event workflow; no new server, database table, or runtime
+endpoint is introduced.
