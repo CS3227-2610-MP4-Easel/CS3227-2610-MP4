@@ -33,7 +33,8 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] Plan approved at Gate 2.
 - [x] T0 to T6 and close-out, per the plan; Attacker and Tester reviews done.
 - [x] Gate 3: operator approved the branch (ludannnn, 2026-11-04).
-- [ ] GATE: push `w4-auth` and open the PR into `development`, on a separate yes.
+- [x] Pushed and opened PR #10 into `development` (operator yes, 2026-11-04).
+- [ ] After merge: project owner folds this branch state (Gate 4).
 - [x] Request body schemas: W4's stricter fixed-message schemas live in `src/be/api/src/routes/auth.ts`; contracts' `UserInputSchema` is unchanged and looser.
 - [ ] **T7 follow-up:** write its own spec and PR from `workflow/specs/2026-10-31-w4-auth-design/follow-up-t7.md` once W10's real data layer and a `src/fe` UI test runner exist; target 10 Nov (C~11).
 - [ ] Ask the PM whether W10 delivers a working sign-in page or a design only.
@@ -50,7 +51,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W4 | Auth and registration | In review | [spec](../../specs/2026-10-31-w4-auth-design.md) | [plan](../../plans/2026-11-04-w4-auth.md) | T0–T6 done; approved at Gate 3; PR not opened | guide out of date: auth |
+| W4 | Auth and registration | In review | [spec](../../specs/2026-10-31-w4-auth-design.md) | [plan](../../plans/2026-11-04-w4-auth.md) | T0–T6 done; PR #10 open | guide out of date: auth |
 
 ---
 
