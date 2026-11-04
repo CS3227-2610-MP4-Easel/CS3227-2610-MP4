@@ -138,7 +138,9 @@ export function extractRun({ expRoot, runId, pricing, projectsDir = defaultProje
   const unpriced = new Set();
   const events = rows.map(({ p, m }, i) => {
     const u = usageFor(m.usage ?? {});
-    const price = pricing.models?.[m.model];
+    // the CLI writes zero-usage placeholder lines (e.g. its usage-limit notice) under model '<synthetic>'; they cost nothing
+    const synthetic = m.model === '<synthetic>' && eventCost(u, { input: 1, output: 1, cache_read: 1, cache_write_5m: 1, cache_write_1h: 1 }) === 0;
+    const price = synthetic ? { input: 0, output: 0, cache_read: 0, cache_write_5m: 0, cache_write_1h: 0 } : pricing.models?.[m.model];
     const cost = price ? eventCost(u, price) : null;
     if (!price) unpriced.add(m.model);
     return {
