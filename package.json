@@ -7,7 +7,7 @@
     "src/be/*"
   ],
   "scripts": {
-    "test": "node --import tsx --test \"tests/**/*.test.ts\" \"src/be/**/*.test.ts\"",
+    "test": "node --import tsx --import ./tests/setup-auth-env.ts --test \"tests/**/*.test.ts\" \"src/be/**/*.test.ts\"",
     "typecheck": "tsc -b && npm --prefix src/fe run typecheck",
     "lint": "tsc -b --pretty false"
   },

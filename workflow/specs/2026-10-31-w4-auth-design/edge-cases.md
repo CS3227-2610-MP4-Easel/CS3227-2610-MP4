@@ -55,7 +55,7 @@ IDs are permanent: never reuse or renumber. E7 and E18 were retired when `requir
 | E30 | N2 | Comparison with short, long and empty values | Spy shows both hashed and `timingSafeEqual` called once; result 403 | No length shortcut | unit |
 | E31 | N6 | Suite offline with the fake settings map | Suite passes | CI has no Firebase dependency | integration |
 | E36 | N7 | `alg: none`, wrong audience, wrong issuer and mangled tokens on the real adapter | `InvalidToken` for each | Proves the real check | unit |
-| E45 | F1 | Adapter receives `auth/id-token-expired`, `auth/argument-error`, `auth/internal-error`, an unknown `auth/` code, and a plain `Error` | `InvalidToken`, `InvalidToken`, `VerifierUnavailable`, `InvalidToken`, `VerifierUnavailable` | Mapping must be exact | unit |
+| E45 | F1 | Adapter receives `auth/id-token-expired`, `auth/argument-error`, `auth/internal-error`, an unknown `auth/` code, a plain `Error`, and `auth/argument-error` whose message starts "Error while making request" (a public-key fetch failure) | `InvalidToken`, `InvalidToken`, `VerifierUnavailable`, `InvalidToken`, `VerifierUnavailable`, `VerifierUnavailable` | Mapping must be exact | unit |
 | E46 | F2, F6 | Database failure in `lookupRegisteredUser`, including on `GET /api/me` | 500 `INTERNAL` | Fails closed | service |
 | E47 | F5 | Insert fails for a reason other than a unique violation | 500 `INTERNAL`; no row | Only duplicates are 409 | service |
 | E48 | F4, F5, F6 | Any response, including errors | `X-Request-Id` present | Contract rule | service |

@@ -11,7 +11,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Approved:** —
 - **Last updated:** 2026-11-04 by Claude Opus 5.5 — plan approved; building T0
 
-**Untouched:** Architecture, Conventions, Deviations
+**Untouched:** Architecture, Conventions
 
 ---
 
@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S2 | 2026-11-04 | Claude Opus 5.5 | W4 | Active | Executing plan inline; T2 done | Plan T3 step 1: write failing `src/be/auth/test/token-verifier.test.ts`; Postgres for integration tests: `docker start w4-pg` (port 5433), see plan | 2026-11-04 |
+| S2 | 2026-11-04 | Claude Opus 5.5 | W4 | Active | Executing plan inline; T3 done | Plan T4 step 1: write failing `src/be/auth/test/registration.test.ts` (E30); Postgres: `docker start w4-pg` (port 5433) | 2026-11-04 |
 
 **Remaining**
 
@@ -38,6 +38,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - [ ] Ask the PM whether W10 delivers a working sign-in page or a design only.
 - [ ] **Handover:** correct architecture §7, which says a valid token always belongs to a verified, enabled account. Firebase does not guarantee that; see Known Gaps.
 - [ ] **Handover:** tell the Dev Lead that W5 now owns `requireMember`, and that endpoint 10 must lowercase emails before lookup.
+- [ ] **Handover:** `apiApp` validates auth settings when its module loads (from T3), so `next build`, `next dev` and every deployed tier need `APP_TIER` and the auth settings (`FIREBASE_PROJECT_ID`, the three `REGISTRATION_CODE_*`, `RATE_KEY_SECRET`) set; W13 for deployed tiers, `src/fe/.env.local` locally. Mock previews may omit all but `APP_TIER=preview`.
 - [ ] **Handover:** W13 smoke checks on the deployed tiers: a forged `x-vercel-forwarded-for` must not change the limiter bucket, and a token from another Firebase project must get 401. `RATE_KEY_SECRET` must differ between dev and prod.
 - [ ] **Handover:** add `REGISTRATION_CODE_*` and `RATE_KEY_SECRET` per tier in W13, and confirm `firebase-admin` verifies with only a project id on Vercel. Firebase's verify-token page says a service account is needed; if the smoke test fails, record a Deviation.
 
@@ -47,7 +48,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W4 | Auth and registration | Building | [spec](../../specs/2026-10-31-w4-auth-design.md) | [plan](../../plans/2026-11-04-w4-auth.md) | T2/6 done; T3 next | — |
+| W4 | Auth and registration | Building | [spec](../../specs/2026-10-31-w4-auth-design.md) | [plan](../../plans/2026-11-04-w4-auth.md) | T3/6 done; T4 next (D~1) | — |
 
 ---
 
@@ -55,7 +56,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-04 | T2: `incrementRateCounter` atomic UTC upsert, `createHit` checks and clamp, `clientIpKey` (/64, mapped IPv4, HMAC); E8/E10/E35 pass on Postgres 16; 126 tests, none skipped | W4 | this commit |
+| 2026-11-04 | T3: Firebase adapter, `resolvePrincipal`, `lookupRegisteredUser`, auth runtime, `createAppDependencies` with fail-closed W5 placeholders, test env setup; key-fetch failure mapped to 500 (D~1); 138 tests, none skipped | W4 | this commit |
+| 2026-11-04 | T2: `incrementRateCounter` atomic UTC upsert, `createHit` checks and clamp, `clientIpKey` (/64, mapped IPv4, HMAC); E8/E10/E35 pass on Postgres 16; 126 tests, none skipped | W4 | b000037 |
 | 2026-11-04 | T1: `loadAuthSettings` validates `APP_TIER`, the emulator ban, codes, secret and preview nulls; 13 tests (E24, E50) | W4 | ed2d8bf |
 | 2026-11-04 | T0: `registerRoute` runs `before` ahead of authorization (adds `X-Request-Id` to its response) and gives TOKEN routes `identity`; 104 tests pass | W4 | 9f59c61 |
 | 2026-11-04 | Plan written, reviewed (Implementer lens: 2 blocking, 8 non-blocking, all fixed) and approved at Gate 2; review moved T4 after T3 in the spec's dependency table | W4 | 4e961c4 |
@@ -167,3 +169,7 @@ New entry:
 - **Who asked:** operator (ludannnn), asked keep or reverse under AGENTS.md §4
 - **Why:** registration still needs a code, and the deadline is tight. See Known Gaps.
 - **Rejected:** reversing it for email only, or for email and revocation.
+
+## 8. Deviations
+
+- **D~1 — A Firebase public-key fetch failure is recognised by its message (T3):** spec E45 mapped every `auth/argument-error` to `InvalidToken`. With outbound HTTPS blocked, `firebase-admin` 13.10 reports the failed key fetch as `auth/argument-error` with the message "Error while making request: …", so a Google outage would have returned 401 and looked like a sign-out, against E29. The adapter now maps that message to `VerifierUnavailable` (500); every other `auth/argument-error` stays `InvalidToken`. E45 gained the case in the spec and the test. Consequence: if a `firebase-admin` upgrade changes that message, outages become 401 again; the E45 test pins the current text, so re-run the blocked-network check (`sandbox-exec` denying TCP 443) after any upgrade.
