@@ -2,8 +2,18 @@ import { readFile } from "node:fs/promises";
 import { readdir } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
+import { parseDocument } from "yaml";
 
 const SHA = /^[0-9a-f]{40}$/;
+const REQUIRED_CI_COMMANDS = Object.freeze({
+  workspace: "npm test",
+  typecheck: "npm run typecheck",
+  lint: "npm run lint",
+  contract: "npm run contract",
+  "dependency-audit": "npm run audit:dependencies",
+  "secret-scan": "npm run scan:secrets",
+  "workflow-security": "npm run check:workflows",
+});
 export const BOOTSTRAP_BASE_SHA = "7bd65440023a0123ac92445e5b6e58ec838ee57c";
 export const BOOTSTRAP_ACTION_PINS = Object.freeze({
   version: 1,
@@ -20,43 +30,6 @@ export const BOOTSTRAP_ACTION_PINS = Object.freeze({
     }),
   }),
 });
-
-function workflowTriggers(text) {
-  const lines = text.split("\n");
-  for (let index = 0; index < lines.length; index += 1) {
-    const match = lines[index].match(/^(\s*)on:\s*(.*)$/i);
-    if (!match) continue;
-    const inline = match[2].trim();
-    if (inline.startsWith("[")) {
-      return inline.slice(1, inline.indexOf("]"))
-        .split(",")
-        .map((value) => value.trim().replace(/^['\"]|['\"]$/g, ""))
-        .filter(Boolean);
-    }
-    if (inline && !inline.startsWith("{")) return [inline.split(/\s+/)[0].replace(/^['\"]|['\"]$/g, "")];
-    if (inline.startsWith("{")) {
-      return [...inline.matchAll(/['\"]?([\w-]+)['\"]?\s*:/g)].map((item) => item[1]);
-    }
-    const parentIndent = match[1].length;
-    let childIndent = null;
-    const triggers = [];
-    for (let next = index + 1; next < lines.length; next += 1) {
-      const child = lines[next].match(/^(\s*)([\w-]+):/);
-      if (!child) {
-        if (lines[next].trim() === "") continue;
-        const indent = lines[next].match(/^\s*/)[0].length;
-        if (indent <= parentIndent) break;
-        continue;
-      }
-      const indent = child[1].length;
-      if (indent <= parentIndent) break;
-      if (childIndent === null) childIndent = indent;
-      if (indent === childIndent) triggers.push(child[2]);
-    }
-    return triggers;
-  }
-  return [];
-}
 
 function parseActionPins(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)
@@ -89,66 +62,131 @@ function actionManifestAtSha(root, sha) {
 
 export function validateWorkflowText(text, pins, file = "workflow.yml") {
   const errors = [];
-  const triggers = workflowTriggers(text);
+  let workflow;
+  try {
+    const document = parseDocument(text, { uniqueKeys: true });
+    if (document.errors.length > 0) {
+      errors.push(`${file}: invalid YAML: ${document.errors.map((error) => error.message).join("; ")}`);
+      return errors;
+    }
+    workflow = document.toJS();
+  } catch (error) {
+    errors.push(`${file}: invalid YAML: ${error instanceof Error ? error.message : String(error)}`);
+    return errors;
+  }
+  if (!workflow || typeof workflow !== "object" || Array.isArray(workflow)) {
+    errors.push(`${file}: workflow must be a YAML object`);
+    return errors;
+  }
+  const triggerValue = workflow.on;
+  const triggers = typeof triggerValue === "string"
+    ? [triggerValue]
+    : Array.isArray(triggerValue)
+      ? triggerValue
+      : triggerValue && typeof triggerValue === "object" ? Object.keys(triggerValue) : [];
   if (triggers.some((trigger) => ["deployment", "deployment_status"].includes(trigger))) {
     errors.push(`${file}: deployment trigger is forbidden in pull-request workflows`);
   }
   if (triggers.length !== 1 || triggers[0] !== "pull_request") {
-    errors.push(`${file}: only the pull_request trigger is allowed`);
+    errors.push(`${file}: only the pull_request trigger is allowed (found: ${triggers.join(", ") || "none"})`);
   }
-  for (const match of text.matchAll(/^\s*-?\s*uses:\s*([^\s#]+)/gm)) {
-    const reference = match[1];
-    const at = reference.lastIndexOf("@");
-    const repository = at === -1 ? reference : reference.slice(0, at);
-    const sha = at === -1 ? "" : reference.slice(at + 1);
-    if (repository.startsWith("./")) continue;
-    if (!SHA.test(sha)) errors.push(`${file}: Action ${reference} must use a full commit SHA`);
-    const approved = pins?.actions?.[repository];
-    if (!approved) errors.push(`${file}: Action repository ${repository} is not in the approved repository manifest`);
-    else if (sha !== approved.sha) errors.push(`${file}: Action ${repository} does not match its approved SHA`);
+  const jobs = workflow.jobs && typeof workflow.jobs === "object" ? workflow.jobs : {};
+  const permissionValues = [workflow.permissions, ...Object.values(jobs).map((job) => job?.permissions)];
+  if (permissionValues.some((permissions) => hasWritePermission(permissions))) {
+    errors.push(`${file}: write permissions are forbidden in pull-request workflows`);
   }
-  if (/\b(?:curl|wget)\b[^\n|]*\|\s*(?:sh|bash)\b/i.test(text)) {
-    errors.push(`${file}: remote bootstrap commands are forbidden`);
-  }
-  if (/^\s*pull_request_target\s*:/m.test(text)) {
-    errors.push(`${file}: pull_request_target is forbidden in pull-request workflows`);
-  }
-  if (/^\s*environment\s*:/m.test(text)) {
-    errors.push(`${file}: environments are forbidden in pull-request workflows`);
-  }
-  const lines = text.split("\n");
-  for (let index = 0; index < lines.length; index += 1) {
-    const runner = lines[index].match(/^(\s*)runs-on:\s*(.*)$/i);
-    if (!runner) continue;
-    let selfHosted = /\bself-hosted\b/i.test(runner[2]);
-    const runnerIndent = runner[1].length;
-    for (let next = index + 1; !selfHosted && next < lines.length && /^[ \t]+/.test(lines[next]); next += 1) {
-      const nextIndent = lines[next].match(/^[ \t]*/)[0].length;
-      if (nextIndent <= runnerIndent) break;
-      selfHosted = /\bself-hosted\b/i.test(lines[next]);
+  for (const job of Object.values(jobs)) {
+    if (!job || typeof job !== "object") continue;
+    if (Object.prototype.hasOwnProperty.call(job, "environment")) {
+      errors.push(`${file}: environments are forbidden in pull-request workflows`);
     }
-    if (selfHosted) errors.push(`${file}: self-hosted runners are forbidden in pull-request workflows`);
-  }
-  for (let index = 0; index < lines.length; index += 1) {
-    const permission = lines[index].match(/^(\s*)permissions:\s*(.*)$/i);
-    if (!permission) continue;
-    if (/^write-all\b/i.test(permission[2]) || /\{[^}]*[\w-]+\s*:\s*write\b/i.test(permission[2])) {
-      errors.push(`${file}: write permissions are forbidden in pull-request workflows`);
-      continue;
+    if (containsSelfHosted(job["runs-on"])) {
+      errors.push(`${file}: self-hosted runners are forbidden in pull-request workflows`);
     }
-    const permissionIndent = permission[1].length;
-    for (let next = index + 1; next < lines.length && /^[ \t]+/.test(lines[next]); next += 1) {
-      const nextIndent = lines[next].match(/^[ \t]*/)[0].length;
-      if (nextIndent <= permissionIndent) break;
-      if (/^[ \t]+[\w-]+:[ \t]*write\b/i.test(lines[next])) {
-        errors.push(`${file}: write permissions are forbidden in pull-request workflows`);
-        index = next;
-        break;
+    if (typeof job.uses === "string") validateActionReference(job.uses, pins, file, errors);
+    else if (Object.prototype.hasOwnProperty.call(job, "uses")) errors.push(`${file}: reusable workflow reference must be a string`);
+    for (const step of Array.isArray(job.steps) ? job.steps : []) {
+      if (!step || typeof step !== "object") continue;
+      if (typeof step.uses === "string") {
+        validateActionReference(step.uses, pins, file, errors);
+      } else if (Object.prototype.hasOwnProperty.call(step, "uses")) {
+        errors.push(`${file}: workflow Action reference must be a string`);
+      }
+      if (typeof step.run === "string" && /\b(?:curl|wget)\b[^\n|]*\|\s*(?:(?:\/[^\s|]+\/)?|env\s+)(?:sh|bash)\b/i.test(step.run)) {
+        errors.push(`${file}: remote bootstrap commands are forbidden`);
       }
     }
+    for (const image of containerImages(job)) {
+      if (!image.includes("@sha256:")) errors.push(`${file}: container image ${image} is not pinned by digest`);
+    }
   }
-  for (const match of text.matchAll(/^\s*image:\s*([^\s#]+)/gm)) {
-    if (!match[1].includes("@sha256:")) errors.push(`${file}: container image ${match[1]} is not pinned by digest`);
+  return errors;
+}
+
+function validateActionReference(reference, pins, file, errors) {
+  const at = reference.lastIndexOf("@");
+  const repository = at === -1 ? reference : reference.slice(0, at);
+  const sha = at === -1 ? "" : reference.slice(at + 1);
+  if (repository.startsWith("./")) return;
+  if (!SHA.test(sha)) errors.push(`${file}: Action ${reference} must use a full commit SHA`);
+  const approved = pins?.actions?.[repository];
+  if (!approved) errors.push(`${file}: Action repository ${repository} is not in the approved repository manifest`);
+  else if (sha !== approved.sha) errors.push(`${file}: Action ${repository} does not match its approved SHA`);
+}
+
+function hasWritePermission(permissions) {
+  if (typeof permissions === "string") return /^(?:write-all|write)$/i.test(permissions.trim());
+  if (!permissions || typeof permissions !== "object" || Array.isArray(permissions)) return false;
+  return Object.values(permissions).some((value) => typeof value === "string" && /^write$/i.test(value.trim()));
+}
+
+function containsSelfHosted(value) {
+  return JSON.stringify(value ?? "").toLowerCase().includes("self-hosted");
+}
+
+function containerImages(job) {
+  const images = [];
+  if (job.container?.image) images.push(String(job.container.image));
+  for (const service of Object.values(job.services ?? {})) {
+    if (service?.image) images.push(String(service.image));
+  }
+  return images;
+}
+
+function containsCommand(runs, command) {
+  const escaped = command.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?:^|\\n|[;&|])\\s*${escaped}(?:\\s|$)`).test(runs);
+}
+
+export function validateCiWorkflowContract(text, file = "ci.yml") {
+  const errors = [];
+  let workflow;
+  try {
+    const document = parseDocument(text, { uniqueKeys: true });
+    if (document.errors.length > 0) return [`${file}: invalid YAML: ${document.errors.map((error) => error.message).join("; ")}`];
+    workflow = document.toJS();
+  } catch (error) {
+    return [`${file}: invalid YAML: ${error instanceof Error ? error.message : String(error)}`];
+  }
+  const jobs = workflow?.jobs && typeof workflow.jobs === "object" ? workflow.jobs : {};
+  for (const [jobName, command] of Object.entries(REQUIRED_CI_COMMANDS)) {
+    if (!Object.prototype.hasOwnProperty.call(jobs, jobName)) {
+      errors.push(`${file}: required CI job ${jobName} is missing`);
+      continue;
+    }
+    const job = jobs[jobName];
+    const runs = (Array.isArray(job?.steps) ? job.steps : [])
+      .map((step) => step?.run)
+      .filter((run) => typeof run === "string")
+      .join("\n");
+    if (!containsCommand(runs, command)) errors.push(`${file}: job ${jobName} must run ${command}`);
+  }
+  const securityRuns = (Array.isArray(jobs["workflow-security"]?.steps) ? jobs["workflow-security"].steps : [])
+    .map((step) => step?.run)
+    .filter((run) => typeof run === "string")
+    .join("\n");
+  for (const command of ["npm run check:agent-policy", "npm run check:security-review"]) {
+    if (!containsCommand(securityRuns, command)) errors.push(`${file}: workflow-security must run ${command}`);
   }
   return errors;
 }
@@ -162,7 +200,12 @@ export async function validateWorkflowDirectory(root = ".", options = {}) {
   const files = (await readdir(directory)).filter((file) => /\.ya?ml$/.test(file));
   const errors = [];
   for (const file of files) {
-    errors.push(...validateWorkflowText(await readFile(join(directory, file), "utf8"), manifest, `.github/workflows/${file}`));
+    const text = await readFile(join(directory, file), "utf8");
+    errors.push(...validateWorkflowText(text, manifest, `.github/workflows/${file}`));
+    if (file === "ci.yml" || file === "ci.yaml") errors.push(...validateCiWorkflowContract(text, `.github/workflows/${file}`));
+  }
+  if (!files.some((file) => file === "ci.yml" || file === "ci.yaml")) {
+    errors.push(".github/workflows/ci.yml: required CI workflow is missing");
   }
   return errors;
 }
