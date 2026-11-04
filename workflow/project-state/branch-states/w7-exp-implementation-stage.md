@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** Xiao-Congchen (PM)
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-05 by Claude Sonnet 5.5 — spec ready for gate 1
+- **Last updated:** 2026-11-05 by Claude Sonnet 5.5 — spec approved, plan next
 
 **Untouched:** Architecture, Conventions, Deviations
 
@@ -32,11 +32,11 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-05 | Claude Sonnet 5.5 | W~1 | Blocked — needs human | Gate 1: spec approval (two review rounds done, lint clean) | On the owner's yes: write `Status: Approved (<name>, <date>)` in the spec index, run `lint.mjs spec <index> --approved`, then run `writing-plans-lite` for the plan. On changes: fix the files and ask again | 2026-11-05 |
+| S1 | 2026-11-05 | Claude Sonnet 5.5 | W~1 | Active | Writing the plan (`writing-plans-lite`) | Plan file `workflow/plans/2026-11-05-experiment-implementation-stage.md`, one section per task T1 to T8; lint with `.claude/skills/writing-plans-lite/scripts/lint.mjs`, one review, then ask the owner for gate 2 | 2026-11-05 |
 
 **Remaining**
 
-- [ ] Gate 1: owner approves the spec; then plan (`writing-plans-lite`) and gate 2.
+- [ ] Plan (`writing-plans-lite`) and gate 2.
 - [ ] **Handover:** fix the question classifier overcount found in the pilot: a final message with no question that says the agent is waiting for a subagent is counted as a question, which inflates `questions` for `lite` and `full`.
 - [ ] **Handover:** Codex driver for the implementation stage (launcher, transcript parser, price list, isolation check); the spec leaves it out on purpose (SD1).
 - [ ] **Handover:** a real W7 comparison needs its own spec and plan once W2, W3, W5 and W6 land.
@@ -47,7 +47,7 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W~1 | Experiment implementation stage (extends the framework workstream of branch `w7-pm-plan-flow`) | Spec'd | [spec](../../specs/2026-11-05-experiment-implementation-stage-design.md) (draft, in review) | — | Big · spec drafted, two review rounds done; awaiting gate 1 | — |
+| W~1 | Experiment implementation stage (extends the framework workstream of branch `w7-pm-plan-flow`) | Spec'd | [spec](../../specs/2026-11-05-experiment-implementation-stage-design.md) (approved 2026-11-05) | — | Big · spec drafted, spec approved at gate 1; plan next | — |
 
 ---
 
@@ -57,6 +57,7 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 |---|---|---|---|
 | 2026-11-05 | Branch and worktree created from the parent branch after the pilot and the blind review of the three replicate-2 plans | W~1 | `f576257` |
 | 2026-11-05 | Spec drafted: index plus requirements, data model, API, edge cases and implementation order; lint clean | W~1 | this commit |
+| 2026-11-05 | Spec approved at gate 1 by the owner, with the adapter form (SD2), the Haiku price gate (SD10) and the T8 exposure choice accepted | W~1 | this commit |
 | 2026-11-05 | Review round 2 (Implementer 4 major; Attacker 3 blocking, 4 major) fixed: shared-check verdicts decided by a parent process (host child answers over IPC), lockfile validation, name whitelist and `node` argv, filesystem rules in the verify-tree builder, no git in the clone, canary tokens, disk polling, per-attempt metrics, exit-code split, T2 to T8 inputs and ownership clarified; lint clean | W~1 | this commit |
 | 2026-11-05 | Review round 1 (Implementer, Tester, Attacker: 4 + 3 + 3 blocking findings) fixed: checks run in a harness-owned verify tree, history-free agent clones, nonce-named verdict file, protected paths mean modified or deleted base files, adapter contract and parsing rules defined, credential-in-output no longer stops a batch, cost attribution by attempt boundary, resource caps, T3/T4 dependency corrected | W~1 | this commit |
 

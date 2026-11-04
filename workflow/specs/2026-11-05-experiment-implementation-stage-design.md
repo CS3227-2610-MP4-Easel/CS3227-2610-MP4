@@ -1,6 +1,6 @@
 # Experiment Implementation Stage Design
 
-- **Status:** Draft
+- **Status:** Approved (Xiao-Congchen, 2026-11-05)
 - **Risk tier:** Medium - new files and CSVs, a new run stage, and the harness now executes agent-written code and tests on the operator's machine (the Attacker lens is added for that reason). No product data, money or permissions change.
 - **Workstream:** W~1 (this branch) | **Plan:** not written yet
 - **Constraints consulted:** `guardrails.md` (no secrets in the repo, AD-32); C8 (source under `src/`); the approved experiment framework spec `workflow/specs/2026-11-03-experiment-framework-design.md` and its folder (stage values reserved, exit 8 for unsupported stages, Known Gap on containment); the pilot result in the `w7-pm-plan-flow` branch state (r2 plans, costs, blind review).
