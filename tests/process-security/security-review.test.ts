@@ -213,3 +213,12 @@ test("F17 rename records classify both source and destination paths", () => {
     "README.md",
   ]);
 });
+
+test("E26 NUL-delimited Git records preserve unusual sensitive pathnames", () => {
+  assert.deepEqual(classifyChangedPathRecords("A\0.github/foo\tbar\0A\0.github/foo\nbar\0"), [
+    ".github/foo\tbar",
+    ".github/foo\nbar",
+  ]);
+  assert.equal(isSensitivePath(".github/foo\tbar"), true);
+  assert.equal(isSensitivePath(".github/foo\nbar"), true);
+});

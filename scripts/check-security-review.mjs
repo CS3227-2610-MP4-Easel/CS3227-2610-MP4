@@ -88,7 +88,7 @@ function globToRegExp(pattern) {
   const escapedParts = pattern.split("**").map((part) => part
     .replace(/[.+^${}()|[\]\\]/g, "\\$&")
     .replaceAll("*", "[^/]*"));
-  return new RegExp(`^${escapedParts.join(".*")}$`);
+  return new RegExp(`^${escapedParts.join(".*")}$`, "s");
 }
 
 export function isSensitivePath(path, patterns = LOCAL_SENSITIVE_PATTERNS) {
@@ -178,6 +178,17 @@ function parseArgs(args) {
 }
 
 export function classifyChangedPathRecords(output) {
+  if (output.includes("\0")) {
+    const fields = output.split("\0");
+    const paths = [];
+    for (let index = 0; index < fields.length - 1;) {
+      const status = fields[index++];
+      if (!status) continue;
+      if (/^[RC]/.test(status)) paths.push(fields[index++], fields[index++]);
+      else paths.push(fields[index++]);
+    }
+    return paths.filter(Boolean);
+  }
   const paths = [];
   for (const line of output.split("\n")) {
     if (!line.trim()) continue;
@@ -190,7 +201,7 @@ export function classifyChangedPathRecords(output) {
 }
 
 function changedPaths(baseSha, headSha) {
-  const result = spawnSync("git", ["diff", "--no-renames", "--name-status", `${baseSha}..${headSha}`], { encoding: "utf8" });
+  const result = spawnSync("git", ["diff", "--no-renames", "--name-status", "-z", `${baseSha}..${headSha}`], { encoding: "utf8" });
   if (result.error || result.status !== 0) throw new Error("unable to resolve the pull request commit range");
   return classifyChangedPathRecords(result.stdout);
 }
