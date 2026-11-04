@@ -28,7 +28,7 @@ export async function gradeRun({ expRoot, repoRoot, runId, launcher, env, model,
     return { exit: 5, reason: 'batch ceiling reached before grading' };
   }
 
-  const flags = new Set(manifest.flags ?? []);
+  const flags = new Set((manifest.flags ?? []).filter((f) => f !== 'judge_error' && f !== 'judge_unstable')); // a regrade starts the judge flags afresh
   const grades = { lint_errors_spec: null, lint_errors_plan: null, issues: null, rubric_spec: null, rubric_plan: null, rubric_gap: null, rubric_total: null };
 
   // artifacts

@@ -75,7 +75,7 @@ export function parseScores(text) {
  * Two calls (criteria order shuffled by seeds recorded in the result). Unusable output gets one retry per call; a
  * second failure gives {error: 'judge_error'} (E44). A gap above 4 sets `unstable` and both scores are kept (E45).
  */
-export async function scoreArtifact({ rubric, artifact, launcher, env, model, seeds, maxBudgetUsd = 0.15 }) {
+export async function scoreArtifact({ rubric, artifact, launcher, env, model, seeds, maxBudgetUsd = 0.5 }) {
   const calls = [];
   let cost = 0;
   for (const seed of seeds) {
@@ -102,7 +102,7 @@ export async function scoreArtifact({ rubric, artifact, launcher, env, model, se
  * The seeded-issue call: per issue an outcome with evidence, per question an issue id and an optional alternate.
  * Returns {issues: {id: {outcome, evidence}}, questions: [{turn, issue_id, issue_alt}], cost} or {error}.
  */
-export async function judgeIssues({ issues, questions, spec, plan, launcher, env, model, maxBudgetUsd = 0.25 }) {
+export async function judgeIssues({ issues, questions, spec, plan, launcher, env, model, maxBudgetUsd = 0.5 }) {
   const ids = issues.map((i) => i.id);
   let cost = 0;
   for (let attempt = 0; attempt < 2; attempt += 1) {
