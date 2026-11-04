@@ -27,6 +27,33 @@ test("E7 rejects tags, unapproved repositories, bootstrap commands, and writable
   assert.match(errors.join("\n"), /write permissions/);
 });
 
+test("F11 rejects privileged workflow triggers, runners, and environments", () => {
+  const bad = [
+    "on:",
+    "  pull_request_target:",
+    "jobs:",
+    "  release:",
+    "    runs-on:",
+    "      - self-hosted",
+    "    environment: production",
+  ].join("\n");
+  const errors = validateWorkflowText(bad, { actions: {} }, "fixture.yml");
+  assert.match(errors.join("\n"), /pull_request_target/);
+  assert.match(errors.join("\n"), /self-hosted/);
+  assert.match(errors.join("\n"), /environment/);
+});
+
+test("N2 rejects scalar and inline writable permission declarations", () => {
+  const bad = [
+    "permissions: write-all",
+    "jobs:",
+    "  deploy:",
+    "    permissions: { contents: write }",
+  ].join("\n");
+  const errors = validateWorkflowText(bad, { actions: {} }, "fixture.yml");
+  assert.equal(errors.filter((error) => /write permissions/.test(error)).length, 2);
+});
+
 test("E6 dependency-audit remains the exact high-severity npm command", async () => {
   const manifest = JSON.parse(await readFile(new URL("package.json", root), "utf8"));
   assert.equal(manifest.scripts?.["audit:dependencies"], "npm audit --audit-level=high");

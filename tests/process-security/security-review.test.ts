@@ -181,6 +181,21 @@ test("E20 paginated review responses are flattened and tied by timestamp then id
   }), []);
 });
 
+test("E20 malformed GitHub review records fail closed", () => {
+  const malformed = {
+    user: { login: "ludannnn" },
+    state: "APPROVED",
+    commit_id: headSha,
+    submitted_at: "2026-11-04T00:00:00Z",
+  };
+  assert.match(validateSecurityReview({
+    headSha,
+    prAuthor: "contributor",
+    changedPaths: sensitivePaths,
+    reviews: [malformed, review("teleifo", { id: 2 })],
+  }).join("\n"), /malformed/);
+});
+
 test("F13 non-sensitive changes do not require security evidence", () => {
   assert.deepEqual(validateSecurityReview({
     artifact: null,

@@ -99,8 +99,15 @@ function flattenReviews(value, output = []) {
   if (!Array.isArray(value)) throw new Error("GitHub review response must be an array or array of pages");
   for (const item of value) {
     if (Array.isArray(item)) flattenReviews(item, output);
-    else if (!item || typeof item !== "object" || Array.isArray(item)) throw new Error("GitHub review record is malformed");
-    else output.push(item);
+    else if (!item || typeof item !== "object" || Array.isArray(item)
+      || !item.user || typeof item.user !== "object"
+      || typeof item.user.login !== "string" || item.user.login.trim() === ""
+      || typeof item.state !== "string" || item.state.trim() === ""
+      || typeof item.commit_id !== "string" || item.commit_id.trim() === ""
+      || typeof item.submitted_at !== "string" || item.submitted_at.trim() === ""
+      || !Number.isInteger(item.id) || item.id < 1) {
+      throw new Error("GitHub review record is malformed");
+    } else output.push(item);
   }
   return output;
 }

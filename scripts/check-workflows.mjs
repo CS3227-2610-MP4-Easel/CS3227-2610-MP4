@@ -20,11 +20,37 @@ export function validateWorkflowText(text, pins, file = "workflow.yml") {
   if (/\b(?:curl|wget)\b[^\n|]*\|\s*(?:sh|bash)\b/i.test(text)) {
     errors.push(`${file}: remote bootstrap commands are forbidden`);
   }
+  if (/^\s*pull_request_target\s*:/m.test(text)) {
+    errors.push(`${file}: pull_request_target is forbidden in pull-request workflows`);
+  }
+  if (/^\s*environment\s*:/m.test(text)) {
+    errors.push(`${file}: environments are forbidden in pull-request workflows`);
+  }
   const lines = text.split("\n");
   for (let index = 0; index < lines.length; index += 1) {
-    if (!/^[ \t]*permissions:[ \t]*$/.test(lines[index])) continue;
+    const runner = lines[index].match(/^(\s*)runs-on:\s*(.*)$/i);
+    if (!runner) continue;
+    let selfHosted = /\bself-hosted\b/i.test(runner[2]);
+    const runnerIndent = runner[1].length;
+    for (let next = index + 1; !selfHosted && next < lines.length && /^[ \t]+/.test(lines[next]); next += 1) {
+      const nextIndent = lines[next].match(/^[ \t]*/)[0].length;
+      if (nextIndent <= runnerIndent) break;
+      selfHosted = /\bself-hosted\b/i.test(lines[next]);
+    }
+    if (selfHosted) errors.push(`${file}: self-hosted runners are forbidden in pull-request workflows`);
+  }
+  for (let index = 0; index < lines.length; index += 1) {
+    const permission = lines[index].match(/^(\s*)permissions:\s*(.*)$/i);
+    if (!permission) continue;
+    if (/^write-all\b/i.test(permission[2]) || /\{[^}]*[\w-]+\s*:\s*write\b/i.test(permission[2])) {
+      errors.push(`${file}: write permissions are forbidden in pull-request workflows`);
+      continue;
+    }
+    const permissionIndent = permission[1].length;
     for (let next = index + 1; next < lines.length && /^[ \t]+/.test(lines[next]); next += 1) {
-      if (/^[ \t]+\w+:[ \t]*write\b/.test(lines[next])) {
+      const nextIndent = lines[next].match(/^[ \t]*/)[0].length;
+      if (nextIndent <= permissionIndent) break;
+      if (/^[ \t]+[\w-]+:[ \t]*write\b/i.test(lines[next])) {
         errors.push(`${file}: write permissions are forbidden in pull-request workflows`);
         index = next;
         break;
