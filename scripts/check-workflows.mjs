@@ -112,7 +112,7 @@ export function validateWorkflowText(text, pins, file = "workflow.yml") {
       } else if (Object.prototype.hasOwnProperty.call(step, "uses")) {
         errors.push(`${file}: workflow Action reference must be a string`);
       }
-      if (typeof step.run === "string" && /\b(?:curl|wget)\b[^\n|]*\|\s*(?:(?:\/[^\s|]+\/)?|env\s+)(?:sh|bash)\b/i.test(step.run)) {
+      if (typeof step.run === "string" && /\b(?:curl|wget)\b(?:[^\\\n]|\\\r?\n)*\|/i.test(step.run)) {
         errors.push(`${file}: remote bootstrap commands are forbidden`);
       }
     }
@@ -127,7 +127,10 @@ function validateActionReference(reference, pins, file, errors) {
   const at = reference.lastIndexOf("@");
   const repository = at === -1 ? reference : reference.slice(0, at);
   const sha = at === -1 ? "" : reference.slice(at + 1);
-  if (repository.startsWith("./")) return;
+  if (repository.startsWith("./")) {
+    errors.push(`${file}: local workflow Actions are forbidden`);
+    return;
+  }
   if (!SHA.test(sha)) errors.push(`${file}: Action ${reference} must use a full commit SHA`);
   const approved = pins?.actions?.[repository];
   if (!approved) errors.push(`${file}: Action repository ${repository} is not in the approved repository manifest`);

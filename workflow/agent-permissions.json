@@ -17,6 +17,9 @@
       "workflow/agent-permissions.json",
       "workflow/**",
       ".githooks/**",
+      ".claude/**",
+      ".codex/**",
+      "scripts/**",
       "tests/security/attack-corpus/**"
     ],
     "reviewers": ["@ludannnn"],
