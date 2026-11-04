@@ -7,7 +7,7 @@
   "max_parallel": 3,
   "run_ceiling_usd": 25,
   "batch_ceiling_usd": 100,
-  "turn_timeout_s": 1800,
+  "turn_timeout_s": 7200,
   "run_timeout_s": 5400,
   "wait_timeout_s": 86400,
   "hypotheses": [
