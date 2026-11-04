@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** ludannnn (Developer member)
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-04 by Claude Opus 5.5 — interface stubs committed; plan next
+- **Last updated:** 2026-11-04 by Claude Opus 5.5 — Dev Lead confirmed seam decisions; plan next
 
 **Untouched:** Architecture, Conventions, Deviations
 
@@ -33,7 +33,6 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] Interface stubs (ddac104).
 - [ ] Plan (Gate 2), then blind tests and T0 to T6.
 - [ ] Request body schemas: contracts' `UserInputSchema` is looser than the spec (`code` optional, `displayName` length in UTF-16 units, no Cc/Cf check). T4/T5 define stricter W4 schemas; the plan must say where.
-- [ ] Send the Dev Lead the seam message: confirm C~6 (W4 adds `RouteDefinition.before` and `ApiContext.identity`), C~7 (who owns the tier setting), C~9 (`src/be/auth` package pattern), C~10 (`hit()` statement in `@agile/db`) and C~8 (W5 owns `requireMember` and the membership and member-project-set resolvers that W1's handover assigned to W4).
 - [ ] Operator to decide whether T7 becomes a follow-up PR, so T1 to T6 can merge before the screen; proposed and held on 2026-10-31. The approved spec keeps T7 in W4, so this would be an amendment.
 - [ ] Ask the PM whether W10 delivers a working sign-in page or a design only.
 - [ ] **Handover:** correct architecture §7, which says a valid token always belongs to a verified, enabled account. Firebase does not guarantee that; see Known Gaps.
@@ -55,6 +54,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-04 | Dev Lead confirmed the five seam decisions (spec SD13 to SD17) | W4 | this commit |
 | 2026-11-04 | Interface stubs: `@agile/auth` package, `incrementRateCounter` stub in `@agile/db`, optional `before`/`identity` route fields; typecheck green, 99 tests pass | W4 | ddac104 |
 | 2026-11-04 | Spec amended to the merged W1 seams: real paths, `resolvePrincipal`/`lookupRegisteredUser`, new T0 for `before`/`identity`, `APP_TIER`, `@agile/auth` package, `hit` statement in `@agile/db`, frontend Firebase settings (SD13 to SD17); operator re-approved it at Gate 1 | W4 | b6ef5d7 |
 | 2026-10-31 | W4 auth spec written, reviewed and approved | W4 | e600d0a |
@@ -99,43 +99,43 @@ New entry:
 - **Why:** `core` owns `project_members`, `conventions/general.md` forbids querying another module's tables, and architecture §4 already says it runs inside `core`.
 - **Rejected:** keeping it in `auth` as a recorded exception.
 
-### C~6 — W4 adds two optional seams to W1's route registration (assumed; Dev Lead to confirm)
+### C~6 — W4 adds two optional seams to W1's route registration
 
 - **Date:** 2026-11-04
-- **Who asked:** operator (ludannnn), asking for the most sensible assumptions before contacting the Dev Lead
+- **Who asked:** operator (ludannnn), asking for the most sensible assumptions before contacting the Dev Lead; Dev Lead confirmed all five (C~6 to C~10) on 2026-11-04
 - **Supersedes:** the spec's "Seams W1 must provide" for route-level middleware and the token principal
-- **Decision:** W4 adds `before?: (c: { requestId; headers }) => Promise<Response | void>` to `RouteDefinition` (run by `registerRoute` before `authorizeRequest`; a returned `Response` ends the request) and `identity?: { firebaseUid; email }` to `ApiContext` (set for `TOKEN` routes; `principal` stays registered-only). Both are optional, so W1's routes and tests are unchanged. The Dev Lead reviews it in the W4 PR.
+- **Decision:** W4 adds `before?: (c: { requestId; headers }) => Promise<Response | void>` to `RouteDefinition` (run by `registerRoute` before `authorizeRequest`; a returned `Response` ends the request) and `identity?: { firebaseUid; email }` to `ApiContext` (set for `TOKEN` routes; `principal` stays registered-only). Both are optional, so W1's routes and tests are unchanged. The Dev Lead still reviews the T0 commit in the W4 PR.
 - **Why:** W1's `registerRoute` authorizes before anything route-specific runs and gives handlers neither headers nor the raw body, so the limiter (client IP), the 4 KiB limit and `Retry-After` cannot live in the handler; and a `TOKEN` route's handler gets no `firebaseUid` or email, so `register` cannot insert. The hook keeps the spec's pipeline and E9 unchanged.
 - **Rejected:** `hit()` inside the handler with no `bodySchema` (handlers cannot see the IP or body; would also break E9); path-scoped `app.use` in `createApiApp` (splits a route's behaviour across two files); waiting for the Dev Lead to build it (costs a day on the critical path to W5).
 
-### C~7 — W4 defines the tier setting for now (assumed; Dev Lead to confirm)
+### C~7 — W4 defines the tier setting for now
 
 - **Date:** 2026-11-04
-- **Who asked:** operator (ludannnn), same request as C~6
+- **Who asked:** operator (ludannnn), same request as C~6; Dev Lead confirmed all five (C~6 to C~10) on 2026-11-04
 - **Decision:** T1 reads `APP_TIER` (`local`, `dev`, `preview`, `prod`, `test`) in W4's auth settings module; the Dev Lead or W13 may move it to a shared settings module later.
 - **Why:** the spec assumed W1 provides a tier setting; none exists in `src/be` and no architecture file names one, so T1 cannot run without it.
 - **Rejected:** blocking T1 until W1 adds it.
 
-### C~8 — W5, not W4, implements the membership resolvers (assumed; Dev Lead to confirm)
+### C~8 — W5, not W4, implements the membership resolvers
 
 - **Date:** 2026-11-04
-- **Who asked:** operator (ludannnn), same request as C~6
+- **Who asked:** operator (ludannnn), same request as C~6; Dev Lead confirmed all five (C~6 to C~10) on 2026-11-04
 - **Supersedes:** W1's handover assigning "membership and the member project set" resolvers to W4
 - **Why:** they read `project_members`, which `core` owns; same reasoning as C~5. W4 supplies only `resolvePrincipal` and `lookupRegisteredUser`.
 - **Rejected:** W4 querying `project_members` from `auth`.
 
-### C~9 — Feature modules are workspace packages; `auth` is `src/be/auth` (assumed; Dev Lead to confirm)
+### C~9 — Feature modules are workspace packages; `auth` is `src/be/auth`
 
 - **Date:** 2026-11-04
-- **Who asked:** operator (ludannnn), same request as C~6
+- **Who asked:** operator (ludannnn), same request as C~6; Dev Lead confirmed all five (C~6 to C~10) on 2026-11-04
 - **Decision:** W4 creates `src/be/auth` (`@agile/auth`), which holds the `users` and `rate_counters` access, `hit()`, the token verifier, code checks and settings. `src/be/api` holds only W4's thin route definitions (appended to `ROUTES`) and wires `@agile/auth` into `createApiApp(deps)`.
 - **Why:** `src/be/api` may not import `@agile/db` or raw SQL (`src/be/api/test/import-rules.test.ts`), and W1 defines no home for feature modules. A package per module matches the `src/be/*` workspaces (C23) and sets the pattern W5's `core` can follow.
 - **Rejected:** putting table access in `src/be/api` (fails the import rule); a shared `src/be/modules` package (one package for every owner's code invites cross-module table access).
 
-### C~10 — `hit()`'s atomic statement lives in `@agile/db` (assumed; Dev Lead to confirm)
+### C~10 — `hit()`'s atomic statement lives in `@agile/db`
 
 - **Date:** 2026-11-04
-- **Who asked:** operator (ludannnn), same request as C~6
+- **Who asked:** operator (ludannnn), same request as C~6; Dev Lead confirmed all five (C~6 to C~10) on 2026-11-04
 - **Decision:** `@agile/db` exports one function that runs the AD-59 upsert on `rate_counters` with a parameterised raw statement; `@agile/auth`'s `hit()` validates inputs and calls it.
 - **Why:** the window reset needs a conditional `INSERT … ON CONFLICT DO UPDATE … RETURNING`, which Prisma's upsert cannot express, and `FilteredDbClient` deliberately omits raw SQL. Keeping the one raw statement inside `@agile/db` keeps raw SQL in a single package.
 - **Rejected:** `@agile/auth` creating its own unfiltered `PrismaClient` (a second raw-SQL holder); a read-then-write in a transaction (two statements, against AD-59).
