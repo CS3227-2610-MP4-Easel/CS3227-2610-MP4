@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { test } from "node:test";
-import { validateWorkflowText } from "../../scripts/check-workflows.mjs";
+import {
+  BOOTSTRAP_ACTION_PINS,
+  BOOTSTRAP_BASE_SHA,
+  resolveActionPins,
+  validateWorkflowText,
+} from "../../scripts/check-workflows.mjs";
 
 const root = new URL("../../", import.meta.url);
 
@@ -41,6 +46,41 @@ test("F11 rejects privileged workflow triggers, runners, and environments", () =
   assert.match(errors.join("\n"), /pull_request_target/);
   assert.match(errors.join("\n"), /self-hosted/);
   assert.match(errors.join("\n"), /environment/);
+});
+
+test("F11 rejects deployment and non-pull-request triggers", () => {
+  const bad = [
+    "on:",
+    "  push:",
+    "  deployment:",
+  ].join("\n");
+  const errors = validateWorkflowText(bad, { actions: {} }, "fixture.yml");
+  assert.match(errors.join("\n"), /pull_request trigger/);
+  assert.match(errors.join("\n"), /deployment trigger/);
+});
+
+test("E7 bootstrap uses fixed Action pins when the trusted base has no manifest", () => {
+  assert.deepEqual(resolveActionPins({
+    baseManifest: null,
+    baseSha: BOOTSTRAP_BASE_SHA,
+    baseBranch: "development",
+    prNumber: "42",
+    bootstrapPrNumber: "42",
+  }), BOOTSTRAP_ACTION_PINS);
+  assert.throws(() => resolveActionPins({
+    baseManifest: null,
+    baseSha: BOOTSTRAP_BASE_SHA,
+    baseBranch: "main",
+    prNumber: "42",
+    bootstrapPrNumber: "42",
+  }), /bootstrap requires the development target/);
+  assert.throws(() => resolveActionPins({
+    baseManifest: null,
+    baseSha: "c".repeat(40),
+    baseBranch: "development",
+    prNumber: "42",
+    bootstrapPrNumber: "42",
+  }), /base Action manifest is required after bootstrap/);
 });
 
 test("N2 rejects scalar and inline writable permission declarations", () => {
