@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S2 | 2026-11-04 | Claude Opus 5.5 | W4 | Active | Executing plan inline; T3 done | Plan T4 step 1: write failing `src/be/auth/test/registration.test.ts` (E30); Postgres: `docker start w4-pg` (port 5433) | 2026-11-04 |
+| S2 | 2026-11-04 | Claude Opus 5.5 | W4 | Active | Executing plan inline; T4 done | Plan T6 step 1: failing E19/E5/E46 cases on `/api/me` in `src/be/api/test/auth-routes.test.ts` | 2026-11-04 |
 
 **Remaining**
 
@@ -48,7 +48,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W4 | Auth and registration | Building | [spec](../../specs/2026-10-31-w4-auth-design.md) | [plan](../../plans/2026-11-04-w4-auth.md) | T3/6 done; T4 next (D~1) | — |
+| W4 | Auth and registration | Building | [spec](../../specs/2026-10-31-w4-auth-design.md) | [plan](../../plans/2026-11-04-w4-auth.md) | T4/7 done; next T6 me | — |
 
 ---
 
@@ -56,7 +56,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-04 | T3: Firebase adapter, `resolvePrincipal`, `lookupRegisteredUser`, auth runtime, `createAppDependencies` with fail-closed W5 placeholders, test env setup; key-fetch failure mapped to 500 (D~1); 138 tests, none skipped | W4 | this commit |
+| 2026-11-04 | T4: check-code endpoint with `limitedBefore` (IP limiter, streamed 4 KiB cap), fixed-message body schema, hashed constant-path code check; 152 tests, none skipped | W4 | this commit |
+| 2026-11-04 | T3: Firebase adapter, `resolvePrincipal`, `lookupRegisteredUser`, auth runtime, `createAppDependencies` with fail-closed W5 placeholders, test env setup; key-fetch failure mapped to 500 (D~1); 138 tests, none skipped | W4 | 00ca030 |
 | 2026-11-04 | T2: `incrementRateCounter` atomic UTC upsert, `createHit` checks and clamp, `clientIpKey` (/64, mapped IPv4, HMAC); E8/E10/E35 pass on Postgres 16; 126 tests, none skipped | W4 | b000037 |
 | 2026-11-04 | T1: `loadAuthSettings` validates `APP_TIER`, the emulator ban, codes, secret and preview nulls; 13 tests (E24, E50) | W4 | ed2d8bf |
 | 2026-11-04 | T0: `registerRoute` runs `before` ahead of authorization (adds `X-Request-Id` to its response) and gives TOKEN routes `identity`; 104 tests pass | W4 | 9f59c61 |

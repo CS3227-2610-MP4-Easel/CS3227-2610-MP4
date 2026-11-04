@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import type { User, UserRole } from "@agile/contracts";
 import type { FilteredDbClient } from "@agile/db";
 
@@ -5,8 +6,9 @@ export class AlreadyRegistered extends Error { constructor() { super("ALREADY_RE
 
 /** Exact comparison along a constant path, whatever the role or code length. */
 export function checkRegistrationCode(codes: Record<UserRole, string>, role: UserRole, code: string): boolean {
-  void codes; void role; void code;
-  throw new Error("NOT_IMPLEMENTED");
+  // Hashing first gives equal-length buffers, so timingSafeEqual never shortcuts on length (N2).
+  const digest = (value: string) => crypto.createHash("sha256").update(value, "utf8").digest();
+  return crypto.timingSafeEqual(digest(code), digest(codes[role]));
 }
 
 export type NewUser = { firebaseUid: string; email: string; displayName: string; role: UserRole };
