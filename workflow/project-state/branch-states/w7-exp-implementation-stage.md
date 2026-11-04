@@ -37,7 +37,7 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 **Remaining**
 
 - [ ] Execute the plan (`executing-plans-lite`) from T1, in a new session started by the owner.
-- [ ] **Handover:** fix the question classifier overcount found in the pilot: a final message with no question that says the agent is waiting for a subagent is counted as a question, which inflates `questions` for `lite` and `full`.
+- [x] The question classifier overcount found in the pilot (status updates counted as questions) is fixed on branch `w7-pm-plan-flow` (decision C~15 there): a `status` class that the driver continues without counting. This branch gets it when it is rebased onto or merged with that branch; the implementation stage's own driver (T6) must use `classifyTurn` unchanged, and spec edge case E28 now refers to that classifier.
 - [ ] **Handover:** Codex driver for the implementation stage (launcher, transcript parser, price list, isolation check); the spec leaves it out on purpose (SD1).
 - [ ] **Handover:** a real W7 comparison needs its own spec and plan once W2, W3, W5 and W6 land.
 
