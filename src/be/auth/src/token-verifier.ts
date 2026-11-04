@@ -21,6 +21,7 @@ export function createFirebaseTokenVerifier(firebaseProjectId: string, verifyIdT
         if (typeof code === "string" && code.startsWith("auth/") && code !== "auth/internal-error" && !keyFetchFailed) throw new InvalidToken();
         throw new VerifierUnavailable();
       }
+      // email_verified is deliberately not checked (AD-57, C~4): peer testers register without a verification step. Known Gap.
       return { uid: decoded.uid, email: typeof decoded.email === "string" && decoded.email !== "" ? decoded.email : null };
     },
   };

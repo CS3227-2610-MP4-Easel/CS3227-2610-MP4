@@ -59,6 +59,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-04 | PR #10 review: unverified email recorded as deliberate (C~4 reconfirmed, Known Gap extended with the member-add impact, comment at the verifier) | W4 | this commit |
 | 2026-11-04 | Close-out: Attacker and Tester lenses, no blocking findings. Fixed: `identity` set only when the token email is a string; tests for register's own bucket and 60 s/20 window, register 401/400/422/500 paths, error codes on E27/E42, no row on check-code, `X-Request-Id` on `me`, multibyte token length, full SHA-256 digests in E30, and `hit` over real Postgres (`hit-integration.test.ts`); 175 tests, none skipped. Accepted, not changed: demo codes valid on dev and preview (AD-63, E24), slow-body requests bounded only by the platform timeout | W4 | b2d987e |
 | 2026-11-04 | T5: register endpoint and `createUser` (P2002 by code to 409); outside the plan: `createApiApp` gains an optional `routes` argument so E25 runs through the real error logging, shared fakes moved to `src/be/api/test/auth-fakes.ts`, and the body-size check no longer awaits `cancel()` on a cloned body (it hung); 170 tests, none skipped | W4 | 8118375 |
 | 2026-11-04 | T6: `GET /api/me` returns the stored row mapped to `User`; E31 offline run (network denied by `sandbox-exec`, no database): 151 pass, 4 skipped, 0 fail; with database 155 pass | W4 | a86de44 |
@@ -124,7 +125,7 @@ Drift: W5 still has to replace the placeholder resolvers in `deps.ts`.
 
 Changes the guardrails entry **Email verification and disabling users**; AD-57 stays.
 
-- **Unverified email at registration** — Firebase issues tokens to unverified emails unless blocking functions are set up, so someone holding a registration code could register an email they do not own (AD-57).
+- **Unverified email at registration** — Firebase issues tokens to unverified emails unless blocking functions are set up, so someone holding a registration code could register an email they do not own (AD-57) Because endpoint 10 adds members by email, that impersonated account would receive the access meant for the real owner. Deliberate (C~4, reconfirmed on PR #10); to close it, require `email_verified` in the verifier and turn on verification in Firebase.
 - **Disabled users keep access until token expiry** — a disabled user's ID token works for up to 1 hour, because revocation is not checked (AD-57).
 
 New entry:
@@ -221,6 +222,7 @@ New entry:
 - **Who asked:** operator (ludannnn), asked keep or reverse under AGENTS.md §4
 - **Why:** registration still needs a code, and the deadline is tight. See Known Gaps.
 - **Rejected:** reversing it for email only, or for email and revocation.
+- **Reconfirmed 2026-11-04:** a teammate's review of PR #10 flagged it as P1 (the verifier drops `email_verified`, so a code holder can register someone else's email; if a Dev Lead then adds members by email, the impersonated address gets project access). The operator (ludannnn) confirmed the omission is deliberate: no email-verification step, so peer testers can sign up and test without one. The code says so at the verifier (`src/be/auth/src/token-verifier.ts`).
 
 ## 8. Deviations
 
