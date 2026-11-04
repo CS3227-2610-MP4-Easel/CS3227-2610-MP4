@@ -2,7 +2,8 @@
   "version": 1,
   "default": "deny",
   "allow": {
-    "read": ["repository", "web", "attack_corpus"]
+    "read": ["repository", "web", "attack_corpus"],
+    "write": ["repository"]
   },
   "deny": {
     "operations": ["unknown", "execute_production", "write_secret"],

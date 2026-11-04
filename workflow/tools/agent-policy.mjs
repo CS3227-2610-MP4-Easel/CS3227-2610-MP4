@@ -6,9 +6,27 @@ const REQUIRED_PROTECTED_PATHS = [
   ".githooks/**",
   "tests/security/attack-corpus/**",
 ];
+const REQUIRED_READ_SCOPES = ["repository", "web", "attack_corpus"];
+const REQUIRED_WRITE_SCOPES = ["repository"];
+const REQUIRED_DENIED_OPERATIONS = ["unknown", "execute_production", "write_secret"];
+const REQUIRED_PRODUCTION_CREDENTIALS = ["*"];
+const REQUIRED_PRODUCTION_HOSTS = ["production", "prod", "*.prod.*", "*.production.*"];
+const REQUIRED_DENIED_PATHS = ["tests/security/attack-corpus/**"];
+const REQUIRED_REVIEWERS = ["@ludannnn"];
+const REQUIRED_OWNER = "@teleifo";
 
 function hasStringArray(value) {
   return Array.isArray(value) && value.length > 0 && value.every((item) => typeof item === "string" && item.length > 0);
+}
+
+function hasExactStrings(value, expected) {
+  return hasStringArray(value)
+    && value.length === expected.length
+    && expected.every((item) => value.includes(item));
+}
+
+function hasRequiredStrings(value, expected) {
+  return hasStringArray(value) && expected.every((item) => value.includes(item));
 }
 
 function matchesProtectedPath(target, patterns) {
@@ -30,12 +48,15 @@ function validateObject(policy) {
   if (!policy.deny || typeof policy.deny !== "object") errors.push("deny must be an object");
   if (!policy.review_required || typeof policy.review_required !== "object") errors.push("review_required must be an object");
   if (!policy.content_handling || typeof policy.content_handling !== "object") errors.push("content_handling must be an object");
-  if (policy.allow && !hasStringArray(policy.allow.read)) errors.push("allow.read must be a non-empty string array");
-  if (policy.deny && !hasStringArray(policy.deny.production_credentials)) errors.push("deny.production_credentials must be a non-empty string array");
-  if (policy.deny && !hasStringArray(policy.deny.production_hosts)) errors.push("deny.production_hosts must be a non-empty string array");
+  if (policy.allow && !hasExactStrings(policy.allow.read, REQUIRED_READ_SCOPES)) errors.push("allow.read must contain only the approved read scopes");
+  if (policy.allow && !hasExactStrings(policy.allow.write, REQUIRED_WRITE_SCOPES)) errors.push("allow.write must contain only the approved write scopes");
+  if (policy.deny && !hasExactStrings(policy.deny.operations, REQUIRED_DENIED_OPERATIONS)) errors.push("deny.operations must contain the required denied operations");
+  if (policy.deny && !hasExactStrings(policy.deny.production_credentials, REQUIRED_PRODUCTION_CREDENTIALS)) errors.push("deny.production_credentials must deny all production credentials");
+  if (policy.deny && !hasExactStrings(policy.deny.production_hosts, REQUIRED_PRODUCTION_HOSTS)) errors.push("deny.production_hosts must contain the required production host patterns");
+  if (policy.deny && !hasRequiredStrings(policy.deny.protected_paths, REQUIRED_DENIED_PATHS)) errors.push("deny.protected_paths must protect the attack corpus");
   if (policy.review_required && !hasStringArray(policy.review_required.protected_paths)) errors.push("review_required.protected_paths must be a non-empty string array");
-  if (policy.review_required && !hasStringArray(policy.review_required.reviewers)) errors.push("review_required.reviewers must be a non-empty string array");
-  if (policy.review_required && typeof policy.review_required.owner !== "string") errors.push("review_required.owner must be a string");
+  if (policy.review_required && !hasExactStrings(policy.review_required.reviewers, REQUIRED_REVIEWERS)) errors.push("review_required.reviewers must contain the configured security reviewer");
+  if (policy.review_required && policy.review_required.owner !== REQUIRED_OWNER) errors.push(`review_required.owner must be ${REQUIRED_OWNER}`);
   for (const key of ["repository", "web", "attack_corpus"]) {
     if (policy.content_handling?.[key] !== "data_not_instructions") errors.push(`content_handling.${key} must be data_not_instructions`);
   }
@@ -64,6 +85,7 @@ export function evaluatePolicy(policy, request) {
   if (operation === "write" && matchesProtectedPath(target, policy.review_required.protected_paths)) {
     return { allowed: false, reason: "review-required", reviewers: policy.review_required.reviewers, owner: policy.review_required.owner };
   }
+  if (operation === "write" && policy.allow.write.includes(request?.scope)) return { allowed: true, reason: "allowed" };
   if (operation === "read" && policy.allow.read.includes(request?.scope)) return { allowed: true, reason: "allowed" };
   return { allowed: false, reason: "default-deny" };
 }

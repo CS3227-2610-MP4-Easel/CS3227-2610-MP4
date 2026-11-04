@@ -25,3 +25,4 @@ Writes: nothing
 Never touch: everything (read-only); do not open STATE.md or other state files
 Return: findings list, each with severity (blocking/major/minor), location, evidence, suggested fix
 Reasoning: medium
+Policy mediation: the provider PreToolUse hook invokes scripts/agent-pre-tool-hook.mjs; it delegates to npm run mediate:agent; do not bypass it.

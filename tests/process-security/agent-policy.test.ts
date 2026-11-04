@@ -39,3 +39,27 @@ test("E9 policy validation fails closed for missing and malformed files", async 
   const malformed = await validatePolicy(join(directory, "malformed.json"));
   assert.equal(malformed.valid, false);
 });
+
+test("F8 rejects a policy that weakens required security values", async () => {
+  const policy = JSON.parse(readFileSync("workflow/agent-permissions.json", "utf8"));
+  policy.allow.read = ["repository", "web", "secrets"];
+  policy.deny.production_credentials = ["not-a-credential"];
+  policy.deny.production_hosts = ["not-a-production-host"];
+  policy.review_required.reviewers = ["@attacker"];
+  policy.review_required.owner = "@attacker";
+
+  const result = await validatePolicy(policy);
+  assert.equal(result.valid, false);
+  assert.match(result.errors.join("\n"), /allow\.read|production_credentials|production_hosts|reviewers|owner/);
+});
+
+test("F8 provider adapters expose the executable mediation seam", async () => {
+  const config = JSON.parse(await readFile("workflow/config.json", "utf8"));
+  assert.equal(config.process_security?.policy_mediator, "npm run mediate:agent");
+  assert.equal(config.process_security?.policy_hook, "scripts/agent-pre-tool-hook.mjs");
+  for (const adapter of [".claude/agents/implementer.md", ".codex/agents/implementer.md"]) {
+    assert.match(await readFile(adapter, "utf8"), /npm run mediate:agent/);
+  }
+  assert.match(await readFile(".claude/settings.json", "utf8"), /agent-pre-tool-hook\.mjs/);
+  assert.match(await readFile(".codex/hooks.json", "utf8"), /agent-pre-tool-hook\.mjs/);
+});
