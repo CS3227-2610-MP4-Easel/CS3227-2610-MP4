@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** ludannnn (Developer member)
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-04 by Claude Opus 5.5 — amended spec approved at Gate 1; stubs next
+- **Last updated:** 2026-11-04 by Claude Opus 5.5 — interface stubs committed; plan next
 
 **Untouched:** Architecture, Conventions, Deviations
 
@@ -25,12 +25,14 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S2 | 2026-11-04 | Claude Opus 5.5 | W4 | Active | Amended spec approved (Gate 1); drafting interface stubs | Run `drafting-interfaces` from the amended spec, starting with T0: `RouteDefinition.before` and `ApiContext.identity` in `src/be/contracts/src/routes.ts` and `src/be/api/src/routes/register.ts`, and the empty `src/be/auth` package; done when stubs typecheck (`npm run typecheck`) | 2026-11-04 |
+| S2 | 2026-11-04 | Claude Opus 5.5 | W4 | Active | Stubs committed (ddac104); plan next | Run `writing-plans-lite` on `workflow/specs/2026-10-31-w4-auth-design.md`, using the stub files in `src/be/auth/src/`, `src/be/db/src/rate-counters.ts` and `src/be/contracts/src/routes.ts` as the real paths; T0's `registerRoute` behaviour is still unbuilt; done when Gate 2 is asked | 2026-11-04 |
 
 **Remaining**
 
 - [x] Spec amendment for the W1 seams (C~6 to C~10); spec lint passes.
-- [ ] Plan, interface stubs and tests against `src/be/api` and `src/fe`.
+- [x] Interface stubs (ddac104).
+- [ ] Plan (Gate 2), then blind tests and T0 to T6.
+- [ ] Request body schemas: contracts' `UserInputSchema` is looser than the spec (`code` optional, `displayName` length in UTF-16 units, no Cc/Cf check). T4/T5 define stricter W4 schemas; the plan must say where.
 - [ ] Send the Dev Lead the seam message: confirm C~6 (W4 adds `RouteDefinition.before` and `ApiContext.identity`), C~7 (who owns the tier setting), C~9 (`src/be/auth` package pattern), C~10 (`hit()` statement in `@agile/db`) and C~8 (W5 owns `requireMember` and the membership and member-project-set resolvers that W1's handover assigned to W4).
 - [ ] Operator to decide whether T7 becomes a follow-up PR, so T1 to T6 can merge before the screen; proposed and held on 2026-10-31. The approved spec keeps T7 in W4, so this would be an amendment.
 - [ ] Ask the PM whether W10 delivers a working sign-in page or a design only.
@@ -45,7 +47,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W4 | Auth and registration | Spec'd | [spec](../../specs/2026-10-31-w4-auth-design.md) | — | Amended spec approved 2026-11-04; drafting stubs | — |
+| W4 | Auth and registration | Spec'd | [spec](../../specs/2026-10-31-w4-auth-design.md) | — | Stubs done; plan next | — |
 
 ---
 
@@ -53,7 +55,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-04 | Spec amended to the merged W1 seams: real paths, `resolvePrincipal`/`lookupRegisteredUser`, new T0 for `before`/`identity`, `APP_TIER`, `@agile/auth` package, `hit` statement in `@agile/db`, frontend Firebase settings (SD13 to SD17); operator re-approved it at Gate 1 | W4 | this commit |
+| 2026-11-04 | Interface stubs: `@agile/auth` package, `incrementRateCounter` stub in `@agile/db`, optional `before`/`identity` route fields; typecheck green, 99 tests pass | W4 | ddac104 |
+| 2026-11-04 | Spec amended to the merged W1 seams: real paths, `resolvePrincipal`/`lookupRegisteredUser`, new T0 for `before`/`identity`, `APP_TIER`, `@agile/auth` package, `hit` statement in `@agile/db`, frontend Firebase settings (SD13 to SD17); operator re-approved it at Gate 1 | W4 | b6ef5d7 |
 | 2026-10-31 | W4 auth spec written, reviewed and approved | W4 | e600d0a |
 
 ---
