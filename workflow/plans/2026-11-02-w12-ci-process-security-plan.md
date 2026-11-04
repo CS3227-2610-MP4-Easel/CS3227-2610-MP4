@@ -5,6 +5,8 @@
 - **Amended 2026-11-04:** T6 no longer requires a committed security-review artifact; two current exact-head GitHub approvals are the complete sensitive-path approval evidence. Prior Gate 1 and Gate 2 approvals are superseded for this amendment.
 - **Amended 2026-11-04; rebased 2026-11-05:** T6 now has a one-time first-rollout bootstrap path bound to `development`, base SHA `68d639a067ce514085a8074b9f18fa0c3ab3ed06`, and externally configured PR number `W12_BOOTSTRAP_PR_NUMBER`; the head manifest must exactly match the fixed list, then later runs use only validated base/head manifests.
 - **Amended 2026-11-04:** T5/T6 now implement canonical base-manifest classification and dual exact-head GitHub review verification; see W12 C~5/C~6.
+- **Amended 2026-11-05:** T6 approval mapping now excludes the PR author and permits either role assignment for the other two trusted people; Gate 1 approval is required before implementation.
+- **Approved 2026-11-05:** Dev Lead approved the author-excluding role-mapping amendment at Gate 1 and Gate 2.
 
 > **For agents:** tick `- [ ]` -> `- [x]` as each step finishes, in this file and the same commit as the work. Keep the W12 branch state Progress cell current. Spec: [W12 design](../specs/2026-11-02-w12-ci-process-security-design.md).
 
@@ -67,9 +69,9 @@
 | E13 | T2, T3, T6 | scan/audit configuration protection checks |
 | E14 | T1, T2, T6 | redacted failure logs |
 | E15 | T1 | W1 dependency gate check |
-| E16 | T6 | sensitive `@teleifo` author-approver pairing |
+| E16 | T6 | any trusted author excludes themselves and permits either role assignment |
 | E17 | T6 | missing or stale required GitHub review |
-| E18 | T6 | sensitive `@ludannnn` author fail-closed case |
+| E18 | T6 | author/same-reviewer/omitted-reviewer fail-closed cases |
 | E19 | T6 | dismissed/changed-request review supersession |
 | E20 | T6 | paginated GitHub review response |
 | E21 | T6 | first-rollout exact bootstrap manifest |
@@ -190,7 +192,7 @@
 
 - [x] 1. Write failing policy tests for E8 and E9; expect failure because the canonical policy and validator do not exist.
 - [x] 2. Add the JSON policy with default-deny rules for production credentials/hosts, all access to `tests/security/attack-corpus/**`, and protected-path writes.
-- [x] 3. Add the central adapter mediation contract and reviewer approval contract, bound to the PR head and requiring `@ludannnn` plus a different human owner.
+- [x] 3. Add the central adapter mediation contract and reviewer approval contract, bound to the PR head and requiring the two trusted people other than the PR author.
 - [x] 3a. Regenerate `.claude/agents/reviewer.md` and `.codex/agents/reviewer.md` from `workflow/agents/reviewer.md` using the repository adapter tooling; do not edit generated adapters directly.
 - [x] 4. Run policy tests with missing, malformed, bypass, and instruction-like fixtures; expect PASS and no side effects.
 - [x] 5. Update branch state Progress and Changes.
@@ -227,20 +229,20 @@
 | Action | Path | What changes |
 |---|---|---|
 | Modify | `scripts/check-security-review.mjs` | Read the base-branch manifest, or use the fixed bootstrap list only for `development` at the immutable pre-rollout base SHA and configured bootstrap PR number when the base manifest is absent; read the head manifest by SHA with duplicate-key-aware parsing, enforce exact schema/list semantics, validate changed/deleted manifests, normalize logins, parse complete paginated reviews, and require latest exact-head approvals without a committed artifact. |
-| Modify | `tests/process-security/security-review.test.ts` | Test bootstrap exact-match, immutable target/base/PR-number guards, missing/malformed/mismatched manifests, duplicate/unknown-key/order cases including duplicate JSON keys, post-rollout fail-closed behavior, exact-head approvals, author pairing, superseded states, pagination, and sensitive `@ludannnn` authors; cover F13/F14 and E16–E27 without artifact fixtures. |
+| Modify | `tests/process-security/security-review.test.ts` | Test bootstrap exact-match, immutable target/base/PR-number guards, missing/malformed/mismatched manifests, duplicate/unknown-key/order cases including duplicate JSON keys, post-rollout fail-closed behavior, exact-head approvals, all three trusted-author mappings with both role assignments, author/same-reviewer/omitted-reviewer failures, superseded states, pagination, and sensitive paths; cover F13/F14 and E16–E27 without artifact fixtures. |
 | Modify | `.github/workflows/ci.yml` | Extend `workflow-security` with job-level `pull-requests: read`, `gh api --paginate --slurp` review retrieval to `$RUNNER_TEMP`, and `--reviews-file`; do not add an eighth required status. |
-| Modify | `workflow/agents/reviewer.md` | Require actual GitHub approvals from `@ludannnn` and the author-dependent human approver for sensitive paths; no committed artifact is required. |
+| Modify | `workflow/agents/reviewer.md` | Require actual GitHub approvals from the two trusted people other than the PR author; either fills the security-reviewer or human-approver role; no committed artifact is required. |
 | Modify | `workflow/config.json` | Register the canonical sensitive-path manifest and dual-review contract without an artifact path or credentials. |
 | Modify | `.claude/agents/reviewer.md`, `.codex/agents/reviewer.md` | Regenerate provider adapters from the amended reviewer contract. |
 | Modify | `workflow/project-state/branch-states/w12.md` | Record verification results, changes, and final handoff. |
 
 **Checklist**
 
-- [x] 1a. Remove artifact-required fixtures and assertions; retain exact-head GitHub review, author-pairing, review-state, pagination, and sensitive `@ludannnn` author coverage.
-- [x] 2. Add the base-manifest sensitive-path classifier, normalized author-dependent approver selection, review-file parser, and deterministic latest-state evaluator; fail closed when sensitive paths change without two current exact-head approvals.
+- [x] 1a. Remove artifact-required fixtures and assertions; retain exact-head GitHub review, author-excluding trusted-pairing, review-state, pagination, and all trusted-author coverage.
+- [x] 2. Add the base-manifest sensitive-path classifier, normalized author-excluding trusted-reviewer selection, review-file parser, and deterministic latest-state evaluator; fail closed when sensitive paths change without two current exact-head approvals from the other two trusted people.
 - [x] 3. Add the workflow review fetch with only `pull-requests: read`, invoke the checker with `--reviews-file`, and verify GitHub reviews are authoritative.
 - [x] 4. Add regression tests for E3–E14 and E16–E20, including normalized GitHub logins, dismissed/changed-request states, equal-timestamp ID tie-breaking, and multi-page responses; verify no secret canary appears in logs.
-- [x] 5. Replace the fixed `human_owner` config with the author-dependent approver mapping, amend the provider-neutral reviewer contract, regenerate the provider adapters, and add assertions that both required GitHub reviews are distinct from the PR author.
+- [x] 5. Replace the fixed `human_owner` config with author-excluding trusted-pair selection, amend the provider-neutral reviewer contract, regenerate the provider adapters, and add assertions that both required GitHub reviews are distinct from the PR author.
 - [x] 5a. Add the exact normative bootstrap list, require `development`, base SHA `68d639a067ce514085a8074b9f18fa0c3ab3ed06`, and PR number equal to `W12_BOOTSTRAP_PR_NUMBER`, read the head manifest by SHA with duplicate-key-aware parsing, reject unknown keys/duplicates/order changes, validate changed or deleted manifests after rollout, and ensure later missing or malformed base manifests fail closed.
 - [x] 6. Run `npm test`, `npm run typecheck`, `npm run lint`, `npm --workspace @agile/db run prisma:validate`, `node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026-11-02-w12-ci-process-security-design.md --approved`, `node .claude/skills/writing-specs-lite/scripts/lint.mjs plan workflow/plans/2026-11-02-w12-ci-process-security-plan.md --approved`, and `git diff --check`.
 - [x] 7. Update the plan, branch state, and Changes line; confirm the working tree is clean.

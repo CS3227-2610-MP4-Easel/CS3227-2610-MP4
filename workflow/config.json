@@ -14,11 +14,8 @@
     "sensitive_path_manifest": "workflow/security-sensitive-paths.json",
     "policy_mediator": "npm run mediate:agent",
     "policy_hook": "scripts/agent-pre-tool-hook.mjs",
-    "security_reviewer": "@ludannnn",
-    "human_approver_by_pr_author": {
-      "@teleifo": "@Xiao-Congchen",
-      "default": "@teleifo"
-    },
+    "trusted_reviewers": ["@teleifo", "@ludannnn", "@Xiao-Congchen"],
+    "approval_roles": "two_trusted_people_other_than_pr_author",
     "approval_source": "github_pull_request_reviews"
   }
 }

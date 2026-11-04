@@ -5,6 +5,7 @@ import { spawnSync } from "node:child_process";
 export const SECURITY_REVIEWER = "@ludannnn";
 export const HUMAN_OWNER = "@teleifo";
 export const HUMAN_OWNER_FOR_DEV_LEAD = "@xiao-congchen";
+export const TRUSTED_REVIEWERS = Object.freeze([SECURITY_REVIEWER, HUMAN_OWNER, HUMAN_OWNER_FOR_DEV_LEAD]);
 export const BOOTSTRAP_TARGET_BRANCH = "development";
 export const BOOTSTRAP_BASE_SHA = "68d639a067ce514085a8074b9f18fa0c3ab3ed06";
 export const BOOTSTRAP_PATHS = Object.freeze([
@@ -19,8 +20,12 @@ function normalizeLogin(value) {
   return `@${value.trim().replace(/^@+/, "").toLowerCase()}`;
 }
 
-export function getRequiredHumanApprover(prAuthor) {
-  return normalizeLogin(prAuthor) === "@teleifo" ? HUMAN_OWNER_FOR_DEV_LEAD : HUMAN_OWNER;
+export function getRequiredReviewers(prAuthor) {
+  const author = normalizeLogin(prAuthor);
+  const otherTrustedReviewers = TRUSTED_REVIEWERS.filter((login) => login !== author);
+  return otherTrustedReviewers.length === 2
+    ? otherTrustedReviewers
+    : [SECURITY_REVIEWER, HUMAN_OWNER];
 }
 
 export function parseSensitiveManifest(manifest) {
@@ -132,7 +137,7 @@ function reviewErrors(reviews, headSha, prAuthor) {
   }
 
   const errors = [];
-  const required = [SECURITY_REVIEWER, getRequiredHumanApprover(prAuthor)];
+  const required = getRequiredReviewers(prAuthor);
   for (const login of required) {
     const latest = latestReview(records, login);
     if (!latest) {
@@ -151,11 +156,6 @@ function reviewErrors(reviews, headSha, prAuthor) {
 export function validateSecurityReview({ headSha, prAuthor, changedPaths, reviews, sensitivePatterns = LOCAL_SENSITIVE_PATTERNS }) {
   const sensitiveChanges = changedPaths.filter((path) => isSensitivePath(path, sensitivePatterns));
   if (sensitiveChanges.length === 0) return [];
-
-  const normalizedAuthor = normalizeLogin(prAuthor);
-  if (normalizedAuthor === SECURITY_REVIEWER) return ["security reviewer cannot be the pull request author"];
-  const requiredHuman = getRequiredHumanApprover(prAuthor);
-  if (requiredHuman === normalizedAuthor) return ["human approver cannot be the pull request author"];
 
   const errors = [];
   if (reviews == null) errors.push("GitHub review data is required for sensitive changes");

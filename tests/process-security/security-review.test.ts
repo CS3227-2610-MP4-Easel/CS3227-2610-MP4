@@ -5,7 +5,7 @@ import {
   BOOTSTRAP_PATHS,
   BOOTSTRAP_TARGET_BRANCH,
   SECURITY_REVIEWER,
-  getRequiredHumanApprover,
+  getRequiredReviewers,
   isSensitivePath,
   parseSensitiveManifestText,
   resolveBaseSensitivePatterns,
@@ -41,11 +41,7 @@ function review(login: string, overrides = {}) {
 }
 
 function approvals(prAuthor = "teleifo", overrides = []) {
-  return [
-    review("ludannnn"),
-    review(getRequiredHumanApprover(prAuthor), { id: 2 }),
-    ...overrides,
-  ];
+  return getRequiredReviewers(prAuthor).map((login, index) => review(login, { id: index + 1 })).concat(overrides);
 }
 
 test("F10 canonical manifest classification covers all control surfaces", () => {
@@ -116,15 +112,9 @@ test("F13 no committed artifact is required", () => {
 });
 
 test("E16/E18 author-dependent pairing and self-review fail closed", () => {
-  assert.equal(getRequiredHumanApprover("@teleifo"), "@xiao-congchen");
-  assert.equal(getRequiredHumanApprover("contributor"), "@teleifo");
-  assert.match(validateSecurityReview({
-    artifact: artifact(),
-    headSha,
-    prAuthor: "@ludannnn",
-    changedPaths: sensitivePaths,
-    reviews: approvals("@ludannnn"),
-  }).join("\n"), /security reviewer cannot be the pull request author/);
+  assert.deepEqual(getRequiredReviewers("@teleifo"), ["@ludannnn", "@xiao-congchen"]);
+  assert.deepEqual(getRequiredReviewers("@ludannnn"), ["@teleifo", "@xiao-congchen"]);
+  assert.deepEqual(getRequiredReviewers("@xiao-congchen"), ["@ludannnn", "@teleifo"]);
   assert.match(validateSecurityReview({
     artifact: artifact(),
     headSha,
@@ -132,6 +122,25 @@ test("E16/E18 author-dependent pairing and self-review fail closed", () => {
     changedPaths: sensitivePaths,
     reviews: [review("ludannnn"), review("teleifo", { id: 2 })],
   }).join("\n"), /GitHub review from @xiao-congchen is required/);
+});
+
+test("E16 trusted authors require the other two reviewers in either role order", () => {
+  const trusted = ["teleifo", "ludannnn", "xiao-congchen"];
+  for (const author of trusted) {
+    const required = trusted.filter((login) => login !== author);
+    assert.deepEqual(validateSecurityReview({
+      headSha,
+      prAuthor: author,
+      changedPaths: sensitivePaths,
+      reviews: [review(required[0]), review(required[1], { id: 2 })],
+    }), []);
+    assert.equal(validateSecurityReview({
+      headSha,
+      prAuthor: author,
+      changedPaths: sensitivePaths,
+      reviews: [review(required[0])],
+    }).length, 1);
+  }
 });
 
 test("F13/E17 missing current GitHub reviews fails", () => {
@@ -152,7 +161,7 @@ test("F13/E19 latest review state must be an exact-head approval", () => {
     headSha,
     prAuthor: "teleifo",
     changedPaths: sensitivePaths,
-    reviews: base.map((item) => item.user.login === "ludannnn" ? { ...item, commit_id: "b".repeat(40) } : item),
+    reviews: base.map((item) => item.user.login === "@ludannnn" ? { ...item, commit_id: "b".repeat(40) } : item),
   }).filter((error) => /GitHub review/.test(error)), ["GitHub review from @ludannnn must approve the exact PR head"]);
 
   const superseded = [

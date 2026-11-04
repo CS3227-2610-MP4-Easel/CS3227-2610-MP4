@@ -52,12 +52,12 @@
   is required for protected branches; an agent review is advisory and never replaces the human approval.
 - Protected branch settings apply identically to `development` and `main`, except that deployment
   and migration jobs remain restricted to `main`'s approved environment outside W12.
-- Sensitive-path changes require actual GitHub `APPROVED` reviews from `@ludannnn` and an additional,
-  different human GitHub approver. When the PR author
-  is `@teleifo`, that approver is `@Xiao-Congchen`; otherwise it is `@teleifo`. Non-sensitive PRs use the ordinary CODEOWNER
-  approval rule. The author cannot be the sole reviewer, and the security reviewer and human
-  approver must be different people; CI verifies the sensitive-path approval against the exact
-  PR head. No committed security-review artifact is required.
+- Sensitive-path changes require actual GitHub `APPROVED` reviews from the two trusted people other
+  than the PR author. The trusted set is `@teleifo`, `@ludannnn`, and `@Xiao-Congchen`; one of the
+  two serves as security reviewer and the other as human approver, in either order. Non-sensitive
+  PRs use the ordinary CODEOWNER approval rule. The author cannot be a reviewer, and the security
+  reviewer and human approver must be different people; CI verifies the sensitive-path approval
+  against the exact PR head. No committed security-review artifact is required.
 - Security findings may block a merge. An owner override must be recorded in the branch state and
   receive a second human review.
 

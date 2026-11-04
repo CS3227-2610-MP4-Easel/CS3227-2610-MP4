@@ -32,10 +32,11 @@ The checker normalizes both the PR-author and reviewer logins to the repository'
 at the boundary. For each required reviewer, the checker sorts all records by `submitted_at` and
 then `id`, selects that reviewer's latest record, and requires its `state` to be `APPROVED` and its
 `commit_id` to equal the exact PR head SHA. `CHANGES_REQUESTED` and `DISMISSED` are failing latest
-states; an approval on an older head also fails. The required reviewers are `@ludannnn` and
-`@Xiao-Congchen` for a `teleifo` PR, or `@ludannnn` and `@teleifo` for any other sensitive PR
-author. The checker must consume all paginated review results. Non-sensitive PRs do not use this
-additional checker requirement.
+states; an approval on an older head also fails. The trusted reviewer set is
+`@teleifo`, `@ludannnn`, and `@Xiao-Congchen`. For every sensitive PR, the author is excluded and
+the other two trusted people are required exactly once: one as the security reviewer and the other
+as the human approver. Either of those two people may fill either role. The checker must consume
+all paginated review results. Non-sensitive PRs do not use this additional checker requirement.
 
 The workflow-security job sets job-level `permissions: { pull-requests: read }` while all other jobs
 retain the top-level empty permission set. It runs the preinstalled GitHub CLI with

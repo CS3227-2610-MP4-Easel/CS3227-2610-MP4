@@ -89,12 +89,11 @@ non-zero result for a detected secret. `npm run setup:hooks` configures the repo
 ### F13 — Security cross-review
 
 Given a change includes any path matching the base-branch canonical sensitive-path manifest, when
-the pull request is reviewed, then `@ludannnn` submits an actual GitHub `APPROVED` review for the
-exact PR head. A different human must also submit an actual GitHub `APPROVED` review for that head. For
-a sensitive PR authored by `@teleifo`, the human approver is `@Xiao-Congchen`; for a sensitive PR
-authored by any other author, the human approver is `@teleifo`. Non-sensitive PRs follow the
-ordinary CODEOWNER rules. The author cannot be either reviewer, and a sensitive PR authored by
-`@ludannnn` fails closed because no alternate security reviewer is configured.
+the pull request is reviewed, then the two trusted people other than the PR author submit actual
+GitHub `APPROVED` reviews for the exact PR head. One serves as security reviewer and the other as
+human approver; either trusted person may fill either role. The trusted set is `@teleifo`,
+`@ludannnn`, and `@Xiao-Congchen`. Non-sensitive PRs follow the ordinary CODEOWNER rules. The
+author cannot be either reviewer, and the security reviewer and human approver must be distinct.
 
 ### F14 — First-rollout manifest bootstrap
 
