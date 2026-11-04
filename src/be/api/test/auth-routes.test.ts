@@ -3,22 +3,11 @@ import { mock, test } from "node:test";
 import { Hono } from "hono";
 import { policyForRoute, type RouteDefinition } from "@agile/contracts";
 import type { FilteredDbClient } from "@agile/db";
-import { clientIpKey, createLookupRegisteredUser, createResolvePrincipal, InvalidToken, VerifierUnavailable, type AuthRuntime, type AuthSettings, type TokenVerifier } from "@agile/auth";
+import { clientIpKey, createLookupRegisteredUser, createResolvePrincipal, type AuthRuntime, type TokenVerifier } from "@agile/auth";
 import { createAppDependencies, errorResponse, registerRoute, type ApiEnv } from "../src/index.js";
-import { requestIdMiddleware } from "../src/middleware/request-id.js";
-import { authRoutes } from "../src/routes/auth.js";
+import { authApp, codes, fakeRuntime, fakeVerifier, secret, settings, usersDb, type UserRow } from "./auth-fakes.js";
 
 type Row = { id: string; firebaseUid: string; role: "PM" | "DEV_LEAD" | "DEVELOPER" };
-const tokens: Record<string, { uid: string; email: string | null }> = { "Bearer good": { uid: "uid-1", email: "a@b.test" }, "Bearer norow": { uid: "uid-2", email: "c@d.test" } };
-const fakeVerifier = (behaviour: "ok" | "invalid" | "down" = "ok"): TokenVerifier => ({
-  verify: async (token) => {
-    if (behaviour === "invalid") throw new InvalidToken();
-    if (behaviour === "down") throw new VerifierUnavailable();
-    const found = tokens[`Bearer ${token}`];
-    if (!found) throw new InvalidToken();
-    return found;
-  },
-});
 const fakeDb = (rows: Row[] = [{ id: "user-1", firebaseUid: "uid-1", role: "PM" }], failing = false) => ({
   user: { findUnique: async ({ where }: { where: { firebaseUid: string } }) => { if (failing) throw new Error("db down"); return rows.find((r) => r.firebaseUid === where.firebaseUid) ?? null; } },
 }) as unknown as FilteredDbClient;
@@ -67,35 +56,7 @@ test("E46 lookup database failure is 500", async () => {
   assert.equal((await body(response)).error.code, "INTERNAL_ERROR");
 });
 
-// Check-code (endpoint 2) through registerRoute with a fake runtime whose `hit` is an in-memory counter.
-const secret = "s".repeat(32);
-const codes = { PM: "pm-code-123456789", DEV_LEAD: "lead-code-12345678", DEVELOPER: "dev-code-123456789" };
-const settings = (overrides: Partial<AuthSettings> = {}): AuthSettings => ({ tier: "test", firebaseProjectId: "w4-test", registrationCodes: codes, rateKeySecret: secret, ...overrides });
-const fakeRuntime = (options: { settings?: AuthSettings; hitFails?: boolean } = {}) => {
-  const counts = new Map<string, number>();
-  const keys: string[] = [];
-  const runtime: AuthRuntime = {
-    settings: options.settings ?? settings(),
-    hit: async (key, _windowSeconds, limit) => {
-      if (options.hitFails) throw new Error("db down");
-      keys.push(key);
-      const count = (counts.get(key) ?? 0) + 1;
-      counts.set(key, count);
-      return count <= limit ? { allowed: true, retryAfterSeconds: 0 } : { allowed: false, retryAfterSeconds: 42 };
-    },
-    db: fakeDb(),
-    resolvePrincipal: createResolvePrincipal(fakeVerifier()),
-    lookupRegisteredUser: createLookupRegisteredUser(fakeDb()),
-  };
-  return { runtime, keys };
-};
-const authApp = (runtime: AuthRuntime) => {
-  const app = new Hono<ApiEnv>();
-  app.use("*", requestIdMiddleware);
-  app.onError((error, c) => errorResponse(error, c.get("requestId")));
-  for (const route of authRoutes(() => runtime)) registerRoute(app, route, createAppDependencies(runtime));
-  return app;
-};
+// Check-code (endpoint 2) through the real app with a fake runtime whose `hit` is an in-memory counter.
 const checkCode = async (app: Hono<ApiEnv>, payload: unknown, headers: Record<string, string> = {}) => {
   const response = await app.request("http://localhost/api/auth/check-code", { method: "POST", headers: { "content-type": "application/json", "x-vercel-forwarded-for": "203.0.113.7", ...headers }, body: typeof payload === "string" ? payload : JSON.stringify(payload) });
   assert.match(response.headers.get("X-Request-Id") ?? "", /^[0-9a-f-]{36}$/, "E48 every auth response has X-Request-Id");
@@ -211,16 +172,9 @@ test("E50 unconfigured routes are 500", async () => {
   assert.equal((await body(response)).error.code, "INTERNAL_ERROR");
 });
 
-// Me (endpoint 4): the db fake serves both the role lookup (by firebaseUid) and getUser (by id).
-type FullRow = Row & { email: string; displayName: string; createdAt: Date };
-const storedRow: FullRow = { id: "00000000-0000-4000-8000-000000000001", firebaseUid: "uid-1", role: "DEV_LEAD", email: "stored@b.test", displayName: "Stored Name", createdAt: new Date(0) };
-const meRuntime = (rows: FullRow[], failing = false) => {
-  const db = { user: { findUnique: async ({ where }: { where: { firebaseUid?: string; id?: string } }) => {
-    if (failing) throw new Error("db down");
-    return rows.find((r) => (where.id ? r.id === where.id : r.firebaseUid === where.firebaseUid)) ?? null;
-  } } } as unknown as FilteredDbClient;
-  return { ...fakeRuntime().runtime, db, lookupRegisteredUser: createLookupRegisteredUser(db) };
-};
+// Me (endpoint 4).
+const storedRow: UserRow = { id: "00000000-0000-4000-8000-000000000001", firebaseUid: "uid-1", role: "DEV_LEAD", email: "stored@b.test", displayName: "Stored Name" };
+const meRuntime = (rows: UserRow[], findFails = false) => fakeRuntime({ db: usersDb(rows, { findFails }) }).runtime;
 const me = (runtime: AuthRuntime, authorization = "Bearer good") => authApp(runtime).request("http://localhost/api/me", { headers: { authorization } });
 
 test("E19 me returns the stored row", async () => {
@@ -239,4 +193,106 @@ test("E46 lookup database failure is 500 on /api/me", async () => {
   const response = await me(meRuntime([storedRow], true));
   assert.equal(response.status, 500);
   assert.equal((await body(response)).error.code, "INTERNAL_ERROR");
+});
+
+// Register (endpoint 3): TOKEN route, so `norow` (uid-2, no row) can register.
+const register = async (app: Hono<ApiEnv>, payload: unknown, headers: Record<string, string> = {}) => {
+  const response = await app.request("http://localhost/api/auth/register", { method: "POST", headers: { authorization: "Bearer norow", "content-type": "application/json", "x-vercel-forwarded-for": "203.0.113.7", ...headers }, body: typeof payload === "string" ? payload : JSON.stringify(payload) });
+  assert.ok(response.headers.get("X-Request-Id"), "E48 every auth response has X-Request-Id");
+  return response;
+};
+const registerSetup = (rows: UserRow[] = [], createFailure?: Error) => {
+  const db = usersDb(rows, { createFailure });
+  const { runtime, keys } = fakeRuntime({ db });
+  return { app: authApp(runtime), db, keys };
+};
+const valid = { role: "DEVELOPER", code: codes.DEVELOPER, displayName: "Dev" };
+
+test("E43 token without row registers with 201", async () => {
+  const { app, db } = registerSetup();
+  const response = await register(app, valid);
+  assert.equal(response.status, 201);
+  const user = await response.json();
+  assert.deepEqual({ ...user, id: undefined }, { id: undefined, email: "c@d.test", displayName: "Dev", role: "DEVELOPER" });
+  assert.equal(db.rows.length, 1);
+  assert.equal(db.rows[0].firebaseUid, "uid-2");
+});
+
+test("E4 displayName rules", async () => {
+  for (const displayName of ["   ", "x".repeat(101), "a\u0000b", "a​b", "😀".repeat(101)]) {
+    const { app, db } = registerSetup();
+    const response = await register(app, { ...valid, displayName });
+    assert.equal(response.status, 422, JSON.stringify(displayName));
+    assert.equal((await body(response) as { error: { details?: unknown[] } }).error.details?.length, 1);
+    assert.equal(db.rows.length, 0);
+  }
+  const { app, db } = registerSetup();
+  const hundred = "😀".repeat(100);
+  const response = await register(app, { ...valid, displayName: `  ${hundred}  ` });
+  assert.equal(response.status, 201);
+  assert.equal(db.rows[0].displayName, hundred);
+});
+
+test("E13 DEVELOPER code with role PM is 403", async () => {
+  const { app, db } = registerSetup();
+  const response = await register(app, { ...valid, role: "PM" });
+  assert.equal(response.status, 403);
+  assert.equal((await body(response)).error.code, "REGISTRATION_CODE_INVALID");
+  assert.equal(db.rows.length, 0);
+});
+
+test("E15 identity fields in body are 422", async () => {
+  for (const [field, value] of [["email", "evil-marker@x.test"], ["firebaseUid", "uid-marker"], ["id", "id-marker"]]) {
+    const { app, db } = registerSetup();
+    const response = await register(app, { ...valid, [field]: value });
+    assert.equal(response.status, 422);
+    assert.ok(!(await response.text()).includes(value));
+    assert.equal(db.rows.length, 0);
+  }
+});
+
+test("E27 registered uid with wrong code is 403", async () => {
+  const { app } = registerSetup([{ id: "00000000-0000-4000-8000-000000000009", firebaseUid: "uid-2", email: "c@d.test", displayName: "C", role: "PM" }]);
+  const response = await register(app, { ...valid, code: codes.PM });
+  assert.equal(response.status, 403);
+});
+
+test("E26 duplicate uid is 409 ALREADY_REGISTERED", async () => {
+  const { app } = registerSetup([{ id: "00000000-0000-4000-8000-000000000009", firebaseUid: "uid-2", email: "c@d.test", displayName: "C", role: "PM" }]);
+  const response = await register(app, valid);
+  assert.equal(response.status, 409);
+  assert.equal((await body(response)).error.code, "ALREADY_REGISTERED");
+});
+
+test("E47 non-unique insert failure is 500", async () => {
+  const { app, db } = registerSetup([], Object.assign(new Error("check failed"), { code: "P2004" }));
+  const error = mock.method(console, "error", () => {});
+  try {
+    const response = await register(app, valid);
+    assert.equal(response.status, 500);
+    assert.equal((await body(response)).error.code, "INTERNAL_ERROR");
+    assert.equal(db.rows.length, 0);
+  } finally { error.mock.restore(); }
+});
+
+test("E9 register: 21st attempt is 429, including one with a bad token", async () => {
+  const { app } = registerSetup();
+  for (let i = 0; i < 20; i++) await register(app, valid, i === 3 ? { authorization: "Bearer bad" } : {});
+  const response = await register(app, valid, { authorization: "Bearer bad" });
+  assert.equal(response.status, 429);
+  assert.equal(response.headers.get("Retry-After"), "42");
+});
+
+test("E16 E17 E40 register: 400, 422 and 413, each counted", async () => {
+  const { app, keys } = registerSetup();
+  assert.equal((await register(app, "{oops")).status, 400);
+  assert.equal((await register(app, { ...valid, role: "MARKERrole" })).status, 422);
+  assert.equal((await register(app, JSON.stringify({ ...valid, displayName: "x".repeat(5000) }))).status, 413);
+  assert.equal(keys.length, 3);
+});
+
+test("E50 register unconfigured is 500", async () => {
+  const { runtime } = fakeRuntime({ settings: settings({ tier: "preview", firebaseProjectId: null, registrationCodes: null, rateKeySecret: null }) });
+  const error = mock.method(console, "error", () => {});
+  try { assert.equal((await register(authApp(runtime), valid)).status, 500); } finally { error.mock.restore(); }
 });

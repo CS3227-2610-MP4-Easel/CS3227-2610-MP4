@@ -15,8 +15,13 @@ export type NewUser = { firebaseUid: string; email: string; displayName: string;
 
 /** One insert; a unique violation on `firebase_uid` or `email` throws `AlreadyRegistered`. */
 export async function createUser(db: FilteredDbClient, user: NewUser): Promise<User> {
-  void db; void user;
-  throw new Error("NOT_IMPLEMENTED");
+  try {
+    return toUser(await db.user.create({ data: user, select: USER_FIELDS }));
+  } catch (error) {
+    // Checked by code, not instanceof: errors pass through the filtered client's extension wrapper.
+    if ((error as { code?: unknown }).code === "P2002") throw new AlreadyRegistered();
+    throw error;
+  }
 }
 
 /** The caller's own row for endpoint 4; throws `Error("USER_NOT_REGISTERED")` if it is gone. */

@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import type { RouteDefinition } from "@agile/contracts";
 import { errorResponse, HttpError } from "./errors.js";
 import { requestIdMiddleware } from "./middleware/request-id.js";
 import { getAuthRuntime } from "@agile/auth";
@@ -7,8 +8,9 @@ import type { AuthDependencies } from "./middleware/auth.js";
 import { ROUTES } from "./routes/index.js";
 import { registerRoute, type ApiEnv } from "./routes/register.js";
 
-/** With no `deps`, wires the process-wide auth runtime, which validates auth settings and fails startup on unsafe ones. */
-export function createApiApp(deps: AuthDependencies = createAppDependencies(getAuthRuntime())) {
+/** With no `deps`, wires the process-wide auth runtime, which validates auth settings and fails startup on unsafe ones.
+ * `routes` defaults to `ROUTES`; tests pass a subset wired to a fake runtime. */
+export function createApiApp(deps: AuthDependencies = createAppDependencies(getAuthRuntime()), routes: readonly RouteDefinition[] = ROUTES) {
   const app = new Hono<ApiEnv>();
   app.use("*", requestIdMiddleware);
   app.onError((error, c) => {
@@ -16,7 +18,7 @@ export function createApiApp(deps: AuthDependencies = createAppDependencies(getA
     if (response.status >= 500) console.error("API request failed", { requestId: c.get("requestId"), errorType: error.name });
     return response;
   });
-  for (const route of ROUTES) registerRoute(app, route, deps);
+  for (const route of routes) registerRoute(app, route, deps);
   app.notFound((c) => errorResponse(new HttpError("NOT_FOUND", 404, "The requested resource was not found."), c.get("requestId")));
   return app;
 }

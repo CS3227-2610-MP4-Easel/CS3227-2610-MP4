@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S2 | 2026-11-04 | Claude Opus 5.5 | W4 | Active | Executing plan inline; T6 done | Plan T5 step 1: failing register cases in `src/be/api/test/auth-routes.test.ts` | 2026-11-04 |
+| S2 | 2026-11-04 | Claude Opus 5.5 | W4 | Active | Executing plan inline; T5 done | Close-out step 1: `lint.mjs plan --closeout`, then code review of the branch diff | 2026-11-04 |
 
 **Remaining**
 
@@ -48,7 +48,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W4 | Auth and registration | Building | [spec](../../specs/2026-10-31-w4-auth-design.md) | [plan](../../plans/2026-11-04-w4-auth.md) | T4, T6 done; next T5 register | — |
+| W4 | Auth and registration | Building | [spec](../../specs/2026-10-31-w4-auth-design.md) | [plan](../../plans/2026-11-04-w4-auth.md) | T0–T6 done; next close-out reviews | — |
 
 ---
 
@@ -56,7 +56,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-04 | T6: `GET /api/me` returns the stored row mapped to `User`; E31 offline run (network denied by `sandbox-exec`, no database): 151 pass, 4 skipped, 0 fail; with database 155 pass | W4 | this commit |
+| 2026-11-04 | T5: register endpoint and `createUser` (P2002 by code to 409); outside the plan: `createApiApp` gains an optional `routes` argument so E25 runs through the real error logging, shared fakes moved to `src/be/api/test/auth-fakes.ts`, and the body-size check no longer awaits `cancel()` on a cloned body (it hung); 170 tests, none skipped | W4 | this commit |
+| 2026-11-04 | T6: `GET /api/me` returns the stored row mapped to `User`; E31 offline run (network denied by `sandbox-exec`, no database): 151 pass, 4 skipped, 0 fail; with database 155 pass | W4 | a86de44 |
 | 2026-11-04 | T4: check-code endpoint with `limitedBefore` (IP limiter, streamed 4 KiB cap), fixed-message body schema, hashed constant-path code check; 152 tests, none skipped | W4 | 7cfedfa |
 | 2026-11-04 | T3: Firebase adapter, `resolvePrincipal`, `lookupRegisteredUser`, auth runtime, `createAppDependencies` with fail-closed W5 placeholders, test env setup; key-fetch failure mapped to 500 (D~1); 138 tests, none skipped | W4 | 00ca030 |
 | 2026-11-04 | T2: `incrementRateCounter` atomic UTC upsert, `createHit` checks and clamp, `clientIpKey` (/64, mapped IPv4, HMAC); E8/E10/E35 pass on Postgres 16; 126 tests, none skipped | W4 | b000037 |
