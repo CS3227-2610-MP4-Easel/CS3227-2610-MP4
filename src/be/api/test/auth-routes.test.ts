@@ -64,11 +64,14 @@ const checkCode = async (app: Hono<ApiEnv>, payload: unknown, headers: Record<st
 };
 
 test("E20 correct pair is 200 valid true and counts", async () => {
-  const { runtime, keys } = fakeRuntime();
+  const db = usersDb();
+  const { runtime, keys, windows } = fakeRuntime({ db });
   const response = await checkCode(authApp(runtime), { role: "PM", code: codes.PM });
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { valid: true });
   assert.equal(keys.length, 1);
+  assert.deepEqual(windows, [[60, 20]], "20 attempts per 60-second window");
+  assert.equal(db.rows.length, 0, "check-code writes no users row");
 });
 
 test("E21 wrong code is 403", async () => {
@@ -80,6 +83,7 @@ test("E21 wrong code is 403", async () => {
 test("E42 leading space in code is 403", async () => {
   const response = await checkCode(authApp(fakeRuntime().runtime), { role: "PM", code: ` ${codes.PM}` });
   assert.equal(response.status, 403);
+  assert.equal((await body(response)).error.code, "REGISTRATION_CODE_INVALID");
 });
 
 test("E16 malformed JSON or wrong content type is 400 and counted", async () => {
@@ -175,7 +179,11 @@ test("E50 unconfigured routes are 500", async () => {
 // Me (endpoint 4).
 const storedRow: UserRow = { id: "00000000-0000-4000-8000-000000000001", firebaseUid: "uid-1", role: "DEV_LEAD", email: "stored@b.test", displayName: "Stored Name" };
 const meRuntime = (rows: UserRow[], findFails = false) => fakeRuntime({ db: usersDb(rows, { findFails }) }).runtime;
-const me = (runtime: AuthRuntime, authorization = "Bearer good") => authApp(runtime).request("http://localhost/api/me", { headers: { authorization } });
+const me = async (runtime: AuthRuntime, authorization = "Bearer good") => {
+  const response = await authApp(runtime).request("http://localhost/api/me", { headers: { authorization } });
+  assert.match(response.headers.get("X-Request-Id") ?? "", /^[0-9a-f-]{36}$/, "E48 every auth response has X-Request-Id");
+  return response;
+};
 
 test("E19 me returns the stored row", async () => {
   const response = await me(meRuntime([storedRow]));
@@ -198,13 +206,13 @@ test("E46 lookup database failure is 500 on /api/me", async () => {
 // Register (endpoint 3): TOKEN route, so `norow` (uid-2, no row) can register.
 const register = async (app: Hono<ApiEnv>, payload: unknown, headers: Record<string, string> = {}) => {
   const response = await app.request("http://localhost/api/auth/register", { method: "POST", headers: { authorization: "Bearer norow", "content-type": "application/json", "x-vercel-forwarded-for": "203.0.113.7", ...headers }, body: typeof payload === "string" ? payload : JSON.stringify(payload) });
-  assert.ok(response.headers.get("X-Request-Id"), "E48 every auth response has X-Request-Id");
+  assert.match(response.headers.get("X-Request-Id") ?? "", /^[0-9a-f-]{36}$/, "E48 every auth response has X-Request-Id");
   return response;
 };
 const registerSetup = (rows: UserRow[] = [], createFailure?: Error) => {
   const db = usersDb(rows, { createFailure });
-  const { runtime, keys } = fakeRuntime({ db });
-  return { app: authApp(runtime), db, keys };
+  const { runtime, keys, windows } = fakeRuntime({ db });
+  return { app: authApp(runtime), runtime, db, keys, windows };
 };
 const valid = { role: "DEVELOPER", code: codes.DEVELOPER, displayName: "Dev" };
 
@@ -255,6 +263,7 @@ test("E27 registered uid with wrong code is 403", async () => {
   const { app } = registerSetup([{ id: "00000000-0000-4000-8000-000000000009", firebaseUid: "uid-2", email: "c@d.test", displayName: "C", role: "PM" }]);
   const response = await register(app, { ...valid, code: codes.PM });
   assert.equal(response.status, 403);
+  assert.equal((await body(response)).error.code, "REGISTRATION_CODE_INVALID");
 });
 
 test("E26 duplicate uid is 409 ALREADY_REGISTERED", async () => {
@@ -295,4 +304,47 @@ test("E50 register unconfigured is 500", async () => {
   const { runtime } = fakeRuntime({ settings: settings({ tier: "preview", firebaseProjectId: null, registrationCodes: null, rateKeySecret: null }) });
   const error = mock.method(console, "error", () => {});
   try { assert.equal((await register(authApp(runtime), valid)).status, 500); } finally { error.mock.restore(); }
+});
+
+test("E12 register uses its own bucket, 60 seconds and 20 attempts", async () => {
+  const { app, keys, windows } = registerSetup();
+  for (let i = 0; i < 21; i++) await checkCode(app, { role: "PM", code: codes.PM });
+  const response = await register(app, valid);
+  assert.equal(response.status, 201, "exhausting check-code does not limit register");
+  assert.equal(keys.at(-1), clientIpKey("register", "203.0.113.7", secret));
+  assert.deepEqual(windows.at(-1), [60, 20]);
+});
+
+test("E1 register without a usable Authorization header is 401 and counted", async () => {
+  const { app, keys, db } = registerSetup();
+  for (const authorization of ["", "Basic abc", "Bearer"]) {
+    const response = await register(app, valid, { authorization });
+    assert.equal(response.status, 401);
+    assert.equal((await body(response)).error.code, "UNAUTHENTICATED");
+  }
+  assert.equal(keys.length, 3);
+  assert.equal(db.rows.length, 0);
+});
+
+test("E16 E17 register: wrong content type, bad fields and unknown keys, no echo", async () => {
+  const { app, keys, db } = registerSetup();
+  assert.equal((await register(app, JSON.stringify(valid), { "content-type": "text/plain" })).status, 400);
+  const marker = "MARKERreg9";
+  for (const payload of [{ ...valid, displayName: 5 }, { role: "DEVELOPER", code: codes.DEVELOPER }, { ...valid, code: "" }, { ...valid, code: marker + "x".repeat(120) }, { ...valid, [marker]: marker }]) {
+    const response = await register(app, payload);
+    assert.equal(response.status, 422, JSON.stringify(payload).slice(0, 60));
+    assert.ok(!(await response.text()).includes(marker));
+  }
+  assert.equal(keys.length, 6);
+  assert.equal(db.rows.length, 0);
+});
+
+test("E28 register: hit failure is 500 and no row is written", async () => {
+  const db = usersDb();
+  const error = mock.method(console, "error", () => {});
+  try {
+    const response = await register(authApp(fakeRuntime({ db, hitFails: true }).runtime), valid);
+    assert.equal(response.status, 500);
+  } finally { error.mock.restore(); }
+  assert.equal(db.rows.length, 0);
 });

@@ -41,12 +41,14 @@ export const settings = (overrides: Partial<AuthSettings> = {}): AuthSettings =>
 export const fakeRuntime = (options: { settings?: AuthSettings; hitFails?: boolean; db?: FilteredDbClient; verifier?: TokenVerifier } = {}) => {
   const counts = new Map<string, number>();
   const keys: string[] = [];
+  const windows: Array<[number, number]> = [];
   const db = options.db ?? usersDb([{ id: "00000000-0000-4000-8000-000000000001", firebaseUid: "uid-1", email: "a@b.test", displayName: "A", role: "PM" }]);
   const runtime: AuthRuntime = {
     settings: options.settings ?? settings(),
-    hit: async (key, _windowSeconds, limit) => {
+    hit: async (key, windowSeconds, limit) => {
       if (options.hitFails) throw new Error("db down");
       keys.push(key);
+      windows.push([windowSeconds, limit]);
       const count = (counts.get(key) ?? 0) + 1;
       counts.set(key, count);
       return count <= limit ? { allowed: true, retryAfterSeconds: 0 } : { allowed: false, retryAfterSeconds: 42 };
@@ -55,7 +57,7 @@ export const fakeRuntime = (options: { settings?: AuthSettings; hitFails?: boole
     resolvePrincipal: createResolvePrincipal(options.verifier ?? fakeVerifier()),
     lookupRegisteredUser: createLookupRegisteredUser(db),
   };
-  return { runtime, keys };
+  return { runtime, keys, windows };
 };
 
 /** The real app (request id, error logging, not-found) with only the auth routes, wired to `runtime`. */

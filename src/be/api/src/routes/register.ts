@@ -46,7 +46,8 @@ export function registerRoute(app: Hono<ApiEnv>, route: RouteDefinition, deps?: 
       };
       const principal = scope.principal && "userId" in scope.principal ? scope.principal : undefined;
       // TOKEN routes have a verified token but possibly no users row, so they get the identity instead of a principal.
-      const identity = scope.principal && !("userId" in scope.principal) ? { firebaseUid: scope.principal.firebaseUid, email: String(scope.principal.tokenClaims.email) } : undefined;
+      const email = scope.principal && !("userId" in scope.principal) ? scope.principal.tokenClaims.email : undefined;
+      const identity = scope.principal && typeof email === "string" ? { firebaseUid: scope.principal.firebaseUid, email } : undefined;
       const context: ApiContext = { requestId: c.get("requestId"), request: { ...request, body: input.body }, input, ...(principal ? { principal } : {}), ...(identity ? { identity } : {}) };
       const response = await route.handler(context);
       if (scope.tx) {

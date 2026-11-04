@@ -7,11 +7,11 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w4-auth (from `INT` at `0dbbdcb`; spec merged in PR #4; fast-forwarded to `INT` at `7bd6544` after W1 merged)
 - **Base:** 7bd6544
 - **Owner:** ludannnn (Developer member)
-- **Status:** Draft
+- **Status:** In review
 - **Approved:** —
-- **Last updated:** 2026-11-04 by Claude Opus 5.5 — plan approved; building T0
+- **Last updated:** 2026-11-04 by Claude Opus 5.5 — T0 to T6 built and reviewed; awaiting Gate 3
 
-**Untouched:** Architecture, Conventions
+**Untouched:** Conventions, Lessons
 
 ---
 
@@ -25,21 +25,22 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S2 | 2026-11-04 | Claude Opus 5.5 | W4 | Active | Executing plan inline; T5 done | Close-out step 1: `lint.mjs plan --closeout`, then code review of the branch diff | 2026-11-04 |
 
 **Remaining**
 
 - [x] Spec amendment for the W1 seams (C~6 to C~10); spec lint passes.
 - [x] Interface stubs (ddac104).
 - [x] Plan approved at Gate 2.
-- [ ] T0 to T6 and close-out, per the plan.
-- [ ] Request body schemas: contracts' `UserInputSchema` is looser than the spec (`code` optional, `displayName` length in UTF-16 units, no Cc/Cf check). T4/T5 define stricter W4 schemas; the plan must say where.
+- [x] T0 to T6 and close-out, per the plan; Attacker and Tester reviews done.
+- [ ] Gate 3: operator review of the branch; then, on a separate yes, push and open the PR into `development`.
+- [x] Request body schemas: W4's stricter fixed-message schemas live in `src/be/api/src/routes/auth.ts`; contracts' `UserInputSchema` is unchanged and looser.
 - [ ] **T7 follow-up:** write its own spec and PR from `workflow/specs/2026-10-31-w4-auth-design/follow-up-t7.md` once W10's real data layer and a `src/fe` UI test runner exist; target 10 Nov (C~11).
 - [ ] Ask the PM whether W10 delivers a working sign-in page or a design only.
 - [ ] **Handover:** correct architecture §7, which says a valid token always belongs to a verified, enabled account. Firebase does not guarantee that; see Known Gaps.
 - [ ] **Handover:** tell the Dev Lead that W5 now owns `requireMember`, and that endpoint 10 must lowercase emails before lookup.
 - [ ] **Handover:** `apiApp` validates auth settings when its module loads (from T3), so `next build`, `next dev` and every deployed tier need `APP_TIER` and the auth settings (`FIREBASE_PROJECT_ID`, the three `REGISTRATION_CODE_*`, `RATE_KEY_SECRET`) set; W13 for deployed tiers, `src/fe/.env.local` locally. Mock previews may omit all but `APP_TIER=preview`.
-- [ ] **Handover:** W13 smoke checks on the deployed tiers: a forged `x-vercel-forwarded-for` must not change the limiter bucket, and a token from another Firebase project must get 401. `RATE_KEY_SECRET` must differ between dev and prod.
+- [ ] **Handover:** W13 smoke checks on the deployed tiers (the limiter trusts `x-vercel-forwarded-for`, so dev and prod must run behind Vercel; on any other host a client can pick its own bucket): a forged `x-vercel-forwarded-for` must not change the limiter bucket, and a token from another Firebase project must get 401. `RATE_KEY_SECRET` must differ between dev and prod.
+- [ ] **Handover:** the integration tests (E8, E10, E22, E23, E26, E35, E41) skip when `W1_INTEGRATION_DATABASE_URL` is unset, and the repo has no CI workflow; whoever adds CI should give it a Postgres 16 and fail when the URL is missing.
 - [ ] **Handover:** add `REGISTRATION_CODE_*` and `RATE_KEY_SECRET` per tier in W13, and confirm `firebase-admin` verifies with only a project id on Vercel. Firebase's verify-token page says a service account is needed; if the smoke test fails, record a Deviation.
 
 ---
@@ -48,7 +49,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W4 | Auth and registration | Building | [spec](../../specs/2026-10-31-w4-auth-design.md) | [plan](../../plans/2026-11-04-w4-auth.md) | T0–T6 done; next close-out reviews | — |
+| W4 | Auth and registration | In review | [spec](../../specs/2026-10-31-w4-auth-design.md) | [plan](../../plans/2026-11-04-w4-auth.md) | T0–T6 done; close-out reviewed; Gate 3 pending | guide out of date: auth |
 
 ---
 
@@ -56,7 +57,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-04 | T5: register endpoint and `createUser` (P2002 by code to 409); outside the plan: `createApiApp` gains an optional `routes` argument so E25 runs through the real error logging, shared fakes moved to `src/be/api/test/auth-fakes.ts`, and the body-size check no longer awaits `cancel()` on a cloned body (it hung); 170 tests, none skipped | W4 | this commit |
+| 2026-11-04 | Close-out: Attacker and Tester lenses, no blocking findings. Fixed: `identity` set only when the token email is a string; tests for register's own bucket and 60 s/20 window, register 401/400/422/500 paths, error codes on E27/E42, no row on check-code, `X-Request-Id` on `me`, multibyte token length, full SHA-256 digests in E30, and `hit` over real Postgres (`hit-integration.test.ts`); 175 tests, none skipped. Accepted, not changed: demo codes valid on dev and preview (AD-63, E24), slow-body requests bounded only by the platform timeout | W4 | this commit |
+| 2026-11-04 | T5: register endpoint and `createUser` (P2002 by code to 409); outside the plan: `createApiApp` gains an optional `routes` argument so E25 runs through the real error logging, shared fakes moved to `src/be/api/test/auth-fakes.ts`, and the body-size check no longer awaits `cancel()` on a cloned body (it hung); 170 tests, none skipped | W4 | 8118375 |
 | 2026-11-04 | T6: `GET /api/me` returns the stored row mapped to `User`; E31 offline run (network denied by `sandbox-exec`, no database): 151 pass, 4 skipped, 0 fail; with database 155 pass | W4 | a86de44 |
 | 2026-11-04 | T4: check-code endpoint with `limitedBefore` (IP limiter, streamed 4 KiB cap), fixed-message body schema, hashed constant-path code check; 152 tests, none skipped | W4 | 7cfedfa |
 | 2026-11-04 | T3: Firebase adapter, `resolvePrincipal`, `lookupRegisteredUser`, auth runtime, `createAppDependencies` with fail-closed W5 placeholders, test env setup; key-fetch failure mapped to 500 (D~1); 138 tests, none skipped | W4 | 00ca030 |
@@ -72,6 +74,50 @@ describes `INT`; read it for context and write here instead of editing it.
 
 ---
 
+## 4. Architecture
+
+> Legend: `C` = project decision. AD-nn entries are in docs/architecture.
+
+### 4.1 Authentication and registration (`architecture/auth.md`)
+
+**Now (proposed):** `auth` is the workspace package `src/be/auth` (`@agile/auth`). `loadAuthSettings` validates `APP_TIER`, the Firebase project id, the three registration codes (13 to 128 characters, distinct, no demo codes on prod) and `RATE_KEY_SECRET` at module load and throws on unsafe values; `FIREBASE_AUTH_EMULATOR_HOST` is refused on every tier; a preview with no data settings starts with them null, and routes needing them return 500. `createFirebaseTokenVerifier` checks ID tokens with `firebase-admin` (no revocation check, AD-57); `createResolvePrincipal` turns a `Bearer` header into `{ firebaseUid, tokenClaims.email }` with the email lowercased, and `createLookupRegisteredUser` reads the role from `users`, never from a claim. `createHit` is the AD-59 fixed-window limiter over `@agile/db`'s `incrementRateCounter`; `clientIpKey` keys it by an HMAC of the purpose and the first `x-vercel-forwarded-for` value (IPv6 grouped to /64, anything invalid to `unknown`). `checkRegistrationCode` compares SHA-256 digests with `timingSafeEqual`; `createUser` maps a unique violation (P2002) to `AlreadyRegistered`; `getUser` returns only the `User` contract fields. `getAuthRuntime()` builds all of this once from `process.env` around one `PrismaClient`. The routes for endpoints 2 (`check-code`), 3 (`register`) and 4 (`me`) live in `src/be/api/src/routes/auth.ts`; 2 and 3 run a `before` hook that counts the attempt per client IP (20 a minute) and caps the body at 4 KiB before authorization or parsing. `requireMember` is not here: W5's `core` owns it (C~5, C~8). The sign-in screen is a follow-up (C~11).
+
+| Path | Role |
+|---|---|
+| `src/be/auth/src/settings.ts` | settings validation per tier |
+| `src/be/auth/src/token-verifier.ts`, `principal.ts` | Firebase token check, principal resolution, registered-user lookup |
+| `src/be/auth/src/rate-limit.ts` | `hit()` and client-IP keys |
+| `src/be/auth/src/registration.ts` | code check, `createUser`, `getUser` |
+| `src/be/auth/src/runtime.ts` | process-wide `AuthRuntime` |
+| `src/be/api/src/routes/auth.ts` | endpoints 2 to 4, the rate-limit and body-size hook, fixed-message body schemas |
+
+| ID | Date | Decision | Why / who asked | Source |
+|---|---|---|---|---|
+| C~3 | 2026-10-31 | Tokens verified with `firebase-admin` | Vendor key rotation; `jose` rejected | spec |
+| C~5 | 2026-10-31 | `requireMember` moves to `core` (W5) | `core` owns `project_members` | spec |
+| C~9 | 2026-11-04 | `auth` is the package `src/be/auth` | `src/be/api` may not import `@agile/db` | spec SD16 |
+| C~10 | 2026-11-04 | `hit()`'s upsert lives in `@agile/db` | Raw SQL stays in one package | spec SD17 |
+
+Drift: architecture §7 says a valid token belongs to a verified, enabled account; it does not (Known Gaps, Handover above).
+
+### 4.2 Foundation (`architecture/foundation.md`)
+
+**Now (proposed):** The repository has one source-root frontend package at `src/fe` and five backend packages under `src/be/*`. `src/be/contracts` is the single source of truth: zod schemas, one error envelope, OpenAPI schemas, and the policy map that gates every route; `RouteDefinition` has an optional `before` hook and `ApiContext` an optional `identity` for `TOKEN` routes. `src/be/db` owns the Prisma schema, filtered request-facing client, recursive visibility enforcement, transaction seams and the one raw rate-counter upsert (`incrementRateCounter`); it excludes soft-deleted and archived data and protects compound project keys. `src/be/api` provides typed resource-resolution and authorization seams, the shared `ROUTES` registry, request parsing/error mapping, and the health endpoint; `registerRoute` runs a route's `before` hook, then authorization, then input parsing. `createApiApp(deps, routes)` defaults to `createAppDependencies(getAuthRuntime())`, which supplies the token check and user lookup from `src/be/auth`; its project resolvers are fail-closed placeholders (every project route is 404) until W5 supplies them. Because the runtime is built at module load, the app needs `APP_TIER` and the auth settings to start. Route handlers hold no domain logic and never check roles themselves. Frozen first (A-18): contracts with the policy map, `LlmGateway.run`, `AiContext.assemble`, `Sessions`.
+
+| Path | Role |
+|---|---|
+| `src/be/api/src/deps.ts` | `createAppDependencies`: auth seams plus W5 placeholders |
+| `src/be/api/src/routes/register.ts` | `before` hook, authorization, parsing, `identity` |
+
+| ID | Date | Decision | Why / who asked | Source |
+|---|---|---|---|---|
+| C~1 | 2026-10-31 | The token check is built by W4 | Was named in both W1 and W4 | spec |
+| C~6 | 2026-11-04 | Optional `before` and `identity` route seams | Limiter and register need headers, body and token identity | spec SD13 |
+
+Drift: W5 still has to replace the placeholder resolvers in `deps.ts`.
+
+---
+
 ## 6. Known Gaps
 
 Changes the guardrails entry **Email verification and disabling users**; AD-57 stays.
@@ -81,7 +127,8 @@ Changes the guardrails entry **Email verification and disabling users**; AD-57 s
 
 New entry:
 
-- **`rate_counters` rows are never cleaned up** — one row per key, with no scheduled jobs to remove them; IPv6 /64 grouping limits growth, and rows can be cleared by hand.
+- **`rate_counters` rows are never cleaned up** — one row per key, with no scheduled jobs to remove them; IPv6 /64 grouping limits growth, and rows can be cleared by hand. An attacker holding many /64 prefixes (a /48 has 65,536) gets 20 attempts per prefix and adds one row per prefix; there is no global ceiling.
+- **Slow request bodies** — endpoints 2 and 3 read up to 4 KiB before authorization; a client sending it slowly holds the function until the platform timeout.
 
 ## 7. Decisions
 

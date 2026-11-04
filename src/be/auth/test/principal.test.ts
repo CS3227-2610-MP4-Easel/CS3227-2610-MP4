@@ -13,7 +13,7 @@ const unauthenticated = { message: "UNAUTHENTICATED" };
 test("E1 rejects malformed Authorization without calling the verifier", async () => {
   const { v, seen } = verifier(async () => ({ uid: "u", email: "a@b.test" }));
   const resolve = createResolvePrincipal(v);
-  for (const header of [undefined, "Basic abc", "Bearer ", "Bearer", "Bearer a, Bearer b", `Bearer ${"x".repeat(4097)}`]) await assert.rejects(() => resolve(header), unauthenticated);
+  for (const header of [undefined, "Basic abc", "Bearer ", "Bearer", "Bearer a, Bearer b", `Bearer ${"x".repeat(4097)}`, `Bearer ${"é".repeat(2049)}`]) await assert.rejects(() => resolve(header), unauthenticated);
   assert.equal(seen.length, 0);
   await resolve("bearer   abc");
   await resolve(`Bearer ${"y".repeat(4096)}`);

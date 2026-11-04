@@ -12,8 +12,8 @@ test("E30 both values hashed, timingSafeEqual once", () => {
       assert.equal(checkRegistrationCode(codes, "PM", code), false);
       assert.equal(spy.mock.callCount(), 1);
       const [a, b] = spy.mock.calls[0].arguments as unknown as [Buffer, Buffer];
-      assert.equal(a.length, 32);
-      assert.equal(b.length, 32);
+      const sha = (v: string) => crypto.createHash("sha256").update(v, "utf8").digest();
+      assert.ok(a.equals(sha(code)) && b.equals(sha(codes.PM)), "compares the full digests of both values");
     } finally { spy.mock.restore(); }
   }
   assert.equal(checkRegistrationCode(codes, "PM", codes.PM), true);
