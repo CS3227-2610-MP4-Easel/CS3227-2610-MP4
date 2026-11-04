@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** ludannnn (Developer member)
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-05 by Claude Opus 5.5 — W2 spec drafted, in review
+- **Last updated:** 2026-11-05 by Claude Opus 5.5 — spec approved; writing plan
 
 **Untouched:** Architecture, Conventions, Deviations
 
@@ -25,12 +25,12 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-05 | Claude Opus 5.5 | W2 | Blocked — needs human | Spec reviewed and revised | Gate 1: operator approves the W2 spec | 2026-11-05 |
+| S1 | 2026-11-05 | Claude Opus 5.5 | W2 | Active | Writing the plan | Write `workflow/plans/2026-11-05-w2-gateway.md`, review it, ask Gate 2 | 2026-11-05 |
 
 **Remaining**
 
 - [x] Spec review (Implementer, Tester, Maintainer, Attacker): findings fixed.
-- [ ] Gate 1: operator approves the spec.
+- [x] Gate 1: spec approved by ludannnn on 2026-11-05.
 - [ ] Plan (Gate 2), then build T1 to T7.
 - [ ] Merge `development` into this branch once W4's PR #10 merges (needed by T5).
 - [ ] **Handover:** W15 owns endpoints 56 and 57 and their resolvers; W1's handover listed "session and usage" resolvers under W2 (spec SD3).
@@ -44,7 +44,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W2 | Gateway runtime and mock | Not started | [spec](../../specs/2026-11-05-w2-gateway-design.md) | — | Spec reviewed; Gate 1 pending | — |
+| W2 | Gateway runtime and mock | Spec'd | [spec](../../specs/2026-11-05-w2-gateway-design.md) | — | Spec approved; writing plan | — |
 
 ---
 
@@ -52,7 +52,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-05 | W2 spec drafted (7 F, 5 N, T1 to T7) and reviewed by four lenses: 5 blocking findings fixed (row written before its columns exist, fit failures leaving rows, static-section rule conflict, no clock seam, breaker race unstated); the spend cap reworked to keep AD-64's decaying budget block; the key restricted to the SoCLaaS host; 47 edge cases; lint clean | W2 | this commit |
+| 2026-11-05 | Spec approved at Gate 1 by the operator | W2 | this commit |
+| 2026-11-05 | W2 spec drafted (7 F, 5 N, T1 to T7) and reviewed by four lenses: 5 blocking findings fixed (row written before its columns exist, fit failures leaving rows, static-section rule conflict, no clock seam, breaker race unstated); the spend cap reworked to keep AD-64's decaying budget block; the key restricted to the SoCLaaS host; 47 edge cases; lint clean | W2 | a40f7f8 |
 
 ---
 

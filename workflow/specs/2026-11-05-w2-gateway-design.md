@@ -1,6 +1,6 @@
 # W2 Gateway Runtime and Mock Design
 
-- **Status:** Draft
+- **Status:** Approved (ludannnn, 2026-11-05)
 - **Risk tier:** High - it holds the SoCLaaS key, sends user-derived text to an external model, spends a shared budget, and every AI feature depends on it.
 - **Workstream:** W2 | **Plan:** not written yet
 - **Constraints consulted:** AD-04, AD-05, AD-16, AD-17, AD-18, AD-19, AD-23a, AD-23b, AD-24, AD-25, AD-26, AD-34, AD-53, AD-58, AD-59, AD-64, AD-66, AD-67, A-07, A-12, A-16, A-18; guardrails Known Gaps (no scheduled jobs) and Binding Decisions (AD-25, AD-32); `conventions/general.md`; `architecture/llm-gateway.md`; contracts.md §1, §3.7, §5.1, §5.3; architecture §4, §5, §8, §10, §11, §12
