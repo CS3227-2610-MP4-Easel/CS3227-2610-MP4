@@ -58,7 +58,7 @@ test("F10 canonical manifest classification covers all control surfaces", () => 
 
 test("F14/E21 bootstrap uses the exact fixed rollout identity and list", () => {
   assert.equal(BOOTSTRAP_TARGET_BRANCH, "development");
-  assert.equal(BOOTSTRAP_BASE_SHA, "7bd65440023a0123ac92445e5b6e58ec838ee57c");
+  assert.equal(BOOTSTRAP_BASE_SHA, "68d639a067ce514085a8074b9f18fa0c3ab3ed06");
   assert.deepEqual(resolveBaseSensitivePatterns({
     baseManifest: null,
     baseBranch: BOOTSTRAP_TARGET_BRANCH,

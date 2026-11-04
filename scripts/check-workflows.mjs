@@ -13,7 +13,7 @@ const REQUIRED_CI_COMMANDS = Object.freeze({
   "dependency-audit": "npm run audit:dependencies",
   "secret-scan": "npm run scan:secrets",
 });
-export const BOOTSTRAP_BASE_SHA = "7bd65440023a0123ac92445e5b6e58ec838ee57c";
+export const BOOTSTRAP_BASE_SHA = "68d639a067ce514085a8074b9f18fa0c3ab3ed06";
 export const BOOTSTRAP_ACTION_PINS = Object.freeze({
   version: 1,
   actions: Object.freeze({

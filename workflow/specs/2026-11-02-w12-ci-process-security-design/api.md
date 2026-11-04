@@ -10,7 +10,7 @@ current pull request.
 The checker reads `workflow/security-sensitive-paths.json` from `--base-sha`, validates its schema,
 and classifies the changed-path set against that base manifest. For the initial rollout only, if
 `--base-branch` is `development`, `--base-sha` is
-`7bd65440023a0123ac92445e5b6e58ec838ee57c`, `--pr-number` equals the externally configured
+`68d639a067ce514085a8074b9f18fa0c3ab3ed06`, `--pr-number` equals the externally configured
 `--bootstrap-pr-number`, and the base manifest is absent, it uses this fixed
 bootstrap list, in this exact order:
 

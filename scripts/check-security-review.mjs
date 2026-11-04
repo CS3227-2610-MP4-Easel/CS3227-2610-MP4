@@ -6,7 +6,7 @@ export const SECURITY_REVIEWER = "@ludannnn";
 export const HUMAN_OWNER = "@teleifo";
 export const HUMAN_OWNER_FOR_DEV_LEAD = "@xiao-congchen";
 export const BOOTSTRAP_TARGET_BRANCH = "development";
-export const BOOTSTRAP_BASE_SHA = "7bd65440023a0123ac92445e5b6e58ec838ee57c";
+export const BOOTSTRAP_BASE_SHA = "68d639a067ce514085a8074b9f18fa0c3ab3ed06";
 export const BOOTSTRAP_PATHS = Object.freeze([
   ".github/**", "CODEOWNERS", "package.json", "package-lock.json", ".githooks/**",
   ".gitleaks.toml", ".gitleaksignore", ".gitignore", "scripts/**", "workflow/**",

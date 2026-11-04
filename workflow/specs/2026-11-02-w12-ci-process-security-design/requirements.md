@@ -100,7 +100,7 @@ ordinary CODEOWNER rules. The author cannot be either reviewer, and a sensitive 
 
 Given the base revision does not contain `workflow/security-sensitive-paths.json`, when T6 runs
 for the initial W12 rollout targeting `development` from base SHA
-`7bd65440023a0123ac92445e5b6e58ec838ee57c` and the pull-request number equals the externally
+`68d639a067ce514085a8074b9f18fa0c3ab3ed06` and the pull-request number equals the externally
 configured repository variable `W12_BOOTSTRAP_PR_NUMBER`, then it uses the fixed bootstrap list in API SD7 and
 requires the head revision to contain a manifest with exactly the keys `version` and `paths`,
 `version: 1`, unique non-empty string paths in the exact normative order, and no unknown keys.

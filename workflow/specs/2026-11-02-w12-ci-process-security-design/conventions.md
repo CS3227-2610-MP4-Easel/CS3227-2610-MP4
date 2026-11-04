@@ -41,7 +41,7 @@
   reads the base-branch copy after rollout, and process-security tests consume the same list;
   CODEOWNERS coverage tests must prove that every listed pattern requests `@teleifo`, `@ludannnn`,
   and `@Xiao-Congchen`. During the first rollout only, target `development` at base SHA
-  `7bd65440023a0123ac92445e5b6e58ec838ee57c` and PR number equal to the externally configured
+  `68d639a067ce514085a8074b9f18fa0c3ab3ed06` and PR number equal to the externally configured
   `W12_BOOTSTRAP_PR_NUMBER` may use the fixed ordered list in API SD7 when the base manifest is
   absent. The head manifest uses duplicate-key-aware parsing, has exactly the keys `version` and
   `paths`, version `1`, unique non-empty strings, and the exact ordered list; whitespace and key
