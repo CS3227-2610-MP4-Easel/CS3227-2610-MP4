@@ -1,6 +1,6 @@
 # W4 Auth and Registration Design
 
-- **Status:** Approved (ludannnn, 2026-10-31)
+- **Status:** Approved (ludannnn, 2026-11-04), amended to match the merged W1 seams; first approved 2026-10-31
 - **Risk tier:** High - it is the authentication boundary for every route, assigns roles and handles registration secrets.
 - **Workstream:** W4 | **Plan:** not written yet
 - **Constraints consulted:** AD-03, AD-07, AD-08, AD-25, AD-33, AD-50, AD-53, AD-55, AD-57, AD-59, AD-63, AD-01b, A-03, A-10, A-15; guardrails Known Gaps; `conventions/general.md`, `conventions/process.md`; `architecture/auth.md`, `architecture/foundation.md`; contracts.md §1, §2, §3.1; architecture §4, §5, §7, §8, §9.1, §13, §14
@@ -37,7 +37,7 @@ Seven functional and seven non-functional requirements, with acceptance criteria
 | ID | Question | Blocks | Owner |
 |---|---|---|---|
 
-External dependencies are not open questions but must be met before building: the W1 seams in [conventions.md](2026-10-31-w4-auth-design/conventions.md) (owner Dev Lead) and the W10 mockup for T7 (owner PM).
+External dependencies are not open questions but must be met before building: the Dev Lead's confirmation of SD13 to SD17 (W4 builds on them meanwhile and the Dev Lead reviews T0 in the PR) and the W10 mockup for T7 (owner PM).
 
 ## 6. Decisions made in this spec
 | ID | Decision | Why / rejected alternative | Asked by |
@@ -54,3 +54,8 @@ External dependencies are not open questions but must be met before building: th
 | SD10 | `rate_counters` rows are not cleaned up | AD-59 allows one atomic statement and guardrails forbid scheduled jobs; /64 grouping limits growth. Recorded as a Known Gap. Rejected: opportunistic deletes inside `hit` | AI, Attacker lens |
 | SD11 | Registration codes are compared exactly, with no trimming | A code has one correct value. The UI trims the field before sending, to handle pasted spaces | AI, Tester lens |
 | SD12 | Every request reaching the limiter counts, whatever its outcome | Simple and matches "counts an attempt". A shared-address lockout is accepted in the threat list | AI, Attacker lens |
+| SD13 | W4 adds optional `RouteDefinition.before` and `ApiContext.identity` to W1's route registration (C~6) | W1 authorizes before route code runs and gives handlers no headers, body or token identity, so the limiter and `register` cannot work otherwise. Rejected: limiting inside the handler, which also breaks E9 | operator, assumption pending Dev Lead |
+| SD14 | W4 defines `APP_TIER` (C~7) | W1 has no tier setting. Rejected: blocking T1 on W1 | operator, assumption pending Dev Lead |
+| SD15 | W5 implements the membership resolvers W1 handed to W4 (C~8) | `core` owns `project_members`, as in SD9 | operator, assumption pending Dev Lead |
+| SD16 | Auth code lives in a new `src/be/auth` package, `@agile/auth` (C~9) | `src/be/api` may not import the database. Rejected: a shared modules package | operator, assumption pending Dev Lead |
+| SD17 | `hit`'s raw statement lives in `@agile/db` (C~10) | The filtered client has no raw SQL and Prisma's upsert cannot express the window reset. Rejected: a second unfiltered client in `@agile/auth` | operator, assumption pending Dev Lead |

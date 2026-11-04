@@ -4,18 +4,18 @@
 describes `INT`; read it for context and write here instead of editing it.
 `sync-project-state` folds this file in after the branch merges.
 
-- **Branch:** w4-auth (from `INT` at `0dbbdcb`)
-- **Base:** 0dbbdcb
+- **Branch:** w4-auth (from `INT` at `0dbbdcb`; spec merged in PR #4; fast-forwarded to `INT` at `7bd6544` after W1 merged)
+- **Base:** 7bd6544
 - **Owner:** ludannnn (Developer member)
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-10-31 by Claude Opus 5.5 — branch state created, spec started
+- **Last updated:** 2026-11-04 by Claude Opus 5.5 — amended spec approved at Gate 1; stubs next
 
 **Untouched:** Architecture, Conventions, Deviations
 
 ---
 
-**Scope.** W4 Auth and registration: endpoints 2, 3 and 4, plus the Firebase token check, on top of the W1 foundation. This branch currently holds the spec only; code waits for W1.
+**Scope.** W4 Auth and registration: endpoints 2, 3 and 4, plus the Firebase token check, on top of the W1 foundation. The approved spec is on `INT` (PR #4); this round amends it to the seams W1 actually built, then plans and builds T1 to T6. The PR #4 branch state has not been folded yet (Gate 4, project owner).
 
 ---
 
@@ -25,14 +25,15 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-10-31 22:13 | Claude Opus 5.5 | W4 | Paused | Spec approved; waiting for W1 | Once W1 merges, merge `INT` in, draft interface stubs (`drafting-interfaces`), then run `writing-plans-lite` against the real paths; done when gate 2 is asked | 2026-10-31 22:13 |
+| S2 | 2026-11-04 | Claude Opus 5.5 | W4 | Active | Amended spec approved (Gate 1); drafting interface stubs | Run `drafting-interfaces` from the amended spec, starting with T0: `RouteDefinition.before` and `ApiContext.identity` in `src/be/contracts/src/routes.ts` and `src/be/api/src/routes/register.ts`, and the empty `src/be/auth` package; done when stubs typecheck (`npm run typecheck`) | 2026-11-04 |
 
 **Remaining**
 
-- [ ] Plan, interface stubs and tests; all need the W1 monorepo, because plan paths must be real.
+- [x] Spec amendment for the W1 seams (C~6 to C~10); spec lint passes.
+- [ ] Plan, interface stubs and tests against `src/be/api` and `src/fe`.
+- [ ] Send the Dev Lead the seam message: confirm C~6 (W4 adds `RouteDefinition.before` and `ApiContext.identity`), C~7 (who owns the tier setting), C~9 (`src/be/auth` package pattern), C~10 (`hit()` statement in `@agile/db`) and C~8 (W5 owns `requireMember` and the membership and member-project-set resolvers that W1's handover assigned to W4).
 - [ ] Operator to decide whether T7 becomes a follow-up PR, so T1 to T6 can merge before the screen; proposed and held on 2026-10-31. The approved spec keeps T7 in W4, so this would be an amendment.
 - [ ] Ask the PM whether W10 delivers a working sign-in page or a design only.
-- [ ] Agree with the Dev Lead the W1 seams listed in the spec's `conventions.md`.
 - [ ] **Handover:** correct architecture §7, which says a valid token always belongs to a verified, enabled account. Firebase does not guarantee that; see Known Gaps.
 - [ ] **Handover:** tell the Dev Lead that W5 now owns `requireMember`, and that endpoint 10 must lowercase emails before lookup.
 - [ ] **Handover:** W13 smoke checks on the deployed tiers: a forged `x-vercel-forwarded-for` must not change the limiter bucket, and a token from another Firebase project must get 401. `RATE_KEY_SECRET` must differ between dev and prod.
@@ -44,7 +45,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W4 | Auth and registration | Spec'd | [spec](../../specs/2026-10-31-w4-auth-design.md) | — | Spec approved; plan waits for W1 | — |
+| W4 | Auth and registration | Spec'd | [spec](../../specs/2026-10-31-w4-auth-design.md) | — | Amended spec approved 2026-11-04; drafting stubs | — |
 
 ---
 
@@ -52,7 +53,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-10-31 | W4 auth spec written, reviewed and approved | W4 | this commit |
+| 2026-11-04 | Spec amended to the merged W1 seams: real paths, `resolvePrincipal`/`lookupRegisteredUser`, new T0 for `before`/`identity`, `APP_TIER`, `@agile/auth` package, `hit` statement in `@agile/db`, frontend Firebase settings (SD13 to SD17); operator re-approved it at Gate 1 | W4 | this commit |
+| 2026-10-31 | W4 auth spec written, reviewed and approved | W4 | e600d0a |
 
 ---
 
@@ -93,6 +95,47 @@ New entry:
 - **Supersedes:** the `requireMember` entry in architecture §4's `auth` row and `architecture/auth.md`
 - **Why:** `core` owns `project_members`, `conventions/general.md` forbids querying another module's tables, and architecture §4 already says it runs inside `core`.
 - **Rejected:** keeping it in `auth` as a recorded exception.
+
+### C~6 — W4 adds two optional seams to W1's route registration (assumed; Dev Lead to confirm)
+
+- **Date:** 2026-11-04
+- **Who asked:** operator (ludannnn), asking for the most sensible assumptions before contacting the Dev Lead
+- **Supersedes:** the spec's "Seams W1 must provide" for route-level middleware and the token principal
+- **Decision:** W4 adds `before?: (c: { requestId; headers }) => Promise<Response | void>` to `RouteDefinition` (run by `registerRoute` before `authorizeRequest`; a returned `Response` ends the request) and `identity?: { firebaseUid; email }` to `ApiContext` (set for `TOKEN` routes; `principal` stays registered-only). Both are optional, so W1's routes and tests are unchanged. The Dev Lead reviews it in the W4 PR.
+- **Why:** W1's `registerRoute` authorizes before anything route-specific runs and gives handlers neither headers nor the raw body, so the limiter (client IP), the 4 KiB limit and `Retry-After` cannot live in the handler; and a `TOKEN` route's handler gets no `firebaseUid` or email, so `register` cannot insert. The hook keeps the spec's pipeline and E9 unchanged.
+- **Rejected:** `hit()` inside the handler with no `bodySchema` (handlers cannot see the IP or body; would also break E9); path-scoped `app.use` in `createApiApp` (splits a route's behaviour across two files); waiting for the Dev Lead to build it (costs a day on the critical path to W5).
+
+### C~7 — W4 defines the tier setting for now (assumed; Dev Lead to confirm)
+
+- **Date:** 2026-11-04
+- **Who asked:** operator (ludannnn), same request as C~6
+- **Decision:** T1 reads `APP_TIER` (`local`, `dev`, `preview`, `prod`, `test`) in W4's auth settings module; the Dev Lead or W13 may move it to a shared settings module later.
+- **Why:** the spec assumed W1 provides a tier setting; none exists in `src/be` and no architecture file names one, so T1 cannot run without it.
+- **Rejected:** blocking T1 until W1 adds it.
+
+### C~8 — W5, not W4, implements the membership resolvers (assumed; Dev Lead to confirm)
+
+- **Date:** 2026-11-04
+- **Who asked:** operator (ludannnn), same request as C~6
+- **Supersedes:** W1's handover assigning "membership and the member project set" resolvers to W4
+- **Why:** they read `project_members`, which `core` owns; same reasoning as C~5. W4 supplies only `resolvePrincipal` and `lookupRegisteredUser`.
+- **Rejected:** W4 querying `project_members` from `auth`.
+
+### C~9 — Feature modules are workspace packages; `auth` is `src/be/auth` (assumed; Dev Lead to confirm)
+
+- **Date:** 2026-11-04
+- **Who asked:** operator (ludannnn), same request as C~6
+- **Decision:** W4 creates `src/be/auth` (`@agile/auth`), which holds the `users` and `rate_counters` access, `hit()`, the token verifier, code checks and settings. `src/be/api` holds only W4's thin route definitions (appended to `ROUTES`) and wires `@agile/auth` into `createApiApp(deps)`.
+- **Why:** `src/be/api` may not import `@agile/db` or raw SQL (`src/be/api/test/import-rules.test.ts`), and W1 defines no home for feature modules. A package per module matches the `src/be/*` workspaces (C23) and sets the pattern W5's `core` can follow.
+- **Rejected:** putting table access in `src/be/api` (fails the import rule); a shared `src/be/modules` package (one package for every owner's code invites cross-module table access).
+
+### C~10 — `hit()`'s atomic statement lives in `@agile/db` (assumed; Dev Lead to confirm)
+
+- **Date:** 2026-11-04
+- **Who asked:** operator (ludannnn), same request as C~6
+- **Decision:** `@agile/db` exports one function that runs the AD-59 upsert on `rate_counters` with a parameterised raw statement; `@agile/auth`'s `hit()` validates inputs and calls it.
+- **Why:** the window reset needs a conditional `INSERT … ON CONFLICT DO UPDATE … RETURNING`, which Prisma's upsert cannot express, and `FilteredDbClient` deliberately omits raw SQL. Keeping the one raw statement inside `@agile/db` keeps raw SQL in a single package.
+- **Rejected:** `@agile/auth` creating its own unfiltered `PrismaClient` (a second raw-SQL holder); a read-then-write in a transaction (two statements, against AD-59).
 
 ### C~3 — Tokens are verified with `firebase-admin`
 
