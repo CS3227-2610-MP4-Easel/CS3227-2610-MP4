@@ -19,9 +19,9 @@ W1 is merged. T0 adds the seams W1 does not provide (C~6, C~9); everything else 
 | T0 Seams | - | - | 1 |
 | T1 Settings | T0 | T2 | 2 |
 | T2 Limiter | T0 | T1 | 2 |
-| T3 Token and user middleware | T1 | T4 | 3 |
-| T4 check-code | T1, T2 | T3 | 3 |
-| T5 register | T3, T4 | T6 | 4 |
-| T6 me | T3 | T5 | 4 |
+| T3 Token and user middleware | T1 | - | 3 |
+| T4 check-code | T1, T2, T3 | T6 | 4 |
+| T5 register | T3, T4 | - | 5 |
+| T6 me | T3 | T4 | 4 |
 
-Shared-file hazards: T4, T5 and T6 each add a route to `src/be/api/src/routes/auth.ts`, so merge those edits one at a time. T0 edits W1's `register.ts` and `contracts/src/routes.ts`; keep it one commit so the Dev Lead can review it alone. T7, the sign-in screen, moved to [follow-up-t7.md](follow-up-t7.md) (SD18).
+T4 depends on T3 because T3 creates the auth runtime that the routes read (plan review, 2026-11-04). Shared-file hazards: T4, T5 and T6 each add a route to `src/be/api/src/routes/auth.ts`, so merge those edits one at a time. T0 edits W1's `register.ts` and `contracts/src/routes.ts`; keep it one commit so the Dev Lead can review it alone. T7, the sign-in screen, moved to [follow-up-t7.md](follow-up-t7.md) (SD18).

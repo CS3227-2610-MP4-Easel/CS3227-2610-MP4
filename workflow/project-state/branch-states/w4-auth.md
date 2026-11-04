@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** ludannnn (Developer member)
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-04 by Claude Opus 5.5 — Dev Lead confirmed seam decisions; plan next
+- **Last updated:** 2026-11-04 by Claude Opus 5.5 — plan approved; building T0
 
 **Untouched:** Architecture, Conventions, Deviations
 
@@ -25,13 +25,14 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S2 | 2026-11-04 | Claude Opus 5.5 | W4 | Active | Stubs committed (ddac104); plan next | Run `writing-plans-lite` on `workflow/specs/2026-10-31-w4-auth-design.md`, using the stub files in `src/be/auth/src/`, `src/be/db/src/rate-counters.ts` and `src/be/contracts/src/routes.ts` as the real paths; T0's `registerRoute` behaviour is still unbuilt; done when Gate 2 is asked | 2026-11-04 |
+| S2 | 2026-11-04 | Claude Opus 5.5 | W4 | Active | Executing plan inline; T0 in flight | `workflow/plans/2026-11-04-w4-auth.md` T0 step 1: add the five failing cases to `src/be/api/test/register-route.test.ts` | 2026-11-04 |
 
 **Remaining**
 
 - [x] Spec amendment for the W1 seams (C~6 to C~10); spec lint passes.
 - [x] Interface stubs (ddac104).
-- [ ] Plan (Gate 2), then blind tests and T0 to T6.
+- [x] Plan approved at Gate 2.
+- [ ] T0 to T6 and close-out, per the plan.
 - [ ] Request body schemas: contracts' `UserInputSchema` is looser than the spec (`code` optional, `displayName` length in UTF-16 units, no Cc/Cf check). T4/T5 define stricter W4 schemas; the plan must say where.
 - [ ] **T7 follow-up:** write its own spec and PR from `workflow/specs/2026-10-31-w4-auth-design/follow-up-t7.md` once W10's real data layer and a `src/fe` UI test runner exist; target 10 Nov (C~11).
 - [ ] Ask the PM whether W10 delivers a working sign-in page or a design only.
@@ -46,7 +47,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W4 | Auth and registration | Spec'd | [spec](../../specs/2026-10-31-w4-auth-design.md) | — | Stubs done; plan next | — |
+| W4 | Auth and registration | Building | [spec](../../specs/2026-10-31-w4-auth-design.md) | [plan](../../plans/2026-11-04-w4-auth.md) | T0/6 in flight: seams | — |
 
 ---
 
@@ -54,7 +55,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-04 | T7, F7 and the UI edge cases moved to `follow-up-t7.md` (spec SD18); operator chose the split | W4 | this commit |
+| 2026-11-04 | Plan written, reviewed (Implementer lens: 2 blocking, 8 non-blocking, all fixed) and approved at Gate 2; review moved T4 after T3 in the spec's dependency table | W4 | this commit |
+| 2026-11-04 | T7, F7 and the UI edge cases moved to `follow-up-t7.md` (spec SD18); operator chose the split | W4 | e7fead8 |
 | 2026-11-04 | Dev Lead confirmed the five seam decisions (spec SD13 to SD17) | W4 | 0106813 |
 | 2026-11-04 | Interface stubs: `@agile/auth` package, `incrementRateCounter` stub in `@agile/db`, optional `before`/`identity` route fields; typecheck green, 99 tests pass | W4 | ddac104 |
 | 2026-11-04 | Spec amended to the merged W1 seams: real paths, `resolvePrincipal`/`lookupRegisteredUser`, new T0 for `before`/`identity`, `APP_TIER`, `@agile/auth` package, `hit` statement in `@agile/db`, frontend Firebase settings (SD13 to SD17); operator re-approved it at Gate 1 | W4 | b6ef5d7 |

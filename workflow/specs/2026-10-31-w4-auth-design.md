@@ -2,7 +2,7 @@
 
 - **Status:** Approved (ludannnn, 2026-11-04), amended to match the merged W1 seams and to split T7 out (SD18); first approved 2026-10-31
 - **Risk tier:** High - it is the authentication boundary for every route, assigns roles and handles registration secrets.
-- **Workstream:** W4 | **Plan:** not written yet
+- **Workstream:** W4 | **Plan:** [2026-11-04-w4-auth](../plans/2026-11-04-w4-auth.md)
 - **Constraints consulted:** AD-03, AD-07, AD-08, AD-25, AD-33, AD-50, AD-53, AD-55, AD-57, AD-59, AD-63, AD-01b, A-03, A-10, A-15; guardrails Known Gaps; `conventions/general.md`, `conventions/process.md`; `architecture/auth.md`, `architecture/foundation.md`; contracts.md §1, §2, §3.1; architecture §4, §5, §7, §8, §9.1, §13, §14
 - **Reviewed by lenses:** Implementer, Tester, Maintainer, Attacker (authentication, secrets and a public endpoint); one round, findings fixed in these files
 
