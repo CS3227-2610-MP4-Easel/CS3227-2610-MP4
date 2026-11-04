@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S2 | 2026-11-04 | Claude Opus 5.5 | W4 | Active | Executing plan inline; T0 in flight | `workflow/plans/2026-11-04-w4-auth.md` T0 step 1: add the five failing cases to `src/be/api/test/register-route.test.ts` | 2026-11-04 |
+| S2 | 2026-11-04 | Claude Opus 5.5 | W4 | Active | Executing plan inline; T0 done | Plan T1 step 1: write failing `src/be/auth/test/settings.test.ts` | 2026-11-04 |
 
 **Remaining**
 
@@ -47,7 +47,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W4 | Auth and registration | Building | [spec](../../specs/2026-10-31-w4-auth-design.md) | [plan](../../plans/2026-11-04-w4-auth.md) | T0/6 in flight: seams | — |
+| W4 | Auth and registration | Building | [spec](../../specs/2026-10-31-w4-auth-design.md) | [plan](../../plans/2026-11-04-w4-auth.md) | T0/6 done; T1 and T2 next | — |
 
 ---
 
@@ -55,7 +55,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-04 | Plan written, reviewed (Implementer lens: 2 blocking, 8 non-blocking, all fixed) and approved at Gate 2; review moved T4 after T3 in the spec's dependency table | W4 | this commit |
+| 2026-11-04 | T0: `registerRoute` runs `before` ahead of authorization (adds `X-Request-Id` to its response) and gives TOKEN routes `identity`; 104 tests pass | W4 | this commit |
+| 2026-11-04 | Plan written, reviewed (Implementer lens: 2 blocking, 8 non-blocking, all fixed) and approved at Gate 2; review moved T4 after T3 in the spec's dependency table | W4 | 4e961c4 |
 | 2026-11-04 | T7, F7 and the UI edge cases moved to `follow-up-t7.md` (spec SD18); operator chose the split | W4 | e7fead8 |
 | 2026-11-04 | Dev Lead confirmed the five seam decisions (spec SD13 to SD17) | W4 | 0106813 |
 | 2026-11-04 | Interface stubs: `@agile/auth` package, `incrementRateCounter` stub in `@agile/db`, optional `before`/`identity` route fields; typecheck green, 99 tests pass | W4 | ddac104 |

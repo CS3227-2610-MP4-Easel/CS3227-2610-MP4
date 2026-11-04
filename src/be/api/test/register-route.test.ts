@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { Hono } from "hono";
 import { z } from "zod";
-import { policyForRoute, type RouteDefinition } from "@agile/contracts";
+import { policyForRoute, type ApiContext, type RouteDefinition } from "@agile/contracts";
 import { apiApp, createApiApp, errorResponse, registerRoute, registeredRoutes, type ApiEnv, type AuthDependencies } from "../src/index.js";
 
 const policy = policyForRoute("endpoint-23");
@@ -63,4 +63,53 @@ test("the shipped app contains only routes registered through the policy gate", 
   assert.ok(mounted.length > 0);
   for (const entry of mounted) assert.ok(registered.has(entry), `${entry} bypasses registerRoute`);
   assert.equal(registeredRoutes(createApiApp()).length, registeredRoutes(apiApp).length);
+});
+
+const tokenPolicy = policyForRoute("endpoint-3");
+const tokenApp = (route: Partial<RouteDefinition>, d: AuthDependencies = deps()) => {
+  const app = new Hono<ApiEnv>();
+  app.use("*", async (c, next) => { c.set("requestId", "rid"); await next(); });
+  app.onError((error, c) => errorResponse(error, c.get("requestId")));
+  registerRoute(app, { operationId: tokenPolicy.operationId, method: tokenPolicy.method, path: tokenPolicy.path, policyKey: tokenPolicy.policyKey, responseSchema: {}, handler: async () => new Response(null, { status: 204 }), ...route }, d);
+  return app;
+};
+const postRegister = (app: Hono<ApiEnv>, token = "Bearer ok") => app.request("http://localhost/api/auth/register", { method: "POST", headers: { authorization: token, "content-type": "application/json" }, body: "{}" });
+
+test("before runs ahead of authorization and its response ends the request", async () => {
+  let resolved = false;
+  const app = tokenApp({ before: async () => new Response(null, { status: 429 }) }, deps({ resolvePrincipal: async () => { resolved = true; return { firebaseUid: "f", tokenClaims: {} }; } }));
+  const response = await postRegister(app);
+  assert.equal(response.status, 429);
+  assert.equal(resolved, false);
+});
+
+test("before returning nothing continues to the handler", async () => {
+  let seen = false;
+  const app = tokenApp({ before: async () => { seen = true; } });
+  const response = await postRegister(app);
+  assert.equal(seen, true);
+  assert.equal(response.status, 204);
+});
+
+test("E48 before-hook response carries X-Request-Id", async () => {
+  const app = tokenApp({ before: async () => Response.json({ error: "x" }, { status: 413 }) });
+  const response = await postRegister(app);
+  assert.equal(response.status, 413);
+  assert.equal(response.headers.get("x-request-id"), "rid");
+});
+
+test("TOKEN route handler receives identity, not principal", async () => {
+  let context: ApiContext | undefined;
+  const app = tokenApp({ handler: async (c) => { context = c; return new Response(null, { status: 204 }); } }, deps({ resolvePrincipal: async () => ({ firebaseUid: "f", tokenClaims: { email: "a@b.test" } }) }));
+  await postRegister(app);
+  assert.deepEqual(context?.identity, { firebaseUid: "f", email: "a@b.test" });
+  assert.equal(context?.principal, undefined);
+});
+
+test("REGISTERED route handler receives principal, not identity", async () => {
+  let context: ApiContext | undefined;
+  const app = appWith(async (c) => { context = c; return Response.json({}); });
+  await patch(app, { title: "x" });
+  assert.deepEqual(context?.principal, { firebaseUid: "f", userId: "u", role: "PM" });
+  assert.equal(context?.identity, undefined);
 });
