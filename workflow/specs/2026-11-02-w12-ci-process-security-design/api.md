@@ -40,8 +40,7 @@ additional checker requirement.
 The workflow-security job sets job-level `permissions: { pull-requests: read }` while all other jobs
 retain the top-level empty permission set. It runs the preinstalled GitHub CLI with
 `GH_TOKEN: ${{ github.token }}` and `gh api --paginate --slurp "/repos/${GITHUB_REPOSITORY}/pulls/${{ github.event.pull_request.number }}/reviews"`, writes the complete nested JSON response to `$RUNNER_TEMP/pr-reviews.json`, and passes that path through `--reviews-file` and `--base-branch`. The file is outside the checked-out PR workspace and is not writable by PR files. If the endpoint fails, the file is absent, the JSON is malformed, or no matching
-review exists, the checker exits non-zero. The artifact's reviewer identity, decision, and
-`humanApproval` object remain supporting audit metadata; actual GitHub review records are
-authoritative for both approvals. The workflow passes the event target branch, pull-request number,
+review exists, the checker exits non-zero. No committed security-review artifact is read or required;
+actual GitHub review records are authoritative and sufficient for both approvals. The workflow passes the event target branch, pull-request number,
 and `W12_BOOTSTRAP_PR_NUMBER` repository variable to the checker; the variable is configured only
 for the allowlisted rollout PR and is removed after that PR merges.
