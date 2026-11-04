@@ -18,9 +18,10 @@ Committed: `tasks/<id>/` (including `acceptance/`), `arms/implementer-*.json`, `
 | | checks.typecheck | array of {argv, cwd, timeout_s} | no | - | run in order; `cwd` repo-relative; errors counted as in § Parsing rules |
 | | checks.lint | array like typecheck, or null | yes | null | null means no lint command (the pilot task: null, because its lint script equals typecheck) |
 | | checks.tests | {own_argv, baseline_files, timeout_s} | no | - | `own_argv` is the argv prefix that runs one test file when the file path is appended after `--`; `baseline_files` is a list of globs of the test files that exist at base |
-| | checks.shared | {argv, timeout_s} | no | - | the shared runner, run in the verify tree |
+| | checks.shared | {argv, timeout_s} | no | - | the shared runner argv (`node` plus the runner path), run with the verify-tree root as working directory |
 | | protected_globs | string[] | no | `[]` | repo-relative, forward slashes, `**` crosses folders, no other depth is implied; a file is protected when it exists at `base_commit`, matches a glob, and is modified, deleted or renamed. The pilot task: `**/tsconfig*.json`, `tests/**`, `**/*.test.ts` |
 | | acceptance | {folder, checks_file, adapters} | no | - | `adapters` maps plan id to a path; every path exists |
+| Acceptance canary | canary | string | no | - | a random string written once into every committed acceptance file by `exp check`'s helper and never shown to an agent; the harness scans tool results and the clone for it (F6) |
 | Acceptance `checks.json` | entries | array of {id, required, requirement} | no | - | `id` `CHK<n>`; `requirement` one sentence, shown in attempt-2 feedback |
 | Adapter (module, one per plan id) | exports | `planFiles`, `createHarness(root, {clock})` | no | - | see § Adapter contract |
 | Implementer arm (`arms/implementer-*.json`) | stage | enum | no | - | `implementation` |
@@ -47,7 +48,7 @@ Committed: `tasks/<id>/` (including `acceptance/`), `arms/implementer-*.json`, `
 | | passing_tests, failing_tests, flaky_tests | string[] | no | `[]` | test ids; flaky = result differs between the two baseline runs and is excluded from the pass rule |
 | Run manifest additions | plan_id, plan_arm_id, plan_snapshot_sha256, sample | string, string, string, int | no | - | `arm_id` is the implementer arm and `rep` equals `sample`; the run id is `<ts>-<task>-<plan-id>-s<sample>` |
 | | adapter_sha256, checks_sha256, baseline_sha256, arm_sha256 | string | no | - | compared at attempt 2 and on `--continue` |
-| | flags | string[] | no | `[]` | adds `protected_modified`, `plan_modified`, `diff_truncated`, `check_timeout`, `output_truncated`, `secret_in_check_output`, `outside_clone_access`, `result_tampering_suspected`, `adapter_error`, `deps_changed`, `review_error`, `cost_mismatch` |
+| | flags | string[] | no | `[]` | adds `protected_modified`, `plan_modified`, `diff_truncated`, `check_timeout`, `output_truncated`, `secret_in_check_output`, `outside_clone_access`, `result_tampering_suspected`, `adapter_error`, `unsafe_path`, `unsafe_deps`, `deps_changed`, `review_error`, `cost_mismatch` |
 | Run state additions | attempt | int | no | 1 | 1 or 2 |
 | | attempt_state | enum | no | `agent` | `agent`, `checking`, `done` |
 | | attempt2_started | time | yes | null | the attempt boundary: set before the resume prompt is sent |
@@ -57,10 +58,13 @@ Committed: `tasks/<id>/` (including `acceptance/`), `arms/implementer-*.json`, `
 | | baseline_tests | {newly_failing, missing} | no | - | ids that passed at baseline and now fail, or are not found |
 | | shared | map CHK id to {status, message} | no | - | status `pass`, `fail` or `error`; message at most 300 characters |
 | | protected_changed, plan_changed | string[] | no | `[]` | paths |
+| | changed_files, deleted_files | string[] | no | `[]` | repo-relative paths against the reference, at most 200 listed |
+| | files_off_plan, plan_files_missing, gates_skipped, gates_in_plan | int | no | 0 | computed at the end of the attempt (F12) |
+| | notes_truncated, secret_in_check_output | bool | no | false | when `secret_in_check_output` is true the `lines` fields are empty and `green` is false |
 | | green | bool | no | - | the F10 rule |
 | Grade additions (`grades.json`) | green_attempt | int | yes | null | 1, 2 or null |
 | | pass1, pass2 | bool | no | - | |
-| | files_off_plan, plan_files_missing, gates_skipped, gates_in_plan | int | no | 0 | |
+| | files_off_plan, plan_files_missing, gates_skipped, gates_in_plan | int | no | 0 | copied from the last `checks/attempt-<n>.json`; 0 for a run with no check result |
 | | review | {findings: [{category, severity, where, issue}]} | no | `{findings: []}` | labels as F13; an unknown label is stored as `other` and `minor` |
 
 ## Parsing rules
@@ -73,12 +77,12 @@ An adapter is an ES module (run with `node --import tsx`) that exports:
 - `planFiles`: string array of repo-relative paths or folders (a folder entry matches every file under it) the plan says it creates or changes.
 - `createHarness(root, {clock})`: returns an object with these async methods, each resolving to `{ok, data, reason}` where `reason` is one of `forbidden`, `not_found`, `invalid`, `other` when `ok` is false:
   `createEpic()` -> `{id}`; `createNote({role, epicId, text})` -> note `{id, text, pinned}`; `listNotes({role, epicId})` -> array of notes in the order the plan's own view returns them, pinned flag included; `pinNote({role, epicId, noteId})`. `role` is `PM` or `Developer`; the Developer is a member of the project. `clock.tick()` advances time by 1 ms so ordering never ties.
-The shared runner (`acceptance/runner.mjs`) imports the adapter and `checks.json`, runs CHK1 to CHK8 and writes `{CHK<n>: {status, message}}` to the result file path given by the harness through an argument. A missing module gives `error` with message `module missing`; any other throw gives `error` with the error's name only.
+The shared runner is `acceptance/runner.mjs`, started by the harness with `node` and the arguments `--adapter <absolute path> --checks <absolute path> --root <verify-tree root>`. It is the parent of F9: it starts a host child (`acceptance/host.mjs`, run with `node --import tsx` in the verify-tree root, which loads the adapter) and calls the adapter methods through IPC messages `{id, method, args}` answered by `{id, result}`; the parent decides each CHK verdict and prints one JSON object `{CHK<n>: {status, message}}` on its stdout. The host needs the loader `tsx`; T1 confirms that it resolves from the pristine baseline tree. A missing module gives `error` with message `module missing`; any other throw gives `error` with the error's name only.
 
 ## Fixed texts
 - Answer to an implementer question: `The plan is the specification. If it is silent, make the smallest change that satisfies the plan's task, record the assumption in IMPLEMENTATION-NOTES.md under Assumptions, and continue.`
 - Notes file: `IMPLEMENTATION-NOTES.md`, at most 20000 characters, headings `## Skipped` and `## Assumptions`, one bullet (`- `) per item; only bullet lines under `## Skipped` count for `gates_skipped`; a missing file or heading gives 0.
-- Attempt-2 feedback (at most 8000 characters, cut with the line `[cut]`): `Your build is not green. Fix these and end with EXP-DONE. Do not ask questions.` then, in this order and only the sections that apply: `Typecheck errors:` and `Lint errors:` with their lines; `Failing tests:` with each failing id and its lines; `Existing tests that no longer pass:` with ids; `Required checks that failed:` with each check's `requirement` sentence; `Restored files:` with the paths the harness restored. Before the resume the harness restores every `protected_globs` file that was modified or deleted and every plan file to its `plan` commit content and lists them under `Restored files:`.
+- Attempt-2 feedback (at most 8000 characters, cut with the line `[cut]`): `Your build is not green. Fix these and end with EXP-DONE. Do not ask questions.` then, in this order and only the sections that apply (when `secret_in_check_output` is set, the single line `The check output could not be shown. Re-read the plan and fix any step that fails.` replaces every section except `Restored files:`): `Typecheck errors:` and `Lint errors:` with their lines; `Failing tests:` with each failing id and its lines; `Existing tests that no longer pass:` with ids; `Required checks that failed:` with each check's `requirement` sentence; `Restored files:` with the paths the harness restored. Before the resume the harness restores every `protected_globs` file that was modified or deleted and every plan file to its `plan` commit content and lists them under `Restored files:`.
 
 ## Cost formulas (SD6)
 - Events are assigned to attempt 1 if their time is before `attempt2_started`, else to attempt 2; a question turn inside an attempt belongs to that attempt.

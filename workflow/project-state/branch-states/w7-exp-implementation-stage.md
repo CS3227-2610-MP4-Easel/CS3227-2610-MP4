@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** Xiao-Congchen (PM)
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-05 by Claude Sonnet 5.5 — spec drafted, review round 1 fixed
+- **Last updated:** 2026-11-05 by Claude Sonnet 5.5 — spec ready for gate 1
 
 **Untouched:** Architecture, Conventions, Deviations
 
@@ -32,7 +32,7 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-05 | Claude Sonnet 5.5 (lead) + reviewer subagents | W~1 | Active | Spec review round 2 (Implementer, Attacker) on the rewritten verify-tree design | Fix round-2 findings, `lint.mjs spec` to 0 errors, then ask the owner for gate 1 (spec approval) naming the index path, tier, lenses and decisions SD1 to SD12 | 2026-11-05 |
+| S1 | 2026-11-05 | Claude Sonnet 5.5 | W~1 | Blocked — needs human | Gate 1: spec approval (two review rounds done, lint clean) | On the owner's yes: write `Status: Approved (<name>, <date>)` in the spec index, run `lint.mjs spec <index> --approved`, then run `writing-plans-lite` for the plan. On changes: fix the files and ask again | 2026-11-05 |
 
 **Remaining**
 
@@ -47,7 +47,7 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W~1 | Experiment implementation stage (extends the framework workstream of branch `w7-pm-plan-flow`) | Spec'd | [spec](../../specs/2026-11-05-experiment-implementation-stage-design.md) (draft, in review) | — | Big · spec drafted, review round 2 in flight | — |
+| W~1 | Experiment implementation stage (extends the framework workstream of branch `w7-pm-plan-flow`) | Spec'd | [spec](../../specs/2026-11-05-experiment-implementation-stage-design.md) (draft, in review) | — | Big · spec drafted, two review rounds done; awaiting gate 1 | — |
 
 ---
 
@@ -57,6 +57,7 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 |---|---|---|---|
 | 2026-11-05 | Branch and worktree created from the parent branch after the pilot and the blind review of the three replicate-2 plans | W~1 | `f576257` |
 | 2026-11-05 | Spec drafted: index plus requirements, data model, API, edge cases and implementation order; lint clean | W~1 | this commit |
+| 2026-11-05 | Review round 2 (Implementer 4 major; Attacker 3 blocking, 4 major) fixed: shared-check verdicts decided by a parent process (host child answers over IPC), lockfile validation, name whitelist and `node` argv, filesystem rules in the verify-tree builder, no git in the clone, canary tokens, disk polling, per-attempt metrics, exit-code split, T2 to T8 inputs and ownership clarified; lint clean | W~1 | this commit |
 | 2026-11-05 | Review round 1 (Implementer, Tester, Attacker: 4 + 3 + 3 blocking findings) fixed: checks run in a harness-owned verify tree, history-free agent clones, nonce-named verdict file, protected paths mean modified or deleted base files, adapter contract and parsing rules defined, credential-in-output no longer stops a batch, cost attribution by attempt boundary, resource caps, T3/T4 dependency corrected | W~1 | this commit |
 
 ---
@@ -70,9 +71,9 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 | C~1 | 2026-11-05 | The first implementation stage uses a cheaper Claude tier through the existing driver; the Codex driver is a later task | Asked by the owner after the pilot: they want to implement the plans with a cheaper model, possibly another provider. Chose "cheaper Claude tier first"; rejected: both providers in v1, Codex only |
 | C~2 | 2026-11-05 | Pass = the plan's own tests, typecheck and lint, plus required shared behaviour checks reached through a per-plan adapter | Owner chose "plan's own tests plus shared behaviour checks"; the adapter replaces a fixed HTTP client because each plan picks its own routes (spec SD2); rejected: own tests only, shared tests only |
 | C~3 | 2026-11-05 | Input plans are replicate 2 of each arm, built in 2 samples with up to 2 attempts each | Owner chose it to keep cost low; rejected: all replicates, one build per plan |
-| C~5 | 2026-11-05 | Checks run in a harness-owned verify tree and agent clones have no git history (spec SD11, SD12) | Found by the Attacker and Implementer lenses: the agent has Bash in its clone, so its `node_modules`, git config and scripts cannot be trusted and git objects expose hidden files; not asked by the owner; rejected: running checks in the clone with protected-path detection only |
+| C~5 | 2026-11-05 | Checks run in a harness-owned verify tree, agent clones have no git history, and shared-check verdicts are decided by a parent process (spec SD11, SD12, SD13) | Found by the Attacker and Implementer lenses: the agent has Bash in its clone, so its `node_modules`, git config and scripts cannot be trusted and git objects expose hidden files; not asked by the owner; rejected: running checks in the clone with protected-path detection only |
 | C~4 | 2026-11-05 | Run the blind review on the three replicate-2 plans only, and move on to the implementation stage in a new branch off the pilot branch | Asked by the owner to keep cost low after the full runs had trouble completing; rejected: a review on all nine plans |
 
 ## 6. Known Gaps
 
-- **Proposed, extends the experiment harness containment entry:** the implementation stage executes agent-written code and tests on the operator's machine with a stripped environment, timeouts and process-tree kill, but no sandbox and no network block. A test can still read absolute paths or call the network. Closing it needs a container or VM; deferred.
+- **Proposed, extends the experiment harness containment entry:** the implementation stage executes agent-written code and tests on the operator's machine, and the agent turn itself has the operator's file and network access. The harness uses a history-free clone, a verify tree built from harness-owned bytes, a stripped check environment, timeouts, a process sweep, canary tokens and disk polling, but no sandbox and no network block. Reads outside the clone and the agent's own spend (`claude -p`, direct API calls) can be detected in part and not prevented or counted. A build that returns plausible values without storing anything can pass the shared checks. Closing it needs a separate low-privilege user, a container or VM, and a dedicated API key with a console spend cap; the T8 gate records the operator's choice.

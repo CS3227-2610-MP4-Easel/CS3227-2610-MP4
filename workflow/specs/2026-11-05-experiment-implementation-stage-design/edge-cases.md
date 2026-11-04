@@ -20,7 +20,7 @@ IDs are permanent: never reuse or renumber. Every F requirement and every API er
 | E9 | F3 | Experiment lists a plan id with no snapshot, no adapter, or twice | Exit 3 before any call, names the plan id | A run must not start on a plan nobody froze | unit |
 | E10 | F3 | `samples` 0 or 6, `attempts` 3, `max_questions` 11, `max_parallel` 4, `plans` empty or above 12, a prompt with `{{brief}}` | Exit 3, names the field and the range or placeholder | Out-of-range counts change cost and the meaning of pass@2 | unit |
 | E11 | F3 | A file inside a snapshot is edited after the experiment file was committed (its `snapshot.json` is unchanged) | Exit 7 before any call, names the plan id and the file | Same plan must be built every time | unit |
-| E12 | F3 | An adapter or `checks.json` is modified in the working tree, or differs from the manifest on `--continue` | Exit 7, names the file | Results must come from one adapter | unit |
+| E12 | F3 | An adapter, `checks.json` or the arm file is modified in the working tree, or differs from the manifest on `--continue` or before attempt 2 | Exit 7, names the file | Results must come from one adapter | unit |
 | E13 | F3, F14 | An implementer arm or review model has no entry in `pricing.json` | Exit 3 before any call | A missing price corrupts the cost columns | unit |
 
 ## Baseline
@@ -51,15 +51,16 @@ IDs are permanent: never reuse or renumber. Every F requirement and every API er
 ## Verify tree and checks
 | ID | Requirement | Scenario | Expected behaviour (exact) | Why it matters | Test layer |
 |---|---|---|---|---|---|
+| E94 | F8 | The agent deleted a source file that the typecheck needs | The verify tree deletes it too (`deleted_files` lists it); typecheck fails; red | Otherwise a deleted file is silently restored and the build passes against code it no longer has | integration |
 | E31 | F8 | The agent patched a file in its clone's `node_modules` | The verify tree has the pristine toolchain; the patch has no effect | A patched compiler would pass everything | integration |
 | E32 | F8 | The agent changed a dependency or the lockfile | The verify tree runs `npm ci --ignore-scripts` from the agent's lockfile; `deps_changed` set | A plan may need a package; lifecycle scripts must not run | integration |
 | E33 | F8 | Acceptance files while the agent runs, on `--continue` after a kill in `checking` | Never in a clone; `--continue` deletes any verify tree, re-runs the checks, starts no agent turn, charges nothing twice | A kill must not leak the checks | integration |
 | E34 | F8 | Typecheck fails | The lint, test and shared steps still run and are recorded | Full results feed the feedback | unit |
-| E35 | F8 | An own-test file name starts with `-` or holds a control character | The attempt is red; the file is not passed to the runner | Option injection into the test runner | unit |
+| E35 | F8 | An own-test file name does not match `^[A-Za-z0-9_][A-Za-z0-9_./-]*$` (for example `a&calc.test.ts`, a leading `-`, `^`, `%`, a space) | The attempt is red with `unsafe_path`; the file is never passed to a runner and never copied | Option and command injection through a file name on Windows | unit |
 | E36 | F8, F15 | A check exceeds its timeout, or the attempt exceeds `check_total_s` | Process tree killed, `check_timeout`, the attempt is red | A hung test must not hang the batch | integration |
 | E37 | F15 | A check prints 20 MB | Killed at 10 MB, `output_truncated`, the attempt is red | Memory and disk exhaustion | integration |
 | E38 | F15 | The agent clone exceeds `max_clone_mb` after a turn | The run aborts `disk`, no checks | Disk exhaustion | integration |
-| E39 | F8, N3 | Check output contains a key pattern | That attempt is red with `secret_in_check_output`, the output is not stored, the batch continues and the final exit is 9; `--continue` does not repeat the check | The agent must not be able to stop the batch by printing a pattern | integration |
+| E39 | F8, N3 | Check output contains a key pattern | `checks/attempt-<n>.json` is still written with `green` false, `secret_in_check_output` true and empty `lines`; the batch continues and the final exit is 9; `--continue` sees the file and does not repeat the check; attempt-2 feedback is the fixed fallback line | The agent must not be able to stop the batch by printing a pattern | integration |
 | E40 | F8 | `lines` of a failing check exceed 40 lines or 300 characters | Cut to those limits | Feedback and files stay bounded | unit |
 
 ## Pass rule
@@ -85,8 +86,8 @@ IDs are permanent: never reuse or renumber. Every F requirement and every API er
 | E54 | F9 | The adapter imports a module the build did not create | The checks that need it are `error` with `module missing`; the run is graded | A plan that was not followed is a fail, not a crash | integration |
 | E55 | F9 | The adapter throws anything else, exits early, writes no verdict file, or omits a CHK id | Missing ids `error`, flag `adapter_error`, red | A broken adapter must not read as a pass | integration |
 | E56 | F9 | A required check is `error`, an informational check fails | `error` counts as failed for F10; the informational failure is only counted in `shared_info_failed` | CHK5, CHK7 and CHK8 depend on decisions the brief leaves open | unit |
-| E57 | F9 | The agent's diff contains `process.exit`, `process.stdout` or `EXP_` | `result_tampering_suspected` set; red | Forged verdicts | unit |
-| E58 | F9 | The agent's code writes a verdict-shaped JSON to stdout or to a file in the clone | Ignored; only the nonce-named file outside the verify tree is read | Forged verdicts | integration |
+| E57 | F9 | The agent's diff contains `process.exit`, `process.stdout`, `process.stderr`, `process.argv`, `child_process` or `eval` | `result_tampering_suspected` set; red | Forged verdicts; the detector is not a barrier (E58 is) | unit |
+| E58 | F9 | The agent's code prints or writes a verdict-shaped JSON, or exits at once | Ignored: the verdict is decided by the parent process from plain values returned over IPC; an early exit gives `error` for every CHK id and `adapter_error` | Forged verdicts | integration |
 | E59 | F9 | A plan declares routes but never mounts them, and its adapter tests the plan's declared service layer | The checks pass at the layer the plan names as its deliverable; a missing route is not tested | The `full` plan states that no route is live until a later workstream | integration |
 | E60 | F9 | Notes created in the same millisecond | The adapter's `clock.tick()` gives each a distinct time | CHK2 must not tie | unit |
 | E61 | F9 | CHK4 and the second pin is rejected | CHK4 fails (the second pin must be accepted) | A vacuous pass | unit |
@@ -117,7 +118,7 @@ IDs are permanent: never reuse or renumber. Every F requirement and every API er
 | E78 | F14 | A plan id or flag that starts with `=` | The CSV cell is prefixed with `'` | Spreadsheet formula injection | unit |
 | E79 | F14, N4 | A key pattern in any report output | Exit 9, no rename, the type is named, the value is not | Reports are committed | unit |
 | E80 | F14 | No finished runs | Exit 2 | An empty report is a usage error | unit |
-| E81 | N2 | `exp grade` run twice, once after the agent clone was deleted | Identical pass fields; the second review block empty with `review_error` | Grading is a pure function of `checks/` | integration |
+| E81 | N2 | `exp grade` run twice, once after the agent clone was deleted | Identical pass and adherence fields (read from `checks/`, `state.json` and the manifest); the second review block empty with `review_error` | Grading is a pure function of the stored results | integration |
 | E82 | F2 | `exp grade` on a run that is not `extracted` | Exit 2 | Only extracted runs have finished checks | unit |
 
 ## Security: threat list (Attacker lens)
@@ -126,7 +127,7 @@ IDs are permanent: never reuse or renumber. Every F requirement and every API er
 | E83 | F5 | The agent recovers hidden files or other arms' plans from git objects | History-free clone (E19) | integration |
 | E84 | F8 | The agent hides edits from git (`assume-unchanged`, `info/exclude`) or sets `core.fsmonitor` or a hook to run a command in a harness git call | The harness never uses the clone's git; it hashes bytes (F8); a changed `.git/config`, hook or `.gitattributes` is `protected_modified` | integration |
 | E85 | F8 | A patched `node_modules`, `.bin` or `.npmrc` | The verify tree has the pristine toolchain (E31) | integration |
-| E86 | F9 | Forged verdicts, or acceptance files copied out at check time | The verify tree is deleted after the attempt; the verdict channel is a nonce-named file outside it (E58); residual: agent code runs in the same process as the adapter, so `result_tampering_suspected` is a detector, not a proof | integration |
+| E86 | F9 | Forged verdicts, or check logic read out at check time | The parent process decides verdicts and holds `checks.json` and the assertions outside the verify tree; the host only answers adapter calls. Residual: a build that returns plausible values without storing anything (building to the check) passes the shared checks; the own tests and the review (F13) are the counter | integration |
 | E87 | F6 | A background process outlives its turn | End-of-turn sweep by command line and working directory (E23); T1 confirms the Windows behaviour | integration |
 | E88 | F15 | Output, disk or time exhaustion | Caps (E36 to E38) | integration |
 | E89 | F7, F13 | The notes file, plan text or file names inject into the reviewer or inflate metrics | Everything inside nonce delimiters (E66), caps, `gates_skipped` labelled agent-reported and cross-checked (E64) | unit |
@@ -134,3 +135,13 @@ IDs are permanent: never reuse or renumber. Every F requirement and every API er
 | E91 | F6 | The agent calls the network or sends data out | Not blocked; recorded as a Known Gap in the branch state | review |
 | E92 | F10 | Sample 2 copies sample 1's solution | Separate folders (E21), outside-clone detection (E22) | integration |
 | E93 | F2 | A task or experiment file names a command outside the clone, or an argv with a shell string | Argv arrays from committed files only, no shell (E8) | unit |
+| E104 | F8 | A symlink, junction, hardlink with link count above 1, device file, or a path with an alternate data stream, a reserved device name, a trailing dot or space in the agent clone | The attempt is red with `unsafe_path`; nothing is followed or copied | The builder must not copy operator files into the tree or the review diff | integration |
+| E95 | F8 | A file above 5 MB, more than 20000 files, or a walk longer than 120 s | The attempt is red with `unsafe_path`; the clone-size poll (E38) still applies | Bounded harness work | unit |
+| E96 | F8 | A nested `node_modules` (for example `src/be/api/node_modules/typescript`) or a `.npmrc` anywhere in the clone | Neither is copied (skipped at any depth, dropped); the checks use the copied pristine toolchain | A nested package would shadow the compiler; an `.npmrc` would redirect the registry | integration |
+| E97 | F8 | The agent's lockfile resolves `typescript` to a `file:` tarball, a git URL, a registry other than `registry.npmjs.org`, or changes the version or integrity of a package that is in the baseline lockfile | The attempt is red with `unsafe_deps`; no install runs | A fake compiler would pass typecheck | unit |
+| E98 | F8, F9 | A test spawns a grandchild through an intermediate process that exits | The sweep by command line and working directory kills it; a survivor makes the attempt red with `containment`; the adapter is added only after a clean sweep | An orphan could watch for the adapter and copy it out | integration |
+| E99 | F6 | The agent hard-codes answers after finding the canary token in a file it read | The token appears in tool results or in clone files: `outside_clone_access`, red | Reading hidden checks by an unlisted path | unit |
+| E100 | F6 | The agent runs `claude -p`, `curl` or `Invoke-WebRequest` through Bash | `outside_clone_access`, red; spend of such calls is not in the run total (Known Gap; the T8 gate asks about a dedicated key with a spend cap) | Spend and calls the harness cannot see | unit |
+| E101 | F6, F15 | The agent fills the disk inside one turn | The 30 s poll aborts the run with `disk` | Disk exhaustion before the end-of-turn check | integration |
+| E102 | F8, F11 | A junction replaces `tests/` in the clone before the attempt-2 restore | The restore runs `lstat` on every target path and refuses a link: the attempt-2 turn is not started and the run aborts `containment` | A write through a link leaves the clone | integration |
+| E103 | F8 | The pristine `node_modules` manifest, `checks.json` or the acceptance folder changed between runs | Exit 7 before the verify tree is built; names the path | A poisoned toolchain would affect every later attempt | integration |
