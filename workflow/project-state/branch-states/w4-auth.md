@@ -33,7 +33,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] Interface stubs (ddac104).
 - [ ] Plan (Gate 2), then blind tests and T0 to T6.
 - [ ] Request body schemas: contracts' `UserInputSchema` is looser than the spec (`code` optional, `displayName` length in UTF-16 units, no Cc/Cf check). T4/T5 define stricter W4 schemas; the plan must say where.
-- [ ] Operator to decide whether T7 becomes a follow-up PR, so T1 to T6 can merge before the screen; proposed and held on 2026-10-31. The approved spec keeps T7 in W4, so this would be an amendment.
+- [ ] **T7 follow-up:** write its own spec and PR from `workflow/specs/2026-10-31-w4-auth-design/follow-up-t7.md` once W10's real data layer and a `src/fe` UI test runner exist; target 10 Nov (C~11).
 - [ ] Ask the PM whether W10 delivers a working sign-in page or a design only.
 - [ ] **Handover:** correct architecture §7, which says a valid token always belongs to a verified, enabled account. Firebase does not guarantee that; see Known Gaps.
 - [ ] **Handover:** tell the Dev Lead that W5 now owns `requireMember`, and that endpoint 10 must lowercase emails before lookup.
@@ -54,7 +54,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-04 | Dev Lead confirmed the five seam decisions (spec SD13 to SD17) | W4 | this commit |
+| 2026-11-04 | T7, F7 and the UI edge cases moved to `follow-up-t7.md` (spec SD18); operator chose the split | W4 | this commit |
+| 2026-11-04 | Dev Lead confirmed the five seam decisions (spec SD13 to SD17) | W4 | 0106813 |
 | 2026-11-04 | Interface stubs: `@agile/auth` package, `incrementRateCounter` stub in `@agile/db`, optional `before`/`identity` route fields; typecheck green, 99 tests pass | W4 | ddac104 |
 | 2026-11-04 | Spec amended to the merged W1 seams: real paths, `resolvePrincipal`/`lookupRegisteredUser`, new T0 for `before`/`identity`, `APP_TIER`, `@agile/auth` package, `hit` statement in `@agile/db`, frontend Firebase settings (SD13 to SD17); operator re-approved it at Gate 1 | W4 | b6ef5d7 |
 | 2026-10-31 | W4 auth spec written, reviewed and approved | W4 | e600d0a |
@@ -139,6 +140,14 @@ New entry:
 - **Decision:** `@agile/db` exports one function that runs the AD-59 upsert on `rate_counters` with a parameterised raw statement; `@agile/auth`'s `hit()` validates inputs and calls it.
 - **Why:** the window reset needs a conditional `INSERT … ON CONFLICT DO UPDATE … RETURNING`, which Prisma's upsert cannot express, and `FilteredDbClient` deliberately omits raw SQL. Keeping the one raw statement inside `@agile/db` keeps raw SQL in a single package.
 - **Rejected:** `@agile/auth` creating its own unfiltered `PrismaClient` (a second raw-SQL holder); a read-then-write in a transaction (two statements, against AD-59).
+
+### C~11 — T7 (sign-in screen) moves to a follow-up spec and PR
+
+- **Date:** 2026-11-04
+- **Who asked:** operator (ludannnn), choosing the recommended option when asked how to handle T7 in the plan; this settles the T7 question held since 2026-10-31
+- **Supersedes:** the approved spec keeping T7 in W4's first PR (spec SD18 amends it)
+- **Why:** `src/fe` is still W10's cookie-based prototype with fixture data and has no UI test runner, so T7 cannot meet F7 now; holding the PR for it would block W5 until 10 Nov.
+- **Rejected:** one PR for T0 to T7; merging partway through one plan and continuing T7 on a new branch (the workflow has no mid-plan merge).
 
 ### C~3 — Tokens are verified with `firebase-admin`
 

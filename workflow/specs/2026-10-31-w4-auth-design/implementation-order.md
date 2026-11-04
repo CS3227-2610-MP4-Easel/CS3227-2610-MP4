@@ -11,7 +11,6 @@ W1 is merged. T0 adds the seams W1 does not provide (C~6, C~9); everything else 
 | T4 | Endpoint 2 `check-code` | code check with constant-path comparison | F4, N1, N2 |
 | T5 | Endpoint 3 `register` | user creation | F5, N1 |
 | T6 | Endpoint 4 `me` | the caller's profile | F6 |
-| T7 | Wire the sign-in and register screen | the end-to-end path | F7 |
 
 ## Dependencies
 
@@ -24,6 +23,5 @@ W1 is merged. T0 adds the seams W1 does not provide (C~6, C~9); everything else 
 | T4 check-code | T1, T2 | T3 | 3 |
 | T5 register | T3, T4 | T6 | 4 |
 | T6 me | T3 | T5 | 4 |
-| T7 Screen | T4, T5, T6 | - | 5 |
 
-Shared-file hazards: T4, T5 and T6 each add a route to `src/be/api/src/routes/auth.ts`, so merge those edits one at a time. T0 edits W1's `register.ts` and `contracts/src/routes.ts`; keep it one commit so the Dev Lead can review it alone. T7 also waits for the W10 mockup.
+Shared-file hazards: T4, T5 and T6 each add a route to `src/be/api/src/routes/auth.ts`, so merge those edits one at a time. T0 edits W1's `register.ts` and `contracts/src/routes.ts`; keep it one commit so the Dev Lead can review it alone. T7, the sign-in screen, moved to [follow-up-t7.md](follow-up-t7.md) (SD18).
