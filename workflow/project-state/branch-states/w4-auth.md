@@ -7,9 +7,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w4-auth (from `INT` at `0dbbdcb`; spec merged in PR #4; fast-forwarded to `INT` at `7bd6544` after W1 merged)
 - **Base:** 7bd6544
 - **Owner:** ludannnn (Developer member)
-- **Status:** In review
-- **Approved:** —
-- **Last updated:** 2026-11-04 by Claude Opus 5.5 — T0 to T6 built and reviewed; awaiting Gate 3
+- **Status:** Approved
+- **Approved:** ludannnn 2026-11-04
+- **Last updated:** 2026-11-04 by Claude Opus 5.5 — approved at Gate 3; push and PR await a separate yes
 
 **Untouched:** Conventions, Lessons
 
@@ -32,7 +32,8 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] Interface stubs (ddac104).
 - [x] Plan approved at Gate 2.
 - [x] T0 to T6 and close-out, per the plan; Attacker and Tester reviews done.
-- [ ] Gate 3: operator review of the branch; then, on a separate yes, push and open the PR into `development`.
+- [x] Gate 3: operator approved the branch (ludannnn, 2026-11-04).
+- [ ] GATE: push `w4-auth` and open the PR into `development`, on a separate yes.
 - [x] Request body schemas: W4's stricter fixed-message schemas live in `src/be/api/src/routes/auth.ts`; contracts' `UserInputSchema` is unchanged and looser.
 - [ ] **T7 follow-up:** write its own spec and PR from `workflow/specs/2026-10-31-w4-auth-design/follow-up-t7.md` once W10's real data layer and a `src/fe` UI test runner exist; target 10 Nov (C~11).
 - [ ] Ask the PM whether W10 delivers a working sign-in page or a design only.
@@ -49,7 +50,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W4 | Auth and registration | In review | [spec](../../specs/2026-10-31-w4-auth-design.md) | [plan](../../plans/2026-11-04-w4-auth.md) | T0–T6 done; close-out reviewed; Gate 3 pending | guide out of date: auth |
+| W4 | Auth and registration | In review | [spec](../../specs/2026-10-31-w4-auth-design.md) | [plan](../../plans/2026-11-04-w4-auth.md) | T0–T6 done; approved at Gate 3; PR not opened | guide out of date: auth |
 
 ---
 
@@ -57,7 +58,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-04 | Close-out: Attacker and Tester lenses, no blocking findings. Fixed: `identity` set only when the token email is a string; tests for register's own bucket and 60 s/20 window, register 401/400/422/500 paths, error codes on E27/E42, no row on check-code, `X-Request-Id` on `me`, multibyte token length, full SHA-256 digests in E30, and `hit` over real Postgres (`hit-integration.test.ts`); 175 tests, none skipped. Accepted, not changed: demo codes valid on dev and preview (AD-63, E24), slow-body requests bounded only by the platform timeout | W4 | this commit |
+| 2026-11-04 | Close-out: Attacker and Tester lenses, no blocking findings. Fixed: `identity` set only when the token email is a string; tests for register's own bucket and 60 s/20 window, register 401/400/422/500 paths, error codes on E27/E42, no row on check-code, `X-Request-Id` on `me`, multibyte token length, full SHA-256 digests in E30, and `hit` over real Postgres (`hit-integration.test.ts`); 175 tests, none skipped. Accepted, not changed: demo codes valid on dev and preview (AD-63, E24), slow-body requests bounded only by the platform timeout | W4 | b2d987e |
 | 2026-11-04 | T5: register endpoint and `createUser` (P2002 by code to 409); outside the plan: `createApiApp` gains an optional `routes` argument so E25 runs through the real error logging, shared fakes moved to `src/be/api/test/auth-fakes.ts`, and the body-size check no longer awaits `cancel()` on a cloned body (it hung); 170 tests, none skipped | W4 | 8118375 |
 | 2026-11-04 | T6: `GET /api/me` returns the stored row mapped to `User`; E31 offline run (network denied by `sandbox-exec`, no database): 151 pass, 4 skipped, 0 fail; with database 155 pass | W4 | a86de44 |
 | 2026-11-04 | T4: check-code endpoint with `limitedBefore` (IP limiter, streamed 4 KiB cap), fixed-message body schema, hashed constant-path code check; 152 tests, none skipped | W4 | 7cfedfa |
