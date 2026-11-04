@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** Xiao-Congchen (PM)
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-05 by Claude Sonnet 5.5 — plan drafted, awaiting gate 2
+- **Last updated:** 2026-11-05 by Claude Sonnet 5.5 — plan approved, execution not started
 
 **Untouched:** Architecture, Conventions, Deviations
 
@@ -32,11 +32,11 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-05 | Claude Sonnet 5.5 | W~1 | Blocked — needs human | Gate 2: plan approval (one review round done, lint clean) | On the owner's yes: write `Status: Approved (<name>, <date>)` under the plan title, run `lint.mjs plan <plan> --approved`, set the workstream to `Planned`, then run `executing-plans-lite` from T1 step 1 (T1 starts with a GATE for the Haiku prices and a spend limit). On changes: fix the plan and ask again | 2026-11-05 |
+| S1 | 2026-11-05 | Claude Sonnet 5.5 | W~1 | Paused | Plan approved at gate 2; the owner will run the implementation in another session | New session: read STATE.md, guardrails.md and this file, add your own session row, then run `executing-plans-lite` from T1 step 1 of the plan (T1 starts with a GATE: ask the owner for the Haiku 5.5 prices and a spend limit). Copy the three pilot run folders into this worktree's `workflow/experiments/local/runs/` before T5 | 2026-11-05 |
 
 **Remaining**
 
-- [ ] Gate 2: owner approves the plan; then `executing-plans-lite` from T1.
+- [ ] Execute the plan (`executing-plans-lite`) from T1, in a new session started by the owner.
 - [ ] **Handover:** fix the question classifier overcount found in the pilot: a final message with no question that says the agent is waiting for a subagent is counted as a question, which inflates `questions` for `lite` and `full`.
 - [ ] **Handover:** Codex driver for the implementation stage (launcher, transcript parser, price list, isolation check); the spec leaves it out on purpose (SD1).
 - [ ] **Handover:** a real W7 comparison needs its own spec and plan once W2, W3, W5 and W6 land.
@@ -47,7 +47,7 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W~1 | Experiment implementation stage (extends the framework workstream of branch `w7-pm-plan-flow`) | Spec'd | [spec](../../specs/2026-11-05-experiment-implementation-stage-design.md) (approved 2026-11-05) | [plan](../../plans/2026-11-05-experiment-implementation-stage.md) (draft, awaiting gate 2) | Big · spec drafted, spec approved at gate 1; plan next | — |
+| W~1 | Experiment implementation stage (extends the framework workstream of branch `w7-pm-plan-flow`) | Planned | [spec](../../specs/2026-11-05-experiment-implementation-stage-design.md) (approved 2026-11-05) | [plan](../../plans/2026-11-05-experiment-implementation-stage.md) (approved 2026-11-05) | Big · spec drafted, spec approved at gate 1; plan next | — |
 
 ---
 
@@ -57,6 +57,7 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 |---|---|---|---|
 | 2026-11-05 | Branch and worktree created from the parent branch after the pilot and the blind review of the three replicate-2 plans | W~1 | `f576257` |
 | 2026-11-05 | Spec drafted: index plus requirements, data model, API, edge cases and implementation order; lint clean | W~1 | this commit |
+| 2026-11-05 | Plan approved at gate 2 by the owner; execution left to a separate session | W~1 | this commit |
 | 2026-11-05 | Plan drafted (T1 to T8 plus close-out, 10 steps at most per task); one review round (0 blocking, 11 major, all fixed: stage switch placement, `check.mjs` pilot rule, `historyFreeTree` moved to T4, `plan_modified` and tampering detectors in T4, aborted runs graded, cost attribution without new cost classes, source runs copied into this worktree, arm approval at the T8 gate); departures from the spec's file hazards: T4 and T6 both edit `clone.mjs`, review spend uses the `judge` cost class, E93 to E104 assigned to tasks | W~1 | this commit |
 | 2026-11-05 | Spec approved at gate 1 by the owner, with the adapter form (SD2), the Haiku price gate (SD10) and the T8 exposure choice accepted | W~1 | this commit |
 | 2026-11-05 | Review round 2 (Implementer 4 major; Attacker 3 blocking, 4 major) fixed: shared-check verdicts decided by a parent process (host child answers over IPC), lockfile validation, name whitelist and `node` argv, filesystem rules in the verify-tree builder, no git in the clone, canary tokens, disk polling, per-attempt metrics, exit-code split, T2 to T8 inputs and ownership clarified; lint clean | W~1 | this commit |
