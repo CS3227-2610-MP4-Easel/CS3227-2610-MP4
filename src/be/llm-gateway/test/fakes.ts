@@ -16,21 +16,32 @@ export function fakeClock(start = "2026-11-05T02:00:00.000Z"): Clock & { advance
   };
 }
 
-/** A real client for integration tests, with users created under a random tag and deleted afterwards (gateway rows first). */
-export async function withIntegrationDb(run: (base: PrismaClient, fixtures: { user(): Promise<string> }) => Promise<void>): Promise<void> {
+export type Fixtures = { user(): Promise<string>; project(createdBy: string): Promise<string> };
+
+/** A real client for integration tests; users and projects are created with random ids and deleted afterwards, gateway rows first. */
+export async function withIntegrationDb(run: (base: PrismaClient, fixtures: Fixtures) => Promise<void>): Promise<void> {
   const base = new PrismaClient({ adapter: new PrismaPg({ connectionString: integrationUrl }) });
   const tag = randomUUID();
   const userIds: string[] = [];
-  const user = async () => {
-    const created = await base.user.create({ data: { firebaseUid: `${tag}-${randomUUID()}`, email: `${randomUUID()}@${tag}.test`, displayName: "Gateway test", role: "DEVELOPER" } });
-    userIds.push(created.id);
-    return created.id;
+  const projectIds: string[] = [];
+  const fixtures: Fixtures = {
+    user: async () => {
+      const created = await base.user.create({ data: { firebaseUid: `${tag}-${randomUUID()}`, email: `${randomUUID()}@${tag}.test`, displayName: "Gateway test", role: "DEVELOPER" } });
+      userIds.push(created.id);
+      return created.id;
+    },
+    project: async (createdBy) => {
+      const created = await base.project.create({ data: { name: `Gateway test ${tag}`, createdBy } });
+      projectIds.push(created.id);
+      return created.id;
+    },
   };
   try {
-    await run(base, { user });
+    await run(base, fixtures);
   } finally {
     await base.llmCall.deleteMany({ where: { userId: { in: userIds } } });
     await base.aiSession.deleteMany({ where: { userId: { in: userIds } } });
+    await base.project.deleteMany({ where: { id: { in: projectIds } } });
     await base.user.deleteMany({ where: { id: { in: userIds } } });
     await base.$disconnect();
   }
