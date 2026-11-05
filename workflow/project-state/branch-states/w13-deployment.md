@@ -8,7 +8,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-06 by Codex — applied W4 local auth clarification
+- **Last updated:** 2026-11-06 by Codex — Gate 1 spec committed
 
 ---
 
@@ -24,13 +24,13 @@ the W1 application runnable on the dev and production tiers.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-06 | Codex | W13 | Paused | Final Tester/QA High-risk traceability review of F/N requirements and operation failures | Report only blocking/high findings with exact refs; do not edit W13 spec | 2026-11-06 |
+| S1 | 2026-11-06 | Codex | W13 | Blocked — needs human (Gate 1) | W13 spec committed; approval pending | Approve or request changes to the W13 spec; on approval start the plan | 2026-11-06 |
 
 **Remaining**
 
 - [x] Complete the requested Implementer/High-risk read-only review and run spec lint; lint passed with 0 errors and 0 warnings.
 - [x] Complete the requested Tester/QA High-risk read-only review; findings reported in chat.
-- [ ] Complete final Tester/QA High-risk traceability review; report only blocking/high findings.
+- [x] Complete final four-lens High-risk review; spec lint passed with 0 errors and 0 warnings.
 - [ ] Gate 1: operator approves the W13 spec before any plan or implementation.
 
 ## 2. Workstreams
@@ -43,9 +43,10 @@ the W1 application runnable on the dev and production tiers.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-06 | Started local W13 branch and drafted the deployment specification using the approved hybrid approach; AD-53 clarified that only `development` receives dev credentials and other previews are mock-only | W13 | this commit |
+| 2026-11-06 | Started local W13 branch and drafted the deployment specification using the approved hybrid approach; AD-53 clarified that only `development` receives dev credentials and other previews are mock-only | W13 | 21c1f77 |
 | 2026-11-06 | Read-only Tester/QA High-risk re-review: spec lint passes, but deployment-owner execution, API error coverage, seed content, recovery evidence, evidence completeness, and CI/runtime redaction traceability remain incomplete | W13 | review in chat |
 | 2026-11-06 | Final Implementer/High-risk read-only review: blocking gaps remain in dev deployment identity, immutable production binding, preview startup, smoke fixtures, and resource allowlists | W13 | review in chat |
+| 2026-11-06 | Finalized the Gate 1 spec with W4 local-auth clarification, fixed preview runtime, resource allowlist, immutable SHA/deployment checks, smoke contract, seed/recovery evidence, and CI security boundaries | W13 | 21c1f77 |
 
 ## 7. Decisions
 
