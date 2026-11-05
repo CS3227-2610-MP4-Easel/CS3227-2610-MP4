@@ -11,7 +11,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Approved:** —
 - **Last updated:** 2026-11-05 by Claude Opus 5.5 — plan approved; starting T1
 
-**Untouched:** Architecture, Conventions, Deviations
+**Untouched:** Architecture, Conventions
 
 ---
 
@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-05 | Claude Opus 5.5 | W2 | Active | Executing plan inline | Plan T1 step 1: failing `settings.test.ts`, `config.test.ts`, `fit.test.ts`, `no-network.test.ts`; needs `DATABASE_URL` in the agent's shell for `npm test` | 2026-11-05 |
+| S1 | 2026-11-05 | Claude Opus 5.5 | W2 | Active | Executing plan inline; T1 done | Plan T2 step 1: failing `src/be/db/test/transaction-marker.test.ts` (E5) | 2026-11-05 |
 
 **Remaining**
 
@@ -47,7 +47,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W2 | Gateway runtime and mock | Planned | [spec](../../specs/2026-11-05-w2-gateway-design.md) | [plan](../../plans/2026-11-05-w2-gateway.md) | Plan approved; T1 next | — |
+| W2 | Gateway runtime and mock | Building | [spec](../../specs/2026-11-05-w2-gateway-design.md) | [plan](../../plans/2026-11-05-w2-gateway.md) | T1/7 done; next T2 transaction marker | — |
 
 ---
 
@@ -55,7 +55,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-05 | Plan written (T1 to T7, close-out), reviewed (Implementer lens: no blocking, 9 minor, all fixed), updated after merging `development` (W4 merged, Prisma 7 adapter, test runner through `tests/setup-auth-env.ts`, W12 agent policy) and approved at Gate 2 | W2 | this commit |
+| 2026-11-05 | T1: `loadGatewaySettings` (tier rules, exact SoCLaaS URL, model overrides), `config.ts` (features, models, limits), token estimate, cost and reservation, section fitting, `assertStaticSectionsFit`, fake clock; `tests/setup-auth-env.ts` defaults `LLM_MODE=mock` and blocks requests to SoCLaaS; 246 tests, 245 pass, 1 fails (D~1), none skipped | W2 | this commit |
+| 2026-11-05 | Plan written (T1 to T7, close-out), reviewed (Implementer lens: no blocking, 9 minor, all fixed), updated after merging `development` (W4 merged, Prisma 7 adapter, test runner through `tests/setup-auth-env.ts`, W12 agent policy) and approved at Gate 2 | W2 | c37ff6e |
 | 2026-11-05 | Merged `development` (W4 PR #10, W12 PR #9) into the branch | W2 | dc55769 |
 | 2026-11-05 | Spec approved at Gate 1 by the operator | W2 | efdb802 |
 | 2026-11-05 | W2 spec drafted (7 F, 5 N, T1 to T7) and reviewed by four lenses: 5 blocking findings fixed (row written before its columns exist, fit failures leaving rows, static-section rule conflict, no clock seam, breaker race unstated); the spend cap reworked to keep AD-64's decaying budget block; the key restricted to the SoCLaaS host; 47 edge cases; lint clean | W2 | a40f7f8 |
@@ -87,3 +88,7 @@ New entry:
 - **Decision:** the agent edits `src/` and `tests/` and runs `npm test`, `npm run typecheck` and `npm run lint`; it drafts `workflow/` files in the git-ignored `.ws/` folder; the operator copies them into place and runs `git add`/`git commit`, `npm install` and `docker`. The policy itself is unchanged.
 - **Why:** the policy is a team control just merged in W12; changing or bypassing it is not this branch's call.
 - **Rejected:** disabling hooks locally (sidesteps a team control); editing the policy on this branch (W12 owner's file, review required).
+
+## 8. Deviations
+
+- **D~1 — A W1 integration test fails under Prisma 7, left failing on purpose (T1):** `src/be/db/test/visibility-integration.test.ts:10` builds `new PrismaClient({ datasourceUrl: url })`, an option Prisma 7 removed, so it fails with "Unknown property datasourceUrl" whenever `W1_INTEGRATION_DATABASE_URL` is set. CI sets no database, so it skips there; the Prisma 7 merge (`9077725`) updated W4's tests but not this one. Not caused by W2. The operator chose to leave it failing (2026-11-05); the fix is the `PrismaPg` adapter pattern W4's tests use. Consequence: `npm test` with a database shows 1 failure on this branch until W1's owner fixes it.
