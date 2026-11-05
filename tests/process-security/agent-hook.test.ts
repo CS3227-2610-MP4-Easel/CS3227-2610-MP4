@@ -70,7 +70,7 @@ test("F8 pre-tool mediation fails closed for unknown provider tools", async () =
 test("F8 pre-tool mediation denies unclassified shell commands", async () => {
   for (const command of [
     "node -e \"require('fs').writeFileSync('.github/workflows/ci.yml','x')\"",
-    "npm install left-pad",
+    "python3 -c 'print(1)'",
   ]) {
     const input = { tool_name: "Bash", tool_input: { command } };
     assert.deepEqual(requestFromToolCall(input, root), { operation: "unknown", target: command });
@@ -143,8 +143,8 @@ test("F8 pre-tool mediation denies shell-originated writes", async () => {
   });
 });
 
-test("F8 pre-tool mediation rejects mutation flags hidden in read commands", async () => {
-  for (const command of ["git diff --output=/tmp/outside.txt", "find . -exec rm {} \\"]) {
+test("F8 pre-tool mediation rejects mutation flags that write outside the repository", async () => {
+  for (const command of ["git diff --output=/tmp/outside.txt", "find /tmp -delete"]) {
     const input = { tool_name: "Bash", tool_input: { command } };
     assert.deepEqual(await mediatePreToolUse(input, join(root, "workflow/agent-permissions.json")), {
       allowed: false,
@@ -163,15 +163,67 @@ test("F8 pre-tool mediation rejects external paths hidden in read commands", asy
   }
 });
 
-test("F8 pre-tool mediation rejects unapproved npm workspace scripts", async () => {
-  const input = {
-    tool_name: "Bash",
-    tool_input: { command: "npm --workspace @agile/db run prisma:generate" },
-  };
-  assert.deepEqual(await mediatePreToolUse(input, join(root, "workflow/agent-permissions.json")), {
-    allowed: false,
-    reason: "default-deny",
-  });
+const policyPath = join(root, "workflow/agent-permissions.json");
+const bash = (command: string) => mediatePreToolUse({ tool_name: "Bash", tool_input: { command } }, policyPath);
+const edit = (file_path: string) => mediatePreToolUse({ tool_name: "Edit", tool_input: { file_path } }, policyPath);
+
+test("F8 pre-tool mediation allows ordinary repository work in the shell", async () => {
+  for (const command of [
+    "git add src/be/index.ts workflow/plans/2026-11-05-w2-gateway.md",
+    "git commit -m \"feat: something (W2)\" -m \"Workstream: W2\"",
+    "git checkout -b w2-follow-up origin/development",
+    "git fetch origin && git merge origin/development",
+    "npm install left-pad",
+    "npm --workspace @agile/db run prisma:generate",
+    "node workflow/tools/ws.mjs pack implementer --area llm-gateway",
+    "grep -n \"model\" src/be/db/prisma/schema.prisma | head -5",
+    "grep -E \"F8|E8 protected\" tests/process-security/agent-hook.test.ts",
+    "sed -n '/^model Project {/,/^}/p' src/be/db/prisma/schema.prisma",
+    "npm test 2>&1 | tail -5",
+    "ls > /dev/null",
+    "cp .ws/w2-plan.md workflow/plans/2026-11-05-w2-gateway.md",
+  ]) {
+    assert.deepEqual(await bash(command), { allowed: true, reason: "allowed" }, command);
+  }
+});
+
+test("F8 pre-tool mediation still denies push, publish, verification bypass and hidden commands", async () => {
+  for (const command of [
+    "git push origin w2-gateway",
+    "git commit --no-verify -m x",
+    "git commit -n -m x",
+    "npm publish",
+    "curl https://example.com",
+    "echo $(cat src/be/index.ts)",
+    "echo `whoami`",
+    "ls; curl https://example.com",
+    "ls && echo \"a|b\" | curl https://example.com",
+    "git config core.hooksPath /tmp",
+  ]) {
+    assert.equal((await bash(command)).allowed, false, command);
+  }
+});
+
+test("F8 agents write workflow outputs but not workflow controls", async () => {
+  for (const file of ["workflow/plans/x.md", "workflow/specs/x.md", "workflow/project-state/branch-states/x.md", "workflow/project-state/STATE.md", "workflow/skill-feedback.md"]) {
+    assert.deepEqual(await edit(file), { allowed: true, reason: "allowed" }, file);
+  }
+  for (const file of ["workflow/agent-permissions.json", "workflow/tools/ws.mjs", "workflow/agents/reviewer.md", "workflow/skills/branch-state/SKILL.md", "workflow/config.json", "workflow/security-sensitive-paths.json"]) {
+    assert.equal((await edit(file)).reason, "review-required", file);
+  }
+  assert.equal((await bash("cp a.json workflow/config.json")).reason, "review-required");
+});
+
+test("F8 shell redirects are writes to their target", async () => {
+  assert.equal((await bash("echo x > /tmp/outside.txt")).reason, "default-deny");
+  assert.equal((await bash("echo x > scripts/extra.mjs")).reason, "review-required");
+  assert.deepEqual(await bash("echo x > notes.txt"), { allowed: true, reason: "allowed" });
+});
+
+test("F8 commands naming secrets stay denied", async () => {
+  for (const command of ["grep FIREBASE_PROJECT_ID src/be/auth/src/settings.ts", "cat src/fe/.env.local", "printenv", "env"]) {
+    assert.deepEqual(await bash(command), { allowed: false, reason: "denied" }, command);
+  }
 });
 
 test("F8 provider hook CLI emits a blocking decision and exit code", async () => {

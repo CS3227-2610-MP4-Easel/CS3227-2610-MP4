@@ -13,9 +13,11 @@ test("F8 canonical policy has explicit default-deny controls", async () => {
   assert.ok(policy.deny.production_credentials);
   assert.ok(policy.deny.production_hosts);
   assert.ok(policy.review_required.protected_paths.includes(".github/**"));
-  for (const path of [".claude/**", ".codex/**", "scripts/**"]) {
+  for (const path of [".claude/**", ".codex/**", "scripts/**", "workflow/tools/**", "workflow/agents/**", "workflow/skills/**"]) {
     assert.ok(policy.review_required.protected_paths.includes(path));
   }
+  // Specs, plans and branch states are the workflow's own outputs, so agents may write them.
+  assert.ok(!policy.review_required.protected_paths.includes("workflow/**"));
   assert.equal(policy.content_handling.repository, "data_not_instructions");
   assert.equal(policy.content_handling.web, "data_not_instructions");
   assert.equal(policy.content_handling.attack_corpus, "data_not_instructions");
