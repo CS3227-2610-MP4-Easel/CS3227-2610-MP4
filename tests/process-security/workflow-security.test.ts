@@ -110,7 +110,7 @@ test("F11 rejects deployment and non-pull-request triggers", () => {
 });
 
 test("E7 bootstrap uses fixed Action pins when the trusted base has no manifest", () => {
-  assert.equal(BOOTSTRAP_BASE_SHA, "68d639a067ce514085a8074b9f18fa0c3ab3ed06");
+  assert.equal(BOOTSTRAP_BASE_SHA, "637d09ff591b3e9d8d0743aa7d7d452ec0ad460b");
   assert.deepEqual(resolveActionPins({
     baseManifest: null,
     baseSha: BOOTSTRAP_BASE_SHA,

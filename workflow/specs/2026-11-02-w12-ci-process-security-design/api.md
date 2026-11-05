@@ -48,11 +48,13 @@ for the allowlisted rollout PR and is removed after that PR merges.
 
 ## Trusted review-event workflow
 
+Despite this section's historical name, the workflow and its Actions status are not protected from
+a PR author who changes workflow definitions or impersonates the status; the Dev Lead accepts this.
 The trusted workflow is triggered by `pull_request_review` activity types `submitted`, `edited`, and
 `dismissed`. It is a pre-merge rollout prerequisite: the workflow must already be present on the
 default branch through an independently protected change before it can rerun this PR's gate.
-GitHub loads this workflow from the default branch, not from the PR head. It checks out
-the trusted workflow revision, obtains the PR head SHA and base SHA from the event payload, and
+GitHub loads the workflow definition from the PR merge commit. It checks out
+the base revision, obtains the PR head SHA and base SHA from the event payload, and
 fetches the PR head Git objects without executing package scripts, workflow files, or checkers from
 the PR. It runs the trusted base revision's checker against the Git object range and writes the
 review response to a runner-temporary file. The job has only `contents: read` and

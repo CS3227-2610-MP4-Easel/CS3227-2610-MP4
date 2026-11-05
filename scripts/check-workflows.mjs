@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { readdir } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { parseDocument } from "yaml";
 
 const SHA = /^[0-9a-f]{40}$/;
@@ -13,7 +14,7 @@ const REQUIRED_CI_COMMANDS = Object.freeze({
   "dependency-audit": "npm run audit:dependencies",
   "secret-scan": "npm run scan:secrets",
 });
-export const BOOTSTRAP_BASE_SHA = "68d639a067ce514085a8074b9f18fa0c3ab3ed06";
+export const BOOTSTRAP_BASE_SHA = "637d09ff591b3e9d8d0743aa7d7d452ec0ad460b";
 export const BOOTSTRAP_ACTION_PINS = Object.freeze({
   version: 1,
   actions: Object.freeze({
@@ -256,6 +257,6 @@ async function main() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main();
 }

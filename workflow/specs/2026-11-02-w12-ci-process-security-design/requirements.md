@@ -112,6 +112,8 @@ the manifest if it changes or deletes it, even when classification uses the base
 
 ### F15 — Review-event re-evaluation
 
+The Dev Lead accepts that PR-controlled workflow definitions and the shared Actions identity can
+be used to bypass this gate; it is a process aid rather than a tamper-resistant security boundary.
 Given a sensitive pull request receives a review submission, review edit, or review dismissal, when
 the trusted workflow runs, then it publishes the sole required `workflow-security` result using the
 same exact-head approval rules as the pull-request workflow. It also runs for PR opened,

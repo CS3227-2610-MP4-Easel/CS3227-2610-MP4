@@ -1,6 +1,7 @@
 # W12 CI and Process Security Design
 
 - **Status:** Approved (Dev Lead, 2026-11-05)
+- **Accepted limitation 2026-11-05:** The Dev Lead accepts that a PR author may bypass the Actions-based review gate; see branch-state D~6.
 - **Amended 2026-11-05:** For every sensitive PR, the author is excluded and the other two trusted people, `@teleifo`, `@ludannnn`, and `@Xiao-Congchen`, fill the security-reviewer and human-approver roles in either order; Gate 1 approval is required before implementation.
 - **Amended 2026-11-05:** Findings 2–5 add trusted review-event re-evaluation, CLI base-argument coverage, rename-safe sensitive-path classification, and cross-platform test discovery; Gate 1 approval is required before implementation.
 - **Amended 2026-11-04:** T6 no longer requires a committed security-review JSON artifact; current exact-head GitHub approvals from `@ludannnn` and the author-dependent human approver are the complete sensitive-path approval evidence.
