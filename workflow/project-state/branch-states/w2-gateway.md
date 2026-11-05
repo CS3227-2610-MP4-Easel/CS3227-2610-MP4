@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** ludannnn (Developer member)
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-05 by Claude Opus 5.5 — T5 done; starting T6
+- **Last updated:** 2026-11-05 by Claude Opus 5.5 — T6 done; starting T7
 
 **Untouched:** Architecture, Conventions
 
@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-05 | Claude Opus 5.5 | W2 | Active | Executing plan inline; T5 done | Plan T6 step 1: failing `src/be/llm-gateway/test/run.test.ts` with the fakes | 2026-11-05 |
+| S1 | 2026-11-05 | Claude Opus 5.5 | W2 | Active | Executing plan inline; T6 done | Plan T7 step 1: failing `src/be/llm-gateway/test/usage-integration.test.ts` (E33, E34, E35, E19 positive) | 2026-11-05 |
 
 **Remaining**
 
@@ -47,7 +47,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W2 | Gateway runtime and mock | Building | [spec](../../specs/2026-11-05-w2-gateway-design.md) | [plan](../../plans/2026-11-05-w2-gateway.md) | T5/7 done; next T6 run | — |
+| W2 | Gateway runtime and mock | Building | [spec](../../specs/2026-11-05-w2-gateway-design.md) | [plan](../../plans/2026-11-05-w2-gateway.md) | T6/7 done; run works; next T7 usage queries | — |
 
 ---
 
@@ -55,7 +55,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-05 | T5: `limits.ts`: `checkBudget` (AD-64 decaying block in `llm_gateway_state`, UTC-day sum including in-flight reservations and failed calls, 15 minutes or UTC midnight) and `checkWindows` (four AD-59 windows over `auth`'s `hit`, stopping at the first refusal); 2 integration and 4 unit tests; 265 tests, 261 pass, 4 fail (D~1 and three old W12 hook tests failing only against the uncommitted new hook), none skipped | W2 | this commit |
+| 2026-11-05 | T6: `createLlmGateway` (`run`: ten admission steps in spec order, lease sweep, input guard, fit, `IN_FLIGHT` row with a cost reservation, one retry within the 25 s deadline, output guard, guarded finalise, session touch, breaker), `guards.ts` (default guards), `breaker.ts`, `runtime.ts` (`getLlmGateway`, `getSessions`); 20 service tests over in-memory fakes and 5 integration tests including the E25 leak check across seven statuses; 291 tests, 287 pass, 4 fail (D~1 and the three old W12 hook tests, as at T5), none skipped | W2 | this commit |
+| 2026-11-05 | T5: `limits.ts`: `checkBudget` (AD-64 decaying block in `llm_gateway_state`, UTC-day sum including in-flight reservations and failed calls, 15 minutes or UTC midnight) and `checkWindows` (four AD-59 windows over `auth`'s `hit`, stopping at the first refusal); 2 integration and 4 unit tests; 265 tests, 261 pass, 4 fail (D~1 and three old W12 hook tests failing only against the uncommitted new hook), none skipped | W2 | 85ed506 |
 | 2026-11-05 | T4: `createSessions` (open with idle abandonment, Singapore-day and open-per-feature caps, `assertUsable`, `touch`, idempotent `close`, conditional `regenerate`) and `SessionCapReached`; all times from the injected clock, all queries limited to the tier's `env`; 6 integration tests on Postgres; 259 tests, 258 pass, 1 fails (D~1), none skipped | W2 | 7c7a338 |
 | 2026-11-05 | T3: `providers.ts`: `LlmProvider`, `UpstreamError` (kind and status only), the process-wide mock registry (`registerMockResponse`, `hasMockResponse`), `createMockProvider` (estimated tokens, foreign errors become `MOCK_RESPONSE_FAILED`), `createSoclaasProvider` (key only to the pinned URL, `redirect: "error"`, abort timeout); 253 tests, 252 pass, 1 fails (D~1), none skipped | W2 | 648ddf5 |
 | 2026-11-05 | T2: `isInTransaction()` in `@agile/db` (new `transaction-scope.ts`, an `AsyncLocalStorage` entered by `inCoreTransaction`, `inMutationTransaction` and the filtered client's callback `$transaction`); W1 files, for the Dev Lead to review (SD6); 248 tests, 247 pass, 1 fails (D~1), none skipped | W2 | c85f739 |
