@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** Xiao-Congchen (PM)
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-05 by Claude Sonnet 5.5 (S5) — T8 steps 1 to 4 done; step 5 gate answered except (c) the dedicated API key
+- **Last updated:** 2026-11-05 by Claude Sonnet 5.5 (S5) — T8 steps 1 to 4 done; step 5 gate fully answered; step 6 real batch started
 
 **Untouched:** Architecture, Conventions
 
@@ -93,7 +93,7 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 | C~8 | 2026-11-05 | The three pilot adapters and `checks.json` are accepted as written, although none ran against built code | Owner, at the T5 gate; not a change to the spec; they may be revised only through a new decision because the adapters are hash-recorded per run |
 | C~6 | 2026-11-05 | The implementer is `claude-sonnet-5-5` at `low` effort, not Haiku (amends SD1, plan T1 and T2; arm gets an `effort` field and `claudeArgs` an `--effort` option). Spend: overall soft cap $40, not to interrupt a running build (T1 spike limit $3; the T8 ceilings are set so the cap is checked between runs, confirmed at the T8 gate) | Owner: "haiku is not the best for implementation"; prices given equal the existing `pricing.json` Sonnet entry; rejected: Haiku, Sonnet at default effort |
 | C~7 | 2026-11-05 | The implementation task file gets an optional `post_setup` argv (starts with `node`), run after `setup_command` in every tree, because `npm ci --ignore-scripts` skips `prisma generate` and `tsc -b` then fails at the base commit (found in T1). Amends data-model.md and plan T2, T4, T5, T6; `setup_sha256` covers both | Found by the T1 spike, not asked by the owner; rejected: letting the baseline accept the 5 existing type errors (breaks E14), running install scripts (breaks N3) |
-| C~9 | 2026-11-06 | T8 gate answers (Q~1): ceilings raised to 10 USD per run and 70 USD per batch in `experiments/impl-pilot-001.json` (supersedes the 40 USD soft cap of C~6 for this batch; review calls count in the batch); batch protections are in place (owner: "protections are in place", form not recorded); owner is available while it runs; arm `implementer-cheap` approved at hash `ab9558d504c21459`; dedicated API key with a spend cap: asked what it is, open | Owner at the T8 gate; rejected: keeping 4 and 30 |
+| C~9 | 2026-11-06 | T8 gate answers (Q~1): ceilings raised to 10 USD per run and 70 USD per batch in `experiments/impl-pilot-001.json` (supersedes the 40 USD soft cap of C~6 for this batch; review calls count in the batch); batch protections are in place (owner: "protections are in place", form not recorded); owner is available while it runs; arm `implementer-cheap` approved at hash `ab9558d504c21459`; no dedicated API key: the batch runs on the owner login (answered 2026-11-06), so agent spend outside the harness is not bounded by a console cap (Known Gap) | Owner at the T8 gate; rejected: keeping 4 and 30 |
 | C~4 | 2026-11-05 | Run the blind review on the three replicate-2 plans only, and move on to the implementation stage in a new branch off the pilot branch | Asked by the owner to keep cost low after the full runs had trouble completing; rejected: a review on all nine plans |
 
 ## 5. Deviations
