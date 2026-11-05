@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ConfigError } from './spawn.mjs';
 import { isHexSha } from './schema.mjs';
+import { gitProtectedSnapshot } from './implchecks.mjs';
 
 const INSTRUCTION_CANDIDATES = ['AGENTS.md', 'CLAUDE.md', 'GEMINI.md', 'CLAUDE.local.md'];
 export const MAX_CLONE_PATH = 200;
@@ -79,4 +80,37 @@ export function historyFreeTree({ repoRoot, baseCommit, dest }) {
   git(dest, ...GIT_AUTHOR, 'add', '-A', '-f');
   git(dest, ...GIT_AUTHOR, 'commit', '-q', '--allow-empty', '-m', 'base');
   return { dest, commit: git(dest, 'rev-parse', 'HEAD') };
+}
+
+/**
+ * F5: the agent clone of the implementation stage. A history-free tree of `baseCommit` (commit `base`), the arm overlay,
+ * the snapshot's files (`planFiles`: repo-relative path -> Buffer) and a second commit `plan`. A plan path that collides
+ * with a file of the base is a ConfigError (exit 3). After this call no git command runs in the clone (F8).
+ */
+export function prepareImplClone({ repoRoot, baseCommit, dest, arm, planFiles }) {
+  if (!isHexSha(baseCommit)) throw new ConfigError('base_commit must be a hex sha');
+  assertClonePath(dest);
+  const baseFiles = git(repoRoot, 'ls-tree', '-r', '--name-only', baseCommit).split('\n').filter(Boolean);
+  for (const rel of planFiles.keys()) {
+    const hit = baseFiles.find((f) => f === rel || f.startsWith(`${rel}/`) || rel.startsWith(`${f}/`));
+    if (hit) throw new ConfigError(`plan file ${rel} collides with ${hit} of the base commit`);
+  }
+  historyFreeTree({ repoRoot, baseCommit, dest });
+  fs.rmSync(path.join(dest, '.claude'), { recursive: true, force: true });
+  fs.rmSync(path.join(dest, '.mcp.json'), { force: true });
+  const keep = new Set(arm.instruction_files ?? ['AGENTS.md', 'CLAUDE.md']);
+  for (const f of INSTRUCTION_CANDIDATES) if (!keep.has(f)) fs.rmSync(path.join(dest, f), { force: true });
+  for (const s of arm.skills ?? []) copyOne(path.join(repoRoot, '.claude', 'skills', s), path.join(dest, '.claude', 'skills', s));
+  for (const a of arm.agents ?? []) copyOne(path.join(repoRoot, '.claude', 'agents', `${a}.md`), path.join(dest, '.claude', 'agents', `${a}.md`));
+  for (const [rel, bytes] of planFiles) {
+    const target = path.join(dest, ...rel.split('/'));
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, bytes);
+  }
+  git(dest, ...GIT_AUTHOR, 'add', '-A', '-f');
+  git(dest, ...GIT_AUTHOR, 'commit', '-q', '--allow-empty', '-m', 'plan');
+  const hooks = path.join(dest, '.git', 'exp-empty-hooks');
+  fs.mkdirSync(hooks, { recursive: true });
+  git(dest, 'config', 'core.hooksPath', hooks);
+  return { dest, planCommit: git(dest, 'rev-parse', 'HEAD'), gitProtected: gitProtectedSnapshot(dest) };
 }

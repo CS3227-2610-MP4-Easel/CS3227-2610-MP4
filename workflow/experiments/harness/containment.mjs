@@ -43,11 +43,12 @@ export function diff(before, after) {
 }
 
 /** The path set of F17 that is fixed for a batch (run state files are added per run by the driver). */
-export function batchPaths({ repoRoot, expRoot, home = os.homedir() }) {
+export function batchPaths({ repoRoot, expRoot, home = os.homedir(), implTaskId = null }) {
   const gitPath = (p) => path.resolve(repoRoot, execFileSync('git', ['rev-parse', '--git-path', p], { cwd: repoRoot, encoding: 'utf8' }).trim());
   return [
     gitPath('config'), gitPath('hooks'), path.join(home, '.claude', 'settings.json'),
     ...['arms', 'tasks', 'experiments', 'plugins', 'rubric', 'harness'].map((d) => path.join(expRoot, d)),
     path.join(expRoot, 'config.json'), path.join(expRoot, 'pricing.json'),
+    ...(implTaskId ? [path.join(expRoot, 'local', 'plans'), path.join(expRoot, 'local', 'baselines', `${implTaskId}.json`)] : []),
   ];
 }

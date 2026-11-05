@@ -92,3 +92,14 @@ test('hashPath handles files, directories and missing paths', () => {
   assert.ok(hashPath(d));
   assert.equal(hashPath(path.join(d, 'nope')), null);
 });
+
+test('T6: an implementation batch also records local/plans and the baseline file of its task', () => {
+  const repoRoot = tmpDir('exp-c-');
+  execFileSync('git', ['init', '-q'], { cwd: repoRoot });
+  const expRoot = path.join(repoRoot, 'workflow', 'experiments');
+  const plain = batchPaths({ repoRoot, expRoot, home: repoRoot });
+  const impl = batchPaths({ repoRoot, expRoot, home: repoRoot, implTaskId: 'impl-task' });
+  const added = impl.filter((p) => !plain.includes(p)).map((p) => path.relative(expRoot, p).split(path.sep).join('/')).sort();
+  assert.deepEqual(added, ['local/baselines/impl-task.json', 'local/plans']);
+  assert.ok(!impl.some((p) => p.endsWith(path.join('impl-task', 'tree'))), 'the baseline tree is re-hashed by F8, not here');
+});

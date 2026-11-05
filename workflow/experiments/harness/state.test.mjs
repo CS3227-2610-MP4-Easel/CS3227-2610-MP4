@@ -95,3 +95,32 @@ test('E4: approvals are stored per arm outside the repo and survive a reload', (
   assert.deepEqual(loadApprovals(dir), { 'arm-one': ['abc'] });
   assert.deepEqual(readJson(path.join(dir, 'approvals.json')), { 'arm-one': ['abc'] });
 });
+
+// ---- implementation stage (T6) -------------------------------------------------------------------------------------
+
+import { computeImplHashes, newImplRunState } from './state.mjs';
+import { makeImplRepo } from './testkit.mjs';
+
+test('F11: an implementation run state adds the attempt fields and keeps every framework field', () => {
+  const s = newImplRunState();
+  assert.deepEqual({ attempt: s.attempt, attempt_state: s.attempt_state, attempt2_started: s.attempt2_started, cli_total_at_boundary: s.cli_total_at_boundary, plan_gap_questions: s.plan_gap_questions },
+    { attempt: 1, attempt_state: 'agent', attempt2_started: null, cli_total_at_boundary: null, plan_gap_questions: 0 });
+  for (const k of Object.keys(newRunState())) assert.ok(k in s, k);
+  assert.ok(!('attempt' in newRunState()), 'the specplan state is unchanged');
+});
+
+test('N2: the implementation hashes cover the adapter, checks.json, the baseline and the arm, and change with each', () => {
+  const ctx = makeImplRepo();
+  put(path.join(ctx.expRoot, 'local', 'baselines', 'impl-task.json'), { base_commit: 'x' });
+  const args = { expRoot: ctx.expRoot, taskId: 'impl-task', planId: 'toy-plan', armId: 'implementer-one' };
+  const a = computeImplHashes(args);
+  for (const k of ['adapter_sha256', 'checks_sha256', 'baseline_sha256', 'arm_sha256']) assert.match(a[k], /^[0-9a-f]{64}$/, k);
+  fs.appendFileSync(path.join(ctx.implTaskDir, 'acceptance', 'adapters', 'toy-plan.mjs'), '// x\n');
+  assert.notEqual(computeImplHashes(args).adapter_sha256, a.adapter_sha256);
+  fs.appendFileSync(path.join(ctx.implTaskDir, 'acceptance', 'checks.json'), ' ');
+  assert.notEqual(computeImplHashes(args).checks_sha256, a.checks_sha256);
+  put(path.join(ctx.expRoot, 'local', 'baselines', 'impl-task.json'), { base_commit: 'y' });
+  assert.notEqual(computeImplHashes(args).baseline_sha256, a.baseline_sha256);
+  fs.appendFileSync(path.join(ctx.expRoot, 'arms', 'implementer-one.json'), ' ');
+  assert.notEqual(computeImplHashes(args).arm_sha256, a.arm_sha256);
+});

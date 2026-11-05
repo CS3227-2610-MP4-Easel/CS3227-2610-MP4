@@ -124,3 +124,65 @@ test('historyFreeTree: refuses an existing destination and a non-hex commit', ()
   assert.throws(() => historyFreeTree({ repoRoot: repo, baseCommit: base, dest }), ConfigError);
   assert.throws(() => historyFreeTree({ repoRoot: repo, baseCommit: '--upload-pack=x', dest: path.join(dest, 'sub') }), ConfigError);
 });
+
+// ---- implementation stage (T6): the agent clone ---------------------------------------------------------------------
+
+import { prepareImplClone } from './clone.mjs';
+import { gitProtectedChanged } from './implchecks.mjs';
+
+const ARM = { skills: [], agents: [], instruction_files: ['AGENTS.md', 'CLAUDE.md'] };
+const PLANS = () => new Map([['docs/plan.md', Buffer.from('# plan\n')], ['docs/spec.md', Buffer.from('# spec\n')]]);
+
+test('E19, F5: an agent clone has commits base and plan and no other ref, tag, remote or older object', () => {
+  const { repo, base } = makeMain();
+  const dest = path.join(tmpDir('exp-impl-'), 'clone');
+  const res = prepareImplClone({ repoRoot: repo, baseCommit: base, dest, arm: ARM, planFiles: PLANS() });
+  assert.deepEqual(git(dest, 'log', '--all', '--format=%s').split('\n'), ['plan', 'base']);
+  assert.equal(git(dest, 'for-each-ref', '--format=%(refname)').split('\n').length, 1);
+  assert.equal(git(dest, 'tag'), '');
+  assert.equal(git(dest, 'remote'), '');
+  assert.ok(!git(dest, 'rev-list', '--all').includes(base), 'the original commit is not in the clone');
+  assert.equal(fs.readFileSync(path.join(dest, 'docs', 'plan.md'), 'utf8'), '# plan\n');
+  assert.equal(git(dest, 'status', '--porcelain'), '');
+  assert.match(res.planCommit, /^[0-9a-f]{40}$/);
+});
+
+test('F5: the arm overlay removes .claude, .mcp.json and instruction files the arm does not keep', () => {
+  const { repo, base } = makeMain();
+  const dest = path.join(tmpDir('exp-impl-'), 'clone');
+  prepareImplClone({ repoRoot: repo, baseCommit: base, dest, arm: ARM, planFiles: PLANS() });
+  assert.ok(!fs.existsSync(path.join(dest, '.claude')));
+  assert.ok(!fs.existsSync(path.join(dest, '.mcp.json')));
+  assert.ok(!fs.existsSync(path.join(dest, 'GEMINI.md')));
+  assert.ok(fs.existsSync(path.join(dest, 'AGENTS.md')) && fs.existsSync(path.join(dest, 'CLAUDE.md')));
+});
+
+test('E20: a plan file whose path collides with a file of the base exits 3 (ConfigError) and leaves nothing', () => {
+  const { repo, base } = makeMain();
+  const dest = path.join(tmpDir('exp-impl-'), 'clone');
+  const plans = new Map([['src/app.txt', Buffer.from('collision')]]);
+  assert.throws(() => prepareImplClone({ repoRoot: repo, baseCommit: base, dest, arm: ARM, planFiles: plans }), (e) => e instanceof ConfigError && /src\/app\.txt/.test(e.message));
+  assert.ok(!fs.existsSync(dest));
+});
+
+test('E21: two clones of the same plan are separate folders', () => {
+  const { repo, base } = makeMain();
+  const root = tmpDir('exp-impl-');
+  const a = path.join(root, 's1');
+  const b = path.join(root, 's2');
+  prepareImplClone({ repoRoot: repo, baseCommit: base, dest: a, arm: ARM, planFiles: PLANS() });
+  prepareImplClone({ repoRoot: repo, baseCommit: base, dest: b, arm: ARM, planFiles: PLANS() });
+  fs.writeFileSync(path.join(a, 'src', 'only-in-a.txt'), 'x');
+  assert.ok(!fs.existsSync(path.join(b, 'src', 'only-in-a.txt')));
+});
+
+test('F10: the clone has an empty hooks path, and its git bytes are recorded at creation', () => {
+  const { repo, base } = makeMain();
+  const dest = path.join(tmpDir('exp-impl-'), 'clone');
+  const res = prepareImplClone({ repoRoot: repo, baseCommit: base, dest, arm: ARM, planFiles: PLANS() });
+  assert.match(git(dest, 'config', 'core.hooksPath'), /exp-empty-hooks/);
+  assert.ok('.git/config' in res.gitProtected);
+  assert.deepEqual(gitProtectedChanged(dest, res.gitProtected), []);
+  fs.appendFileSync(path.join(dest, '.git', 'config'), '[alias]\n\tx = !calc\n');
+  assert.deepEqual(gitProtectedChanged(dest, res.gitProtected), ['.git/config']);
+});

@@ -48,6 +48,11 @@ export const newRunState = () => ({
   spend: { arm: 0, answerer: 0, matcher: 0, judge: 0, probe: 0 }, overshoot_usd: 0, abort_reason: null, abort_detail: null, exit_code: 0,
 });
 
+/** The run state of an implementation run: the framework fields plus the attempt boundary (F11, SD6). */
+export const newImplRunState = () => ({
+  ...newRunState(), attempt: 1, attempt_state: 'agent', attempt2_started: null, cli_total_at_boundary: null, plan_gap_questions: 0,
+});
+
 export function loadState(paths) {
   return readJson(paths.state);
 }
@@ -78,6 +83,18 @@ export function computeHashes({ expRoot, armId, taskId, experimentId }) {
     config: hashFile(path.join(expRoot, 'config.json')),
     prompts: sha(arm.prompt),
     harness: hashTree(path.join(expRoot, 'harness')),
+  };
+}
+
+/** Hashes added for an implementation run: the plan's adapter, checks.json, the baseline file and the arm file. */
+export function computeImplHashes({ expRoot, taskId, planId, armId }) {
+  const taskDir = path.join(expRoot, 'tasks', taskId);
+  const task = readJson(path.join(taskDir, 'task.json'));
+  return {
+    adapter_sha256: hashFile(path.join(taskDir, task.acceptance.adapters[planId])),
+    checks_sha256: hashFile(path.join(taskDir, task.acceptance.checks_file)),
+    baseline_sha256: hashFile(path.join(expRoot, 'local', 'baselines', `${taskId}.json`)),
+    arm_sha256: hashFile(path.join(expRoot, 'arms', `${armId}.json`)),
   };
 }
 
