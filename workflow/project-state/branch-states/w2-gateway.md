@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-05 | Claude Opus 5.5 | W2 | Active | Executing plan inline; T2 done | Plan T3 step 1: failing `src/be/llm-gateway/test/providers.test.ts` (E39, E45) | 2026-11-05 |
+| S1 | 2026-11-05 | Claude Opus 5.5 | W2 | Active | Executing plan inline; T3 done | Plan T4 step 1: failing `src/be/llm-gateway/test/sessions-integration.test.ts` (E13, E14, E15, E16, E26, E37) | 2026-11-05 |
 
 **Remaining**
 
@@ -47,7 +47,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W2 | Gateway runtime and mock | Building | [spec](../../specs/2026-11-05-w2-gateway-design.md) | [plan](../../plans/2026-11-05-w2-gateway.md) | T2/7 done; next T3 providers and mock | — |
+| W2 | Gateway runtime and mock | Building | [spec](../../specs/2026-11-05-w2-gateway-design.md) | [plan](../../plans/2026-11-05-w2-gateway.md) | T3/7 done; mock usable; next T4 sessions | — |
 
 ---
 
@@ -55,7 +55,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-05 | T2: `isInTransaction()` in `@agile/db` (new `transaction-scope.ts`, an `AsyncLocalStorage` entered by `inCoreTransaction`, `inMutationTransaction` and the filtered client's callback `$transaction`); W1 files, for the Dev Lead to review (SD6); 248 tests, 247 pass, 1 fails (D~1), none skipped | W2 | this commit |
+| 2026-11-05 | T3: `providers.ts`: `LlmProvider`, `UpstreamError` (kind and status only), the process-wide mock registry (`registerMockResponse`, `hasMockResponse`), `createMockProvider` (estimated tokens, foreign errors become `MOCK_RESPONSE_FAILED`), `createSoclaasProvider` (key only to the pinned URL, `redirect: "error"`, abort timeout); 253 tests, 252 pass, 1 fails (D~1), none skipped | W2 | this commit |
+| 2026-11-05 | T2: `isInTransaction()` in `@agile/db` (new `transaction-scope.ts`, an `AsyncLocalStorage` entered by `inCoreTransaction`, `inMutationTransaction` and the filtered client's callback `$transaction`); W1 files, for the Dev Lead to review (SD6); 248 tests, 247 pass, 1 fails (D~1), none skipped | W2 | c85f739 |
 | 2026-11-05 | T1: `loadGatewaySettings` (tier rules, exact SoCLaaS URL, model overrides), `config.ts` (features, models, limits), token estimate, cost and reservation, section fitting, `assertStaticSectionsFit`, fake clock; `tests/setup-auth-env.ts` defaults `LLM_MODE=mock` and blocks requests to SoCLaaS; 246 tests, 245 pass, 1 fails (D~1), none skipped | W2 | b55aeed |
 | 2026-11-05 | Plan written (T1 to T7, close-out), reviewed (Implementer lens: no blocking, 9 minor, all fixed), updated after merging `development` (W4 merged, Prisma 7 adapter, test runner through `tests/setup-auth-env.ts`, W12 agent policy) and approved at Gate 2 | W2 | c37ff6e |
 | 2026-11-05 | Merged `development` (W4 PR #10, W12 PR #9) into the branch | W2 | dc55769 |
