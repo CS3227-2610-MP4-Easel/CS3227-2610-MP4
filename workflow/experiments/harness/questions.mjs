@@ -1,5 +1,6 @@
 // F11: the question log of one run, `questions.jsonl`. A row is {run_id, turn, text, source, bank_id, issue_id, issue_alt, note}.
 import fs from 'node:fs';
+import { classifyTurn } from './classify.mjs';
 import { sanitizeText } from './sanitize.mjs';
 import { writeAtomic } from './state.mjs';
 
@@ -14,9 +15,11 @@ export function appendQuestion(paths, row) {
   return full;
 }
 
-export function readQuestions(paths) {
+/** Rows of the log. Status updates that older runs logged as questions are left out unless includeStatus is true. */
+export function readQuestions(paths, { includeStatus = false } = {}) {
   if (!fs.existsSync(paths.questions)) return [];
-  return fs.readFileSync(paths.questions, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+  const rows = fs.readFileSync(paths.questions, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+  return includeStatus ? rows : rows.filter((r) => classifyTurn(r.text) !== 'status');
 }
 
 /**
@@ -24,7 +27,7 @@ export function readQuestions(paths) {
  * Nothing is written when any entry is invalid.
  */
 export function setIssueIds(paths, mapping, validIds) {
-  const rows = readQuestions(paths);
+  const rows = readQuestions(paths, { includeStatus: true });
   const byTurn = new Map(rows.map((r) => [r.turn, r]));
   for (const m of mapping) {
     if (!byTurn.has(m.turn)) throw new Error(`no question at turn ${m.turn}`);

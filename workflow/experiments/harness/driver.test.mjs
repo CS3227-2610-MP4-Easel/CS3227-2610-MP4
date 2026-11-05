@@ -576,3 +576,25 @@ test('an error stop keeps the CLI message in abort_detail (a usage-limit stop re
   assert.equal(stateOf(ctx).abort_reason, 'crash');
   assert.match(stateOf(ctx).abort_detail, /5-hour limit/);
 });
+
+test('a status update is continued, never counted or logged as a question', async () => {
+  const ctx = makeExperimentRepo();
+  const cli = fakeCli([PROBE, { text: "The reviewer is running. I'll wait for its findings." }, DONE]);
+  const res = await drive(ctx, cli, single);
+  assert.equal(res.exit, 0, res.lines.join('\n'));
+  assert.equal(cli.calls()[2].prompt, CONTINUE_PROMPT);
+  const s = stateOf(ctx);
+  assert.equal(s.question_count, 0);
+  assert.equal(s.status_turns, 1);
+  assert.ok(!fs.existsSync(runPaths(ctx.expRoot, runId(1)).questions), 'no question row is written');
+});
+
+test('status updates in a row past the cap abort turn_cap, exit 6', async () => {
+  const ctx = makeExperimentRepo();
+  const cli = fakeCli([PROBE, { text: 'The spec-writer is still running. I will wait for its completion notice.' }]);
+  const res = await drive(ctx, cli, { ...single, deps: { maxStatusTurns: 2 } });
+  assert.equal(res.exit, 6);
+  const s = stateOf(ctx);
+  assert.equal(s.abort_reason, 'turn_cap');
+  assert.equal(s.question_count, 0);
+});
