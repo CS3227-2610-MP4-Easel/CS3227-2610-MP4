@@ -7,9 +7,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w2-gateway (from `INT` at `7bd6544`; `development` merged in at `dc55769` after W4 and W12 merged)
 - **Base:** 90e1e9c
 - **Owner:** ludannnn (Developer member)
-- **Status:** In review
-- **Approved:** —
-- **Last updated:** 2026-11-05 by Claude Opus 5.5 — close-out done; Gate 3 pending
+- **Status:** Approved
+- **Approved:** ludannnn 2026-11-05
+- **Last updated:** 2026-11-05 by Claude Opus 5.5 — approved at Gate 3; push and PR await a separate yes
 
 **Untouched:** Conventions
 
@@ -34,7 +34,8 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] Gate 2: plan approved by ludannnn on 2026-11-05.
 - [x] Merge `development` into this branch after W4's PR #10 merged (`dc55769`).
 - [x] Build T1 to T7, then close-out (Attacker and Tester lenses; findings fixed or recorded below).
-- [ ] Gate 3: operator review of the branch; then, on a separate yes, push and open the PR into `development`.
+- [x] Gate 3: operator approved the branch (ludannnn, 2026-11-05).
+- [ ] GATE: operator pushes `w2-gateway` and opens the PR into `development`, on a separate yes.
 - [ ] **Handover:** W15 calls `usageSummary` with a date range (it reads every matching row to compute the means) and gates endpoint 57 by role; both usage queries take `settings.tier`.
 - [ ] **Handover:** the endpoints that call `Sessions.open` check the caller's project membership, and those that call `close` check owner or approver (SD11); `Sessions` does neither.
 - [ ] **Handover:** the W2 integration tests skip without `W1_INTEGRATION_DATABASE_URL`, and W12's CI does not set it; whoever owns CI should give it a Postgres 16 so they run there.
@@ -51,7 +52,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W2 | Gateway runtime and mock | In review | [spec](../../specs/2026-11-05-w2-gateway-design.md) | [plan](../../plans/2026-11-05-w2-gateway.md) | T1–T7 done; reviewed; Gate 3 pending | guide out of date: llm-gateway |
+| W2 | Gateway runtime and mock | In review | [spec](../../specs/2026-11-05-w2-gateway-design.md) | [plan](../../plans/2026-11-05-w2-gateway.md) | T1–T7 done; approved at Gate 3; PR not opened | guide out of date: llm-gateway |
 
 ---
 
@@ -59,7 +60,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-05 | Close-out: Attacker and Tester lenses on the branch diff, no blocking findings. Fixed: the SoCLaaS timeout now covers the response body, bodies over 1 MB and absurd token counts are refused; a throw after the row is written finalises it `UPSTREAM_ERROR` and leaves only `LLM_CALL_FAILED`; internal (non-upstream) errors no longer count towards the breaker (D~2); the budget sum gets an upper bound on the UTC day (a real bug: later-dated rows counted, which also let parallel test files block each other); the gateway's settings no longer carry the key; usage queries refuse invalid dates and pages over 10,000; tests added for timeouts and network failures counting, early-retry timeouts, static over budget at `run`, model override and reasoning effort, live mode without a mock, exact `maxChars`, the Singapore-day edge, `from` inclusive, a lease ending exactly now, and E22 with an isolated breaker row; E25 gained five admission paths. 301 tests, 297 pass, 4 fail (same as T5), none skipped, run twice | W2 | this commit |
+| 2026-11-05 | Close-out: Attacker and Tester lenses on the branch diff, no blocking findings. Fixed: the SoCLaaS timeout now covers the response body, bodies over 1 MB and absurd token counts are refused; a throw after the row is written finalises it `UPSTREAM_ERROR` and leaves only `LLM_CALL_FAILED`; internal (non-upstream) errors no longer count towards the breaker (D~2); the budget sum gets an upper bound on the UTC day (a real bug: later-dated rows counted, which also let parallel test files block each other); the gateway's settings no longer carry the key; usage queries refuse invalid dates and pages over 10,000; tests added for timeouts and network failures counting, early-retry timeouts, static over budget at `run`, model override and reasoning effort, live mode without a mock, exact `maxChars`, the Singapore-day edge, `from` inclusive, a lease ending exactly now, and E22 with an isolated breaker row; E25 gained five admission paths. 301 tests, 297 pass, 4 fail (same as T5), none skipped, run twice | W2 | 26ec4f8 |
 | 2026-11-05 | T7: `usage.ts`: `usageSessions` (caller's sessions in this tier, `[from, to)`, newest first, per-session call sums, paging with `RangeError` on bad page or size), `usageSummary` (per feature and model, no user data, means rounded to 2 decimals), `failureReason` (owner-only `UPSTREAM_LIMIT`); both usage queries take the tier as an argument; 3 integration tests; 294 tests, 290 pass, 4 fail (same as T5), none skipped | W2 | ae5ec76 |
 | 2026-11-05 | T6: `createLlmGateway` (`run`: ten admission steps in spec order, lease sweep, input guard, fit, `IN_FLIGHT` row with a cost reservation, one retry within the 25 s deadline, output guard, guarded finalise, session touch, breaker), `guards.ts` (default guards), `breaker.ts`, `runtime.ts` (`getLlmGateway`, `getSessions`); 20 service tests over in-memory fakes and 5 integration tests including the E25 leak check across seven statuses; 291 tests, 287 pass, 4 fail (D~1 and the three old W12 hook tests, as at T5), none skipped | W2 | 6f1cb13 |
 | 2026-11-05 | T5: `limits.ts`: `checkBudget` (AD-64 decaying block in `llm_gateway_state`, UTC-day sum including in-flight reservations and failed calls, 15 minutes or UTC midnight) and `checkWindows` (four AD-59 windows over `auth`'s `hit`, stopping at the first refusal); 2 integration and 4 unit tests; 265 tests, 261 pass, 4 fail (D~1 and three old W12 hook tests failing only against the uncommitted new hook), none skipped | W2 | 85ed506 |
