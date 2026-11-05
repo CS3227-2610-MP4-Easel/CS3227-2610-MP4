@@ -9,7 +9,7 @@ import { classifyTurn } from './classify.mjs';
 import { findCanary } from './canary.mjs';
 import { costFromModelUsage, invocationCap, evaluateRun, reasonFromResult, round4 } from './budget.mjs';
 import { planCollision, prepareImplClone } from './clone.mjs';
-import { baselineProblem, matchGlob, copyToolchain, pristineProblem, sweepProcesses } from './implchecks.mjs';
+import { baselineProblem, matchGlob, copyToolchains, pristineProblem, sweepProcesses } from './implchecks.mjs';
 import { buildFeedback, restoreFiles } from './implfeedback.mjs';
 import { loadAdapterPlanFiles, runVerification } from './implverify.mjs';
 import { checkProbe, describePlugin, describeProblems } from './isolation.mjs';
@@ -247,8 +247,7 @@ async function runImpl(ctx, run, h) {
     h.persist(ctx, run);
     const info = prepareImplClone({ repoRoot: ctx.repoRoot, baseCommit: task.base_commit, dest: run.clone, arm, planFiles: plan.planFiles });
     // the pristine toolchain is copied, not installed again (no network per sample); links are recreated inside the clone
-    const nm = path.join(impl.baselineTree, 'node_modules');
-    if (fs.existsSync(nm)) copyToolchain(nm, path.join(run.clone, 'node_modules'), impl.baselineTree, run.clone);
+    copyToolchains(impl.baselineTree, run.clone);
     state.git_protected = info.gitProtected;
     state.overlay_missing = overlayMissing(impl.baselineTree, run.clone);
     run.manifest.plan_files = Object.fromEntries([...plan.planFiles].map(([rel, bytes]) => [rel, sha256(bytes)]));

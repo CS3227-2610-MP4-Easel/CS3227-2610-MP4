@@ -16,11 +16,11 @@ test('E35, E104: names outside ^[A-Za-z0-9_][A-Za-z0-9_./-]*$, device names and 
   }
 });
 
-test('walkClone lists regular files and skips .git, node_modules, dist and *.tsbuildinfo at any depth (E96)', () => {
+test('walkClone lists regular files and skips .git, node_modules, dist, .next, .turbo and *.tsbuildinfo at any depth (E96)', () => {
   const root = tmpDir('exp-walk-');
   for (const f of ['src/a.ts', 'tests/b.test.ts', '.gitignore', 'package.json',
     '.git/config', 'node_modules/typescript/index.js', 'src/be/api/node_modules/typescript/index.js',
-    'dist/out.js', 'src/be/api/dist/x.js', 'tsconfig.tsbuildinfo', 'src/be/api/tsconfig.tsbuildinfo']) put(path.join(root, f), 'x');
+    'dist/out.js', 'src/be/api/dist/x.js', 'tsconfig.tsbuildinfo', 'src/be/api/tsconfig.tsbuildinfo', 'src/fe/.next/static/main.js', '.turbo/log.txt']) put(path.join(root, f), 'x');
   const res = walkClone(root);
   assert.deepEqual(rels(res), ['.gitignore', 'package.json', 'src/a.ts', 'tests/b.test.ts']);
   assert.deepEqual(res.unsafe, []);

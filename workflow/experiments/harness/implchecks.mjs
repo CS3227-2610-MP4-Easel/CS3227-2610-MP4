@@ -49,6 +49,36 @@ export function toolchainManifest(nmDir, root) {
   return sha256(lines.sort().join('\n'));
 }
 
+/** Every node_modules folder of a tree that is not inside another one (workspaces keep their own next to the package). */
+export function toolchainDirs(tree) {
+  const found = [];
+  const walk = (dir, rel) => {
+    for (const name of fs.readdirSync(dir)) {
+      if (name === '.git') continue;
+      const full = path.join(dir, name);
+      const st = fs.lstatSync(full);
+      if (!st.isDirectory() || st.isSymbolicLink()) continue;
+      const r = rel ? `${rel}/${name}` : name;
+      if (name === 'node_modules') found.push(r); else walk(full, r);
+    }
+  };
+  walk(tree, '');
+  return found.sort();
+}
+
+/** The manifest of the whole toolchain of a tree: one folder gives that folder's manifest, several are combined. */
+export function treeToolchainManifest(tree) {
+  const dirs = toolchainDirs(tree);
+  if (dirs.length === 0) return toolchainManifest(path.join(tree, 'node_modules'), tree);
+  if (dirs.length === 1 && dirs[0] === 'node_modules') return toolchainManifest(path.join(tree, 'node_modules'), tree);
+  return sha256(dirs.map((d) => `${d} ${toolchainManifest(path.join(tree, ...d.split('/')), tree)}`).join('\n'));
+}
+
+/** Copy every pristine node_modules folder of `srcTree` into the same place of `destTree`. */
+export function copyToolchains(srcTree, destTree) {
+  for (const d of toolchainDirs(srcTree)) copyToolchain(path.join(srcTree, ...d.split('/')), path.join(destTree, ...d.split('/')), srcTree, destTree);
+}
+
 /**
  * A copy of the pristine node_modules, never a link. npm workspaces install absolute junctions to the workspace
  * folders; those are recreated pointing into the same relative place of the new tree (never back at the baseline).
@@ -169,12 +199,11 @@ export async function buildVerifyTree({ baselineTree, clone, planFiles, scratch,
       return !isSkippedName(name, fs.lstatSync(src).isDirectory());
     },
   });
-  const baseNm = path.join(baselineTree, 'node_modules');
-  if (fs.existsSync(baseNm)) copyToolchain(baseNm, path.join(dir, 'node_modules'), baselineTree, dir);
+  copyToolchains(baselineTree, dir);
   for (const rel of out.changed) copyFileSafe(cloneMap.get(rel), dir, rel);
   for (const rel of out.deleted) fs.rmSync(path.join(dir, ...rel.split('/')), { force: true });
   if (out.depsChanged) {
-    fs.rmSync(path.join(dir, 'node_modules'), { recursive: true, force: true });
+    for (const d of toolchainDirs(dir)) fs.rmSync(path.join(dir, ...d.split('/')), { recursive: true, force: true });
     try {
       await install({ dir, env });
     } catch (e) {
@@ -516,7 +545,7 @@ export function acceptanceHash(target) {
 
 /** E103: why the pristine tree, checks.json or the acceptance folder cannot be trusted (exit 7), or null. */
 export function pristineProblem({ baselineTree, baseline, acceptanceDir }) {
-  if (toolchainManifest(path.join(baselineTree, 'node_modules'), baselineTree) !== baseline.node_modules_sha256) {
+  if (treeToolchainManifest(baselineTree) !== baseline.node_modules_sha256) {
     return `the pristine node_modules of the baseline (${path.join(baselineTree, 'node_modules')}) changed since the baseline was built`;
   }
   const checks = path.join(acceptanceDir, 'checks.json');

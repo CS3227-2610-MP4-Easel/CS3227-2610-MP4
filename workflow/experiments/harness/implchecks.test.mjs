@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { buildVerifyTree, matchGlob, toolchainManifest, validateLockfile } from './implchecks.mjs';
+import { buildVerifyTree, matchGlob, toolchainDirs, toolchainManifest, treeToolchainManifest, validateLockfile } from './implchecks.mjs';
 import { put, tmpDir } from './testkit.mjs';
 
 const read = (...p) => fs.readFileSync(path.join(...p), 'utf8');
@@ -551,4 +551,21 @@ test('E103: a changed pristine toolchain, checks.json or acceptance folder is re
   put(path.join(acc, 'checks.json'), '[{"id":"CHK1"}]');
   put(path.join(baselineTree, 'node_modules', 'typescript', 'lib', 'tsc.js'), 'POISONED');
   assert.match(pristineProblem({ baselineTree, baseline, acceptanceDir: acc }), /node_modules/);
+});
+
+test('a nested node_modules of the baseline (a workspace toolchain) is copied into the verify tree and is part of the pristine manifest', async () => {
+  const fx = fixture();
+  put(path.join(fx.baseline, 'src', 'fe', 'node_modules', 'typescript', 'bin', 'tsc'), 'FE-TSC\n');
+  const root = treeToolchainManifest(fx.baseline);
+  assert.notEqual(root, toolchainManifest(path.join(fx.baseline, 'node_modules'), fx.baseline), 'the nested folder changes the manifest');
+  const res = await build(fx);
+  assert.equal(read(res.dir, 'src', 'fe', 'node_modules', 'typescript', 'bin', 'tsc'), 'FE-TSC\n');
+  fs.appendFileSync(path.join(fx.baseline, 'src', 'fe', 'node_modules', 'typescript', 'bin', 'tsc'), 'x');
+  assert.notEqual(treeToolchainManifest(fx.baseline), root, 'a patched nested toolchain is detected');
+  assert.deepEqual(toolchainDirs(fx.baseline), ['node_modules', 'src/fe/node_modules']);
+});
+
+test('a tree with only a root node_modules keeps the plain manifest', () => {
+  const fx = fixture();
+  assert.equal(treeToolchainManifest(fx.baseline), toolchainManifest(path.join(fx.baseline, 'node_modules'), fx.baseline));
 });

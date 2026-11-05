@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { historyFreeTree } from './clone.mjs';
-import { acceptanceHash, checkEnv, matchGlob, npmCi, runChecks, runCommand, taskHashes, toolchainManifest } from './implchecks.mjs';
+import { acceptanceHash, checkEnv, matchGlob, npmCi, runChecks, runCommand, taskHashes, treeToolchainManifest } from './implchecks.mjs';
 import { walkClone } from './safefs.mjs';
 import { writeJsonAtomic } from './state.mjs';
 
@@ -72,7 +72,7 @@ export async function buildBaseline({ expRoot, repoRoot, task, deps = {} }) {
   const baseline = {
     base_commit: task.base_commit, created: new Date().toISOString(), ...taskHashes(task, repoRoot),
     typecheck_errors: 0, lint_errors: 0, passing_tests: passing, failing_tests: failing, flaky_tests: flaky, test_files: testFiles,
-    node_modules_sha256: toolchainManifest(path.join(dest, 'node_modules'), dest),
+    node_modules_sha256: treeToolchainManifest(dest),
     acceptance_sha256: fs.existsSync(acceptanceDir) ? acceptanceHash(acceptanceDir) : '',
     checks_json_sha256: fs.existsSync(checksFile) ? acceptanceHash(checksFile) : '',
   };
