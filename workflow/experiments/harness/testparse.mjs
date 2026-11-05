@@ -30,7 +30,10 @@ export function parseTap(text, file, { exitCode = 0 } = {}) {
     const directive = DIRECTIVE.exec(m[3]);
     const name = m[3].replace(DIRECTIVE, '');
     const result = directive ? 'skipped' : m[2] === 'ok' ? 'passed' : 'failed';
-    const names = [...stack.slice(0, level).map((s, k) => s ?? `#${k}`), name];
+    // A file that cannot load is reported by node as a failing test named after the file path.
+    const asFile = name.split(/\\+/).join('/'); // node writes each backslash of a Windows path twice
+    const loadFailure = level === 0 && result === 'failed' && (asFile === file || asFile.endsWith(`/${file}`));
+    const names = loadFailure ? ['load'] : [...stack.slice(0, level).map((s, k) => s ?? `#${k}`), name];
     const hadChildren = (pending[level] ?? 0) > 0;
     const failedChildren = hadChildren ? (pending[`f${level}`] ?? 0) > 0 : false;
     pending[level] = 0;

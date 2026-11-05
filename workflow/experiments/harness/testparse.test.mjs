@@ -111,3 +111,12 @@ test('E48: countTsErrors counts lines that match error TS<digits>', () => {
   assert.equal(countTsErrors(out), 4);
   assert.equal(countTsErrors(''), 0);
 });
+
+test('E48: a file that cannot load is reported by node as a failing test named after the path, and becomes <file>::load', () => {
+  const out = ['TAP version 13', 'not ok 1 - tests\\broken.test.mjs', '  ---', "  failureType: 'testCodeFailure'", "  error: 'Unexpected token'", '  ...', ''].join('\n');
+  const r = parseTap(out, 'tests/broken.test.mjs', { exitCode: 1 });
+  assert.deepEqual(r.map((x) => [x.id, x.result]), [['tests/broken.test.mjs::load', 'failed']]);
+  assert.ok(r[0].lines.length > 0);
+  const ok = parseTap('TAP version 13\nok 1 - tests/a.test.mjs\n', 'tests/a.test.mjs');
+  assert.deepEqual(ok.map((x) => x.id), ['tests/a.test.mjs::tests/a.test.mjs'], 'only a failing test with the file name is a load failure');
+});
