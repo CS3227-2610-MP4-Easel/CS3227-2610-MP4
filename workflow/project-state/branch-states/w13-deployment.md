@@ -8,7 +8,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-06 by Codex — Gate 1 spec committed
+- **Last updated:** 2026-11-06 by Codex — Gate 1 approved by operator
 
 ---
 
@@ -24,14 +24,14 @@ the W1 application runnable on the dev and production tiers.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-06 | Codex | W13 | Blocked — needs human (Gate 1) | W13 spec committed; approval pending | Approve or request changes to the W13 spec; on approval start the plan | 2026-11-06 |
+| S1 | 2026-11-06 | Codex | W13 | Active | Writing Gate 2 implementation plan | Verify plan paths, lint, review, then request Gate 2 approval | 2026-11-06 |
 
 **Remaining**
 
 - [x] Complete the requested Implementer/High-risk read-only review and run spec lint; lint passed with 0 errors and 0 warnings.
 - [x] Complete the requested Tester/QA High-risk read-only review; findings reported in chat.
 - [x] Complete final four-lens High-risk review; spec lint passed with 0 errors and 0 warnings.
-- [ ] Gate 1: operator approves the W13 spec before any plan or implementation.
+- [x] Gate 1: operator approved the W13 spec on 2026-11-06; approved-spec lint passes.
 
 ## 2. Workstreams
 

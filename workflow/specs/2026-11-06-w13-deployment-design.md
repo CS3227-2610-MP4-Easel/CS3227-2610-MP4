@@ -1,6 +1,6 @@
 # W13 — Environments, seed data and deployment
 
-- **Status:** Draft — Gate 1 approval required  
+- **Status:** Approved (operator, 2026-11-06)  
 - **Risk tier:** High — production credentials, authentication configuration, database migrations, recovery, and irreversible deployment effects.  
 **Lenses:** Implementer, Tester, Maintainer, Attacker.  
 **Approach:** Hybrid deployment: Vercel branch deployment for dev; an approved protected GitHub Environment job for production migration and deployment.
