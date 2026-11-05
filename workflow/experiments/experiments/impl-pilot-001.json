@@ -12,7 +12,7 @@
   "attempts": 2,
   "max_questions": 5,
   "max_parallel": 1,
-  "run_ceiling_usd": 4,
-  "batch_ceiling_usd": 30,
+  "run_ceiling_usd": 10,
+  "batch_ceiling_usd": 70,
   "answer_mode": "fixed"
 }
