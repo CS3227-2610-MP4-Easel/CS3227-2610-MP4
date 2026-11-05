@@ -1,6 +1,6 @@
 # UI
 
-W4 connects the W10 sign-in and register screen to Firebase and the API. Layout, tokens and copy not listed here come from the W10 mockup. It lives in `apps/web` and never imports `packages/db` (AD-01b). The sign-in route is `/sign-in` and the projects route is `/projects`.
+W4 connects the W10 sign-in and register screen to Firebase and the API. Layout, tokens and copy not listed here come from the W10 mockup. It lives in `src/fe` and never imports `@agile/db` (AD-01b, C8). The sign-in route is `/sign-in` and the projects route is `/projects`. The Firebase web config comes from public settings per tier (`NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID`); they are not secrets, and W13 sets them alongside `FIREBASE_PROJECT_ID`.
 
 ## Flows
 | Flow | Sequence | Success |
