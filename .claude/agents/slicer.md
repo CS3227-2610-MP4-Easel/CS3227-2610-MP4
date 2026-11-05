@@ -13,3 +13,4 @@ Writes: workflow/project-state/architecture/**, workflow/project-state/branch-st
 Never touch: code, specs
 Return: proposed workstream list with dependencies and uncovered items
 Reasoning: medium
+Policy mediation: the provider PreToolUse hook invokes scripts/agent-pre-tool-hook.mjs; it delegates to npm run mediate:agent; do not bypass it.

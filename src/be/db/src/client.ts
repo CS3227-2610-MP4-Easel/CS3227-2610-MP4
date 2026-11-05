@@ -1,4 +1,5 @@
 import { PrismaClient, Prisma } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { applyVisibilityToArgs, isVisibleUniqueResult, normalizeUniqueSelector, sanitizeVisibleResult, VISIBILITY_POLICY } from "./visibility.js";
 const modelNames = new Map(Prisma.dmmf.datamodel.models.map(({ name }) => [name[0].toLowerCase() + name.slice(1), name]));
 
@@ -92,7 +93,13 @@ function hideRawSql<T extends object>(client: T): Omit<T, RawSqlMethodName> {
 
 /** Callers must authorize all nested writes and relation connections in the mutation transaction;
  * visibility filters protect top-level targets and returned relations, not nested mutation inputs. */
-export function createDbClient(base: PrismaClient = new PrismaClient()): FilteredDbClient {
+function createDefaultPrismaClient(): PrismaClient {
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) throw new Error("DATABASE_URL is required to create the database client");
+  return new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
+}
+
+export function createDbClient(base: PrismaClient = createDefaultPrismaClient()): FilteredDbClient {
   const filtered = base.$extends(filteredReadExtension) as unknown as PrismaClient;
   return wrapUniqueReads(hideRawSql(filtered)) as unknown as FilteredDbClient;
 }

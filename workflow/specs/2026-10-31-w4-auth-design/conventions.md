@@ -5,17 +5,22 @@ Applies `conventions/general.md`; only additions and W4-specific applications ar
 ## Placement
 | Path | Holds |
 |---|---|
-| `packages/api/auth/` | middleware, `TokenVerifier`, code check, `hit`, auth settings |
-| `packages/api/auth/routes/` | one file per endpoint |
-| `apps/web` | the wired screen and a token helper; the exact folder follows W1 and W10 |
+| `src/be/auth` (`@agile/auth`, new workspace package) | `resolvePrincipal`, `lookupRegisteredUser`, `TokenVerifier`, code check, `hit`, user creation and lookup, auth settings (C~9) |
+| `src/be/db` | the one raw `rate_counters` statement that `hit` calls (C~10) |
+| `src/be/api/src/routes/auth.ts` | the three thin `RouteDefinition`s and their `before` hooks, appended to `ROUTES` |
+| `src/be/api/src/app.ts` | wires `@agile/auth` into `createApiApp(deps)` |
+| `src/fe` | the wired screen and a token helper; the exact folder follows W10 |
+
+`src/be/api` may not import `@agile/db` or run raw SQL (`src/be/api/test/import-rules.test.ts`), so every table access goes through `@agile/auth`.
 
 ## Settings
 Settings are read by a pure function over an env map, run at module load in every serverless entry point. A failure stops startup, naming the setting and never its value. These add to the AD-53 assertions.
 
-The tier comes from W1's tier setting: `local`, `dev`, `preview`, `prod` or `test`. A missing or other value fails startup. Tests pass an explicit map with fake values and tier `test`, and never read the real environment.
+The tier comes from `APP_TIER`, which W4 defines until a shared settings module exists (C~7): `local`, `dev`, `preview`, `prod` or `test`. A missing or other value fails startup. Tests pass an explicit map with fake values and tier `test`, and never read the real environment.
 
 | Setting | Tiers | Rule |
 |---|---|---|
+| `APP_TIER` | all | one of the five tiers |
 | `FIREBASE_PROJECT_ID` | local, dev, prod, test | present |
 | `REGISTRATION_CODE_PM`, `REGISTRATION_CODE_DEV_LEAD`, `REGISTRATION_CODE_DEVELOPER` | local, dev, prod, test | each 13 to 128 characters; all three different |
 | Same three | prod | none equals `PROJ_MANAGER_DEMO`, `DEV_LEAD_DEMO` or `DEVELOPER_DEMO` |
@@ -31,15 +36,21 @@ Key format: `ip:<hex HMAC-SHA256>`, keyed by `RATE_KEY_SECRET`, over `<purpose>:
 
 Client IP: the first comma-separated value of `x-vercel-forwarded-for`, trimmed. An IPv4-mapped address is unwrapped. An IPv6 address is reduced to its /64 prefix in canonical lowercase form. If the header is absent, empty, or not a valid IP, the literal `unknown` is used, so those requests share one bucket; on dev and prod this also logs the fixed label `client_ip_missing`.
 
-## Seams W1 must provide
-- A way to mount `authenticate` and `loadUser` ahead of the policy gate.
-- Route-level middleware that runs before body validation.
-- Policy-map entries for endpoints 2 to 4, including the access levels public and token-without-row.
+## Seams from W1
+Provided by W1 and used as they are:
+- `AuthDependencies.resolvePrincipal` and `lookupRegisteredUser`, which `authorizeRequest` calls before the policy gate; W1 maps the errors `UNAUTHENTICATED` to 401 and `USER_NOT_REGISTERED` to 403.
+- Policy-map entries for endpoints 2 to 4, with auth states `PUBLIC`, `TOKEN` and `REGISTERED`.
 - The error codes used in [api.md](api.md), including `PAYLOAD_TOO_LARGE`.
-- The `users` and `rate_counters` tables, and the tier setting.
+- The `users` and `rate_counters` tables.
+
+Added by W4 in task T0, both optional so existing routes are unchanged (C~6; the Dev Lead reviews it):
+- `RouteDefinition.before?: (c: { requestId: string; request: Request }) => Promise<Response | void>` (the raw request, so the hook can read headers and a clone of the body), run by `registerRoute` before `authorizeRequest`; a returned `Response` ends the request with that response plus `X-Request-Id`.
+- `ApiContext.identity?: { firebaseUid: string; email: string }`, set for `TOKEN` routes from `resolvePrincipal`'s result; `principal` stays registered-only.
+
+Not provided by W1, so W4 adds them: the tier setting (C~7) and a home for module code (C~9).
 
 ## Seams for later workstreams
-- W5: endpoint 10 must lowercase an email before looking it up, and W5 owns `requireMember`.
+- W5: endpoint 10 must lowercase an email before looking it up, and W5 owns `requireMember` and the membership and member-project-set resolvers that W1's handover listed under W4 (C~8).
 - W2: treats `displayName` as untrusted text if it ever enters a prompt (AD-25).
 
 ## Tests
@@ -56,7 +67,7 @@ Use a fake `TokenVerifier` for middleware and route tests (N6), and the real `fi
 | Anonymous | Fill `rate_counters` with new keys | Accepted Known Gap (SD10); /64 grouping raises the cost | E37 |
 | Holder of a low-role code | Register with a higher role | Code is checked against the requested role | E13 |
 | Signed-in user | Set their role through a claim or body field | Claims dropped by the adapter; unknown fields rejected | E14, E15 |
-| Unregistered account | Reach application routes | `loadUser` before the gate | E5 |
+| Unregistered account | Reach application routes | `lookupRegisteredUser` before the gate | E5 |
 | Teammate or agent | Ship with the emulator variable set | Startup assertion on every tier | E24 |
 | Log reader | Read tokens, codes or IPs | Bodies and headers not logged; IP stored only as HMAC | E25 |
 | Third-party site | Call `check-code` from a visitor's browser | No CORS headers; same origin only | E38 |

@@ -28,7 +28,6 @@ IDs are permanent: never reuse or renumber. E7 and E18 were retired when `requir
 | E21 | F4 | Wrong code on `check-code` | 403 `REGISTRATION_CODE_INVALID` | Baseline | service |
 | E43 | F5 | Valid token, no row, correct code on `register` | 201 `User`; `USER_NOT_REGISTERED` is not returned | The token-without-row rule | service |
 | E38 | F4 | Cross-origin request to `check-code` | No `Access-Control-Allow-Origin` in the response | Same origin only | service |
-| E39 | F7 | `displayName` containing `<script>` | Accepted, and shown as plain text | No script injection | UI |
 
 ## Concurrency and limits
 | ID | Requirement | Scenario | Expected behaviour (exact) | Why it matters | Test layer |
@@ -56,24 +55,15 @@ IDs are permanent: never reuse or renumber. E7 and E18 were retired when `requir
 | E30 | N2 | Comparison with short, long and empty values | Spy shows both hashed and `timingSafeEqual` called once; result 403 | No length shortcut | unit |
 | E31 | N6 | Suite offline with the fake settings map | Suite passes | CI has no Firebase dependency | integration |
 | E36 | N7 | `alg: none`, wrong audience, wrong issuer and mangled tokens on the real adapter | `InvalidToken` for each | Proves the real check | unit |
-| E45 | F1 | Adapter receives `auth/id-token-expired`, `auth/argument-error`, `auth/internal-error`, an unknown `auth/` code, and a plain `Error` | `InvalidToken`, `InvalidToken`, `VerifierUnavailable`, `InvalidToken`, `VerifierUnavailable` | Mapping must be exact | unit |
-| E46 | F2, F6 | Database failure in `loadUser`, including on `GET /api/me` | 500 `INTERNAL` | Fails closed | service |
+| E45 | F1 | Adapter receives `auth/id-token-expired`, `auth/argument-error`, `auth/internal-error`, an unknown `auth/` code, a plain `Error`, and `auth/argument-error` whose message starts "Error while making request" (a public-key fetch failure) | `InvalidToken`, `InvalidToken`, `VerifierUnavailable`, `InvalidToken`, `VerifierUnavailable`, `VerifierUnavailable` | Mapping must be exact | unit |
+| E46 | F2, F6 | Database failure in `lookupRegisteredUser`, including on `GET /api/me` | 500 `INTERNAL` | Fails closed | service |
 | E47 | F5 | Insert fails for a reason other than a unique violation | 500 `INTERNAL`; no row | Only duplicates are 409 | service |
 | E48 | F4, F5, F6 | Any response, including errors | `X-Request-Id` present | Contract rule | service |
 | E49 | F4 | Deployed tier with the IP header missing | Bucket `unknown`, and `client_ip_missing` logged | A misconfiguration stays visible | service |
 | E50 | F2 | Preview tier with auth settings absent | Routes needing them return 500 `INTERNAL`; startup succeeds | Mock previews still build | service |
 
 ## UI
-| ID | Requirement | Scenario | Expected behaviour (exact) | Why it matters | Test layer |
-|---|---|---|---|---|---|
-| E32 | F7 | New user with a valid code | Reaches `/projects` | Main path | UI |
-| E33 | F7 | Firebase signup succeeded, `register` failed, user returns and signs in | Register fields appear and registration completes | No stranded accounts | UI |
-| E34 | F7 | 429 on the screen, using fake timers | Message shows N and submit stays disabled for N seconds | Avoids burning attempts | UI |
-| E51 | F7 | Returning user signs in; then signs out | Reaches `/projects`; then `/sign-in` | Baseline | UI |
-| E52 | F7 | 403 code, 409, 422 and network or 500 responses | Each shows its exact text from `ui.md`, with `requestId` on 500 | States are specified | UI |
-| E53 | F7 | Firebase returns `auth/email-already-in-use` | Message and a "Sign in instead" action | Recovery path | UI |
-| E54 | F7 | 401 on any page | Redirect to `/sign-in` | Expired sessions | UI |
-| E55 | F7 | After registration | Code is absent from browser storage and the URL | Secret handling | UI |
+The UI rows, and the screen's script-injection row, moved with the screen requirement to [follow-up-t7.md](follow-up-t7.md) (SD18).
 
 ## What could corrupt data (High tier)
 - A wrong role stored permanently, since no edit path exists: guarded by the code check against the requested role (E13).

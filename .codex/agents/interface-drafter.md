@@ -10,3 +10,4 @@ Writes: src/**
 Never touch: tests, logic, workflow/project-state/**
 Return: list of stub files and the build result
 Reasoning: medium
+Policy mediation: the provider PreToolUse hook invokes scripts/agent-pre-tool-hook.mjs; it delegates to npm run mediate:agent; do not bypass it.

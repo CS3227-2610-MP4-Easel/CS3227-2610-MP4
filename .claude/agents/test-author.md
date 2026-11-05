@@ -16,3 +16,4 @@ Writes: tests/contract/**, src/**/*.contract.test.*
 Never touch: production code, [impl]-tagged plan snippets, workflow/project-state/**
 Return: test list mapped to E/F IDs, and any spec ambiguity found
 Reasoning: medium
+Policy mediation: the provider PreToolUse hook invokes scripts/agent-pre-tool-hook.mjs; it delegates to npm run mediate:agent; do not bypass it.

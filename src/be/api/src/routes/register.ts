@@ -1,5 +1,5 @@
 import type { Hono } from "hono";
-import type { z } from "zod";
+import type { z } from "zod/v3";
 import { policyForRoute, validateRouteRegistration, type ApiContext, type RouteDefinition } from "@agile/contracts";
 import { parseInput, parseJsonBody } from "../errors.js";
 import { authorizeRequest, type AuthDependencies } from "../middleware/auth.js";
@@ -26,6 +26,15 @@ export function registerRoute(app: Hono<ApiEnv>, route: RouteDefinition, deps?: 
   app.on(route.method, honoPath(route.path), async (c) => {
     const url = new URL(c.req.url);
     const request = { method: route.method, path: url.pathname, params: c.req.param() as Record<string, string>, query: url.searchParams, body: undefined as unknown };
+    // A route's before-hook (rate limits, body size) runs ahead of authorization; a returned response ends the request.
+    if (route.before) {
+      const early = await route.before({ requestId: c.get("requestId"), request: c.req.raw });
+      if (early) {
+        const headers = new Headers(early.headers);
+        headers.set("X-Request-Id", c.get("requestId"));
+        return new Response(early.body, { status: early.status, headers });
+      }
+    }
     // Authorization runs before input parsing, so a malformed protected request without a valid token is a 401, not a 422.
     const scope = await authorizeRequest(policy, deps as AuthDependencies, c.req.header("authorization"), request);
     let settled = false;
@@ -36,7 +45,10 @@ export function registerRoute(app: Hono<ApiEnv>, route: RouteDefinition, deps?: 
         body: isSchema(route.bodySchema) ? parseInput(route.bodySchema, await parseJsonBody(c.req.raw)) : undefined,
       };
       const principal = scope.principal && "userId" in scope.principal ? scope.principal : undefined;
-      const context: ApiContext = { requestId: c.get("requestId"), request: { ...request, body: input.body }, input, ...(principal ? { principal } : {}) };
+      // TOKEN routes have a verified token but possibly no users row, so they get the identity instead of a principal.
+      const email = scope.principal && !("userId" in scope.principal) ? scope.principal.tokenClaims.email : undefined;
+      const identity = scope.principal && typeof email === "string" ? { firebaseUid: scope.principal.firebaseUid, email } : undefined;
+      const context: ApiContext = { requestId: c.get("requestId"), request: { ...request, body: input.body }, input, ...(principal ? { principal } : {}), ...(identity ? { identity } : {}) };
       const response = await route.handler(context);
       if (scope.tx) {
         settled = true;

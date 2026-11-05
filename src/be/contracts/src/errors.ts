@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v3";
 
 export const ErrorCodeSchema = z.enum([
   "BAD_REQUEST", "UNAUTHENTICATED", "USER_NOT_REGISTERED", "FORBIDDEN_ROLE", "NOT_FOUND",
