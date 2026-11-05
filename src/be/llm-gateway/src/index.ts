@@ -9,3 +9,4 @@ export * from "./limits.js";
 export * from "./guards.js";
 export * from "./gateway.js";
 export * from "./runtime.js";
+export * from "./usage.js";
