@@ -112,7 +112,7 @@ const sameBytes = (a, b) => a.length === b.length && a.equals(b);
  * (`unsafe_path`, `unsafe_deps`) when the attempt is red before any check. Never runs git; never follows a link.
  * `planFiles` maps repo-relative path to the snapshot's bytes (the reference besides the baseline tree).
  */
-export async function buildVerifyTree({ baselineTree, clone, planFiles, scratch, protectedGlobs = [], limits = WALK_LIMITS, install = defaultInstall, env }) {
+export async function buildVerifyTree({ baselineTree, clone, planFiles, scratch, protectedGlobs = [], limits = WALK_LIMITS, install = defaultInstall, env, expectedMissing = new Set() }) {
   const out = { dir: null, changed: [], deleted: [], plan_changed: [], protected_changed: [], flags: [], reasons: [], depsChanged: false };
   const walked = walkClone(clone, limits);
   if (walked.unsafe.length) {
@@ -129,7 +129,8 @@ export async function buildVerifyTree({ baselineTree, clone, planFiles, scratch,
       out.changed.push(rel);
     }
   }
-  for (const rel of baseMap.keys()) if (!cloneMap.has(rel)) out.deleted.push(rel);
+  // `expectedMissing`: base files the clone overlay removed on purpose (skills, agents, instruction files); not the agent's deletions
+  for (const rel of baseMap.keys()) if (!cloneMap.has(rel) && !expectedMissing.has(rel)) out.deleted.push(rel);
   for (const rel of planFiles.keys()) if (!cloneMap.has(rel)) out.plan_changed.push(rel);
   for (const rel of out.changed) {
     const bad = cloneNameProblem(rel);
@@ -480,8 +481,13 @@ export function adherence({ changed, cloneFiles, planFiles, notesText, planTexts
   const notes_truncated = notesText != null && notesText.length > NOTES_MAX;
   if (notesText != null) {
     let inSkipped = false;
+    let seen = false;
     for (const line of notesText.slice(0, NOTES_MAX).split(/\r?\n/)) {
-      if (/^##\s/.test(line)) inSkipped = /^##\s+Skipped\s*$/i.test(line);
+      if (/^##\s/.test(line)) {
+        // E29: only the first `## Skipped` heading counts
+        inSkipped = !seen && /^##\s+Skipped\s*$/i.test(line);
+        if (inSkipped) seen = true;
+      }
       else if (inSkipped && /^- /.test(line)) gates_skipped += 1;
     }
   }

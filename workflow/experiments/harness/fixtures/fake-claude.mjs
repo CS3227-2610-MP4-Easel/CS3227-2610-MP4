@@ -7,6 +7,7 @@
 import { spawn } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import path from 'node:path';
 import { BASELINE_TOOLS, BUILTIN_AGENTS, BUILTIN_PLUGINS, BUILTIN_SKILLS } from '../baseline.mjs';
 
 const scriptFile = process.env.FAKE_CLAUDE_SCRIPT;
@@ -38,8 +39,16 @@ const prompt = fs.readFileSync(0, 'utf8');
 fs.appendFileSync(`${scriptFile}.calls.jsonl`, `${JSON.stringify({ index, argv, env: Object.keys(process.env), prompt, cwd: process.cwd(), pid: process.pid })}\n`);
 
 for (const eff of step.effects ?? []) {
+  if (eff.op !== 'spawn') fs.mkdirSync(path.dirname(eff.path), { recursive: true });
   if (eff.op === 'append') fs.appendFileSync(eff.path, eff.content);
-  else fs.writeFileSync(eff.path, eff.content);
+  else if (eff.op === 'rm') fs.rmSync(eff.path, { recursive: true, force: true });
+  else if (eff.op === 'link') fs.symlinkSync(eff.target, eff.path, 'junction');
+  else if (eff.op === 'spawn') {
+    // a detached child whose command line holds the working directory (the clone); it outlives this process
+    const child = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)', '--', process.cwd()], { stdio: 'ignore', detached: true, windowsHide: true });
+    child.unref();
+    fs.appendFileSync(`${scriptFile}.pids`, `${child.pid}\n`);
+  } else fs.writeFileSync(eff.path, eff.content);
 }
 
 const sessionId = arg('--resume') ?? arg('--session-id') ?? crypto.randomUUID();
@@ -82,7 +91,10 @@ if (step.action === 'hang') {
 
 const text = step.text ?? 'ok';
 const usage = { input_tokens: u.input, output_tokens: u.output, cache_read_input_tokens: u.cache_read, cache_creation_input_tokens: u.cache_write_5m + u.cache_write_1h };
-out({ type: 'assistant', message: { id: `msg_${sessionId.slice(0, 8)}_${index}`, model, role: 'assistant', content: [{ type: 'text', text }], usage }, session_id: sessionId });
+// tool_calls [{name, input}] become tool_use blocks, tool_results [string] one user event of tool_result blocks
+const toolBlocks = (step.tool_calls ?? []).map((c, i) => ({ type: 'tool_use', id: `tu_${index}_${i}`, name: c.name, input: c.input }));
+out({ type: 'assistant', message: { id: `msg_${sessionId.slice(0, 8)}_${index}`, model, role: 'assistant', content: [...toolBlocks, { type: 'text', text }], usage }, session_id: sessionId });
+if (step.tool_results) out({ type: 'user', message: { role: 'user', content: step.tool_results.map((r, i) => ({ type: 'tool_result', tool_use_id: `tu_${index}_${i}`, content: r })) }, session_id: sessionId });
 
 const modelUsage = {
   [model]: {
@@ -91,7 +103,7 @@ const modelUsage = {
     costUSD: costOf(session),
   },
 };
-const base = { type: 'result', session_id: sessionId, total_cost_usd: costOf(session), modelUsage, num_turns: 1 };
+const base = { type: 'result', session_id: sessionId, total_cost_usd: step.cli_total ?? costOf(session), modelUsage, num_turns: 1 };
 if (step.action === 'crash') {
   out({ ...base, subtype: 'error_during_execution', is_error: true, terminal_reason: 'error', result: step.text });
   process.exit(1);

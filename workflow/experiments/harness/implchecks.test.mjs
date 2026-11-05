@@ -83,6 +83,14 @@ test('E94: a source file deleted in the clone is deleted in the verify tree and 
   assert.ok(exists(res.dir, 'src', 'b.ts'));
 });
 
+test('expectedMissing: base files the clone overlay removed on purpose are not the agent\'s deletions (T6)', async () => {
+  const fx = fixture();
+  fs.rmSync(path.join(fx.clone, 'src', 'dep.ts'));
+  fs.rmSync(path.join(fx.clone, 'src', 'b.ts'));
+  const res = await build(fx, { expectedMissing: new Set(['src/dep.ts']) });
+  assert.deepEqual(res.deleted, ['src/b.ts']);
+});
+
 test('plan files are neither copied nor counted as changes; an edited or deleted one is plan_changed (E47 detection)', async () => {
   const same = fixture();
   const r1 = await build(same);

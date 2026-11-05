@@ -82,6 +82,16 @@ export function historyFreeTree({ repoRoot, baseCommit, dest }) {
   return { dest, commit: git(dest, 'rev-parse', 'HEAD') };
 }
 
+/** E20: a message when a plan path collides with a tracked file of the base commit (or a folder of it), else null. */
+export function planCollision({ repoRoot, baseCommit, paths }) {
+  const baseFiles = git(repoRoot, 'ls-tree', '-r', '--name-only', baseCommit).split('\n').filter(Boolean);
+  for (const rel of paths) {
+    const hit = baseFiles.find((f) => f === rel || f.startsWith(`${rel}/`) || rel.startsWith(`${f}/`));
+    if (hit) return `plan file ${rel} collides with ${hit} of the base commit`;
+  }
+  return null;
+}
+
 /**
  * F5: the agent clone of the implementation stage. A history-free tree of `baseCommit` (commit `base`), the arm overlay,
  * the snapshot's files (`planFiles`: repo-relative path -> Buffer) and a second commit `plan`. A plan path that collides
@@ -90,11 +100,8 @@ export function historyFreeTree({ repoRoot, baseCommit, dest }) {
 export function prepareImplClone({ repoRoot, baseCommit, dest, arm, planFiles }) {
   if (!isHexSha(baseCommit)) throw new ConfigError('base_commit must be a hex sha');
   assertClonePath(dest);
-  const baseFiles = git(repoRoot, 'ls-tree', '-r', '--name-only', baseCommit).split('\n').filter(Boolean);
-  for (const rel of planFiles.keys()) {
-    const hit = baseFiles.find((f) => f === rel || f.startsWith(`${rel}/`) || rel.startsWith(`${f}/`));
-    if (hit) throw new ConfigError(`plan file ${rel} collides with ${hit} of the base commit`);
-  }
+  const collision = planCollision({ repoRoot, baseCommit, paths: [...planFiles.keys()] });
+  if (collision) throw new ConfigError(collision);
   historyFreeTree({ repoRoot, baseCommit, dest });
   fs.rmSync(path.join(dest, '.claude'), { recursive: true, force: true });
   fs.rmSync(path.join(dest, '.mcp.json'), { force: true });
