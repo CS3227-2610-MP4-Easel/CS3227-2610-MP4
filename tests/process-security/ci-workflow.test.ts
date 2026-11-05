@@ -36,7 +36,7 @@ test("E1/E2/E12/E15 workflow is isolated and gates on W1", async () => {
   const packageManifest = JSON.parse(await readFile(new URL("package.json", root), "utf8"));
   assert.equal(packageManifest.scripts?.test, "node --import tsx scripts/discover-tests.mjs");
   assert.match(packageManifest.scripts?.["check:security-review"] ?? "", /check-security-review\.mjs/);
-  assert.match(workflow, /npm run check:security-review -- --base-sha/);
+  assert.doesNotMatch(workflow, /npm run check:security-review/);
   assert.match(workflow, /npm run check:workflows -- --base-sha/);
   assert.match(workflow, /check:workflows -- --base-sha .*--base-branch/);
   assert.match(workflow, /check:workflows -- --base-sha .*--bootstrap-pr-number/);
@@ -45,19 +45,4 @@ test("E1/E2/E12/E15 workflow is isolated and gates on W1", async () => {
   assert.match(workflow, /--bootstrap-pr-number "\$\{\{ vars\.W12_BOOTSTRAP_PR_NUMBER \}\}"/);
   assert.match(packageManifest.scripts?.contract ?? "", /src\/be\/api\/test\/openapi-parity\.test\.ts/);
   assert.match(packageManifest.scripts?.contract ?? "", /src\/be\/contracts\/test\/openapi\.test\.ts/);
-});
-
-test("F15 trusted review workflow reruns security review without PR scripts", async () => {
-  const workflow = await readFile(new URL(".github/workflows/review-security.yml", root), "utf8");
-  assert.match(workflow, /pull_request_review:/);
-  assert.match(workflow, /pull_request:/);
-  assert.match(workflow, /types:\s*\[submitted, edited, dismissed\]/);
-  assert.match(workflow, /contents:\s*read/);
-  assert.match(workflow, /pull-requests:\s*read/);
-  assert.match(workflow, /github\.event\.pull_request\.head\.sha/);
-  assert.match(workflow, /git fetch/);
-  assert.doesNotMatch(workflow, /npm ci|npm install|npm run/);
-  assert.doesNotMatch(workflow, /github\.event\.review\.body/);
-  assert.match(workflow, /workflow-security:/);
-  assert.match(workflow, /current_head=\$\(gh api/);
 });

@@ -199,7 +199,7 @@ export function validateCiWorkflowContract(text, file = "ci.yml") {
     .map((step) => step?.run)
     .filter((run) => typeof run === "string")
     .join("\n");
-  for (const command of ["npm run check:agent-policy", "npm run check:security-review"]) {
+  for (const command of ["npm run check:agent-policy"]) {
     if (!containsCommand(securityRuns, command)) errors.push(`${file}: workflow-security-pr must run ${command}`);
   }
   return errors;

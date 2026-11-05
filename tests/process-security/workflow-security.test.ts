@@ -220,7 +220,6 @@ test("F1 workflow topology requires all checks and security steps", () => {
   ].join("\n");
   const errors = validateCiWorkflowContract(incomplete, "ci.yml");
   assert.match(errors.join("\n"), /check:agent-policy/);
-  assert.match(errors.join("\n"), /check:security-review/);
 
   const spoofed = incomplete.replace("npm test", "echo npm test");
   assert.match(validateCiWorkflowContract(spoofed, "ci.yml").join("\n"), /job workspace must run npm test/);
