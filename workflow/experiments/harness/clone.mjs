@@ -54,3 +54,29 @@ export function prepareClone({ repoRoot, baseCommit, dest, arm }) {
 export function headOf(dir) {
   return git(dir, 'rev-parse', 'HEAD');
 }
+
+const GIT_AUTHOR = ['-c', 'user.name=harness', '-c', 'user.email=harness@localhost', '-c', 'core.autocrlf=false', '-c', 'commit.gpgsign=false'];
+
+/**
+ * SD12: a tree of `baseCommit` with no history: `git archive`, `git init`, one commit named `base`, no other ref.
+ * `git archive` is extracted by a relative path from the parent folder because GNU tar reads `S:\...` as host:path.
+ */
+export function historyFreeTree({ repoRoot, baseCommit, dest }) {
+  if (!isHexSha(baseCommit)) throw new ConfigError('base_commit must be a hex sha');
+  if (fs.existsSync(dest)) throw new ConfigError(`tree path ${dest} already exists`);
+  const parent = path.dirname(dest);
+  fs.mkdirSync(parent, { recursive: true });
+  const name = path.basename(dest);
+  const tarName = `${name}.base.tar`;
+  fs.mkdirSync(dest);
+  try {
+    execFileSync('git', ['archive', '--format=tar', '-o', path.join(parent, tarName), baseCommit], { cwd: repoRoot, stdio: ['ignore', 'pipe', 'pipe'] });
+    execFileSync('tar', ['-xf', tarName, '-C', name], { cwd: parent, stdio: ['ignore', 'pipe', 'pipe'] });
+  } finally {
+    fs.rmSync(path.join(parent, tarName), { force: true });
+  }
+  git(dest, 'init', '-q');
+  git(dest, ...GIT_AUTHOR, 'add', '-A', '-f');
+  git(dest, ...GIT_AUTHOR, 'commit', '-q', '--allow-empty', '-m', 'base');
+  return { dest, commit: git(dest, 'rev-parse', 'HEAD') };
+}

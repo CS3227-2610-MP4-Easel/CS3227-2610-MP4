@@ -116,7 +116,7 @@ Measured by `harness/spike/impl-spike.mjs` on the pilot base commit `160053c` in
 
 **tsx.** Resolves from the tree (`node_modules/tsx` present), so `node --import tsx --test` works with the tree as working directory.
 
-**TAP format** (`--test-reporter=tap`): `TAP version 13`, then per test `# Subtest: <name>`, `ok <n> - <name>` or `not ok <n> - <name>`, an indented YAML block (`duration_ms`, `type: 'test'`), and a summary of `# tests`, `# suites`, `# pass`, `# fail` lines. Nested tests are indented by two spaces per level. A file that prints nothing has no `ok` line.
+**TAP format** (`--test-reporter=tap`): `TAP version 13`, then per test `# Subtest: <name>`, `ok <n> - <name>` or `not ok <n> - <name>`, an indented YAML block (`duration_ms`, `type: 'test'`), and a summary of `# tests`, `# suites`, `# pass`, `# fail` lines. Nested tests are indented by four spaces per level; a suite (describe) result carries `type: 'suite'` in its YAML block. A file that prints nothing has no `ok` line.
 
 **Links on this machine.** `fs.lstat` on a directory junction reports `isSymbolicLink() === true` and `isDirectory() === false`; a file symlink reports `isSymbolicLink() === true`; a hardlink reports `nlink === 2` on both names. Creating them needed no elevation here. Walkers can use `lstat` alone.
 

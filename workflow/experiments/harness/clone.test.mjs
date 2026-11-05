@@ -98,3 +98,29 @@ test('a base_commit that is not a hex sha is refused', () => {
   const { repo } = makeMain();
   assert.throws(() => prepareClone({ repoRoot: repo, baseCommit: '--upload-pack=x', dest: path.join(tmpDir(), 'c'), arm }), ConfigError);
 });
+
+// ---- implementation stage (T4): the history-free tree ------------------------------------------------------------
+
+import { historyFreeTree } from './clone.mjs';
+
+test('historyFreeTree: the base tree with one commit named base, no other commit, ref, tag or remote', () => {
+  const { repo, base } = makeMain();
+  const dest = path.join(tmpDir('exp-hf-'), 'tree');
+  const res = historyFreeTree({ repoRoot: repo, baseCommit: base, dest });
+  assert.match(res.commit, /^[0-9a-f]{40}$/);
+  assert.notEqual(res.commit, base, 'a new commit, not the original');
+  assert.deepEqual(git(dest, 'log', '--all', '--format=%s').split('\n'), ['base']);
+  assert.equal(git(dest, 'for-each-ref', '--format=%(refname)').split('\n').length, 1);
+  assert.equal(git(dest, 'tag'), '');
+  assert.equal(git(dest, 'remote'), '');
+  assert.equal(fs.readFileSync(path.join(dest, 'src', 'app.txt'), 'utf8'), 'app');
+  assert.ok(!fs.existsSync(path.join(dest, 'src', 'later.txt')), 'files added after the base commit are not in the tree');
+  assert.equal(git(dest, 'status', '--porcelain'), '');
+});
+
+test('historyFreeTree: refuses an existing destination and a non-hex commit', () => {
+  const { repo, base } = makeMain();
+  const dest = tmpDir('exp-hf-');
+  assert.throws(() => historyFreeTree({ repoRoot: repo, baseCommit: base, dest }), ConfigError);
+  assert.throws(() => historyFreeTree({ repoRoot: repo, baseCommit: '--upload-pack=x', dest: path.join(dest, 'sub') }), ConfigError);
+});
