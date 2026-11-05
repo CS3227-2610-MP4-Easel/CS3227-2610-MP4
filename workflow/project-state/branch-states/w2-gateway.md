@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** ludannnn (Developer member)
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-05 by Claude Opus 5.5 — plan approved; starting T1
+- **Last updated:** 2026-11-05 by Claude Opus 5.5 — T5 done; starting T6
 
 **Untouched:** Architecture, Conventions
 
@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-05 | Claude Opus 5.5 | W2 | Active | Executing plan inline; T4 done | Plan T5 step 1: failing `src/be/llm-gateway/test/budget-integration.test.ts` (E10, E47) | 2026-11-05 |
+| S1 | 2026-11-05 | Claude Opus 5.5 | W2 | Active | Executing plan inline; T5 done | Plan T6 step 1: failing `src/be/llm-gateway/test/run.test.ts` with the fakes | 2026-11-05 |
 
 **Remaining**
 
@@ -34,7 +34,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] Gate 2: plan approved by ludannnn on 2026-11-05.
 - [x] Merge `development` into this branch after W4's PR #10 merged (`dc55769`).
 - [ ] Build T1 to T7, then close-out.
-- [ ] Ask teleifo (W12 owner) to let agents write `workflow/specs/`, `workflow/plans/` and `workflow/project-state/branch-states/`, and run `git add`/`git commit` and `node` scripts (C~2).
+- [ ] Agent policy narrowed on its own branch, `w12-agent-policy-scope` (operator's decision; its C~1); PR open for `@teleifo` and `@Xiao-Congchen`. Until it merges, this working copy carries its three policy files uncommitted, so three old W12 hook tests fail locally here; after it merges, restore those files and merge `development` in (C~2).
 - [ ] **Handover:** W15 owns endpoints 56 and 57 and their resolvers; W1's handover listed "session and usage" resolvers under W2 (spec SD3).
 - [ ] **Handover:** W7, W8 and W9 register their mock responses with `registerMockResponse` at import of their module, put their rules in `STATIC` sections (non-static sections can be dropped when the prompt is over budget), and call `assertStaticSectionsFit` in a test.
 - [ ] **Handover:** tell the PM and Dev Lead in the W2 PR that `createSessions` adds `regenerate` beside the frozen `Sessions` type (spec SD10), and that `Sessions.close` leaves the owner-or-approver check to their endpoints (SD11).
@@ -47,7 +47,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W2 | Gateway runtime and mock | Building | [spec](../../specs/2026-11-05-w2-gateway-design.md) | [plan](../../plans/2026-11-05-w2-gateway.md) | T4/7 done; next T5 limiter and budget block | — |
+| W2 | Gateway runtime and mock | Building | [spec](../../specs/2026-11-05-w2-gateway-design.md) | [plan](../../plans/2026-11-05-w2-gateway.md) | T5/7 done; next T6 run | — |
 
 ---
 
@@ -55,7 +55,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-05 | T4: `createSessions` (open with idle abandonment, Singapore-day and open-per-feature caps, `assertUsable`, `touch`, idempotent `close`, conditional `regenerate`) and `SessionCapReached`; all times from the injected clock, all queries limited to the tier's `env`; 6 integration tests on Postgres; 259 tests, 258 pass, 1 fails (D~1), none skipped | W2 | this commit |
+| 2026-11-05 | T5: `limits.ts`: `checkBudget` (AD-64 decaying block in `llm_gateway_state`, UTC-day sum including in-flight reservations and failed calls, 15 minutes or UTC midnight) and `checkWindows` (four AD-59 windows over `auth`'s `hit`, stopping at the first refusal); 2 integration and 4 unit tests; 265 tests, 261 pass, 4 fail (D~1 and three old W12 hook tests failing only against the uncommitted new hook), none skipped | W2 | this commit |
+| 2026-11-05 | T4: `createSessions` (open with idle abandonment, Singapore-day and open-per-feature caps, `assertUsable`, `touch`, idempotent `close`, conditional `regenerate`) and `SessionCapReached`; all times from the injected clock, all queries limited to the tier's `env`; 6 integration tests on Postgres; 259 tests, 258 pass, 1 fails (D~1), none skipped | W2 | 7c7a338 |
 | 2026-11-05 | T3: `providers.ts`: `LlmProvider`, `UpstreamError` (kind and status only), the process-wide mock registry (`registerMockResponse`, `hasMockResponse`), `createMockProvider` (estimated tokens, foreign errors become `MOCK_RESPONSE_FAILED`), `createSoclaasProvider` (key only to the pinned URL, `redirect: "error"`, abort timeout); 253 tests, 252 pass, 1 fails (D~1), none skipped | W2 | 648ddf5 |
 | 2026-11-05 | T2: `isInTransaction()` in `@agile/db` (new `transaction-scope.ts`, an `AsyncLocalStorage` entered by `inCoreTransaction`, `inMutationTransaction` and the filtered client's callback `$transaction`); W1 files, for the Dev Lead to review (SD6); 248 tests, 247 pass, 1 fails (D~1), none skipped | W2 | c85f739 |
 | 2026-11-05 | T1: `loadGatewaySettings` (tier rules, exact SoCLaaS URL, model overrides), `config.ts` (features, models, limits), token estimate, cost and reservation, section fitting, `assertStaticSectionsFit`, fake clock; `tests/setup-auth-env.ts` defaults `LLM_MODE=mock` and blocks requests to SoCLaaS; 246 tests, 245 pass, 1 fails (D~1), none skipped | W2 | b55aeed |
