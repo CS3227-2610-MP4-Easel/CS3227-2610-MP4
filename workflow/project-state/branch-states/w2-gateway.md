@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** ludannnn (Developer member)
 - **Status:** Approved
 - **Approved:** ludannnn 2026-11-05
-- **Last updated:** 2026-11-06 by Claude Opus 5.5 — merged `development` (policy PR #13); PR into `development` not opened yet
+- **Last updated:** 2026-11-06 by Claude Opus 5.5 — PR #14 open into `development`
 
 **Untouched:** Conventions
 
@@ -35,7 +35,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] Merge `development` into this branch after W4's PR #10 merged (`dc55769`).
 - [x] Build T1 to T7, then close-out (Attacker and Tester lenses; findings fixed or recorded below).
 - [x] Gate 3: operator approved the branch (ludannnn, 2026-11-05).
-- [ ] GATE: operator pushes `w2-gateway` and opens the PR into `development`, on a separate yes.
+- [x] GATE: operator pushed `w2-gateway` and opened PR #14 into `development` (2026-11-06).
 - [ ] **Handover:** W15 calls `usageSummary` with a date range (it reads every matching row to compute the means) and gates endpoint 57 by role; both usage queries take `settings.tier`.
 - [ ] **Handover:** the endpoints that call `Sessions.open` check the caller's project membership, and those that call `close` check owner or approver (SD11); `Sessions` does neither.
 - [ ] **Handover:** the W2 integration tests skip without `W1_INTEGRATION_DATABASE_URL`, and W12's CI does not set it; whoever owns CI should give it a Postgres 16 so they run there.
@@ -52,7 +52,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W2 | Gateway runtime and mock | In review | [spec](../../specs/2026-11-05-w2-gateway-design.md) | [plan](../../plans/2026-11-05-w2-gateway.md) | T1–T7 done; approved at Gate 3; `development` merged; PR not opened | guide out of date: llm-gateway |
+| W2 | Gateway runtime and mock | In review | [spec](../../specs/2026-11-05-w2-gateway-design.md) | [plan](../../plans/2026-11-05-w2-gateway.md) | T1–T7 done; approved at Gate 3; PR #14 open | guide out of date: llm-gateway |
 
 ---
 
@@ -60,6 +60,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-06 | PR #14 opened into `development` | W2 | PR #14 |
 | 2026-11-06 | Merged `development` (W12 agent policy PR #13) into the branch after discarding the uncommitted policy copies; 305 tests, 304 pass, 1 fails (D~1), none skipped | W2 | e568668 |
 | 2026-11-05 | Close-out: Attacker and Tester lenses on the branch diff, no blocking findings. Fixed: the SoCLaaS timeout now covers the response body, bodies over 1 MB and absurd token counts are refused; a throw after the row is written finalises it `UPSTREAM_ERROR` and leaves only `LLM_CALL_FAILED`; internal (non-upstream) errors no longer count towards the breaker (D~2); the budget sum gets an upper bound on the UTC day (a real bug: later-dated rows counted, which also let parallel test files block each other); the gateway's settings no longer carry the key; usage queries refuse invalid dates and pages over 10,000; tests added for timeouts and network failures counting, early-retry timeouts, static over budget at `run`, model override and reasoning effort, live mode without a mock, exact `maxChars`, the Singapore-day edge, `from` inclusive, a lease ending exactly now, and E22 with an isolated breaker row; E25 gained five admission paths. 301 tests, 297 pass, 4 fail (same as T5), none skipped, run twice | W2 | 26ec4f8 |
 | 2026-11-05 | T7: `usage.ts`: `usageSessions` (caller's sessions in this tier, `[from, to)`, newest first, per-session call sums, paging with `RangeError` on bad page or size), `usageSummary` (per feature and model, no user data, means rounded to 2 decimals), `failureReason` (owner-only `UPSTREAM_LIMIT`); both usage queries take the tier as an argument; 3 integration tests; 294 tests, 290 pass, 4 fail (same as T5), none skipped | W2 | ae5ec76 |
