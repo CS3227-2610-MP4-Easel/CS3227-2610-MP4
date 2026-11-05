@@ -8,7 +8,7 @@ export const BUILTIN_SKILLS = [
   'claude-api', 'run', 'run-skill-generator', 'plugin-authoring',
 ];
 
-export const BUILTIN_AGENTS = ['claude', 'claude-code-guide', 'Explore', 'general-purpose', 'Plan', 'statusline-setup'];
+export const BUILTIN_AGENTS = ['claude', 'claude-code-guide', 'Explore', 'general-purpose', 'Plan', 'statusline-setup', 'web-fetch'];
 
 export const BUILTIN_PLUGINS = ['cc-plugin-agents-md', 'cc-plugin-telemetry', 'cc-plugin-plugin-authoring'];
 
