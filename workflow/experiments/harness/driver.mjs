@@ -15,10 +15,11 @@ import { appendQuestion } from './questions.mjs';
 import { enqueue, getItem, logAuto, suggestDuplicate } from './queue.mjs';
 import { sanitizeText } from './sanitize.mjs';
 import { resolveWorktreesRoot } from './paths.mjs';
+import { DEFAULTS as IMPL_DEFAULTS, executeImplRun, implHashChanges, implPreflight, implRunIdFor, withImplDefaults } from './impldriver.mjs';
 import { ConfigError, buildEnv, claudeArgs, isUuid, parseStream, resolveLauncher, runProcess } from './spawn.mjs';
 import {
   HARNESS_VERSION, approvalHash, approve, buildManifest, changedHashes, computeHashes, configDir as defaultConfigDir, isApproved,
-  isTerminal, loadState, newRunState, readJson, runPaths, saveState, writeJsonAtomic,
+  isTerminal, loadState, newImplRunState, newRunState, computeImplHashes, readJson, runPaths, saveState, writeJsonAtomic,
 } from './state.mjs';
 
 export const COMPLETION_BLOCK = 'When the artifact is complete, end your final message with a last line that is exactly EXP-DONE. Ask the operator in plain text if you need a decision; your turn ends when you ask.';
@@ -86,6 +87,7 @@ async function runBatch({ repoRoot, expRoot, experimentId, filters, dry, yes, co
     experimentId = manifest.experiment_id;
     if (!isUuid(state.session_id)) throw new Exit(3, `stored session id of run ${continueRunId} is not a UUID`);
     const changed = changedHashes(manifest.hashes, computeHashes({ expRoot, armId: manifest.arm_id, taskId: manifest.task_id, experimentId }));
+    if (manifest.plan_id) changed.push(...implHashChanges({ expRoot, manifest }));
     if (changed.length) throw new Exit(7, `inputs changed since run ${continueRunId} started: ${changed.join(', ')}`);
     resumeRun = { paths, manifest, state };
   }
@@ -95,15 +97,24 @@ async function runBatch({ repoRoot, expRoot, experimentId, filters, dry, yes, co
   if (!fs.existsSync(expFile)) throw new Exit(3, `experiment ${experimentId} does not exist`);
   const problem = experimentFileProblem(repoRoot, expFile);
   if (problem) throw new Exit(7, `experiment file ${path.relative(repoRoot, expFile)} is ${problem}; commit it before running`);
-  const experiment = readJson(expFile);
+  let experiment = readJson(expFile);
 
-  // 2. unsupported stages exit 8 before anything is created. An experiment file with no `stage` is a specplan one.
-  // `implementation` is dispatched to the implementation driver once T6 lands (not before experiment.arm_ids is read).
+  // 2. unsupported stages exit 8 before anything is created. An experiment file with no `stage` is a specplan one;
+  // `implementation` goes to the implementation driver (one arm, one task, plans x samples).
   const experimentStage = experiment.stage ?? 'specplan';
-  if (experimentStage !== SUPPORTED_STAGE) throw new Exit(8, `stage ${experimentStage} (experiment ${experiment.id}) is not supported in this version`);
-  const armFiles = Object.fromEntries(experiment.arm_ids.map((a) => [a, readJson(path.join(expRoot, 'arms', `${a}.json`))]));
-  const tasks = Object.fromEntries(experiment.task_ids.map((t) => [t, readJson(path.join(expRoot, 'tasks', t, 'task.json'))]));
-  for (const a of Object.values(armFiles)) if (a.stage !== SUPPORTED_STAGE) throw new Exit(8, `stage ${a.stage} (arm ${a.id}) is not supported in this version`);
+  const isImpl = experimentStage === 'implementation';
+  if (!isImpl && experimentStage !== SUPPORTED_STAGE) throw new Exit(8, `stage ${experimentStage} (experiment ${experiment.id}) is not supported in this version`);
+  if (isImpl) {
+    if (!experiment.implementer_arm_id || !experiment.task_id) throw new Exit(3, `implementation experiment ${experiment.id} needs task_id and implementer_arm_id`);
+    if (filters.task || filters.arm || filters.rep !== undefined) throw new Exit(2, 'an implementation experiment is planned from its plans and samples; --task, --arm and --rep do not apply');
+    experiment = withImplDefaults(experiment);
+  }
+  const armIds = isImpl ? [experiment.implementer_arm_id] : experiment.arm_ids;
+  const taskIds = isImpl ? [experiment.task_id] : experiment.task_ids;
+  const armFiles = Object.fromEntries(armIds.map((a) => [a, readJson(path.join(expRoot, 'arms', `${a}.json`))]));
+  const tasks = Object.fromEntries(taskIds.map((t) => [t, readJson(path.join(expRoot, 'tasks', t, 'task.json'))]));
+  const wantStage = isImpl ? 'implementation' : SUPPORTED_STAGE;
+  for (const a of Object.values(armFiles)) if (a.stage !== wantStage) throw new Exit(8, `stage ${a.stage} (arm ${a.id}) is not supported in this version`);
 
   // 3. configuration.
   const check = runCheck({ expRoot, repoRoot });
@@ -118,7 +129,7 @@ async function runBatch({ repoRoot, expRoot, experimentId, filters, dry, yes, co
   }
 
   // 4. approvals (E4).
-  for (const a of experiment.arm_ids) {
+  for (const a of armIds) {
     const hash = approvalHash({ expRoot, armId: a });
     const arm = armFiles[a];
     log(`arm ${a}: plugins [${(arm.plugins ?? []).join(', ')}] allowed tools [${(arm.allowed_tools ?? []).join(', ')}] approval hash ${hash}`);
@@ -128,11 +139,30 @@ async function runBatch({ repoRoot, expRoot, experimentId, filters, dry, yes, co
     }
   }
 
+  // 4b. implementation: frozen plans, committed adapters, a current baseline and a pristine toolchain (exit 3 or 7)
+  const impl = isImpl ? await implPreflight({ repoRoot, expRoot, experiment, task: tasks[experiment.task_id], arm: armFiles[experiment.implementer_arm_id] }, IMPL_HELPERS) : null;
+
   // 5. plan the runs.
   const planned = [];
   const existing = scanRuns(expRoot, experimentId);
   if (resumeRun) {
-    planned.push({ resume: resumeRun, run_id: resumeRun.manifest.run_id, task: resumeRun.manifest.task_id, arm: resumeRun.manifest.arm_id, rep: resumeRun.manifest.rep });
+    const m = resumeRun.manifest;
+    planned.push({ resume: resumeRun, run_id: m.run_id, task: m.task_id, arm: m.arm_id, rep: m.rep, ...(m.plan_id ? { plan_id: m.plan_id, sample: m.sample } : {}) });
+  } else if (isImpl) {
+    const stamp = now();
+    for (const p of experiment.plans) {
+      const taken = new Set(existing.filter((r) => r.plan_id === p.plan_id).map((r) => r.sample));
+      for (let sample = 1; sample <= experiment.samples; sample += 1) {
+        if (taken.has(sample)) continue;
+        const run_id = implRunIdFor(stamp, experiment.task_id, p.plan_id, sample);
+        assertClonePath(clonePathFor(worktreesRoot, run_id));
+        planned.push({ task: experiment.task_id, arm: experiment.implementer_arm_id, rep: sample, plan_id: p.plan_id, sample, run_id });
+      }
+    }
+    if (planned.length === 0) {
+      log(`all ${experiment.samples} samples of every plan already exist; nothing to run`);
+      return { exit: 0, lines, table: [], runs: [] };
+    }
   } else {
     const taskIds = filters.task ? [filters.task] : experiment.task_ids;
     const armIds = filters.arm ? [filters.arm] : experiment.arm_ids;
@@ -165,13 +195,13 @@ async function runBatch({ repoRoot, expRoot, experimentId, filters, dry, yes, co
   }
 
   // 6. shared batch context: containment snapshot, kill registry, spend.
-  const expState = loadExperimentState(expRoot, experimentId, experiment);
+  const expState = loadExperimentState(expRoot, experimentId, armIds);
   const batch = {
-    snapshot: snapshot(batchPaths({ repoRoot, expRoot, home })),
+    snapshot: snapshot(batchPaths({ repoRoot, expRoot, home, implTaskId: isImpl ? experiment.task_id : null })),
     recorded: new Map(), kills: new Set(), violation: null,
     spend: { ...expState.batch_spend_usd },
   };
-  const ctx = { repoRoot, expRoot, experiment, armFiles, tasks, pricing, config, worktreesRoot, launcher, deps, log, batch, now, home };
+  const ctx = { repoRoot, expRoot, experiment, armFiles, tasks, pricing, config, worktreesRoot, launcher, deps, log, batch, now, home, impl, isImpl };
 
   const runs = [];
   for (const p of planned) runs.push(p.resume ? { ...p.resume, ...p, resumed: true } : createRun(ctx, p));
@@ -183,7 +213,7 @@ async function runBatch({ repoRoot, expRoot, experimentId, filters, dry, yes, co
       if (batchReached({ batchSpent: totalOf(batch.spend), batchCeiling: experiment.batch_ceiling_usd })) { batchStopped = true; return; }
       const run = queue.shift();
       try {
-        await executeRun(ctx, run);
+        await (isImpl ? executeImplRun(ctx, run, IMPL_HELPERS) : executeRun(ctx, run));
       } catch (e) {
         if (e instanceof ConfigError) abort(ctx, run, 'crash', e.message);
         else throw e;
@@ -205,6 +235,8 @@ async function runBatch({ repoRoot, expRoot, experimentId, filters, dry, yes, co
   const summary = summarize(runs.map((r) => ({ run_id: r.run_id, status: r.state.status, abort_reason: r.state.abort_reason })));
   summary.table.forEach(log);
   if (batchStopped) summary.exit = Math.max(summary.exit, 5);
+  // a credential pattern in check output never stops a batch; it ends with exit 9 (N3, E39)
+  if (runs.some((r) => r.manifest.flags?.includes('secret_in_check_output'))) summary.exit = Math.max(summary.exit, 9);
   return { exit: summary.exit, lines, table: summary.table, runs: runs.map((r) => ({ run_id: r.run_id, status: r.state.status, abort_reason: r.state.abort_reason })) };
 }
 
@@ -219,12 +251,12 @@ function scanRuns(expRoot, experimentId) {
   });
 }
 
-function loadExperimentState(expRoot, experimentId, experiment) {
+function loadExperimentState(expRoot, experimentId, armIds) {
   const file = path.join(expRoot, 'local', 'experiments', experimentId, 'state.json');
   let s;
   try { s = readJson(file); } catch { s = null; }
   if (!s) {
-    s = { arm_codes: Object.fromEntries(experiment.arm_ids.map((a, i) => [a, String.fromCharCode(65 + i)])), batch_spend_usd: { arm: 0, answerer: 0, matcher: 0, judge: 0, probe: 0 } };
+    s = { arm_codes: Object.fromEntries(armIds.map((a, i) => [a, String.fromCharCode(65 + i)])), batch_spend_usd: { arm: 0, answerer: 0, matcher: 0, judge: 0, probe: 0 } };
   }
   return s;
 }
@@ -235,7 +267,14 @@ function createRun(ctx, p) {
   const manifest = buildManifest({
     expRoot: ctx.expRoot, repoRoot: ctx.repoRoot, runId: p.run_id, experimentId: ctx.experiment.id, taskId: p.task, armId: p.arm, rep: p.rep, baseCommit: task.base_commit,
   });
-  const state = newRunState();
+  const state = ctx.isImpl ? newImplRunState() : newRunState();
+  if (ctx.isImpl) {
+    const entry = ctx.experiment.plans.find((e) => e.plan_id === p.plan_id);
+    Object.assign(manifest, {
+      plan_id: p.plan_id, plan_arm_id: ctx.impl.plans.get(p.plan_id).snapshot.arm_id, plan_snapshot_sha256: entry.snapshot_sha256, sample: p.sample,
+      ...computeImplHashes({ expRoot: ctx.expRoot, taskId: p.task, planId: p.plan_id, armId: p.arm }),
+    });
+  }
   const run = { ...p, paths, manifest, state, clone: clonePathFor(ctx.worktreesRoot, p.run_id) };
   persist(ctx, run);
   return run;
@@ -263,18 +302,18 @@ function abort(ctx, run, reason, detail) {
 
 /** Paths whose hash no longer matches what the batch or the harness recorded (F17). */
 function containmentDiff(ctx) {
-  const current = snapshot(batchPaths({ repoRoot: ctx.repoRoot, expRoot: ctx.expRoot, home: ctx.home }));
+  const current = snapshot(batchPaths({ repoRoot: ctx.repoRoot, expRoot: ctx.expRoot, home: ctx.home, implTaskId: ctx.isImpl ? ctx.experiment.task_id : null }));
   const changed = diff(ctx.batch.snapshot, current);
   for (const [file, hash] of ctx.batch.recorded) if (hashFile(file) !== hash) changed.push(file);
   return changed;
 }
 
-async function invoke(ctx, run, { args, prompt, timeoutMs }) {
+async function invoke(ctx, run, { args, prompt, timeoutMs, onSpawn }) {
   const env = buildEnv(ctx.deps.parentEnv ?? process.env, { authMode: ctx.config.auth_mode, extra: ctx.deps.extraEnv ?? {} });
   let kill;
   const res = await runProcess({
     launcher: ctx.launcher, args, cwd: run.clone, env, input: prompt, timeoutMs,
-    onSpawn: (k) => { kill = k; ctx.batch.kills.add(k); },
+    onSpawn: (k) => { kill = k; ctx.batch.kills.add(k); onSpawn?.(k); },
   });
   ctx.batch.kills.delete(kill);
   const events = parseStream(res.stdout);
@@ -492,4 +531,10 @@ async function sheetAnswer({ run, question, state, arm, task, ctx }) {
   return { text: r.text, source: r.source };
 }
 
-export { HARNESS_VERSION };
+// the framework helpers the implementation driver uses, passed in so that it never imports this module (no cycle)
+const IMPL_HELPERS = {
+  persist, abort, invoke, account, containmentDiff, Exit, experimentFileProblem,
+  prompts: { COMPLETION_BLOCK, RETRY_PROMPT, CONTINUE_PROMPT, PROBE_PROMPT },
+};
+
+export { HARNESS_VERSION, IMPL_DEFAULTS, Exit, abort, account, containmentDiff, invoke, persist };

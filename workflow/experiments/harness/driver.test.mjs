@@ -5,7 +5,7 @@ import path from 'node:path';
 import { COMPLETION_BLOCK, CONTINUE_PROMPT, FIXED_ASSUMPTION, MAX_QUESTIONS, PROBE_PROMPT, RETRY_PROMPT, runExperiment, runIdFor } from './driver.mjs';
 import { approvalHash, approve, loadState, readJson, runPaths, writeJsonAtomic } from './state.mjs';
 import { isolationFlags } from './spawn.mjs';
-import { fakeCli, git, makeExperimentRepo, pidAlive, put } from './testkit.mjs';
+import { fakeCli, git, makeExperimentRepo, makeImplRepo, pidAlive, put } from './testkit.mjs';
 import { addEntry } from './bank.mjs';
 import { timeTerms } from './metrics.mjs';
 import { answerItem, loadItems, readAuto } from './queue.mjs';
@@ -113,7 +113,7 @@ test('E12: a modified experiment file exits 7', async () => {
   assert.equal(cli.calls().length, 0);
 });
 
-test('E11: an arm with stage implementation exits 8 before any clone or run folder exists', async () => {
+test('E11: an arm with stage implementation in a specplan experiment exits 8 before any clone or run folder exists', async () => {
   const ctx = makeExperimentRepo({
     arm: { stage: 'implementation' },
     tweak: ({ expRoot }) => put(path.join(expRoot, 'tasks', 'task-one', 'task.json'), { ...readJson(path.join(expRoot, 'tasks', 'task-one', 'task.json')), stage: 'implementation' }),
@@ -126,8 +126,8 @@ test('E11: an arm with stage implementation exits 8 before any clone or run fold
   assert.deepEqual(fs.readdirSync(ctx.worktreesRoot), []);
 });
 
-for (const stage of ['ablation', 'model_tier', 'implementation']) {
-  test(`stage: an experiment file with stage ${stage} exits 8 before any call, clone or run folder (until T6 for implementation)`, async () => {
+for (const stage of ['ablation', 'model_tier']) {
+  test(`stage: an experiment file with stage ${stage} exits 8 before any call, clone or run folder`, async () => {
     const ctx = makeExperimentRepo({ experiment: { stage, arm_ids: undefined, task_ids: undefined } });
     const cli = fakeCli([PROBE, DONE]);
     const res = await drive(ctx, cli, single);
@@ -139,6 +139,27 @@ for (const stage of ['ablation', 'model_tier', 'implementation']) {
     assert.deepEqual(fs.readdirSync(ctx.worktreesRoot), []);
   });
 }
+
+test('stage: an implementation experiment is dispatched to the implementation driver (exit 3 for a missing baseline, no call, no clone)', async () => {
+  const ctx = makeImplRepo({
+    implTweak: ({ expRoot }) => {
+      put(path.join(expRoot, 'local', 'plans', 'pilot-001', 'toy-plan', 'files', 'docs', 'plan-1.md'), 'plan');
+      put(path.join(expRoot, 'local', 'plans', 'pilot-001', 'toy-plan', 'files', 'docs', 'spec-1.md'), 'spec');
+    },
+  });
+  approve(ctx.configDir, 'implementer-one', approvalHash({ expRoot: ctx.expRoot, armId: 'implementer-one' }));
+  const cli = fakeCli([PROBE, DONE]);
+  const res = await runExperiment({
+    repoRoot: ctx.repoRoot, expRoot: ctx.expRoot, experimentId: 'impl-one',
+    deps: { launcher: cli.launcher, extraEnv: cli.env, configDir: ctx.configDir, home: ctx.home, now: NOW },
+  });
+  const text = res.lines.join('\n');
+  assert.equal(res.exit, 3, text);
+  assert.match(text, /exp baseline impl-task/);
+  assert.equal(cli.calls().length, 0);
+  assert.ok(noRunDirs(ctx));
+  assert.deepEqual(fs.readdirSync(ctx.worktreesRoot), []);
+});
 
 test('E13: a clone path over 200 characters exits 3 and creates nothing', async () => {
   const ctx = makeExperimentRepo();
