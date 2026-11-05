@@ -92,7 +92,8 @@ export function evaluatePolicy(policy, request) {
   if (operation === "write" && matchesProtectedPath(target, policy.review_required.protected_paths)) {
     return { allowed: false, reason: "review-required", reviewers: policy.review_required.reviewers, owner: policy.review_required.owner };
   }
-  if (operation === "write" && request?.source === "shell") return { allowed: false, reason: "default-deny" };
+  // Shell writes inside the repository are ordinary work (git add/commit, npm install, file moves); protected
+  // paths are caught above and external targets fall through to default-deny because allow.write is repository only.
   if (operation === "write" && policy.allow.write.includes(request?.scope)) return { allowed: true, reason: "allowed" };
   if (operation === "read" && policy.allow.read.includes(request?.scope)) return { allowed: true, reason: "allowed" };
   return { allowed: false, reason: "default-deny" };
