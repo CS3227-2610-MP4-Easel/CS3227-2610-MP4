@@ -26,7 +26,8 @@ Committed: `tasks/<id>/` (including `acceptance/`), `arms/implementer-*.json`, `
 | Adapter (module, one per plan id) | exports | `planFiles`, `createHarness(root, {clock})` | no | - | see § Adapter contract |
 | Implementer arm (`arms/implementer-*.json`) | stage | enum | no | - | `implementation` |
 | | prompt | string | no | - | placeholders `{{plan_path}}`, `{{spec_paths}}`, `{{task_id}}` only; `plan_path` is the first file of kind `plan` in the snapshot order, `spec_paths` all files of kind `spec` joined by a space |
-| | model | map | no | - | `{main: "claude-haiku-5-5"}`; the id has an entry in `pricing.json` before T2 |
+| | model | map | no | - | `{main: "claude-sonnet-5-5"}`; the id has an entry in `pricing.json` (already present, prices confirmed by the operator 2026-11-05) |
+| | effort | enum | yes | absent (CLI default) | `low`, `medium` or `high`; passed as `--effort <value>`; the pilot implementer arm uses `low` |
 | | artifact_globs | object | no | `{spec: [], plan: []}` | empty for this stage |
 | Implementation experiment (`experiments/<id>.json`) | stage, id | enum, string | no | - | `implementation` |
 | | task_id, implementer_arm_id | string | no | - | exist; stages equal `implementation` |

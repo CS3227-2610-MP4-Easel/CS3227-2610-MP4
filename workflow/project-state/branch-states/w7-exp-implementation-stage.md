@@ -32,7 +32,7 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-05 | Claude Sonnet 5.5 | W~1 | Paused | Plan approved at gate 2; the owner will run the implementation in another session | New session: read STATE.md, guardrails.md and this file, add your own session row, then run `executing-plans-lite` from T1 step 1 of the plan (T1 starts with a GATE: ask the owner for the Haiku 5.5 prices and a spend limit). Copy the three pilot run folders into this worktree's `workflow/experiments/local/runs/` before T5 | 2026-11-05 |
+| S2 | 2026-11-05 | Claude Sonnet 5.5 | W~1 | Blocked — needs human | T1 step 1 (GATE); baseline `<BUILD>` running in background | Q~1: owner gives the `claude-haiku-5-5` prices (read from the provider's page, owner present) and a spend limit for the T1 toy build; then T1 step 2. Copy the three pilot run folders into this worktree's `workflow/experiments/local/runs/` before T5 | 2026-11-05 |
 
 **Remaining**
 
@@ -61,6 +61,7 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 | 2026-11-05 | Plan drafted (T1 to T8 plus close-out, 10 steps at most per task); one review round (0 blocking, 11 major, all fixed: stage switch placement, `check.mjs` pilot rule, `historyFreeTree` moved to T4, `plan_modified` and tampering detectors in T4, aborted runs graded, cost attribution without new cost classes, source runs copied into this worktree, arm approval at the T8 gate); departures from the spec's file hazards: T4 and T6 both edit `clone.mjs`, review spend uses the `judge` cost class, E93 to E104 assigned to tasks | W~1 | this commit |
 | 2026-11-05 | Spec approved at gate 1 by the owner, with the adapter form (SD2), the Haiku price gate (SD10) and the T8 exposure choice accepted | W~1 | this commit |
 | 2026-11-05 | Review round 2 (Implementer 4 major; Attacker 3 blocking, 4 major) fixed: shared-check verdicts decided by a parent process (host child answers over IPC), lockfile validation, name whitelist and `node` argv, filesystem rules in the verify-tree builder, no git in the clone, canary tokens, disk polling, per-attempt metrics, exit-code split, T2 to T8 inputs and ownership clarified; lint clean | W~1 | this commit |
+| 2026-11-05 | Execution started; T1 gate answered: implementer switched to Sonnet 5.5 at low effort (C~6); spec SD1, data-model, implementation-order and plan T1/T2 amended; no new price entry needed | W~1 | this commit |
 | 2026-11-05 | Review round 1 (Implementer, Tester, Attacker: 4 + 3 + 3 blocking findings) fixed: checks run in a harness-owned verify tree, history-free agent clones, nonce-named verdict file, protected paths mean modified or deleted base files, adapter contract and parsing rules defined, credential-in-output no longer stops a batch, cost attribution by attempt boundary, resource caps, T3/T4 dependency corrected | W~1 | this commit |
 
 ---
@@ -75,6 +76,7 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 | C~2 | 2026-11-05 | Pass = the plan's own tests, typecheck and lint, plus required shared behaviour checks reached through a per-plan adapter | Owner chose "plan's own tests plus shared behaviour checks"; the adapter replaces a fixed HTTP client because each plan picks its own routes (spec SD2); rejected: own tests only, shared tests only |
 | C~3 | 2026-11-05 | Input plans are replicate 2 of each arm, built in 2 samples with up to 2 attempts each | Owner chose it to keep cost low; rejected: all replicates, one build per plan |
 | C~5 | 2026-11-05 | Checks run in a harness-owned verify tree, agent clones have no git history, and shared-check verdicts are decided by a parent process (spec SD11, SD12, SD13) | Found by the Attacker and Implementer lenses: the agent has Bash in its clone, so its `node_modules`, git config and scripts cannot be trusted and git objects expose hidden files; not asked by the owner; rejected: running checks in the clone with protected-path detection only |
+| C~6 | 2026-11-05 | The implementer is `claude-sonnet-5-5` at `low` effort, not Haiku (amends SD1, plan T1 and T2; arm gets an `effort` field and `claudeArgs` an `--effort` option). Spend: overall soft cap $40, not to interrupt a running build (T1 spike limit $3; the T8 ceilings are set so the cap is checked between runs, confirmed at the T8 gate) | Owner: "haiku is not the best for implementation"; prices given equal the existing `pricing.json` Sonnet entry; rejected: Haiku, Sonnet at default effort |
 | C~4 | 2026-11-05 | Run the blind review on the three replicate-2 plans only, and move on to the implementation stage in a new branch off the pilot branch | Asked by the owner to keep cost low after the full runs had trouble completing; rejected: a review on all nine plans |
 
 ## 6. Known Gaps
