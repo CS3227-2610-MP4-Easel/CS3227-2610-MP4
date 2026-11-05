@@ -114,3 +114,17 @@ test('parseStream skips a truncated last line', () => {
   const events = parseStream('{"type":"a"}\n{"type":"b"}\n{"type":"res');
   assert.deepEqual(events.map((e) => e.type), ['a', 'b']);
 });
+
+test('effort: an arm effort becomes --effort <value>; an invalid value throws; none leaves the args unchanged', () => {
+  const base = claudeArgs({ model: 'm', maxBudgetUsd: 1 });
+  assert.ok(!base.includes('--effort'));
+  for (const effort of ['low', 'medium', 'high']) {
+    const args = claudeArgs({ model: 'm', maxBudgetUsd: 1, effort });
+    assert.equal(args[args.indexOf('--effort') + 1], effort);
+    assert.deepEqual(args.filter((a, i) => a !== '--effort' && args[i - 1] !== '--effort'), base);
+  }
+  for (const bad of ['extreme', '', 'low --max-budget-usd 99']) {
+    assert.throws(() => claudeArgs({ model: 'm', maxBudgetUsd: 1, effort: bad }), ConfigError);
+  }
+  assert.deepEqual(claudeArgs({ model: 'm', maxBudgetUsd: 1, effort: undefined }), base);
+});

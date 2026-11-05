@@ -5,7 +5,7 @@ import path from 'node:path';
 import { EXP_ROOT, REPO_ROOT, isInside, resolveWorktreesRoot } from './paths.mjs';
 import { scan } from './secrets.mjs';
 import {
-  validateArm, validateConfig, validateExperiment, validatePricing, validateSeededIssues, validateTask,
+  validateArm, validateConfig, validateExperiment, validateImplExperiment, validatePricing, validateSeededIssues, validateTask,
 } from './schema.mjs';
 
 export const HARNESS_VERSION = 1;
@@ -49,6 +49,48 @@ function walk(dir, skip, out = []) {
     else out.push(p);
   }
   return out;
+}
+
+/** Files an implementation task names must exist (F2, E8). */
+function implTaskFileErrors(dir, t) {
+  const errors = [];
+  const a = t.acceptance;
+  if (!isDir(path.join(dir, a.folder))) errors.push(`acceptance.folder ${a.folder} is missing`);
+  const checks = readJson(path.join(dir, a.checks_file));
+  if (checks.error) errors.push(`acceptance.checks_file ${a.checks_file}: ${checks.error}`);
+  else if (!Array.isArray(checks.value) || checks.value.length === 0) errors.push(`${a.checks_file} must list at least one check`);
+  else for (const c of checks.value) {
+    if (!/^CHK[0-9]+$/.test(c?.id ?? '') || typeof c.required !== 'boolean' || typeof c.requirement !== 'string') errors.push(`${a.checks_file}: an entry needs id CHKn, required and requirement`);
+  }
+  for (const [planId, p] of Object.entries(a.adapters)) {
+    if (!fs.existsSync(path.join(dir, p))) errors.push(`acceptance.adapters.${planId}: adapter ${p} is missing`);
+  }
+  return errors;
+}
+
+/** Cross-file rules of an implementation experiment (E9, E13). */
+function implExperimentErrors({ e, arms, tasks, expRoot, repoRoot, pricing }) {
+  const errors = [];
+  const arm = arms.get(e.implementer_arm_id);
+  const task = tasks.get(e.task_id);
+  if (!arm) errors.push(`implementer arm ${e.implementer_arm_id} does not exist`);
+  else if (arm.stage !== 'implementation') errors.push(`arm ${arm.id} stage ${arm.stage} is not implementation`);
+  if (!task) errors.push(`task ${e.task_id} does not exist`);
+  else if (task.stage !== 'implementation') errors.push(`task ${task.id} stage ${task.stage} is not implementation`);
+  const priced = (model, what) => { if (!pricing?.models?.[model]) errors.push(`${what} model ${model} is not in pricing.json`); };
+  const models = readJson(path.join(repoRoot, 'workflow', 'models.json'));
+  const review = models.value?.tiers?.strong?.claude;
+  if (typeof review !== 'string') errors.push('workflow/models.json has no strong tier model for the review call');
+  else priced(review, 'review');
+  if (arm) for (const m of new Set(Object.values(arm.model ?? {}))) priced(m, 'implementer');
+  for (const p of Array.isArray(e.plans) ? e.plans : []) {
+    if (typeof p?.plan_id !== 'string') continue;
+    if (!fs.existsSync(path.join(expRoot, 'local', 'plans', String(p.source_experiment_id), p.plan_id, 'snapshot.json'))) {
+      errors.push(`plan ${p.plan_id} has no snapshot (run exp snapshot)`);
+    }
+    if (task?.acceptance && !task.acceptance.adapters[p.plan_id]) errors.push(`plan ${p.plan_id} has no adapter in task ${task.id}`);
+  }
+  return errors;
 }
 
 export function runCheck({ expRoot = EXP_ROOT, repoRoot = REPO_ROOT, secrets = false } = {}) {
@@ -104,7 +146,8 @@ export function runCheck({ expRoot = EXP_ROOT, repoRoot = REPO_ROOT, secrets = f
       const brief = path.join(dir, t.brief_file);
       if (!fs.existsSync(brief)) errors.push(`${t.brief_file} is missing`);
       if (t.sheet_file && !fs.existsSync(path.join(dir, t.sheet_file))) errors.push(`${t.sheet_file} is missing`);
-      const isPilot = id.startsWith('pilot-');
+      const isPilot = id.startsWith('pilot-') && t.stage === 'specplan'; // F16 is a specplan rule
+      if (t.stage === 'implementation') errors.push(...implTaskFileErrors(dir, t));
       if (isPilot && !t.issues_file) errors.push('a pilot task needs a seeded issues file (F16)');
       if (t.issues_file) {
         const issuesPath = path.join(dir, t.issues_file);
@@ -136,6 +179,14 @@ export function runCheck({ expRoot = EXP_ROOT, repoRoot = REPO_ROOT, secrets = f
     const r = readJson(file);
     if (r.error) { fail(file, r.error); continue; }
     const e = r.value;
+    // An experiment file with no `stage` is a specplan one, so pilot-001.json is unchanged.
+    if (e.stage === 'implementation') {
+      const implErrors = validateImplExperiment(e).errors;
+      if (e.id !== name.replace(/\.json$/, '')) implErrors.push(`id ${e.id} does not match file name ${name}`);
+      implErrors.push(...implExperimentErrors({ e, arms, tasks, expRoot, repoRoot, pricing: pricing.value }));
+      report(file, implErrors);
+      continue;
+    }
     const errors = validateExperiment(e).errors;
     if (e.id !== name.replace(/\.json$/, '')) errors.push(`id ${e.id} does not match file name ${name}`);
     for (const a of e.arm_ids ?? []) if (!arms.has(a)) errors.push(`arm ${a} does not exist`);

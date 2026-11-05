@@ -231,3 +231,97 @@ test('a worktrees_root inside the repo must be ignored', () => {
   assert.equal(res.code, 3);
   assert.match(text(res), /worktrees_root/);
 });
+
+// ---- implementation stage (T2) ------------------------------------------------------------------------------
+
+import { EXP_ROOT, REPO_ROOT } from './paths.mjs';
+import { makeImplRepo } from './testkit.mjs';
+
+const run = (ctx) => runCheck({ expRoot: ctx.expRoot, repoRoot: ctx.repoRoot });
+const out = (res) => res.lines.join('\n');
+const readJ = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
+
+test('an implementation experiment tree passes exp check', () => {
+  const res = run(makeImplRepo());
+  assert.equal(res.code, 0, out(res));
+  assert.match(out(res), /impl-one\.json: ok/);
+  assert.match(out(res), /impl-task[\\/]task\.json: ok/);
+});
+
+test('E8: a missing adapter, checks file or acceptance folder exits 3 and names the file', () => {
+  const adapter = run(makeImplRepo({ implTweak: ({ implTaskDir }) => fs.rmSync(path.join(implTaskDir, 'acceptance', 'adapters', 'toy-plan.mjs')) }));
+  assert.equal(adapter.code, 3);
+  assert.match(out(adapter), /adapter acceptance\/adapters\/toy-plan\.mjs is missing/);
+  const checks = run(makeImplRepo({ implTweak: ({ implTaskDir }) => fs.rmSync(path.join(implTaskDir, 'acceptance', 'checks.json')) }));
+  assert.equal(checks.code, 3);
+  assert.match(out(checks), /checks\.json/);
+  const folder = run(makeImplRepo({ implTweak: ({ implTaskDir }) => fs.rmSync(path.join(implTaskDir, 'acceptance'), { recursive: true }) }));
+  assert.equal(folder.code, 3);
+  assert.match(out(folder), /acceptance\.folder acceptance is missing/);
+});
+
+test('E8, E93: a check with no argv or a shell string in the task file exits 3', () => {
+  const edit = (fn) => ({ implTweak: ({ implTaskDir }) => {
+    const f = path.join(implTaskDir, 'task.json');
+    const t = readJ(f); fn(t); write(f, t);
+  } });
+  const noArgv = run(makeImplRepo(edit((t) => { t.checks.typecheck = [{ cwd: '.', timeout_s: 5 }]; })));
+  assert.equal(noArgv.code, 3);
+  assert.match(out(noArgv), /checks\.typecheck\[0\]\.argv/);
+  const shell = run(makeImplRepo(edit((t) => { t.checks.shared.argv = ['sh', '-c', 'node x']; })));
+  assert.equal(shell.code, 3);
+});
+
+test('E9: a plan with no snapshot, no adapter, or listed twice exits 3 and names the plan id', () => {
+  const plan = (id) => ({ source_experiment_id: 'pilot-001', plan_id: id, snapshot_sha256: 'a'.repeat(64) });
+  const noSnapshot = run(makeImplRepo({ implTweak: ({ expRoot }) => {
+    const f = path.join(expRoot, 'experiments', 'impl-one.json');
+    const e = readJ(f); e.plans.push(plan('ghost-r1')); write(f, e);
+  } }));
+  assert.equal(noSnapshot.code, 3);
+  assert.match(out(noSnapshot), /plan ghost-r1 has no snapshot/);
+  assert.match(out(noSnapshot), /plan ghost-r1 has no adapter/);
+  const twice = run(makeImplRepo({ implTweak: ({ expRoot }) => {
+    const f = path.join(expRoot, 'experiments', 'impl-one.json');
+    const e = readJ(f); e.plans.push({ ...e.plans[0] }); write(f, e);
+  } }));
+  assert.equal(twice.code, 3);
+  assert.match(out(twice), /duplicate plan id toy-plan/);
+});
+
+test('E13: an implementer or review model with no price exits 3 before any call', () => {
+  const arm = run(makeImplRepo({ arm: { model: { main: 'claude-unpriced-1' } } }));
+  assert.equal(arm.code, 3);
+  assert.match(out(arm), /claude-unpriced-1/);
+  const review = run(makeImplRepo({ implTweak: ({ repoRoot }) => write(path.join(repoRoot, 'workflow', 'models.json'), { tiers: { strong: { claude: 'claude-unpriced-2' } } }) }));
+  assert.equal(review.code, 3);
+  assert.match(out(review), /review model claude-unpriced-2 is not in pricing\.json/);
+});
+
+test('an experiment whose arm or task is not an implementation one exits 3', () => {
+  const res = run(makeImplRepo({ experiment: { implementer_arm_id: 'arm-one', task_id: 'task-one' } }));
+  assert.equal(res.code, 3);
+  assert.match(out(res), /arm arm-one stage specplan is not implementation/);
+  assert.match(out(res), /task task-one stage specplan is not implementation/);
+});
+
+test('the pilot- rule applies to specplan tasks only: an implementation pilot task needs no issues file', () => {
+  const impl = run(makeImplRepo({ implTweak: ({ implTaskDir, expRoot }) => {
+    const dest = path.join(expRoot, 'tasks', 'pilot-impl');
+    fs.cpSync(implTaskDir, dest, { recursive: true });
+    write(path.join(dest, 'task.json'), { ...readJ(path.join(dest, 'task.json')), id: 'pilot-impl' });
+  } }));
+  assert.equal(impl.code, 0, out(impl));
+  const specplan = run(makeImplRepo({ implTweak: ({ expRoot }) => {
+    const dest = path.join(expRoot, 'tasks', 'pilot-spec');
+    fs.cpSync(path.join(expRoot, 'tasks', 'task-one'), dest, { recursive: true });
+    write(path.join(dest, 'task.json'), { ...readJ(path.join(dest, 'task.json')), id: 'pilot-spec' });
+  } }));
+  assert.equal(specplan.code, 3);
+  assert.match(out(specplan), /a pilot task needs a seeded issues file/);
+});
+
+test('the committed specplan experiment pilot-001.json still validates', () => {
+  const res = runCheck({ expRoot: EXP_ROOT, repoRoot: REPO_ROOT });
+  assert.match(out(res), /experiments\/pilot-001\.json: ok/);
+});

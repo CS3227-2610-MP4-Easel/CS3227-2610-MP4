@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   validateArm, validateConfig, validateTask, validateExperiment,
-  validatePricing, validateSeededIssues,
+  validatePricing, validateSeededIssues, validateImplExperiment,
 } from './schema.mjs';
 
 const pricing = {
@@ -75,7 +75,7 @@ test('E3: bypass-all permission_mode is rejected', () => {
 
 test('E8: arm stage must be a known stage', () => {
   assert.equal(check({ stage: 'nonsense' }).ok, false);
-  assert.equal(check({ stage: 'implementation' }).ok, true);
+  assert.equal(check({ stage: 'implementation', prompt: 'Build {{plan_path}} ({{task_id}})' }).ok, true);
 });
 
 test('E9: review.max_rounds above 2 is rejected', () => {
@@ -175,4 +175,116 @@ test('pricing: shape and numeric fields', () => {
   assert.equal(validatePricing({ schema_version: 2, models: {} }).ok, false);
   const bad = { schema_version: 1, models: { m: { input: -1, output: 1, cache_read: 1, cache_write_5m: 1, cache_write_1h: 1, source: 's', checked: '2026-11-03' } } };
   assert.equal(validatePricing(bad).ok, false);
+});
+
+// ---- implementation stage (T2) ------------------------------------------------------------------------------
+
+const implArm = (over = {}) => arm({
+  id: 'lite', stage: 'implementation', prompt: 'Build {{plan_path}} with {{spec_paths}} ({{task_id}})', skills: [],
+  artifact_globs: { spec: [], plan: [] }, lint: false, effort: 'low', ...over,
+});
+const implArmCheck = (over) => validateArm(implArm(over), { fileName: 'lite.json', pricing });
+const cmd = (argv, over = {}) => ({ argv, cwd: '.', timeout_s: 120, ...over });
+const implTask = (over = {}) => ({
+  id: 'impl-task', stage: 'implementation', base_commit: 'abc1234', brief_file: 'brief.md',
+  setup_command: ['npm', 'ci', '--ignore-scripts'],
+  post_setup: ['node', 'node_modules/prisma/build/index.js', 'generate'],
+  checks: {
+    typecheck: [cmd(['node', 'node_modules/typescript/bin/tsc', '-b'])],
+    lint: null,
+    tests: { own_argv: ['node', '--import', 'tsx', '--test', '--test-reporter=tap'], baseline_files: ['tests/**/*.test.ts'], timeout_s: 300 },
+    shared: { argv: ['node', 'workflow/experiments/tasks/impl-task/acceptance/runner.mjs'], timeout_s: 300 },
+  },
+  protected_globs: ['**/tsconfig*.json', 'tests/**'],
+  acceptance: { folder: 'acceptance', checks_file: 'acceptance/checks.json', adapters: { 'lite-r2': 'acceptance/adapters/lite-r2.mjs' } },
+  ...over,
+});
+const implExp = (over = {}) => ({
+  id: 'impl-001', stage: 'implementation', task_id: 'impl-task', implementer_arm_id: 'lite',
+  plans: [{ source_experiment_id: 'pilot-001', plan_id: 'lite-r2', snapshot_sha256: 'a'.repeat(64) }],
+  run_ceiling_usd: 5, batch_ceiling_usd: 30, answer_mode: 'fixed', ...over,
+});
+
+test('F2/F3: a valid implementation arm, task and experiment pass', () => {
+  assert.deepEqual(implArmCheck({}).errors, []);
+  assert.deepEqual(validateTask(implTask()).errors, []);
+  assert.deepEqual(validateImplExperiment(implExp()).errors, []);
+});
+
+test('implementation arm: placeholders are plan_path, spec_paths, task_id only; effort is low, medium or high', () => {
+  assert.equal(implArmCheck({ prompt: 'x {{plan_path}}' }).ok, true);
+  assert.equal(implArmCheck({ effort: 'high' }).ok, true);
+  assert.equal(implArmCheck({ effort: undefined }).ok, true);
+  assert.equal(implArmCheck({ effort: 'extreme' }).ok, false);
+  assert.equal(check({ effort: 'low' }).ok, true); // allowed on any stage
+});
+
+test('E10: an implementation prompt with {{brief}} is rejected and names the placeholder', () => {
+  const res = implArmCheck({ prompt: 'Build {{brief}}' });
+  assert.equal(res.ok, false);
+  assert.ok(mentions(res, '{{brief}}'));
+});
+
+test('E8: a checks entry with no argv, or a string argv, is rejected and names the field', () => {
+  const noArgv = implTask(); noArgv.checks.typecheck = [{ cwd: '.', timeout_s: 60 }];
+  const res = validateTask(noArgv);
+  assert.equal(res.ok, false);
+  assert.ok(mentions(res, 'checks.typecheck'));
+  const str = implTask(); str.checks.typecheck = [cmd('node tsc -b')];
+  assert.equal(validateTask(str).ok, false);
+  const lintBad = implTask(); lintBad.checks.lint = [cmd('node x')];
+  assert.equal(validateTask(lintBad).ok, false);
+  const sharedBad = implTask(); sharedBad.checks.shared = { timeout_s: 60 };
+  assert.ok(mentions(validateTask(sharedBad), 'checks.shared'));
+});
+
+test('E93: every check argv starts with node; shells and a string are rejected', () => {
+  for (const argv of [['sh', '-c', 'x'], ['cmd', '/c', 'x'], ['powershell', 'x'], ['npm', 'test'], 'node x', []]) {
+    const t = implTask(); t.checks.typecheck = [cmd(argv)];
+    assert.equal(validateTask(t).ok, false, JSON.stringify(argv));
+  }
+  const own = implTask(); own.checks.tests.own_argv = ['sh', '-c', 'x'];
+  assert.equal(validateTask(own).ok, false);
+  const sh = implTask({ setup_command: ['sh', '-c', 'npm ci'] });
+  assert.equal(validateTask(sh).ok, false);
+  const post = implTask({ post_setup: ['npm', 'run', 'x'] });
+  assert.equal(validateTask(post).ok, false);
+  assert.equal(validateTask(implTask({ post_setup: undefined })).ok, true);
+});
+
+test('implementation task: fields, timeouts, cwd and protected globs are checked', () => {
+  const t = implTask(); t.checks.typecheck = [cmd(['node', 'x'], { cwd: '../outside' })];
+  assert.equal(validateTask(t).ok, false);
+  const t2 = implTask(); t2.checks.typecheck = [cmd(['node', 'x'], { timeout_s: 0 })];
+  assert.equal(validateTask(t2).ok, false);
+  assert.equal(validateTask(implTask({ protected_globs: ['/abs/**'] })).ok, false);
+  assert.equal(validateTask(implTask({ setup_command: undefined })).ok, false);
+  assert.equal(validateTask(implTask({ acceptance: { folder: '../x', checks_file: 'c.json', adapters: {} } })).ok, false);
+  assert.equal(validateTask(implTask({ acceptance: undefined })).ok, false);
+});
+
+test('E10: counts and ranges of an implementation experiment', () => {
+  const bad = (over, field) => {
+    const res = validateImplExperiment(implExp(over));
+    assert.equal(res.ok, false, field);
+    assert.ok(mentions(res, field), `${field}: ${res.errors}`);
+  };
+  bad({ samples: 0 }, 'samples'); bad({ samples: 6 }, 'samples');
+  bad({ attempts: 3 }, 'attempts'); bad({ attempts: 0 }, 'attempts');
+  bad({ max_questions: 11 }, 'max_questions'); bad({ max_parallel: 4 }, 'max_parallel');
+  bad({ plans: [] }, 'plans');
+  bad({ plans: Array.from({ length: 13 }, (_, i) => ({ source_experiment_id: 'p', plan_id: `p-r${i}`, snapshot_sha256: 'a'.repeat(64) })) }, 'plans');
+  bad({ run_ceiling_usd: 0 }, 'run_ceiling_usd'); bad({ batch_ceiling_usd: undefined }, 'batch_ceiling_usd');
+  bad({ stage: 'specplan' }, 'stage'); bad({ answer_mode: 'sheet' }, 'answer_mode');
+  bad({ turn_timeout_s: 0 }, 'turn_timeout_s'); bad({ max_clone_mb: -1 }, 'max_clone_mb');
+  assert.equal(validateImplExperiment(implExp({ samples: 5, attempts: 2, max_questions: 10, max_parallel: 3 })).ok, true);
+});
+
+test('E9: a duplicate plan id or a malformed snapshot hash is rejected', () => {
+  const p = { source_experiment_id: 'pilot-001', plan_id: 'lite-r2', snapshot_sha256: 'a'.repeat(64) };
+  const dup = validateImplExperiment(implExp({ plans: [p, p] }));
+  assert.equal(dup.ok, false);
+  assert.ok(mentions(dup, 'lite-r2'));
+  assert.equal(validateImplExperiment(implExp({ plans: [{ ...p, snapshot_sha256: 'xyz' }] })).ok, false);
+  assert.equal(validateImplExperiment(implExp({ plans: [{ ...p, plan_id: '' }] })).ok, false);
 });

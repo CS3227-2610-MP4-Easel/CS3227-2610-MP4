@@ -97,7 +97,10 @@ async function runBatch({ repoRoot, expRoot, experimentId, filters, dry, yes, co
   if (problem) throw new Exit(7, `experiment file ${path.relative(repoRoot, expFile)} is ${problem}; commit it before running`);
   const experiment = readJson(expFile);
 
-  // 2. unsupported stages exit 8 before anything is created.
+  // 2. unsupported stages exit 8 before anything is created. An experiment file with no `stage` is a specplan one.
+  // `implementation` is dispatched to the implementation driver once T6 lands (not before experiment.arm_ids is read).
+  const experimentStage = experiment.stage ?? 'specplan';
+  if (experimentStage !== SUPPORTED_STAGE) throw new Exit(8, `stage ${experimentStage} (experiment ${experiment.id}) is not supported in this version`);
   const armFiles = Object.fromEntries(experiment.arm_ids.map((a) => [a, readJson(path.join(expRoot, 'arms', `${a}.json`))]));
   const tasks = Object.fromEntries(experiment.task_ids.map((t) => [t, readJson(path.join(expRoot, 'tasks', t, 'task.json'))]));
   for (const a of Object.values(armFiles)) if (a.stage !== SUPPORTED_STAGE) throw new Exit(8, `stage ${a.stage} (arm ${a.id}) is not supported in this version`);
@@ -289,7 +292,7 @@ async function executeRun(ctx, run) {
   const startedAt = Date.now();
   const flags = (resume, cap) => claudeArgs({
     model: arm.model.main, maxBudgetUsd: cap, pluginDirs, mcp: arm.mcp ?? [], allowedTools: arm.allowed_tools ?? [],
-    disallowedTools: arm.disallowed_tools ?? ['WebFetch', 'WebSearch'], permissionMode: arm.permission_mode, resume,
+    disallowedTools: arm.disallowed_tools ?? ['WebFetch', 'WebSearch'], permissionMode: arm.permission_mode, resume, effort: arm.effort,
   });
 
   if (run.resumed) {

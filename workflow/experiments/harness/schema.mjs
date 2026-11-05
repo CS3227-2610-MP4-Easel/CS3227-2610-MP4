@@ -7,6 +7,8 @@ export const CATEGORIES = [
 ];
 export const PHASES = ['spec', 'plan', 'review', 'other'];
 const BYPASS_MODES = ['bypassPermissions'];
+const IMPL_PLACEHOLDERS = ['plan_path', 'spec_paths', 'task_id'];
+export const EFFORTS = ['low', 'medium', 'high'];
 const ID_RE = /^[a-z0-9-]{3,24}$/;
 const SHA_RE = /^[0-9a-f]{7,40}$/i;
 
@@ -59,10 +61,12 @@ export function validateArm(a, { fileName, pricing } = {}) {
   if (typeof a.prompt !== 'string' || a.prompt === '') {
     errors.push('prompt is required');
   } else {
+    const allowed = a.stage === 'implementation' ? IMPL_PLACEHOLDERS : ['brief', 'task_id'];
     for (const m of a.prompt.matchAll(/\{\{\s*([^}]*?)\s*\}\}/g)) {
-      if (!['brief', 'task_id'].includes(m[1])) errors.push(`prompt placeholder {{${m[1]}}} is not allowed`);
+      if (!allowed.includes(m[1])) errors.push(`prompt placeholder {{${m[1]}}} is not allowed`);
     }
   }
+  if (a.effort !== undefined && !EFFORTS.includes(a.effort)) errors.push(`effort must be one of ${EFFORTS.join(', ')}`);
   for (const key of ['plugins', 'skills', 'agents', 'mcp', 'allowed_tools', 'disallowed_tools']) {
     if (!isStrArray(a[key] ?? [])) errors.push(`${key} must be a string array`);
   }
@@ -123,6 +127,106 @@ export function validateTask(t) {
     if (t[k] != null && !isSafeRelPath(t[k])) errors.push(`${k} must be a safe relative path or null`);
   }
   if (!STAGES.includes(t.stage)) errors.push(`stage must be one of ${STAGES.join(', ')}`);
+  if (t.stage === 'implementation') errors.push(...implTaskErrors(t));
+  return result(errors);
+}
+
+// ---- implementation stage (data-model.md) -----------------------------------------------------------------------
+
+const posInt = (v) => Number.isInteger(v) && v > 0;
+
+/** An argv is a non-empty array of non-empty strings without NUL whose first element is `node` (E93). */
+function argvErrors(label, argv, { first = 'node' } = {}) {
+  if (!Array.isArray(argv) || argv.length === 0) return [`${label}.argv must be a non-empty array of strings (no shell string)`];
+  if (!argv.every((s) => typeof s === 'string' && s !== '' && !s.includes('\0'))) return [`${label}.argv must contain only non-empty strings`];
+  if (first && argv[0] !== first) return [`${label}.argv must start with ${first}, not ${argv[0]}`];
+  return [];
+}
+
+function stepErrors(label, list) {
+  if (!Array.isArray(list) || list.length === 0) return [`${label} must be a non-empty list of {argv, cwd, timeout_s}`];
+  const errors = [];
+  list.forEach((c, i) => {
+    const l = `${label}[${i}]`;
+    if (!isObj(c)) { errors.push(`${l} must be an object`); return; }
+    errors.push(...argvErrors(l, c.argv));
+    if (!isSafeRelPath(c.cwd ?? '.')) errors.push(`${l}.cwd must be a safe relative path`);
+    if (!posInt(c.timeout_s)) errors.push(`${l}.timeout_s must be a positive integer`);
+  });
+  return errors;
+}
+
+function implTaskErrors(t) {
+  const errors = [];
+  if (!Array.isArray(t.setup_command) || t.setup_command.join(' ') !== 'npm ci --ignore-scripts') {
+    errors.push('setup_command must be ["npm","ci","--ignore-scripts"]');
+  }
+  if (t.post_setup !== undefined && (!Array.isArray(t.post_setup) || t.post_setup.length > 0)) {
+    errors.push(...argvErrors('post_setup', t.post_setup));
+  }
+  const c = t.checks;
+  if (!isObj(c)) {
+    errors.push('checks must be an object with typecheck, lint, tests and shared');
+  } else {
+    errors.push(...stepErrors('checks.typecheck', c.typecheck));
+    if (c.lint != null) errors.push(...stepErrors('checks.lint', c.lint));
+    if (!isObj(c.tests)) {
+      errors.push('checks.tests must be {own_argv, baseline_files, timeout_s}');
+    } else {
+      errors.push(...argvErrors('checks.tests.own', c.tests.own_argv).map((e) => e.replace('.own.argv', '.own_argv')));
+      if (!isStrArray(c.tests.baseline_files ?? [])) errors.push('checks.tests.baseline_files must be a string array');
+      else for (const g of c.tests.baseline_files) if (!isSafeRelPath(g)) errors.push(`checks.tests.baseline_files entry is not a safe relative path: ${g}`);
+      if (!posInt(c.tests.timeout_s)) errors.push('checks.tests.timeout_s must be a positive integer');
+    }
+    if (!isObj(c.shared)) {
+      errors.push('checks.shared must be {argv, timeout_s}');
+    } else {
+      errors.push(...argvErrors('checks.shared', c.shared.argv));
+      if (!posInt(c.shared.timeout_s)) errors.push('checks.shared.timeout_s must be a positive integer');
+    }
+  }
+  if (!isStrArray(t.protected_globs ?? [])) errors.push('protected_globs must be a string array');
+  else for (const g of t.protected_globs ?? []) if (!isSafeRelPath(g)) errors.push(`protected_globs entry is not a safe relative path: ${g}`);
+  const a = t.acceptance;
+  if (!isObj(a)) {
+    errors.push('acceptance must be {folder, checks_file, adapters}');
+  } else {
+    for (const k of ['folder', 'checks_file']) if (!isSafeRelPath(a[k])) errors.push(`acceptance.${k} must be a safe relative path`);
+    if (!isObj(a.adapters)) errors.push('acceptance.adapters must map plan id to a path');
+    else for (const [id, p] of Object.entries(a.adapters)) if (!isSafeRelPath(p)) errors.push(`acceptance.adapters.${id} must be a safe relative path`);
+  }
+  return errors;
+}
+
+const SHA256_RE = /^[0-9a-f]{64}$/;
+
+export function validateImplExperiment(e) {
+  const errors = [];
+  if (!isObj(e)) return result(['experiment must be an object']);
+  if (!isId(e.id)) errors.push('id must match [a-z0-9-]{3,24}');
+  if (e.stage !== 'implementation') errors.push('stage must be implementation');
+  for (const k of ['task_id', 'implementer_arm_id']) if (!isId(e[k])) errors.push(`${k} must match [a-z0-9-]{3,24}`);
+  if (!Array.isArray(e.plans) || e.plans.length < 1 || e.plans.length > 12) {
+    errors.push('plans must be a list of 1-12 entries');
+  } else {
+    const seen = new Set();
+    for (const p of e.plans) {
+      if (!isObj(p) || typeof p.plan_id !== 'string' || p.plan_id === '' || !/^[A-Za-z0-9._-]+$/.test(p.plan_id)) { errors.push('plans entry needs a plan_id of letters, digits, dot, dash or underscore'); continue; }
+      if (seen.has(p.plan_id)) errors.push(`plans: duplicate plan id ${p.plan_id}`);
+      seen.add(p.plan_id);
+      if (!isId(p.source_experiment_id)) errors.push(`plans ${p.plan_id}: source_experiment_id must match [a-z0-9-]{3,24}`);
+      if (typeof p.snapshot_sha256 !== 'string' || !SHA256_RE.test(p.snapshot_sha256)) errors.push(`plans ${p.plan_id}: snapshot_sha256 must be 64 hex characters`);
+    }
+  }
+  const optInt = (key, min, max) => { if (e[key] !== undefined) intIn(errors, e, key, min, max); };
+  optInt('samples', 1, 5); optInt('attempts', 1, 2); optInt('max_questions', 1, 10); optInt('max_parallel', 1, 3);
+  for (const k of ['turn_timeout_s', 'run_timeout_s', 'check_timeout_s', 'check_total_s', 'max_clone_mb']) {
+    if (e[k] !== undefined && !posInt(e[k])) errors.push(`${k} must be a positive integer`);
+  }
+  for (const k of ['run_ceiling_usd', 'batch_ceiling_usd']) {
+    if (!isNum(e[k]) || e[k] <= 0) errors.push(`${k} is required and must be above 0`);
+  }
+  if (e.answer_mode !== undefined && e.answer_mode !== 'fixed') errors.push('answer_mode must be fixed');
   return result(errors);
 }
 

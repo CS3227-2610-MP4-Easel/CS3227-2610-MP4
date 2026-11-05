@@ -66,8 +66,11 @@ const safeValue = (what, v) => {
   return v;
 };
 
+const EFFORT_LEVELS = ['low', 'medium', 'high'];
+
 /** Argument list of one agent invocation. Isolation flags are identical for first and resumed launches (F4, E58). */
-export function claudeArgs({ model, maxBudgetUsd, pluginDirs = [], mcp = [], allowedTools = [], disallowedTools = DEFAULT_DENY, permissionMode, resume }) {
+export function claudeArgs({ model, maxBudgetUsd, pluginDirs = [], mcp = [], allowedTools = [], disallowedTools = DEFAULT_DENY, permissionMode, resume, effort }) {
+  if (effort !== undefined && !EFFORT_LEVELS.includes(effort)) throw new ConfigError(`effort must be one of ${EFFORT_LEVELS.join(', ')}`);
   if (mcp.length > 0) throw new ConfigError('MCP servers are not supported in v1');
   if (resume !== undefined && !isUuid(resume)) throw new ConfigError('session id is not a UUID');
   const denied = [...new Set([...DEFAULT_DENY.filter((t) => !allowedTools.includes(t)), ...disallowedTools])];
@@ -78,6 +81,7 @@ export function claudeArgs({ model, maxBudgetUsd, pluginDirs = [], mcp = [], all
     '--max-budget-usd', String(maxBudgetUsd),
   ];
   if (permissionMode) args.push('--permission-mode', safeValue('permission_mode', permissionMode));
+  if (effort !== undefined) args.push('--effort', effort);
   if (allowedTools.length) args.push('--allowedTools', allowedTools.join(','));
   if (denied.length) args.push('--disallowedTools', denied.join(','));
   for (const p of pluginDirs) args.push('--plugin-dir', safeValue('plugin path', p));

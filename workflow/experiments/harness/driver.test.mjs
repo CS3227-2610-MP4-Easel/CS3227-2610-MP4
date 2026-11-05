@@ -126,6 +126,20 @@ test('E11: an arm with stage implementation exits 8 before any clone or run fold
   assert.deepEqual(fs.readdirSync(ctx.worktreesRoot), []);
 });
 
+for (const stage of ['ablation', 'model_tier', 'implementation']) {
+  test(`stage: an experiment file with stage ${stage} exits 8 before any call, clone or run folder (until T6 for implementation)`, async () => {
+    const ctx = makeExperimentRepo({ experiment: { stage, arm_ids: undefined, task_ids: undefined } });
+    const cli = fakeCli([PROBE, DONE]);
+    const res = await drive(ctx, cli, single);
+    const text = res.lines.join('\n');
+    assert.equal(res.exit, 8, text);
+    assert.match(text, new RegExp(stage));
+    assert.equal(cli.calls().length, 0);
+    assert.ok(noRunDirs(ctx));
+    assert.deepEqual(fs.readdirSync(ctx.worktreesRoot), []);
+  });
+}
+
 test('E13: a clone path over 200 characters exits 3 and creates nothing', async () => {
   const ctx = makeExperimentRepo();
   const long = path.join(ctx.worktreesRoot, 'x'.repeat(200));

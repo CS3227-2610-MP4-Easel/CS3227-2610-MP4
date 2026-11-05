@@ -32,7 +32,7 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S2 | 2026-11-05 | Claude Sonnet 5.5 | W~1 | Active | T1 done and committed; T2 not started | T2 step 1: write failing `schema.test.mjs` cases (plan T2); remember `post_setup` (C~7) and `effort` (C~6) in the validators | 2026-11-05 |
+| S2 | 2026-11-05 | Claude Sonnet 5.5 | W~1 | Active | T2 done and committed; T3 not started | T3 step 1 (or split wave 3: T3, T4, T5 share no files): write failing `snapshot.test.mjs` for E1 to E3 | 2026-11-05 |
 
 **Remaining**
 
@@ -47,7 +47,7 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W~1 | Experiment implementation stage (extends the framework workstream of branch `w7-pm-plan-flow`) | Building | [spec](../../specs/2026-11-05-experiment-implementation-stage-design.md) (approved 2026-11-05) | [plan](../../plans/2026-11-05-experiment-implementation-stage.md) (approved 2026-11-05) | Big · T1 done (spike findings); T2 next | — |
+| W~1 | Experiment implementation stage (extends the framework workstream of branch `w7-pm-plan-flow`) | Building | [spec](../../specs/2026-11-05-experiment-implementation-stage-design.md) (approved 2026-11-05) | [plan](../../plans/2026-11-05-experiment-implementation-stage.md) (approved 2026-11-05) | Big · T1, T2 done; wave 3 (T3, T4, T5) next | — |
 
 ---
 
@@ -61,6 +61,7 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 | 2026-11-05 | Plan drafted (T1 to T8 plus close-out, 10 steps at most per task); one review round (0 blocking, 11 major, all fixed: stage switch placement, `check.mjs` pilot rule, `historyFreeTree` moved to T4, `plan_modified` and tampering detectors in T4, aborted runs graded, cost attribution without new cost classes, source runs copied into this worktree, arm approval at the T8 gate); departures from the spec's file hazards: T4 and T6 both edit `clone.mjs`, review spend uses the `judge` cost class, E93 to E104 assigned to tasks | W~1 | this commit |
 | 2026-11-05 | Spec approved at gate 1 by the owner, with the adapter form (SD2), the Haiku price gate (SD10) and the T8 exposure choice accepted | W~1 | this commit |
 | 2026-11-05 | Review round 2 (Implementer 4 major; Attacker 3 blocking, 4 major) fixed: shared-check verdicts decided by a parent process (host child answers over IPC), lockfile validation, name whitelist and `node` argv, filesystem rules in the verify-tree builder, no git in the clone, canary tokens, disk polling, per-attempt metrics, exit-code split, T2 to T8 inputs and ownership clarified; lint clean | W~1 | this commit |
+| 2026-11-05 | T2 done: `schema.mjs` implementation validators (`validateImplExperiment`, task and arm rules, `post_setup`, `effort`), `check.mjs` implementation experiment and task rules (pilot rule limited to specplan tasks, adapter and snapshot existence, review and implementer prices), `spawn.mjs` `--effort`, driver experiment-stage switch (exit 8 for ablation, model_tier, implementation until T6), `makeImplRepo()` in `testkit.mjs`, `arms/implementer-cheap.json` (Sonnet 5.5, low effort). Tests were written alongside the code, not strictly before it. The framework test "E8: arm stage" now uses an implementation prompt, because the implementation placeholder allowlist replaces the specplan one | W~1 | this commit |
 | 2026-11-05 | T1 done: Windows facts recorded in `isolation.md` (env list, setup needs a `prisma generate` step, timings, TAP format, junction/hardlink behaviour, grandchild survives `killTree` and the PowerShell sweep kills it); toy build with Sonnet 5.5 at low effort cost 0.0561 USD and the result-event totals reproduce the CLI cost exactly (assistant-event usage undercounts); `pricing.json` Sonnet entry re-dated; baseline `<BUILD>` was 296/296 green | W~1 | this commit |
 | 2026-11-05 | Execution started; T1 gate answered: implementer switched to Sonnet 5.5 at low effort (C~6); spec SD1, data-model, implementation-order and plan T1/T2 amended; no new price entry needed | W~1 | this commit |
 | 2026-11-05 | Review round 1 (Implementer, Tester, Attacker: 4 + 3 + 3 blocking findings) fixed: checks run in a harness-owned verify tree, history-free agent clones, nonce-named verdict file, protected paths mean modified or deleted base files, adapter contract and parsing rules defined, credential-in-output no longer stops a batch, cost attribution by attempt boundary, resource caps, T3/T4 dependency corrected | W~1 | this commit |

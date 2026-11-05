@@ -17,7 +17,7 @@
 | Task | Depends on | Can run concurrently with | Wave | Status |
 |---|---|---|---|---|
 | T1 Feasibility spike | - | - | 1 | Done |
-| T2 Schema, validation and testkit | T1 | - | 2 | Not started |
+| T2 Schema, validation and testkit | T1 | - | 2 | Done |
 | T3 `exp snapshot` | T2 | T4, T5 | 3 | Not started |
 | T4 Check runner and `exp baseline` | T2 | T3, T5 | 3 | Not started |
 | T5 Shared checks and adapters | T2 | T3, T4 | 3 | Not started |
@@ -112,13 +112,13 @@ Executor note: run inline, task by task in table order. T3, T4 and T5 share no f
 | Test | `workflow/experiments/harness/schema.test.mjs`, `workflow/experiments/harness/check.test.mjs`, `workflow/experiments/harness/driver.test.mjs` | cases: E8, E9, E10, E13, E93; exit 8 regression for `ablation`, `model_tier`, `implementation` |
 
 **Checklist**
-- [ ] 1. Write failing tests in `schema.test.mjs`: a valid implementation task, arm and experiment pass; E8 (missing adapter path is for `check.test.mjs`; here a `checks` entry with no `argv`, a string argv), E10 (`samples` 0 and 6, `attempts` 3, `max_questions` 11, `max_parallel` 4, `plans` empty and 13, a `{{brief}}` placeholder), E93 (an argv that starts with `sh` or `cmd`, an argv that is a string). Run `<TEST schema>`; expect FAIL.
-- [ ] 2. Implement the validators in `schema.mjs`; run `<TEST schema>`; expect PASS. The specplan validators and their tests stay unchanged.
-- [ ] 3. Add `makeImplRepo()` to `testkit.mjs` (toy implementation task, a toy adapter, stub `acceptance/runner.mjs` and `host.mjs`, `arms/implementer-one.json`, `experiments/impl-one.json`); `makeExperimentRepo` stays untouched. T3 to T6 add their own test files and do not edit `testkit.mjs`.
-- [ ] 4. Write failing tests in `check.test.mjs` using `makeImplRepo()`: E8 (adapter path missing), E9 (plan with no snapshot, no adapter, duplicate plan id), E13 (model without a price), an implementation task without `issues_file` passes while a `pilot-` specplan task without one still fails, `experiments/pilot-001.json` still validates. Implement the `runCheck` changes; run `<TEST check>`; expect PASS.
-- [ ] 5. In `driver.test.mjs` keep the existing test `E11: an arm with stage implementation exits 8 before any clone or run folder exists` and add cases for an experiment with `stage` `ablation` and `model_tier` (no `arm_ids` needed) expecting exit 8 before any call; run only these with `node --test --test-name-pattern "stage" workflow/experiments/harness/driver.test.mjs`; expect PASS.
-- [ ] 6. Write a failing `spawn.test.mjs` case (`effort: 'low'` adds `--effort low`, an invalid value throws, no `effort` leaves the args unchanged) and an arm-validator case in `schema.test.mjs` (`effort` allowed values); implement in `spawn.mjs` and `schema.mjs`; run `<TEST spawn>` and `<TEST schema>`; PASS. Create `arms/implementer-cheap.json`; run `node workflow/experiments/harness/exp.mjs check`; expect exit 0.
-- [ ] 7. Update branch state: Progress, Changes line.
+- [x] 1. Write failing tests in `schema.test.mjs`: a valid implementation task, arm and experiment pass; E8 (missing adapter path is for `check.test.mjs`; here a `checks` entry with no `argv`, a string argv), E10 (`samples` 0 and 6, `attempts` 3, `max_questions` 11, `max_parallel` 4, `plans` empty and 13, a `{{brief}}` placeholder), E93 (an argv that starts with `sh` or `cmd`, an argv that is a string). Run `<TEST schema>`; expect FAIL.
+- [x] 2. Implement the validators in `schema.mjs`; run `<TEST schema>`; expect PASS. The specplan validators and their tests stay unchanged.
+- [x] 3. Add `makeImplRepo()` to `testkit.mjs` (toy implementation task, a toy adapter, stub `acceptance/runner.mjs` and `host.mjs`, `arms/implementer-one.json`, `experiments/impl-one.json`); `makeExperimentRepo` stays untouched. T3 to T6 add their own test files and do not edit `testkit.mjs`.
+- [x] 4. Write failing tests in `check.test.mjs` using `makeImplRepo()`: E8 (adapter path missing), E9 (plan with no snapshot, no adapter, duplicate plan id), E13 (model without a price), an implementation task without `issues_file` passes while a `pilot-` specplan task without one still fails, `experiments/pilot-001.json` still validates. Implement the `runCheck` changes; run `<TEST check>`; expect PASS.
+- [x] 5. In `driver.test.mjs` keep the existing test `E11: an arm with stage implementation exits 8 before any clone or run folder exists` and add cases for an experiment with `stage` `ablation` and `model_tier` (no `arm_ids` needed) expecting exit 8 before any call; run only these with `node --test --test-name-pattern "stage" workflow/experiments/harness/driver.test.mjs`; expect PASS.
+- [x] 6. Write a failing `spawn.test.mjs` case (`effort: 'low'` adds `--effort low`, an invalid value throws, no `effort` leaves the args unchanged) and an arm-validator case in `schema.test.mjs` (`effort` allowed values); implement in `spawn.mjs` and `schema.mjs`; run `<TEST spawn>` and `<TEST schema>`; PASS. Create `arms/implementer-cheap.json`; run `node workflow/experiments/harness/exp.mjs check`; expect exit 0.
+- [x] 7. Update branch state: Progress, Changes line.
 - [ ] 8. Commit: `feat: implementation stage schemas, validation and toy fixtures (experiment framework)` with `Task: T2`.
 
 ### T3: `exp snapshot`
