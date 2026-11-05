@@ -18,7 +18,7 @@
 |---|---|---|---|---|
 | T1 Feasibility spike | - | - | 1 | Done |
 | T2 Schema, validation and testkit | T1 | - | 2 | Done |
-| T3 `exp snapshot` | T2 | T4, T5 | 3 | Not started |
+| T3 `exp snapshot` | T2 | T4, T5 | 3 | Done |
 | T4 Check runner and `exp baseline` | T2 | T3, T5 | 3 | Not started |
 | T5 Shared checks and adapters | T2 | T3, T4 | 3 | Not started |
 | T6 Implementation driver | T3, T4, T5 | - | 4 | Not started |
@@ -132,12 +132,12 @@ Executor note: run inline, task by task in table order. T3, T4 and T5 share no f
 | Test | `workflow/experiments/harness/snapshot.test.mjs` | E1 to E7 |
 
 **Checklist**
-- [ ] 1. Write failing tests for E1 (status `extracted`, unknown id), E2 (no plan file, `missing_artifact`, `cost_mismatch`), E3 (existing target with another hash), each expecting exit 2 and nothing written. Run `<TEST snapshot>`; expect FAIL.
-- [ ] 2. Implement `snapshotRun` for the happy path and these refusals; run; expect PASS for E1 to E3.
-- [ ] 3. Add failing tests for E4 (a key pattern in a plan file, exit 9, the type named and the value absent from the message) and E5 (each refused path form, a symlink fixture skipped on a machine that cannot create one with a recorded reason). Implement; run; expect PASS.
-- [ ] 4. Add failing tests for E6 (`curl http://x`, `~/.ssh`, a 300-character base64 line: exit 2 listing file and line; with `--accept-findings` the file is written) and E7 (two plan-kind files: `snapshot.json` keeps `files` order). Implement; run; expect PASS.
-- [ ] 5. Add `commands/snapshot.mjs`; run `node workflow/experiments/harness/exp.mjs snapshot` with no argument; expect usage and exit 2.
-- [ ] 6. Update branch state: Progress, Changes line. Commit: `feat: exp snapshot freezes plan artifacts (experiment framework)` with `Task: T3`.
+- [x] 1. Write failing tests for E1 (status `extracted`, unknown id), E2 (no plan file, `missing_artifact`, `cost_mismatch`), E3 (existing target with another hash), each expecting exit 2 and nothing written. Run `<TEST snapshot>`; expect FAIL.
+- [x] 2. Implement `snapshotRun` for the happy path and these refusals; run; expect PASS for E1 to E3.
+- [x] 3. Add failing tests for E4 (a key pattern in a plan file, exit 9, the type named and the value absent from the message) and E5 (each refused path form, a symlink fixture skipped on a machine that cannot create one with a recorded reason). Implement; run; expect PASS.
+- [x] 4. Add failing tests for E6 (`curl http://x`, `~/.ssh`, a 300-character base64 line: exit 2 listing file and line; with `--accept-findings` the file is written) and E7 (two plan-kind files: `snapshot.json` keeps `files` order). Implement; run; expect PASS.
+- [x] 5. Add `commands/snapshot.mjs`; run `node workflow/experiments/harness/exp.mjs snapshot` with no argument; expect usage and exit 2.
+- [x] 6. Update branch state: Progress, Changes line. Commit: `feat: exp snapshot freezes plan artifacts (experiment framework)` with `Task: T3`.
 
 ### T4: Check runner and `exp baseline`
 **Delivers:** the verify-tree builder, the stripped-environment runner, parsers, the green rule, adherence metrics and the baseline | **Satisfies:** F4, F8, F10, F12, F15, N3, E14 to E18, E31 to E48, E62 to E64, E94 to E98, E103, E104 | **Depends on:** T2 | **Wave:** 3
