@@ -27,6 +27,7 @@ export const CONTINUE_PROMPT = 'Continue from where you stopped.';
 export const PROBE_PROMPT = 'Reply with exactly the word: ok';
 export { FIXED_ASSUMPTION };
 export const MAX_QUESTIONS = 40;
+export const MAX_STATUS_TURNS = 10;
 const SUPPORTED_STAGE = 'specplan';
 
 class Exit extends Error {
@@ -393,7 +394,19 @@ async function executeRun(ctx, run) {
       persist(ctx, run);
       continue;
     }
+    if (kind === 'status') {
+      // a status update asks nothing: continue without counting or logging a question
+      state.empty_streak = 0;
+      state.status_streak = (state.status_streak ?? 0) + 1;
+      state.status_turns = (state.status_turns ?? 0) + 1;
+      if (state.status_streak > (ctx.deps.maxStatusTurns ?? MAX_STATUS_TURNS)) return abort(ctx, run, 'turn_cap', `${state.status_streak} status updates in a row`);
+      prompt = CONTINUE_PROMPT;
+      state.next_prompt = prompt;
+      persist(ctx, run);
+      continue;
+    }
     state.empty_streak = 0;
+    state.status_streak = 0;
     state.question_count += 1;
     if (state.question_count > (ctx.deps.maxQuestions ?? MAX_QUESTIONS)) return abort(ctx, run, 'turn_cap', `question ${state.question_count}`);
     const answer = await (ctx.deps.answer ?? answerFor)({ run, question: String(text), state, arm, task, ctx });

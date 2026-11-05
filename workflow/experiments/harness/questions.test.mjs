@@ -47,3 +47,13 @@ test('setIssueIds rejects an unknown issue id, an unknown turn and equal ids, an
   assert.throws(() => setIssueIds(p, [{ turn: 1, issue_id: 'collision' }, { turn: 1, issue_id: 'ghost' }], IDS), /ghost/);
   assert.equal(readQuestions(p)[0].issue_id, null);
 });
+
+test('status updates logged as questions by older runs are left out of readQuestions but kept by setIssueIds', () => {
+  const p = paths();
+  appendQuestion(p, { run_id: 'r1', turn: 1, text: 'Which role may edit a note?', source: 'assumption' });
+  appendQuestion(p, { run_id: 'r1', turn: 2, text: "The reviewer is running. I'll wait for its findings.", source: 'assumption' });
+  assert.equal(readQuestions(p).length, 1);
+  assert.equal(readQuestions(p, { includeStatus: true }).length, 2);
+  setIssueIds(p, [{ turn: 1, issue_id: 'collision' }], IDS);
+  assert.equal(readQuestions(p, { includeStatus: true }).length, 2);
+});
