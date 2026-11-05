@@ -101,3 +101,25 @@ Ceiling rule (this plan's own choice): run ceiling = 3 x the highest toy cost = 
 | `transcript-subagent.jsonl`, `.meta.json` | the reviewer subagent of the same run | extractor linking (T5) |
 | `cli-result.json` | probe with one subagent | N1 reference total, cumulative `modelUsage` |
 | `cli-result-budget-stop.json` | probe with a 0.01 cap | budget mapping (E65) |
+
+## Implementation stage findings (T1 spike, 2026-11-05, Windows 11, Node 22.23, npm 10.9)
+
+Measured by `harness/spike/impl-spike.mjs` on the pilot base commit `160053c` in a history-free tree.
+
+**History-free tree.** `git archive` + `tar` + `git init` + one commit `base` takes about 31 s; `git log --all` shows one commit and `for-each-ref` one ref (`refs/heads/master`). GNU tar from Git for Windows reads `S:...` as `host:path` ("Cannot connect to S: resolve failed"): extract with relative names and `cwd` set to the work folder, or avoid `tar`.
+
+**Check environment (N3).** Final variable list, all that was needed: `PATH`, `PATHEXT`, `ComSpec`, `SystemRoot`, `TEMP`, `TMP`, `HOME`, `USERPROFILE`, `APPDATA`, plus `npm_config_cache` when the parent has it set (it is not set on this machine). No variable had to be added after the first run. `npm ci --ignore-scripts`, `tsc`, and `node --import tsx --test` all ran with only these.
+
+**Setup needs a second step.** `npm ci --ignore-scripts` skips `prisma generate`, so `node node_modules/typescript/bin/tsc -b` fails at the base commit (5 errors in `src/be/db/src/client.ts`, exit 2). `node node_modules/prisma/build/index.js generate --schema src/be/db/prisma/schema.prisma` works under the stripped environment (21 s, no scripts) and `tsc -b` then exits 0. The task file gets `post_setup` for it (data-model.md).
+
+**Timings (seconds).** `npm ci --ignore-scripts` 110 (network); `prisma generate` 21; `tsc -b` 6.7 (after generate); `tsc --noEmit` in `src/fe` 10; one test file (`date-rules.test.ts`, 5 tests) 1.1; recursive copy of `node_modules` 55 (15,289 files). A verify tree therefore costs about a minute for the copy.
+
+**tsx.** Resolves from the tree (`node_modules/tsx` present), so `node --import tsx --test` works with the tree as working directory.
+
+**TAP format** (`--test-reporter=tap`): `TAP version 13`, then per test `# Subtest: <name>`, `ok <n> - <name>` or `not ok <n> - <name>`, an indented YAML block (`duration_ms`, `type: 'test'`), and a summary of `# tests`, `# suites`, `# pass`, `# fail` lines. Nested tests are indented by two spaces per level. A file that prints nothing has no `ok` line.
+
+**Links on this machine.** `fs.lstat` on a directory junction reports `isSymbolicLink() === true` and `isDirectory() === false`; a file symlink reports `isSymbolicLink() === true`; a hardlink reports `nlink === 2` on both names. Creating them needed no elevation here. Walkers can use `lstat` alone.
+
+**Process containment.** A detached grandchild started through an intermediate process that then exits **survives** `killTree(parent.pid)` (`taskkill /PID <pid> /T /F`). Finding it by a PowerShell filter and killing it works: `Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*<marker>*' -and $_.Name -eq 'node.exe' }`, then `taskkill /PID <pid> /T /F`; the marker is a string in the grandchild's command line (a path under the clone also works). The end-of-turn sweep is therefore required, as the spec assumes.
+
+**Toy implementation build.** Sonnet 5.5 at `--effort low` with the harness flags (`--setting-sources project`, `--strict-mcp-config`, Read/Write/Edit/Bash/Glob/Grep allowed, WebFetch/WebSearch denied, `--max-budget-usd 3`) wrote a function and a test and ran it in 18 s: `total_cost_usd` **0.0561** (2 turns). The cost computed from `pricing.json` with the result event's `usage` totals (input 4, output 256, cache read 65,825, cache write 1h 11,732) is 0.0560785, equal to the CLI total. The per-message `usage` of the `assistant` stream events undercounts output tokens (30 against 256), so cost must be taken from the result event or the final totals, never summed from assistant events. Because the prompt cache writes use the 1-hour tier here, cache writes dominate the cost of a small build.

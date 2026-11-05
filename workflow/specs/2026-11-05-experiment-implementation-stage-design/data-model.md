@@ -15,6 +15,7 @@ Committed: `tasks/<id>/` (including `acceptance/`), `arms/implementer-*.json`, `
 | Implementation task (`tasks/<id>/task.json`) | stage | enum | no | - | `implementation` |
 | | base_commit, brief_file | string, path | no | - | as in the framework |
 | | setup_command | argv array | no | - | run in a new tree; the pilot task: `["npm","ci","--ignore-scripts"]` |
+| | post_setup | argv array | yes | `[]` | run in the same tree right after `setup_command`, same stripped environment; the first element must be `node` (E93). Added 2026-11-05 after T1: `--ignore-scripts` skips `prisma generate`, so `tsc -b` fails at the base commit. The pilot task: `["node","node_modules/prisma/build/index.js","generate","--schema","src/be/db/prisma/schema.prisma"]`. `setup_sha256` covers both commands |
 | | checks.typecheck | array of {argv, cwd, timeout_s} | no | - | run in order; `cwd` repo-relative; errors counted as in § Parsing rules |
 | | checks.lint | array like typecheck, or null | yes | null | null means no lint command (the pilot task: null, because its lint script equals typecheck) |
 | | checks.tests | {own_argv, baseline_files, timeout_s} | no | - | `own_argv` is the argv prefix that runs one test file when the file path is appended after `--`; `baseline_files` is a list of globs of the test files that exist at base |
