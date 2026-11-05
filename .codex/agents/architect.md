@@ -10,3 +10,4 @@ Writes: docs/architecture/**
 Never touch: code, specs, plans, workflow/project-state/**
 Return: readiness-gate summary
 Reasoning: high
+Policy mediation: the provider PreToolUse hook invokes scripts/agent-pre-tool-hook.mjs; it delegates to npm run mediate:agent; do not bypass it.

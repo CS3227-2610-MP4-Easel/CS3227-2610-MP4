@@ -1,0 +1,2 @@
+# Reviewed non-secret canary from the original W12 scanner test commit.
+4d8025da73a3a7c18919a7b44b8fa804409262b4:tests/process-security/secret-scan.test.ts:generic-api-key:24
