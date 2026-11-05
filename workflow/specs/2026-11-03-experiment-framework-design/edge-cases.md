@@ -26,6 +26,7 @@ IDs are permanent: never reuse or renumber. Every F requirement and every API er
 | E15 | F5 | Fixtures `question-then-marker-last-line` and `marker-then-question-last-line` | done (question noted `ignored_after_done`) and question | Double handling | unit |
 | E16 | F5 | Whitespace-only final message, twice in a row | one retry, then abort `turn_cap`, exit 6 | Infinite loop | integration |
 | E17 | F5 | 41st question | abort `turn_cap`, exit 6 | Runaway cost | integration |
+| E72 | F5 | Final message `The reviewer is running. I'll wait for its findings.` | classified `status`: the continue prompt is sent, `question_count` stays 0, no question row, `status_turns` 1; a message of 300 characters or more, or with a question mark, is still a question; the 11th status update in a row aborts `turn_cap`, exit 6 | A status line is not a question and must not inflate the question count or get the fixed assumption text | unit, integration |
 | E18 | F5 | CLI result reports an error stop | abort `crash`, exit 6 | Partial run treated as complete | integration |
 | E19 | F14 | Turn exceeds `turn_timeout_s` | process tree killed, abort `timeout`, exit 6, orphan process count is 0 | Hung child, Windows orphans | integration |
 | E20 | F6 | Harness killed mid-run | `exp run --continue <run-id>` resumes with prior spend and session id | Lost run | integration |
