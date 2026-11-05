@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { createDbClient, incrementRateCounter, type FilteredDbClient } from "@agile/db";
 import { createLookupRegisteredUser, createResolvePrincipal, type RegisteredPrincipal, type TokenPrincipal } from "./principal.js";
 import { createHit, type Hit } from "./rate-limit.js";
@@ -17,7 +18,7 @@ export type AuthRuntime = {
  * The client does not connect until its first query. Without Firebase settings (a mock preview, E50) identity calls fail with 500. */
 export function createAuthRuntime(env: Record<string, string | undefined>, overrides: { verifier?: TokenVerifier; base?: PrismaClient } = {}): AuthRuntime {
   const settings = loadAuthSettings(env);
-  const base = overrides.base ?? new PrismaClient();
+  const base = overrides.base ?? new PrismaClient({ adapter: new PrismaPg({ connectionString: env.DATABASE_URL }) });
   const db = createDbClient(base);
   const hit = createHit((key, windowSeconds) => incrementRateCounter(base, key, windowSeconds));
   if (!settings.firebaseProjectId) {

@@ -12,7 +12,8 @@
   "dependencies": {
     "@agile/contracts": "*",
     "@agile/db": "*",
-    "@prisma/client": "^6.19.3",
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
     "firebase-admin": "^13.10.0"
   }
 }

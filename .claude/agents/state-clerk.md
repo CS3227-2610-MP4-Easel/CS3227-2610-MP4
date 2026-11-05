@@ -14,3 +14,4 @@ Writes: workflow/project-state/branch-states/**
 Never touch: code, STATE.md, guardrails.md, cold folders
 Return: confirmation naming the entries written
 Reasoning: low
+Policy mediation: the provider PreToolUse hook invokes scripts/agent-pre-tool-hook.mjs; it delegates to npm run mediate:agent; do not bypass it.

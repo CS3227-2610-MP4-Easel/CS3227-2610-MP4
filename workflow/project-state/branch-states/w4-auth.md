@@ -5,11 +5,11 @@ describes `INT`; read it for context and write here instead of editing it.
 `sync-project-state` folds this file in after the branch merges.
 
 - **Branch:** w4-auth (from `INT` at `0dbbdcb`; spec merged in PR #4; fast-forwarded to `INT` at `7bd6544` after W1 merged)
-- **Base:** 7bd6544
+- **Base:** 6a6c2ed
 - **Owner:** ludannnn (Developer member)
-- **Status:** Approved
-- **Approved:** ludannnn 2026-11-04
-- **Last updated:** 2026-11-04 by Claude Opus 5.5 — approved at Gate 3; push and PR await a separate yes
+- **Status:** In review
+- **Approved:** ludannnn 2026-11-04 for the pre-merge branch; fresh review needed after integration changes
+- **Last updated:** 2026-11-05 by Codex — merged current development and reconciled Prisma 7 and test setup
 
 **Untouched:** Conventions, Lessons
 
@@ -59,6 +59,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-05 | Merged development 6a6c2ed; retained W4 auth test setup with portable discovery, adapted Prisma 7 clients and Zod imports, and reconciled lockfile and feedback; 224 tests pass, 9 database-dependent tests skip | W4 | merge |
 | 2026-11-04 | PR #10 review: unverified email recorded as deliberate (C~4 reconfirmed, Known Gap extended with the member-add impact, comment at the verifier) | W4 | this commit |
 | 2026-11-04 | Close-out: Attacker and Tester lenses, no blocking findings. Fixed: `identity` set only when the token email is a string; tests for register's own bucket and 60 s/20 window, register 401/400/422/500 paths, error codes on E27/E42, no row on check-code, `X-Request-Id` on `me`, multibyte token length, full SHA-256 digests in E30, and `hit` over real Postgres (`hit-integration.test.ts`); 175 tests, none skipped. Accepted, not changed: demo codes valid on dev and preview (AD-63, E24), slow-body requests bounded only by the platform timeout | W4 | b2d987e |
 | 2026-11-04 | T5: register endpoint and `createUser` (P2002 by code to 409); outside the plan: `createApiApp` gains an optional `routes` argument so E25 runs through the real error logging, shared fakes moved to `src/be/api/test/auth-fakes.ts`, and the body-size check no longer awaits `cancel()` on a cloned body (it hung); 170 tests, none skipped | W4 | 8118375 |

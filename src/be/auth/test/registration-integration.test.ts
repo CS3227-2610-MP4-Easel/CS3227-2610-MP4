@@ -2,13 +2,14 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { createDbClient } from "@agile/db";
 import { AlreadyRegistered, createResolvePrincipal, createUser, getUser, type NewUser } from "../src/index.js";
 
 const url = process.env.W1_INTEGRATION_DATABASE_URL;
 
 async function withDb(run: (db: ReturnType<typeof createDbClient>, newUser: (overrides?: Partial<NewUser>) => NewUser) => Promise<void>) {
-  const base = new PrismaClient({ datasourceUrl: url });
+  const base = new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
   const tag = randomUUID();
   const newUser = (overrides: Partial<NewUser> = {}): NewUser => ({ firebaseUid: `${tag}-${randomUUID()}`, email: `${randomUUID()}@${tag}.test`, displayName: "Dev", role: "DEVELOPER", ...overrides });
   try { await run(createDbClient(base), newUser); } finally { await base.user.deleteMany({ where: { OR: [{ firebaseUid: { startsWith: tag } }, { email: { endsWith: `@${tag}.test` } }] } }); await base.$disconnect(); }

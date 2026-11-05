@@ -17,3 +17,4 @@ Writes: src/**, workflow/plans/**
 Never touch: test files (read-only), workflow/project-state/**, spec files
 Return: diff summary, build result summary (pass/fail line plus first failing lines)
 Reasoning: medium
+Policy mediation: the provider PreToolUse hook invokes scripts/agent-pre-tool-hook.mjs; it delegates to npm run mediate:agent; do not bypass it.

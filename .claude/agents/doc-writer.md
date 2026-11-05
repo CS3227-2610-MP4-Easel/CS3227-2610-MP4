@@ -14,3 +14,4 @@ Writes: docs/guide/**
 Never touch: code, workflow/project-state/**
 Return: sections changed
 Reasoning: medium
+Policy mediation: the provider PreToolUse hook invokes scripts/agent-pre-tool-hook.mjs; it delegates to npm run mediate:agent; do not bypass it.

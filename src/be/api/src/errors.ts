@@ -1,4 +1,4 @@
-import type { z } from "zod";
+import type { z } from "zod/v3";
 
 export class HttpError extends Error {
   constructor(public readonly code: string, public readonly status: number, message: string, public readonly details?: Array<{ field: string; message: string }>) {

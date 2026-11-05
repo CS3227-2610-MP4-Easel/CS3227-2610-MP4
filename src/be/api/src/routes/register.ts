@@ -1,5 +1,5 @@
 import type { Hono } from "hono";
-import type { z } from "zod";
+import type { z } from "zod/v3";
 import { policyForRoute, validateRouteRegistration, type ApiContext, type RouteDefinition } from "@agile/contracts";
 import { parseInput, parseJsonBody } from "../errors.js";
 import { authorizeRequest, type AuthDependencies } from "../middleware/auth.js";

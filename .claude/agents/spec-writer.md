@@ -16,3 +16,4 @@ Writes: workflow/specs/**
 Never touch: code, plans, workflow/project-state/**
 Return: spec path, tier, open questions
 Reasoning: high
+Policy mediation: the provider PreToolUse hook invokes scripts/agent-pre-tool-hook.mjs; it delegates to npm run mediate:agent; do not bypass it.

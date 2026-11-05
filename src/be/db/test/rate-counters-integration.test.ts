@@ -2,12 +2,13 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { incrementRateCounter } from "../src/index.js";
 
 const url = process.env.W1_INTEGRATION_DATABASE_URL;
 
 async function withClient(run: (base: PrismaClient, key: string) => Promise<void>) {
-  const base = new PrismaClient({ datasourceUrl: url });
+  const base = new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
   const key = `test:${randomUUID()}`;
   try { await run(base, key); } finally { await base.rateCounter.deleteMany({ where: { key } }); await base.$disconnect(); }
 }

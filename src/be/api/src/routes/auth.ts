@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v3";
 import { policyForRoute, type RouteDefinition } from "@agile/contracts";
 import { AlreadyRegistered, checkRegistrationCode, clientIpKey, createUser, getUser, type AuthRuntime, type RatePurpose } from "@agile/auth";
 import { errorResponse, HttpError } from "../errors.js";

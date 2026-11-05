@@ -1,5 +1,5 @@
 import { AuthStateSchema, PredicateSchema, RoleAliasSchema, UserRoleSchema, type UserRole } from "./enums.js";
-import type { z } from "zod";
+import type { z } from "zod/v3";
 
 export type AuthState = z.infer<typeof AuthStateSchema>;
 export type Predicate = z.infer<typeof PredicateSchema>;
