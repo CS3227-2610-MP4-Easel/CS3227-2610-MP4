@@ -16,9 +16,10 @@ function runtime() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) throw new Error("DATABASE_URL is required to create the gateway client");
   const db = new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
-  const sessions = createSessions({ db, settings });
+  const sessions = createSessions({ db, settings: { tier: settings.tier } });
   const provider = settings.llmMode === "live" ? createSoclaasProvider({ baseUrl: settings.baseUrl, apiKey: settings.apiKey as string }) : createMockProvider();
-  cached = { sessions, gateway: createLlmGateway({ settings, db, hit: getAuthRuntime().hit, sessions, provider }) };
+  // Only the SoCLaaS provider holds the key; the gateway's copy of the settings does not, so it cannot be logged by accident.
+  cached = { sessions, gateway: createLlmGateway({ settings: { ...settings, apiKey: null }, db, hit: getAuthRuntime().hit, sessions, provider }) };
   return cached;
 }
 

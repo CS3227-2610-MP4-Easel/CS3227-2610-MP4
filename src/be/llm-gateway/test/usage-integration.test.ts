@@ -27,9 +27,10 @@ test("E33 usageSessions: the caller's sessions in [from, to), newest first, with
   await base.aiSession.create({ data: { feature: "DEV_STANDUP", userId: me, env: "dev", startedAt: at("09:15:00"), lastActivityAt: at("09:15:00") } });
   await base.llmCall.createMany({ data: [call(me, { sessionId: early.id, costMicrousd: 5n }), call(me, { sessionId: early.id, status: "SCHEMA_FAIL", promptTokens: null, completionTokens: null, costMicrousd: 104n })] });
 
+  const atFrom = await session(me, "00:00:00");
   const page = await usageSessions(base, me, { from: at("00:00:00"), to: at("12:00:00"), page: 0, size: 20 }, "test");
-  assert.equal(page.total, 2, "the session at `to`, the other user's and the other tier's are excluded");
-  assert.deepEqual(page.items.map((s) => s.id), [late.id, early.id]);
+  assert.equal(page.total, 3, "the session at `from` counts; the one at `to`, the other user's and the other tier's do not");
+  assert.deepEqual(page.items.map((s) => s.id), [late.id, early.id, atFrom.id]);
   for (const item of page.items) UsageSessionSchema.parse(item);
   assert.deepEqual(page.items[1], {
     id: early.id, feature: "DEV_STANDUP", startedAt: at("08:00:00").toISOString(), endedAt: at("08:30:00").toISOString(), outcome: "ACCEPTED", regenerateCount: 2,
@@ -38,12 +39,13 @@ test("E33 usageSessions: the caller's sessions in [from, to), newest first, with
   assert.deepEqual([page.items[0].calls, page.items[0].costMicroUsd, page.items[0].elapsedSeconds], [0, 0, null]);
 
   const past = await usageSessions(base, me, { from: at("00:00:00"), to: at("12:00:00"), page: 5, size: 1 }, "test");
-  assert.deepEqual([past.items, past.total, past.page, past.size], [[], 2, 5, 1]);
+  assert.deepEqual([past.items, past.total, past.page, past.size], [[], 3, 5, 1]);
   const byFeature = await usageSessions(base, me, { feature: "DEV_SUMMARY", page: 0, size: 10 }, "test");
   assert.equal(byFeature.total, 0);
-  for (const query of [{ page: 0, size: 0 }, { page: 0, size: 101 }, { page: -1, size: 10 }, { page: 0.5, size: 10 }]) {
+  for (const query of [{ page: 0, size: 0 }, { page: 0, size: 101 }, { page: -1, size: 10 }, { page: 0.5, size: 10 }, { page: 10_001, size: 10 }, { page: 0, size: 10, from: new Date("nope") }]) {
     await assert.rejects(usageSessions(base, me, query, "test"), RangeError);
   }
+  await assert.rejects(usageSummary(base, { to: new Date("nope") }, "test"), RangeError);
 }));
 
 test("E34 usageSummary: one row per feature and model for this tier, aggregate only", { skip }, () => withIntegrationDb(async (base, { user }) => {

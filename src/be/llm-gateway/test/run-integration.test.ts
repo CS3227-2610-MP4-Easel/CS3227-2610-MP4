@@ -12,7 +12,7 @@ const skip = !integrationUrl;
 const MIN = 60_000;
 
 /** A real gateway over Postgres with its own breaker and budget rows, a fake clock and an allow-all limiter. */
-async function setup(base: PrismaClient, { user, project }: Fixtures, options: { provider?: (clock: ReturnType<typeof fakeClock>) => LlmProvider; settings?: Parameters<typeof testSettings>[0]; guards?: GuardPipeline; mockResponses?: Map<string, MockRespond> } = {}) {
+async function setup(base: PrismaClient, { user, project }: Fixtures, options: { provider?: (clock: ReturnType<typeof fakeClock>) => LlmProvider; settings?: Parameters<typeof testSettings>[0]; guards?: GuardPipeline; mockResponses?: Map<string, MockRespond>; refuse?: Record<string, number>; breaker?: object } = {}) {
   const clock = fakeClock();
   const settings = testSettings(options.settings);
   const sessions = createSessions({ db: base, settings, clock });
@@ -21,8 +21,9 @@ async function setup(base: PrismaClient, { user, project }: Fixtures, options: {
   const sessionId = await sessions.open({ feature: "DEV_STANDUP", userId, projectId });
   const mockResponses = options.mockResponses ?? new Map<string, MockRespond>([["DEV_STANDUP", () => "Yesterday: fixed login."]]);
   const stateKeyPrefix = `test-${randomUUID()}-`;
+  if (options.breaker) await base.llmGatewayState.create({ data: { key: `${stateKeyPrefix}breaker`, value: options.breaker } });
   const gateway = createLlmGateway({
-    settings, db: base, hit: fakeHit().hit, sessions, clock, stateKeyPrefix, guards: options.guards, mockResponses,
+    settings, db: base, hit: fakeHit(options.refuse).hit, sessions, clock, stateKeyPrefix, guards: options.guards, mockResponses,
     provider: options.provider?.(clock) ?? createMockProvider(mockResponses),
   });
   const call = (overrides: Partial<LlmCall> = {}): LlmCall => ({
@@ -34,7 +35,8 @@ async function setup(base: PrismaClient, { user, project }: Fixtures, options: {
     output: { kind: "text", maxChars: 500 }, inputHash: "hash-1", ...overrides,
   });
   const cleanup = () => base.llmGatewayState.deleteMany({ where: { key: { startsWith: stateKeyPrefix } } });
-  return { clock, gateway, call, userId, projectId, sessionId, cleanup };
+  const breakerState = async () => (await base.llmGatewayState.findUnique({ where: { key: `${stateKeyPrefix}breaker` } }))?.value;
+  return { clock, gateway, call, userId, projectId, sessionId, cleanup, breakerState };
 }
 
 test("E5 run refuses inside a transaction and runs normally after it", { skip }, () => withIntegrationDb(async (base, fixtures) => {
@@ -60,24 +62,34 @@ test("E13 run with a missing or another user's session is NOT_FOUND with no row"
 
 test("E22 expired leases are finalised TIMEOUT by the next run; a swept call returns AI_UNAVAILABLE", { skip }, () => withIntegrationDb(async (base, fixtures) => {
   let sweep = async () => {};
-  const s = await setup(base, fixtures, { provider: (clock) => fakeProvider(clock, [{ text: "ok" }, { text: "ok", during: () => sweep() }]).provider });
+  const breaker = { failures: 2, openUntil: null };
+  // The first run ends SCHEMA_FAIL (empty text), which leaves the breaker alone, so any change would come from the sweep.
+  const s = await setup(base, fixtures, { breaker, provider: (clock) => fakeProvider(clock, [{ text: "" }, { text: "ok", during: () => sweep() }]).provider });
   try {
-    const stale = await base.llmCall.create({ data: {
-      userId: s.userId, role: "DEVELOPER", env: "test", feature: "DEV_STANDUP", model: "llama3.1:8b", promptVersion: "000000000000", status: "IN_FLIGHT",
-      leaseExpiresAt: new Date(s.clock.now().getTime() - 1), createdAt: new Date(s.clock.now().getTime() - MIN), attempts: 0, estimatedPromptTokens: 0, sectionTokens: {},
+    const row = (lease: number) => ({
+      userId: s.userId, role: "DEVELOPER" as const, env: "test", feature: "DEV_STANDUP" as const, model: "llama3.1:8b", promptVersion: "000000000000", status: "IN_FLIGHT" as const,
+      leaseExpiresAt: new Date(s.clock.now().getTime() + lease), createdAt: new Date(s.clock.now().getTime() - MIN), attempts: 0, estimatedPromptTokens: 0, sectionTokens: {},
       prefixHash: "p", inputHash: "i", flagged: false, truncated: false, costMicrousd: 104n, experiment: {},
-    } });
-    assert.equal((await s.gateway.run(s.call())).ok, true);
+    });
+    const stale = await base.llmCall.create({ data: row(-1) });
+    const current = await base.llmCall.create({ data: row(0) });
+    await s.gateway.run(s.call());
     const swept = await base.llmCall.findUniqueOrThrow({ where: { id: stale.id } });
     assert.equal(swept.status, "TIMEOUT");
     assert.equal(swept.costMicrousd, 104n, "the reservation stays counted");
-    assert.equal(await base.llmGatewayState.count({ where: { key: { contains: "breaker" }, value: { path: ["failures"], gt: 0 } } }), 0, "a sweep does not touch the breaker");
+    assert.equal((await base.llmCall.findUniqueOrThrow({ where: { id: current.id } })).status, "IN_FLIGHT", "a lease ending exactly now is not swept");
+    assert.deepEqual(await s.breakerState(), breaker, "a sweep does not touch the breaker");
 
+    await base.llmCall.update({ where: { id: current.id }, data: { status: "TIMEOUT" } });
+    const activity = (await base.aiSession.findUniqueOrThrow({ where: { id: s.sessionId } })).lastActivityAt;
+    s.clock.advance(MIN);
     sweep = async () => { await base.llmCall.updateMany({ where: { userId: s.userId, status: "IN_FLIGHT" }, data: { status: "TIMEOUT", leaseExpiresAt: null } }); };
     const result = await s.gateway.run(s.call());
     assert.equal(result.ok, false);
     assert.equal(!result.ok && result.code, "AI_UNAVAILABLE");
     assert.equal((await base.llmCall.findUniqueOrThrow({ where: { id: result.callId as string } })).status, "TIMEOUT");
+    assert.deepEqual(await s.breakerState(), breaker, "the swept call does not touch the breaker");
+    assert.deepEqual((await base.aiSession.findUniqueOrThrow({ where: { id: s.sessionId } })).lastActivityAt, activity, "nor the session");
   } finally { await s.cleanup(); }
 }));
 
@@ -137,6 +149,11 @@ test("E25 marker text, key, provider bodies and rejected values never reach rows
     // Section names are fixed by feature code and appear in STATIC_SECTION_OVER_BUDGET by design; only text is untrusted.
     [{}, (c) => ({ ...c, sections: [{ name: "rules", kind: "STATIC", priority: 0, budgetTokens: 1, text: MARK, trusted: true }] })],
     [{ mockResponses: new Map([["DEV_STANDUP", () => { throw new Error(MARK); }]]) }, (c) => c],
+    [{ refuse: { "global:min": 9 } }, (c) => c],
+    [{ breaker: { failures: 5, openUntil: "2999-01-01T00:00:00.000Z" } }, (c) => c],
+    [{ mockResponses: new Map() }, (c) => c],
+    [{}, (c) => ({ ...c, projectId: randomUUID() })],
+    [{}, (c) => ({ ...c, inputHash: "", extra: MARK }) as LlmCall],
   ];
   const cleanups: Array<() => Promise<unknown>> = [];
   try {

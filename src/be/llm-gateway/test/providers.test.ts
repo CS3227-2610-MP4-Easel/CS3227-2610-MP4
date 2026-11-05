@@ -74,6 +74,23 @@ test("E39 SoCLaaS abort at timeoutMs is TIMEOUT; missing usage gives null tokens
   assert.deepEqual(await noUsage.complete(request()), { text: "x", promptTokens: null, completionTokens: null });
 });
 
+test("E39 SoCLaaS body reading: a slow body times out, an oversized body or token count is refused", async () => {
+  const slowBody = fakeFetch(async ({ init }) => new Response(new ReadableStream({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode("{\"choices\":"));
+      init.signal?.addEventListener("abort", () => controller.error(new DOMException("aborted", "AbortError")));
+    },
+  }), { status: 200 }));
+  const slow = createSoclaasProvider({ baseUrl: BASE, apiKey: KEY, fetch: slowBody.fetch });
+  assert.equal((await kindOf(slow.complete(request({ timeoutMs: 5 })))).kind, "TIMEOUT", "the deadline covers the body");
+
+  const huge = createSoclaasProvider({ baseUrl: BASE, apiKey: KEY, fetch: fakeFetch(async () => new Response("x".repeat(1_000_001), { status: 200 })).fetch });
+  assert.deepEqual(await kindOf(huge.complete(request())), { kind: "HTTP_5XX", status: 200, message: "UPSTREAM_HTTP_5XX" });
+
+  const absurd = createSoclaasProvider({ baseUrl: BASE, apiKey: KEY, fetch: fakeFetch(ok({ choices: [{ message: { content: "x" } }], usage: { prompt_tokens: 10_000_001, completion_tokens: 3 } })).fetch });
+  assert.deepEqual(await absurd.complete(request()), { text: "x", promptTokens: null, completionTokens: 3 });
+});
+
 test("E45 mock registry: registered text, token estimates, failures normalised", async () => {
   const registry = new Map<string, MockRespond>();
   const provider = createMockProvider(registry);

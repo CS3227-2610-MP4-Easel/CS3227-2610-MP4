@@ -16,8 +16,7 @@ function matches(row: Row, where: Where): boolean {
     const value = row[key];
     if (condition && typeof condition === "object" && !(condition instanceof Date)) {
       const { lt, gte } = condition as { lt?: Date; gte?: Date };
-      if (lt !== undefined) return value instanceof Date && value < lt;
-      if (gte !== undefined) return value instanceof Date && value >= gte;
+      if (lt !== undefined || gte !== undefined) return value instanceof Date && (lt === undefined || value < lt) && (gte === undefined || value >= gte);
     }
     return value === condition;
   });
@@ -42,7 +41,12 @@ export function fakeGatewayDb() {
     },
     llmGatewayState: {
       findUnique: async ({ where }: { where: { key: string } }) => (state.has(where.key) ? { key: where.key, value: state.get(where.key) } : null),
-      upsert: async ({ where, create }: { where: { key: string }; create: { value: unknown } }) => { writes.push("llmGatewayState.upsert"); state.set(where.key, create.value); return {}; },
+      // Like Prisma: `create` for a new key, `update` for an existing one; values are copied so tests can compare snapshots.
+      upsert: async ({ where, create, update }: { where: { key: string }; create: { value: unknown }; update: { value: unknown } }) => {
+        writes.push("llmGatewayState.upsert");
+        state.set(where.key, structuredClone(state.has(where.key) ? update.value : create.value));
+        return {};
+      },
     },
     aiSession: {
       findUnique: async ({ where }: { where: { id: string } }) => sessions.get(where.id) ?? null,

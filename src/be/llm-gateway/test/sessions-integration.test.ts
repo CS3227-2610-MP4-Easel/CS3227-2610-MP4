@@ -72,6 +72,13 @@ test("E15 open caps: three open per feature, twenty a Singapore day, idle sessio
   // 20 started today and 3 open: the day cap wins. Clock is 10:31 Singapore time.
   const toMidnight = (new Date("2026-11-05T16:00:00.000Z").getTime() - clock.now().getTime()) / 1000;
   await assert.rejects(sessions.open({ feature: "DEV_SUMMARY", userId: daily, projectId: null }), capReached(toMidnight));
+
+  // The Singapore day starts at 16:00 UTC: a session at 15:59:59 UTC belongs to the previous day.
+  const edge = await user();
+  const closedAt = (iso: string) => ({ feature: "LEAD_DIGEST" as const, userId: edge, env: "test", startedAt: new Date(iso), lastActivityAt: new Date(iso), outcome: "ACCEPTED" as const, endedAt: new Date(iso) });
+  await base.aiSession.createMany({ data: [closedAt("2026-11-04T15:59:59.000Z"), ...Array.from({ length: 19 }, () => closedAt("2026-11-04T16:00:00.000Z"))] });
+  assert.ok(await sessions.open({ feature: "LEAD_DIGEST", userId: edge, projectId: null }), "19 counted today, so the 20th opens");
+  await assert.rejects(sessions.open({ feature: "LEAD_DIGEST", userId: edge, projectId: null }), (error) => error instanceof SessionCapReached);
 }));
 
 test("E16 close is idempotent and checks its arguments", { skip }, () => withIntegrationDb(async (base, { user }) => {

@@ -25,7 +25,7 @@ export async function checkBudget({ db, settings, clock = systemClock, stateKey 
   const until = blockedUntil(await db.llmGatewayState.findUnique({ where: { key: stateKey } }));
   if (until && until > now) return refuse(until, now);
   const dayStart = startOfUtcDay(now);
-  const { _sum } = await db.llmCall.aggregate({ _sum: { costMicrousd: true }, where: { env: settings.tier, createdAt: { gte: dayStart } } });
+  const { _sum } = await db.llmCall.aggregate({ _sum: { costMicrousd: true }, where: { env: settings.tier, createdAt: { gte: dayStart, lt: new Date(dayStart.getTime() + DAY_MS) } } });
   if (Number(_sum.costMicrousd ?? 0n) < LIMITS.spendCapMicroUsd) return { ok: true };
   const next = new Date(Math.min(now.getTime() + LIMITS.budgetBlockMs, dayStart.getTime() + DAY_MS));
   const value = { blockedUntil: next.toISOString() };

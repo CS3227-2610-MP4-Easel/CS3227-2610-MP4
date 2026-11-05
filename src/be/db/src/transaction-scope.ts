@@ -2,6 +2,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 
 // Set while code runs inside a transaction this package started, so the LLM gateway can refuse a model call there.
 // Only `isInTransaction` is exported from the package; the scope is entered by this package's helpers alone.
+// Best effort, not a security boundary: a `$transaction` on an unfiltered PrismaClient is not marked.
 const transactionScope = new AsyncLocalStorage<true>();
 
 export function runInTransactionScope<T>(fn: () => T): T {

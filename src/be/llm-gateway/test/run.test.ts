@@ -120,7 +120,7 @@ test("E41 the earlier admission step wins each adjacent pair", async () => {
   assert.equal(w.hit.length, 0, "budget block answers before hit");
   w = world({ refuse: { "global:day": 99 } });
   const open = { failures: 5, openUntil: new Date(w.clock.now().getTime() + MIN).toISOString() };
-  w.store.state.set("breaker", open);
+  w.store.state.set("breaker", structuredClone(open));
   assert.deepEqual(await w.gateway.run(w.call), { ok: false, code: "AI_BUSY", retryAfterSeconds: 99 });
   assert.deepEqual(breakerOf(w.store), open, "breaker untouched");
 });
@@ -132,12 +132,36 @@ test("E42 a session of another project, or a project-less session, is NOT_FOUND"
   w.store.sessions.set(w.call.sessionId, { projectId: null });
   await assert.rejects(w.gateway.run(w.call), { message: "NOT_FOUND" });
   assert.equal(w.store.calls.length, 0);
+  assert.equal((await w.gateway.run(textCall({ projectId: null }))).ok, true, "both null counts as equal");
+});
+
+test("E12 live mode never needs a mock response", async () => {
+  const w = world({ settings: { llmMode: "live", apiKey: "k" }, mockResponses: new Map() });
+  assert.equal((await w.gateway.run(w.call)).ok, true);
+});
+
+test("E30 static sections over budget throw at admission: no row, no hit", async () => {
+  const w = world();
+  const call = textCall({ sections: [{ name: "rules", kind: "STATIC", priority: 0, budgetTokens: 1, text: "Far too long for one token.", trusted: true }] });
+  await assert.rejects(w.gateway.run(call), { message: "STATIC_SECTION_OVER_BUDGET:rules" });
+  assert.equal(w.store.calls.length, 0);
+  assert.equal(w.hit.length, 0);
+});
+
+test("E32 a model override sets the row's model, the reservation and the reasoning effort sent", async () => {
+  const w = world({ settings: { modelOverrides: { DEV_STANDUP: "qwen3.5:9b" } }, steps: [{ text: "ok", tokens: [null, null] }] });
+  await w.gateway.run(w.call);
+  const row = w.store.calls[0];
+  assert.equal(row.model, "qwen3.5:9b");
+  assert.equal(row.costMicrousd, 520n, "ceil(4000 * 0.1 + 800 * 0.15)");
+  assert.equal(w.requests[0].model, "qwen3.5:9b");
+  assert.equal(w.requests[0].reasoningEffort, "none");
 });
 
 test("E43 a hit refusal while the breaker is due a probe leaves openUntil unchanged", async () => {
   const w = world({ refuse: { "global:min": 5 } });
   const due = { failures: 5, openUntil: new Date(w.clock.now().getTime() - 1).toISOString() };
-  w.store.state.set("breaker", due);
+  w.store.state.set("breaker", structuredClone(due));
   assert.deepEqual(await w.gateway.run(w.call), { ok: false, code: "AI_BUSY", retryAfterSeconds: 5 });
   assert.deepEqual(breakerOf(w.store), due);
 });
@@ -170,7 +194,6 @@ test("E18 breaker counting: schema failures do not count, OK resets, the probe c
   assert.equal(breakerOf(w.store)?.failures, 6);
   assert.equal(breakerOf(w.store)?.openUntil, new Date(w.clock.now().getTime() + MIN).toISOString(), "a failed probe re-opens for 60 s");
   assert.equal(warnings.filter((args) => args[0] === "llm_breaker_open").length, 1, "and logs again");
-  w.clock.advance(MIN);
   const ok = world();
   ok.store.state.set("breaker", { failures: 6, openUntil: new Date(ok.clock.now().getTime() - 1).toISOString() });
   assert.equal((await ok.gateway.run(ok.call)).ok, true);
@@ -196,6 +219,30 @@ test("E19 429 and 5xx retries: final status from the last attempt", async () => 
     if (status !== "OK") assert.deepEqual(result, { ok: false, code: "AI_UNAVAILABLE", callId: row.id });
     assert.equal(breakerOf(w.store)?.failures ?? 0, status === "UPSTREAM_ERROR" ? 1 : 0);
   }
+});
+
+test("E17 timeouts count towards the breaker like 5xx and network failures", async () => {
+  const hangs = world({ steps: [{ hang: true }] });
+  await quietly(async () => { for (let i = 0; i < 5; i++) await hangs.gateway.run(hangs.call); });
+  assert.equal(breakerOf(hangs.store)?.failures, 5);
+  assert.notEqual(breakerOf(hangs.store)?.openUntil, null);
+
+  const mixed = world({ steps: [{ hang: true }, { fail: "HTTP_5XX" }, { fail: "HTTP_5XX" }, { fail: "NETWORK" }, { fail: "NETWORK" }] });
+  await quietly(async () => { for (let i = 0; i < 3; i++) await mixed.gateway.run(mixed.call); });
+  assert.deepEqual(mixed.store.calls.map((row) => row.status), ["TIMEOUT", "UPSTREAM_ERROR", "UPSTREAM_ERROR"]);
+  assert.equal(breakerOf(mixed.store)?.failures, 3);
+});
+
+test("E19 a network failure is retried without waiting; an early failure's retry gets the rest of the 25 s", async () => {
+  const network = world({ steps: [{ fail: "NETWORK" }, { text: "ok" }] });
+  const start = network.clock.now().getTime();
+  assert.equal((await network.gateway.run(network.call)).ok, true);
+  assert.equal(network.clock.now().getTime() - start, 0);
+  assert.equal(network.store.calls[0].attempts, 2);
+
+  const early = world({ steps: [{ fail: "HTTP_5XX", after: 1_000 }, { text: "ok" }] });
+  await early.gateway.run(early.call);
+  assert.equal(early.requests[1].timeoutMs, 24_000);
 });
 
 test("E20 a provider that never answers is TIMEOUT at 20 s and not retried", async () => {
@@ -246,12 +293,17 @@ test("E24 output that fails validation is SCHEMA_FAIL and AI_UNAVAILABLE without
   const ok = world({ steps: [{ text: "{\"yesterday\":\"fixed\"}" }] });
   const result = await ok.gateway.run(jsonCall);
   assert.deepEqual(result.ok && result.value, { yesterday: "fixed" });
+  const exact = world({ steps: [{ text: "😀😀😀" }] });
+  assert.equal((await exact.gateway.run(textCall({ output: { kind: "text", maxChars: 3 } }))).ok, true, "maxChars counts code points, not UTF-16 units");
 });
 
 test("E27 replacement guards plug in: changed text, blocked input, flags and refusals", async () => {
-  const changed = world({ guards: { ...defaultGuards, input: (text) => ({ text: text.toUpperCase(), flagged: false }) } });
+  const seen: string[] = [];
+  const changed = world({ guards: { ...defaultGuards, input: (text) => { seen.push(text); return { text: text.toUpperCase(), flagged: false }; } } });
   await changed.gateway.run(changed.call);
   assert.equal(changed.requests[0].messages[1].content, "## items\nFIXED THE LOGIN BUG.");
+  assert.equal(changed.requests[0].messages[0].content, "## rules\nWrite a standup.", "trusted sections skip the input guard");
+  assert.deepEqual(seen, ["Fixed the login bug."]);
 
   const blocked = world({ guards: { ...defaultGuards, input: () => ({ blocked: true }) } });
   const result = await blocked.gateway.run(blocked.call);
@@ -293,7 +345,18 @@ test("E45 mock registry at run level: unused in live mode, failures normalised a
   const secret = world({ provider: "mock", mockResponses: new Map([["DEV_STANDUP", () => { throw new Error("secret"); }]]) });
   const { result, warnings } = await quietly(() => secret.gateway.run(secret.call));
   assert.equal(secret.store.calls[0].status, "UPSTREAM_ERROR");
+  assert.equal(breakerOf(secret.store), undefined, "an internal error does not count towards the breaker");
   assert.ok(!JSON.stringify([result, warnings, secret.store.calls], (_, value) => (typeof value === "bigint" ? value.toString() : value)).includes("secret"));
+});
+
+test("E22 a throw after the row is written still finalises it and leaves only a fixed message", async () => {
+  const w = world({ guards: { ...defaultGuards, output: () => { throw new Error("guard exploded with MKdetail"); } } });
+  const { warnings } = await quietly(() => assert.rejects(w.gateway.run(w.call), (error: Error) => error.message === "LLM_CALL_FAILED" && error.cause === undefined));
+  const row = w.store.calls[0];
+  assert.equal(row.status, "UPSTREAM_ERROR");
+  assert.equal(row.leaseExpiresAt, null);
+  assert.deepEqual(warnings, [["llm_call_failed", { callId: row.id, status: "UPSTREAM_ERROR" }]]);
+  assert.equal(breakerOf(w.store), undefined);
 });
 
 import { UpstreamError } from "../src/index.js";

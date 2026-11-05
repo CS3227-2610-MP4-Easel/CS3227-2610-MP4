@@ -7,11 +7,11 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w2-gateway (from `INT` at `7bd6544`; `development` merged in at `dc55769` after W4 and W12 merged)
 - **Base:** 90e1e9c
 - **Owner:** ludannnn (Developer member)
-- **Status:** Draft
+- **Status:** In review
 - **Approved:** —
-- **Last updated:** 2026-11-05 by Claude Opus 5.5 — T7 done; close-out next
+- **Last updated:** 2026-11-05 by Claude Opus 5.5 — close-out done; Gate 3 pending
 
-**Untouched:** Architecture, Conventions
+**Untouched:** Conventions
 
 ---
 
@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-05 | Claude Opus 5.5 | W2 | Active | T1 to T7 done | Close-out step 1: Traceability verified, then the Attacker and Tester lenses on the branch diff | 2026-11-05 |
+
 
 **Remaining**
 
@@ -33,7 +33,11 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] Gate 1: spec approved by ludannnn on 2026-11-05.
 - [x] Gate 2: plan approved by ludannnn on 2026-11-05.
 - [x] Merge `development` into this branch after W4's PR #10 merged (`dc55769`).
-- [ ] Build T1 to T7, then close-out.
+- [x] Build T1 to T7, then close-out (Attacker and Tester lenses; findings fixed or recorded below).
+- [ ] Gate 3: operator review of the branch; then, on a separate yes, push and open the PR into `development`.
+- [ ] **Handover:** W15 calls `usageSummary` with a date range (it reads every matching row to compute the means) and gates endpoint 57 by role; both usage queries take `settings.tier`.
+- [ ] **Handover:** the endpoints that call `Sessions.open` check the caller's project membership, and those that call `close` check owner or approver (SD11); `Sessions` does neither.
+- [ ] **Handover:** the W2 integration tests skip without `W1_INTEGRATION_DATABASE_URL`, and W12's CI does not set it; whoever owns CI should give it a Postgres 16 so they run there.
 - [ ] Agent policy narrowed on its own branch, `w12-agent-policy-scope` (operator's decision; its C~1); PR open for `@teleifo` and `@Xiao-Congchen`. Until it merges, this working copy carries its three policy files uncommitted, so three old W12 hook tests fail locally here; after it merges, restore those files and merge `development` in (C~2).
 - [ ] **Handover:** W15 owns endpoints 56 and 57 and their resolvers; W1's handover listed "session and usage" resolvers under W2 (spec SD3).
 - [ ] **Handover:** W7, W8 and W9 register their mock responses with `registerMockResponse` at import of their module, put their rules in `STATIC` sections (non-static sections can be dropped when the prompt is over budget), and call `assertStaticSectionsFit` in a test.
@@ -47,7 +51,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W2 | Gateway runtime and mock | Building | [spec](../../specs/2026-11-05-w2-gateway-design.md) | [plan](../../plans/2026-11-05-w2-gateway.md) | T7/7 done; next close-out reviews | — |
+| W2 | Gateway runtime and mock | In review | [spec](../../specs/2026-11-05-w2-gateway-design.md) | [plan](../../plans/2026-11-05-w2-gateway.md) | T1–T7 done; reviewed; Gate 3 pending | guide out of date: llm-gateway |
 
 ---
 
@@ -55,7 +59,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-05 | T7: `usage.ts`: `usageSessions` (caller's sessions in this tier, `[from, to)`, newest first, per-session call sums, paging with `RangeError` on bad page or size), `usageSummary` (per feature and model, no user data, means rounded to 2 decimals), `failureReason` (owner-only `UPSTREAM_LIMIT`); both usage queries take the tier as an argument; 3 integration tests; 294 tests, 290 pass, 4 fail (same as T5), none skipped | W2 | this commit |
+| 2026-11-05 | Close-out: Attacker and Tester lenses on the branch diff, no blocking findings. Fixed: the SoCLaaS timeout now covers the response body, bodies over 1 MB and absurd token counts are refused; a throw after the row is written finalises it `UPSTREAM_ERROR` and leaves only `LLM_CALL_FAILED`; internal (non-upstream) errors no longer count towards the breaker (D~2); the budget sum gets an upper bound on the UTC day (a real bug: later-dated rows counted, which also let parallel test files block each other); the gateway's settings no longer carry the key; usage queries refuse invalid dates and pages over 10,000; tests added for timeouts and network failures counting, early-retry timeouts, static over budget at `run`, model override and reasoning effort, live mode without a mock, exact `maxChars`, the Singapore-day edge, `from` inclusive, a lease ending exactly now, and E22 with an isolated breaker row; E25 gained five admission paths. 301 tests, 297 pass, 4 fail (same as T5), none skipped, run twice | W2 | this commit |
+| 2026-11-05 | T7: `usage.ts`: `usageSessions` (caller's sessions in this tier, `[from, to)`, newest first, per-session call sums, paging with `RangeError` on bad page or size), `usageSummary` (per feature and model, no user data, means rounded to 2 decimals), `failureReason` (owner-only `UPSTREAM_LIMIT`); both usage queries take the tier as an argument; 3 integration tests; 294 tests, 290 pass, 4 fail (same as T5), none skipped | W2 | ae5ec76 |
 | 2026-11-05 | T6: `createLlmGateway` (`run`: ten admission steps in spec order, lease sweep, input guard, fit, `IN_FLIGHT` row with a cost reservation, one retry within the 25 s deadline, output guard, guarded finalise, session touch, breaker), `guards.ts` (default guards), `breaker.ts`, `runtime.ts` (`getLlmGateway`, `getSessions`); 20 service tests over in-memory fakes and 5 integration tests including the E25 leak check across seven statuses; 291 tests, 287 pass, 4 fail (D~1 and the three old W12 hook tests, as at T5), none skipped | W2 | 6f1cb13 |
 | 2026-11-05 | T5: `limits.ts`: `checkBudget` (AD-64 decaying block in `llm_gateway_state`, UTC-day sum including in-flight reservations and failed calls, 15 minutes or UTC midnight) and `checkWindows` (four AD-59 windows over `auth`'s `hit`, stopping at the first refusal); 2 integration and 4 unit tests; 265 tests, 261 pass, 4 fail (D~1 and three old W12 hook tests failing only against the uncommitted new hook), none skipped | W2 | 85ed506 |
 | 2026-11-05 | T4: `createSessions` (open with idle abandonment, Singapore-day and open-per-feature caps, `assertUsable`, `touch`, idempotent `close`, conditional `regenerate`) and `SessionCapReached`; all times from the injected clock, all queries limited to the tier's `env`; 6 integration tests on Postgres; 259 tests, 258 pass, 1 fails (D~1), none skipped | W2 | 7c7a338 |
@@ -69,11 +74,45 @@ describes `INT`; read it for context and write here instead of editing it.
 
 ---
 
+## 4. Architecture
+
+> Legend: `C` = project decision. AD-nn entries are in docs/architecture.
+
+### 4.1 LLM gateway and AI context (`architecture/llm-gateway.md`)
+
+**Now (proposed):** `src/be/llm-gateway` (`@agile/llm-gateway`) is built except the guards (W3) and `ai-context` (W6). `getLlmGateway().run(call)` is the one path for every model call. It admits a call by checking, in order, the call shape, that no `@agile/db` transaction is open, the caller's role for the feature, the session (owner, feature, open, project), `AI_ENABLED`, the mock registration, that the feature's static sections fit, the AD-64 budget block (the tier's UTC-day `cost_microusd` against a 20,000,000 µ$ cap, blocking for 15 minutes or until UTC midnight), the four AD-59 windows through `auth`'s `hit`, and the breaker. An admitted call sweeps expired leases, runs the input guard, fits the sections to the token budget (AD-17), writes an `llm_calls` row `IN_FLIGHT` with a lease and a cost reservation, calls the provider with one retry inside a 25-second deadline, runs the output guard, and finalises the row only if it is still `IN_FLIGHT`. No prompt, response, section text or key is stored or logged. The provider is the deterministic mock (`registerMockResponse` per feature) or SoCLaaS, chosen by `LLM_MODE`; `test` and `preview` must be mock and `prod` must be live, and the key goes only to the exact SoCLaaS URL with redirects refused. `getSessions()` issues and checks AI sessions (AD-19) with the contracts §5.3 caps and a 30-minute inactivity rule, plus `regenerate` for the five-regeneration cap. `usageSessions`, `usageSummary` and `failureReason` serve W15. Model records, prices and limits are one configuration module (`config.ts`); every time comes from an injectable clock. The guard slot passes input through and only parses and schema-checks output until W3 fills it.
+
+| Path | Role |
+|---|---|
+| `src/be/llm-gateway/src/gateway.ts` | `createLlmGateway`: admission, execution, row lifecycle |
+| `src/be/llm-gateway/src/settings.ts`, `config.ts` | settings per tier; features, models, prices, limits |
+| `src/be/llm-gateway/src/budget.ts` | token estimate, section fitting, cost and reservation |
+| `src/be/llm-gateway/src/providers.ts` | mock registry and provider, SoCLaaS provider, `UpstreamError` |
+| `src/be/llm-gateway/src/sessions.ts` | `createSessions`, `SessionCapReached` |
+| `src/be/llm-gateway/src/limits.ts`, `breaker.ts` | budget block, windows, breaker |
+| `src/be/llm-gateway/src/guards.ts` | the guard slot and W2's default guards |
+| `src/be/llm-gateway/src/usage.ts` | usage queries for endpoints 56-57 |
+| `src/be/llm-gateway/src/runtime.ts` | `getLlmGateway`, `getSessions` |
+| `src/be/ai-context (planned)` | the one membership-scoped context-assembly function (W6) |
+
+| ID | Date | Decision | Why / who asked | Source |
+|---|---|---|---|---|
+| C~1 | 2026-11-05 | Scope boundaries and starting values | Operator accepted the proposed assumptions | spec SD1 to SD6 |
+
+Drift: AD-24's price refresh and AD-17's automatic ratio calibration are not built (spec SD4); the guards are W3's.
+
+### 4.2 Foundation (`architecture/foundation.md`)
+
+**Now (proposed, addition only):** `src/be/db` also exposes `isInTransaction()`, true inside `inCoreTransaction`, `inMutationTransaction` and the filtered client's callback `$transaction`, so the gateway can refuse a model call inside a transaction (spec SD6). The rest of the area's Now is unchanged by this branch.
+
+---
+
 ## 6. Known Gaps
 
 New entry:
 
-- **A few users can use up the global AI windows** — the per-user windows (6 a minute, 200 a day) limit each user, but four or five active users can exhaust `global:min` (25 a minute) and everyone else gets `AI_BUSY` until the window resets; there is no per-project share.
+- **A few users can use up the global AI windows** — the per-user windows (6 a minute, 200 a day) limit each user, but four or five active users can exhaust `global:min` (25 a minute) and everyone else gets `AI_BUSY` until the window resets; there is no per-project share. A call refused by the breaker has already counted against the windows.
+- **AI session caps and the spend cap are soft** — `Sessions.open` counts then inserts, so concurrent opens can pass both the open-per-feature and the daily cap (bounded by how many arrive at once); calls admitted together each see the spend sum before the others' reservations (bounded by `global:min`).
 
 ## 7. Decisions
 
@@ -98,3 +137,5 @@ New entry:
 ## 8. Deviations
 
 - **D~1 — A W1 integration test fails under Prisma 7, left failing on purpose (T1):** `src/be/db/test/visibility-integration.test.ts:10` builds `new PrismaClient({ datasourceUrl: url })`, an option Prisma 7 removed, so it fails with "Unknown property datasourceUrl" whenever `W1_INTEGRATION_DATABASE_URL` is set. CI sets no database, so it skips there; the Prisma 7 merge (`9077725`) updated W4's tests but not this one. Not caused by W2. The operator chose to leave it failing (2026-11-05); the fix is the `PrismaPg` adapter pattern W4's tests use. Consequence: `npm test` with a database shows 1 failure on this branch until W1's owner fixes it.
+- **D~2 — Internal errors do not count towards the breaker (close-out):** spec api.md § Breaker update says every call ending `UPSTREAM_ERROR` adds one. A provider error that is not an `UpstreamError` (for example a mock that throws, or a bug) is still recorded as `UPSTREAM_ERROR` but no longer counts, because the Attacker review showed one user's input could otherwise trip the breaker for everyone. Real 5xx, network and timeout failures still count.
+- **D~3 — Small interface adaptations (T6, T7):** `createLlmGateway` takes two extra optional seams, `mockResponses` and `stateKeyPrefix` (test isolation); `usageSessions` and `usageSummary` take the tier as an explicit argument; `run` throws `LLM_CALL_FAILED` (row finalised `UPSTREAM_ERROR`) when something throws after its row is written, a case the spec did not list. No frozen interface changed.

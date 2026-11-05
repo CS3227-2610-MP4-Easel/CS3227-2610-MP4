@@ -7,14 +7,19 @@ export type UsagePage = { items: UsageSession[]; page: number; size: number; tot
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const round2 = (value: number) => Math.round(value * 100) / 100;
+const MAX_PAGE = 10_000;
+function assertDates({ from, to }: { from?: Date; to?: Date }): void {
+  for (const date of [from, to]) if (date !== undefined && Number.isNaN(date.getTime())) throw new RangeError("from and to must be valid dates");
+}
 /** The half-open range `[from, to)` on a timestamp column. */
 const range = (from?: Date, to?: Date) => (from || to ? { ...(from ? { gte: from } : {}), ...(to ? { lt: to } : {}) } : undefined);
 
 /** Endpoint 56: the caller's sessions in this tier, newest first, with per-session call sums (contracts §3.7). */
 export async function usageSessions(db: PrismaClient, userId: string, query: UsageSessionsQuery, tier: AppTier): Promise<UsagePage> {
   const { page, size } = query;
-  if (!Number.isInteger(page) || page < 0) throw new RangeError("page must be a non-negative integer");
+  if (!Number.isInteger(page) || page < 0 || page > MAX_PAGE) throw new RangeError("page must be an integer from 0 to 10000");
   if (!Number.isInteger(size) || size < 1 || size > 100) throw new RangeError("size must be 1 to 100");
+  assertDates(query);
   const where = { userId, env: tier, ...(query.feature ? { feature: query.feature } : {}), ...(range(query.from, query.to) ? { startedAt: range(query.from, query.to) } : {}) };
   const [total, sessions] = await Promise.all([
     db.aiSession.count({ where }),
@@ -40,6 +45,7 @@ export async function usageSessions(db: PrismaClient, userId: string, query: Usa
 
 /** Endpoint 57: one row per (feature, model) over this tier's calls in `[from, to)`, sorted by feature then model; no user data. */
 export async function usageSummary(db: PrismaClient, query: { from?: Date; to?: Date }, tier: AppTier): Promise<UsageSummary> {
+  assertDates(query);
   const where = { env: tier, ...(range(query.from, query.to) ? { createdAt: range(query.from, query.to) } : {}) };
   const [groups, rows] = await Promise.all([
     db.llmCall.groupBy({ by: ["feature", "model"], where, _count: { _all: true }, _sum: { promptTokens: true, completionTokens: true, costMicrousd: true } }),

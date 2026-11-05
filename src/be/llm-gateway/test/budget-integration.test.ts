@@ -57,11 +57,14 @@ test("E47 in-flight reservations and failed calls count; other tiers and earlier
     await base.llmCall.createMany({ data: [
       call(userId, 19_000_000, `${day}T00:00:00.000Z`, { env: "dev" }),
       call(userId, 19_000_000, "2031-04-03T23:59:59.000Z"),
+      call(userId, 19_000_000, "2031-04-05T00:00:00.000Z"),
       call(userId, 7_000_000, `${day}T08:00:00.000Z`, { status: "IN_FLIGHT" }),
       call(userId, 7_000_000, `${day}T09:00:00.000Z`, { status: "IN_FLIGHT" }),
     ] });
-    assert.deepEqual(await check(), { ok: true }, "14,000,000 from this tier today");
-    await base.llmCall.create({ data: call(userId, 6_000_000, `${day}T10:00:00.000Z`, { status: "TIMEOUT" }) });
+    assert.deepEqual(await check(), { ok: true }, "14,000,000 from this tier today; other tiers, yesterday and tomorrow excluded");
+    await base.llmCall.create({ data: call(userId, 5_999_999, `${day}T09:30:00.000Z`, { status: "TIMEOUT" }) });
+    assert.deepEqual(await check(), { ok: true }, "one µ$ under the cap passes");
+    await base.llmCall.create({ data: call(userId, 1, `${day}T10:00:00.000Z`, { status: "TIMEOUT" }) });
     assert.deepEqual(await check(), { ok: false, retryAfterSeconds: 900 }, "the TIMEOUT row keeps its reservation");
   } finally {
     await base.llmGatewayState.deleteMany({ where: { key: stateKey } });

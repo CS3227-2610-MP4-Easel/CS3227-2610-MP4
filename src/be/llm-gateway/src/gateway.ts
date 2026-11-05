@@ -130,39 +130,52 @@ export function createLlmGateway(deps: GatewayDeps): LlmGateway {
         select: { id: true },
       });
 
-      const effort = MODELS[model]?.reasoningEfforts.includes(feature.reasoningEffort) ? feature.reasoningEffort : undefined;
-      const { last, count } = await attempts({
-        model, call, maxTokens: feature.maxTokens, temperature: feature.temperature,
-        messages: [{ role: "system", content: fitted.system }, { role: "user", content: fitted.user }],
-        ...(effort === undefined ? {} : { reasoningEffort: effort }),
-      });
+      let finalised = false;
+      try {
+        const effort = MODELS[model]?.reasoningEfforts.includes(feature.reasoningEffort) ? feature.reasoningEffort : undefined;
+        const { last, count } = await attempts({
+          model, call, maxTokens: feature.maxTokens, temperature: feature.temperature,
+          messages: [{ role: "system", content: fitted.system }, { role: "user", content: fitted.user }],
+          ...(effort === undefined ? {} : { reasoningEffort: effort }),
+        });
 
-      let status: FinalStatus;
-      let value: unknown;
-      if (!last.ok) status = STATUS_FOR_KIND[last.kind];
-      else {
-        const checked = guards.output(last.result.text, call.output);
-        if (checked.ok) { status = "OK"; value = checked.value; } else status = checked.status;
+        let status: FinalStatus;
+        let value: unknown;
+        if (!last.ok) status = STATUS_FOR_KIND[last.kind];
+        else {
+          const checked = guards.output(last.result.text, call.output);
+          if (checked.ok) { status = "OK"; value = checked.value; } else status = checked.status;
+        }
+        const promptTokens = last.ok ? last.result.promptTokens : null;
+        const completionTokens = last.ok ? last.result.completionTokens : null;
+        const cost = promptTokens !== null && completionTokens !== null ? costMicroUsd(model, promptTokens, completionTokens) : reserved;
+        const finished = clock.now();
+        const { count: updated } = await db.llmCall.updateMany({
+          where: { id: callId, status: "IN_FLIGHT" },
+          data: {
+            status, promptTokens, completionTokens, totalTokens: promptTokens !== null && completionTokens !== null ? promptTokens + completionTokens : null,
+            costMicrousd: BigInt(cost), latencyMs: finished.getTime() - now.getTime(), attempts: count, leaseExpiresAt: null,
+          },
+        });
+        finalised = true;
+        // The lease sweep got there first: the row is already TIMEOUT and this result is discarded.
+        if (updated === 0) return { ok: false, code: "AI_UNAVAILABLE", callId };
+
+        if (status === "OK") await sessions.touch(call.sessionId);
+        // An internal error (not an upstream failure) is recorded as UPSTREAM_ERROR but must not trip the breaker for everyone.
+        if (last.ok || last.kind !== "OTHER") await recordOutcome(breaker, status);
+        if (LOGGED_STATUSES.has(status)) console.warn("llm_call_failed", { callId, status });
+        if (status !== "OK") return { ok: false, code: CODE_FOR_STATUS[status], callId };
+        return { ok: true, value, callId, flagged, truncated: fitted.truncated, cacheHit: false, promptTokens: promptTokens ?? 0, completionTokens: completionTokens ?? 0, costMicroUsd: cost };
+      } catch {
+        // Anything that throws after the insert still finalises the row, so its reservation does not linger until a sweep.
+        if (!finalised) {
+          await db.llmCall.updateMany({ where: { id: callId, status: "IN_FLIGHT" }, data: { status: "UPSTREAM_ERROR", leaseExpiresAt: null, latencyMs: clock.now().getTime() - now.getTime() } }).catch(() => {});
+          console.warn("llm_call_failed", { callId, status: "UPSTREAM_ERROR" });
+        }
+        // The original error may carry provider or database detail, so only a fixed message leaves the gateway.
+        throw new Error("LLM_CALL_FAILED");
       }
-      const promptTokens = last.ok ? last.result.promptTokens : null;
-      const completionTokens = last.ok ? last.result.completionTokens : null;
-      const cost = promptTokens !== null && completionTokens !== null ? costMicroUsd(model, promptTokens, completionTokens) : reserved;
-      const finished = clock.now();
-      const { count: finalised } = await db.llmCall.updateMany({
-        where: { id: callId, status: "IN_FLIGHT" },
-        data: {
-          status, promptTokens, completionTokens, totalTokens: promptTokens !== null && completionTokens !== null ? promptTokens + completionTokens : null,
-          costMicrousd: BigInt(cost), latencyMs: finished.getTime() - now.getTime(), attempts: count, leaseExpiresAt: null,
-        },
-      });
-      // The lease sweep got there first: the row is already TIMEOUT and this result is discarded.
-      if (finalised === 0) return { ok: false, code: "AI_UNAVAILABLE", callId };
-
-      if (status === "OK") await sessions.touch(call.sessionId);
-      await recordOutcome(breaker, status);
-      if (LOGGED_STATUSES.has(status)) console.warn("llm_call_failed", { callId, status });
-      if (status !== "OK") return { ok: false, code: CODE_FOR_STATUS[status], callId };
-      return { ok: true, value, callId, flagged, truncated: fitted.truncated, cacheHit: false, promptTokens: promptTokens ?? 0, completionTokens: completionTokens ?? 0, costMicroUsd: cost };
     },
   };
 }
