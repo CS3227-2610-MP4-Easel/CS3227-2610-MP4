@@ -22,7 +22,7 @@
 | T4 Check runner and `exp baseline` | T2 | T3, T5 | 3 | Done |
 | T5 Shared checks and adapters | T2 | T3, T4 | 3 | Done |
 | T6 Implementation driver | T3, T4, T5 | - | 4 | Done |
-| T7 Code review and `exp grade` | T6 | - | 5 | Not started |
+| T7 Code review and `exp grade` | T6 | - | 5 | Done |
 | T8 Report and pilot run | T7 | - | 6 | Not started |
 
 Executor note: run inline, task by task in table order. T3, T4 and T5 share no files, so wave 3 may be split across subagents, one per task. The spec's `implementation-order.md` lists E93 to E104 under no task; this plan assigns them (E93 to T2; E94 to E98, E103, E104 to T4; E99 to E102 to T6) and the close-out records that in the branch state. Two other departures from the spec's file hazards are recorded the same way: T4 edits `clone.mjs` (`historyFreeTree`) and T6 edits it again (`prepareImplClone`), and review spend uses the existing `judge` cost class.
@@ -239,10 +239,10 @@ The IPC contract (data-model.md, a snippet): parent sends `{id: 1, method: "crea
 | Test | `workflow/experiments/harness/implreview.test.mjs`, `workflow/experiments/harness/grade.test.mjs` | E65 to E70, E81, E82 |
 
 **Checklist**
-- [ ] 1. Write failing `implreview.test.mjs`: cut at 80000 with `diff_truncated` (E65); the instruction line sits only between the delimiters and the nonce is regenerated when present in the content (E66); an unparseable answer twice gives `review_error` (E67); unknown labels become `other` and `minor`, controls stripped, 900 characters cut to 500 (E68); a key pattern gives `review_error` and a final exit 9 (E69); a blocker on a green run changes no pass field (E70). Run; expect FAIL.
-- [ ] 2. Implement `implreview.mjs` using `runNoTools` with a fake CLI; run `<TEST implreview>`; PASS.
-- [ ] 3. Write failing `grade.test.mjs` cases: pass fields are identical when graded twice, also after the agent clone is deleted, with the second review block empty and `review_error` (E81, N2); a run that is not `extracted` exits 2 (E82); an aborted implementation run is graded with false pass fields and no review. Implement the `gradeRun` branch; run `<TEST grade>`; PASS (the specplan grade tests stay green).
-- [ ] 4. Update branch state: Progress, Changes line. Commit: `feat: advisory code review and the implementation grade (experiment framework)` with `Task: T7`.
+- [x] 1. Write failing `implreview.test.mjs`: cut at 80000 with `diff_truncated` (E65); the instruction line sits only between the delimiters and the nonce is regenerated when present in the content (E66); an unparseable answer twice gives `review_error` (E67); unknown labels become `other` and `minor`, controls stripped, 900 characters cut to 500 (E68); a key pattern gives `review_error` and a final exit 9 (E69); a blocker on a green run changes no pass field (E70). Run; expect FAIL.
+- [x] 2. Implement `implreview.mjs` using `runNoTools` with a fake CLI; run `<TEST implreview>`; PASS.
+- [x] 3. Write failing `grade.test.mjs` cases: pass fields are identical when graded twice, also after the agent clone is deleted, with the second review block empty and `review_error` (E81, N2); a run that is not `extracted` exits 2 (E82); an aborted implementation run is graded with false pass fields and no review. Implement the `gradeRun` branch; run `<TEST grade>`; PASS (the specplan grade tests stay green).
+- [x] 4. Update branch state: Progress, Changes line. Commit: `feat: advisory code review and the implementation grade (experiment framework)` with `Task: T7`.
 
 ### T8: Report and pilot run
 **Delivers:** the two CSVs, the committed pilot experiment and the real batch | **Satisfies:** F14, N1, N4, E75, E76, E77, E78, E79, E80 | **Depends on:** T7 | **Wave:** 6

@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** Xiao-Congchen (PM)
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-05 by Claude Sonnet 5.5 (S3) — T6 done; T7 next, owner decides whether to continue
+- **Last updated:** 2026-11-05 by Claude Sonnet 5.5 (S4) — T7 done; T8 has real-spend gates and waits for the owner
 
 **Untouched:** Architecture, Conventions
 
@@ -34,6 +34,7 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 |---|---|---|---|---|---|---|---|
 | S2 | 2026-11-05 | Claude Sonnet 5.5 | W~1 | Finished | T1 to T5 and T6 slice 1 committed | - | 2026-11-05 |
 | S3 | 2026-11-05 | Claude Sonnet 5.5 | W~1 | Finished | T6 done and committed in slices (driver, controls, attempts, cost); full `<BUILD>` run in the background | Owner decides whether to continue to T7 (code review and `exp grade`); T8 has real-spend gates and needs its own yes | 2026-11-05 |
+| S4 | 2026-11-06 | Claude Sonnet 5.5 | W~1 | Finished | T7 done and committed | Owner decides whether to start T8 (report, pilot experiment file, real batch: four GATE steps) | 2026-11-06 |
 
 **Remaining**
 
@@ -48,7 +49,7 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W~1 | Experiment implementation stage (extends the framework workstream of branch `w7-pm-plan-flow`) | Building | [spec](../../specs/2026-11-05-experiment-implementation-stage-design.md) (approved 2026-11-05) | [plan](../../plans/2026-11-05-experiment-implementation-stage.md) (approved 2026-11-05) | Big · T1 to T6 done; T7 next (owner decides) | — |
+| W~1 | Experiment implementation stage (extends the framework workstream of branch `w7-pm-plan-flow`) | Building | [spec](../../specs/2026-11-05-experiment-implementation-stage-design.md) (approved 2026-11-05) | [plan](../../plans/2026-11-05-experiment-implementation-stage.md) (approved 2026-11-05) | Big · T1 to T7 done; T8 next (real-spend gates, owner decides) | — |
 
 ---
 
@@ -56,6 +57,7 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-06 | T7 done: `implreview.mjs` (`buildDiff` from the clone against the baseline tree with lockfiles removed, `buildReviewPrompt` with plan 40000, notes 20000, diff 80000 characters and a nonce drawn again until absent, `parseFindings` with label fallback, control stripping and a 500-character cut, `reviewRun` with one retry, a 0.5 USD cap and a credential check) and the implementation branch of `gradeRun` (pass1, pass2, green_attempt, check and adherence fields, `impl_cost_usd` and `fix_cost_usd` through `splitCosts`, review block, `review_error`, exit 5 at the batch ceiling, exit 9 for a credential in the review, review cost in the run and batch judge spend). The plan text for the review comes from the frozen snapshot, not from the agent clone. Tests: `implreview.test.mjs` (8) and 10 new cases in `grade.test.mjs`; no real call | W~1 | this commit |
 | 2026-11-05 | T6 done: `impldriver.mjs` (`executeImplRun`: preflight with snapshot, adapter, `checks.json`, arm, baseline and pristine-toolchain checks; history-free clone plus a copy of the pristine node_modules; probe; turn loop with `classifyTurn` unchanged, fixed question answer, `plan_gap_questions` and `max_questions`; end-of-turn clone sweep, outside-clone and canary detection, 30 s disk poll; attempts with restore, feedback and the attempt boundary; `--continue` in `agent` and `checking`; per-session cost totals and `cost_mismatch`), `implverify.mjs` (`runVerification`, `runShared`), dispatch for stage `implementation` in `driver.mjs` (arm, task and plans x samples, exit 9 for a credential in check output), `--task/--arm/--rep` exit 2, exit 8 stays for `ablation` and `model_tier`. Tests: five new files (`impldriver*.test.mjs` plus `implverify.test.mjs`, shared helpers in `impldrivekit.mjs`), fake CLI gained `tool_calls`, `tool_results`, `cli_total` and the effects `rm`, `link`, `spawn`. Two T4 corrections found by the tests: `adherence` counts only the first `## Skipped` heading (E29), `buildVerifyTree` takes `expectedMissing` (files the clone overlay removed on purpose). No real model call was made | W~1 | this commit |
 | 2026-11-05 | Branch and worktree created from the parent branch after the pilot and the blind review of the three replicate-2 plans | W~1 | `f576257` |
 | 2026-11-05 | Spec drafted: index plus requirements, data model, API, edge cases and implementation order; lint clean | W~1 | this commit |
