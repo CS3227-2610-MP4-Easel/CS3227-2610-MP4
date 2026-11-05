@@ -9,9 +9,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** Xiao-Congchen (PM)
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-05 by Claude Sonnet 5.5 — plan approved, execution not started
+- **Last updated:** 2026-11-05 by Claude Sonnet 5.5 (S3) — T6 done; T7 next, owner decides whether to continue
 
-**Untouched:** Architecture, Conventions, Deviations
+**Untouched:** Architecture, Conventions
 
 ---
 
@@ -32,7 +32,8 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S2 | 2026-11-05 | Claude Sonnet 5.5 | W~1 | Active | T6 slice 1 committed: `prepareImplClone`, `implfeedback.mjs` (feedback and restore, step 5 done), `implcost.mjs`, `newImplRunState`, `computeImplHashes`, `batchPaths({implTaskId})`. Not done: the driver itself (`impldriver.mjs`, its dispatch in `driver.mjs`, `runShared`) and steps 1 (preflight part), 2, 3, 4, 6, 7, 8 and the integration part of 9 | T6 next: write `impldriver.mjs` as `executeImplRun(ctx, run, helpers)` (helpers = persist, abort, invoke, account, containmentDiff passed in from `driver.mjs` to avoid a circular import); in `runBatch` replace the exit-8 branch for `implementation` by arms = [implementer_arm_id], tasks = [task_id], plan runs = plans x samples (run id `<ts>-<task>-<plan-id>-s<sample>`), same approval, ceilings, workers and afterRun; the sandbox for node_modules in the agent clone is a `copyToolchain` of the baseline tree, not `npm ci` (no network per sample). Tests with the fake CLI and a toy baseline built by `buildBaseline` with an injected setup | 2026-11-05 |
+| S2 | 2026-11-05 | Claude Sonnet 5.5 | W~1 | Finished | T1 to T5 and T6 slice 1 committed | - | 2026-11-05 |
+| S3 | 2026-11-05 | Claude Sonnet 5.5 | W~1 | Finished | T6 done and committed in slices (driver, controls, attempts, cost); full `<BUILD>` run in the background | Owner decides whether to continue to T7 (code review and `exp grade`); T8 has real-spend gates and needs its own yes | 2026-11-05 |
 
 **Remaining**
 
@@ -47,7 +48,7 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W~1 | Experiment implementation stage (extends the framework workstream of branch `w7-pm-plan-flow`) | Building | [spec](../../specs/2026-11-05-experiment-implementation-stage-design.md) (approved 2026-11-05) | [plan](../../plans/2026-11-05-experiment-implementation-stage.md) (approved 2026-11-05) | Big · T1 to T5 done; T6 next | — |
+| W~1 | Experiment implementation stage (extends the framework workstream of branch `w7-pm-plan-flow`) | Building | [spec](../../specs/2026-11-05-experiment-implementation-stage-design.md) (approved 2026-11-05) | [plan](../../plans/2026-11-05-experiment-implementation-stage.md) (approved 2026-11-05) | Big · T1 to T6 done; T7 next (owner decides) | — |
 
 ---
 
@@ -55,6 +56,7 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-05 | T6 done: `impldriver.mjs` (`executeImplRun`: preflight with snapshot, adapter, `checks.json`, arm, baseline and pristine-toolchain checks; history-free clone plus a copy of the pristine node_modules; probe; turn loop with `classifyTurn` unchanged, fixed question answer, `plan_gap_questions` and `max_questions`; end-of-turn clone sweep, outside-clone and canary detection, 30 s disk poll; attempts with restore, feedback and the attempt boundary; `--continue` in `agent` and `checking`; per-session cost totals and `cost_mismatch`), `implverify.mjs` (`runVerification`, `runShared`), dispatch for stage `implementation` in `driver.mjs` (arm, task and plans x samples, exit 9 for a credential in check output), `--task/--arm/--rep` exit 2, exit 8 stays for `ablation` and `model_tier`. Tests: five new files (`impldriver*.test.mjs` plus `implverify.test.mjs`, shared helpers in `impldrivekit.mjs`), fake CLI gained `tool_calls`, `tool_results`, `cli_total` and the effects `rm`, `link`, `spawn`. Two T4 corrections found by the tests: `adherence` counts only the first `## Skipped` heading (E29), `buildVerifyTree` takes `expectedMissing` (files the clone overlay removed on purpose). No real model call was made | W~1 | this commit |
 | 2026-11-05 | Branch and worktree created from the parent branch after the pilot and the blind review of the three replicate-2 plans | W~1 | `f576257` |
 | 2026-11-05 | Spec drafted: index plus requirements, data model, API, edge cases and implementation order; lint clean | W~1 | this commit |
 | 2026-11-05 | Plan approved at gate 2 by the owner; execution left to a separate session | W~1 | this commit |
@@ -88,6 +90,16 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 | C~6 | 2026-11-05 | The implementer is `claude-sonnet-5-5` at `low` effort, not Haiku (amends SD1, plan T1 and T2; arm gets an `effort` field and `claudeArgs` an `--effort` option). Spend: overall soft cap $40, not to interrupt a running build (T1 spike limit $3; the T8 ceilings are set so the cap is checked between runs, confirmed at the T8 gate) | Owner: "haiku is not the best for implementation"; prices given equal the existing `pricing.json` Sonnet entry; rejected: Haiku, Sonnet at default effort |
 | C~7 | 2026-11-05 | The implementation task file gets an optional `post_setup` argv (starts with `node`), run after `setup_command` in every tree, because `npm ci --ignore-scripts` skips `prisma generate` and `tsc -b` then fails at the base commit (found in T1). Amends data-model.md and plan T2, T4, T5, T6; `setup_sha256` covers both | Found by the T1 spike, not asked by the owner; rejected: letting the baseline accept the 5 existing type errors (breaks E14), running install scripts (breaks N3) |
 | C~4 | 2026-11-05 | Run the blind review on the three replicate-2 plans only, and move on to the implementation stage in a new branch off the pilot branch | Asked by the owner to keep cost low after the full runs had trouble completing; rejected: a review on all nine plans |
+
+## 5. Deviations
+
+| ID | Date | What | Consequence | What I did |
+|---|---|---|---|---|
+| D~1 | 2026-11-05 | The plan (T6 step 1) says each sample runs `setup_command` and `post_setup`; the driver copies the pristine `node_modules` of the baseline tree with `copyToolchain` instead (asked by the owner's brief for S3: no network per sample) | The agent clone has the toolchain but not any file that `post_setup` writes outside `node_modules` (for the pilot `prisma generate` writes into `node_modules`, so none is expected); the verify tree is a copy of the whole baseline tree and has them | Recorded here; baseline hashes (`node_modules_sha256`) are re-checked before every verify tree |
+| D~2 | 2026-11-05 | E30 says a notes file above 20000 characters sets `output_truncated`, and F10 lists `output_truncated` among the red flags | Read literally, a long notes file would make every attempt red although no check output was cut | The flag is set on the run manifest (`output_truncated`) but is not part of the attempt's `flags`, so the attempt is not red because of it; `notes_truncated` is in the check result. The spec should say which reading is meant |
+| D~3 | 2026-11-05 | Plan T6 names one `impldriver.test.mjs`; the tests are split over `impldriver.test.mjs`, `impldriver-controls.test.mjs`, `impldriver-attempts.test.mjs`, `impldriver-cost.test.mjs` and `implverify.test.mjs` | None for the behaviour; on this machine a `git` call costs about 0.5 s, so one toy run takes about 25 s and the files must run in parallel | Shared helpers are in `impldrivekit.mjs` (not a test); every test cites its E id |
+| D~4 | 2026-11-05 | The old `driver.test.mjs` test "arm with stage implementation exits 8" is kept for a specplan experiment that names an implementation arm (a stage mismatch still exits 8); the plan's wish for exit 3 is a new test with a real implementation experiment | The experiment with `stage: implementation` is dispatched | Rewritten as described; the three-stage loop now covers `ablation` and `model_tier` only |
+| D~5 | 2026-11-05 | The commits of T6 are four slices by file group, not by feature, because `impldriver.mjs` was written as one module | The slice names in the plan step 10 are approximate | Commit messages say what each slice holds |
 
 ## 6. Known Gaps
 
