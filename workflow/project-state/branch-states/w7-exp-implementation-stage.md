@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** Xiao-Congchen (PM)
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-05 by Claude Sonnet 5.5 (S4) — T7 done; T8 has real-spend gates and waits for the owner
+- **Last updated:** 2026-11-05 by Claude Sonnet 5.5 (S5) — T8 steps 1 to 4 done; waiting at the step 5 gate (ceilings, protection, key, availability, arm approval)
 
 **Untouched:** Architecture, Conventions
 
@@ -35,6 +35,7 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 | S2 | 2026-11-05 | Claude Sonnet 5.5 | W~1 | Finished | T1 to T5 and T6 slice 1 committed | - | 2026-11-05 |
 | S3 | 2026-11-05 | Claude Sonnet 5.5 | W~1 | Finished | T6 done and committed in slices (driver, controls, attempts, cost); full `<BUILD>` run in the background | Owner decides whether to continue to T7 (code review and `exp grade`); T8 has real-spend gates and needs its own yes | 2026-11-05 |
 | S4 | 2026-11-06 | Claude Sonnet 5.5 | W~1 | Finished | T7 done and committed | Owner decides whether to start T8 (report, pilot experiment file, real batch: four GATE steps) | 2026-11-06 |
+| S5 | 2026-11-06 | Claude Sonnet 5.5 | W~1 | Blocked — needs human | T8 steps 1 to 4 done (report, snapshots, baseline, experiment file). No real call made | Step 5 GATE: the owner answers Q~1 below; then step 6 (real batch, background) | 2026-11-06 |
 
 **Remaining**
 
@@ -49,7 +50,7 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W~1 | Experiment implementation stage (extends the framework workstream of branch `w7-pm-plan-flow`) | Building | [spec](../../specs/2026-11-05-experiment-implementation-stage-design.md) (approved 2026-11-05) | [plan](../../plans/2026-11-05-experiment-implementation-stage.md) (approved 2026-11-05) | Big · T1 to T7 done; T8 next (real-spend gates, owner decides) | — |
+| W~1 | Experiment implementation stage (extends the framework workstream of branch `w7-pm-plan-flow`) | Building | [spec](../../specs/2026-11-05-experiment-implementation-stage-design.md) (approved 2026-11-05) | [plan](../../plans/2026-11-05-experiment-implementation-stage.md) (approved 2026-11-05) | Big · T1 to T7 done; T8 steps 1 to 4 done, step 5 gate next | — |
 
 ---
 
@@ -57,6 +58,7 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-06 | T8 steps 1 to 4: `implreport.mjs` (`impl-runs.csv`, `impl-summary.csv`, SD6 formulas, notes order, formula-guarded cells, credential scan exit 9, exit 2 with no finished runs; no verdict or ranking) dispatched from `writeReport` by experiment stage, `reporterror.mjs`; three source runs snapshotted (no scan hits); `exp baseline pilot-pinned-note-impl`: 99 passing, 0 failing, 0 flaky, 0 typecheck errors; `experiments/impl-pilot-001.json` committed with proposed ceilings 4 per run and 30 per batch, one build at a time. Found: the committed `npmCi` loaded one empty file as both user and global npm config and npm refused it (every real baseline setup failed with exit 1); now two files. The `--dry` run needs the arm approval, so it waits for the gate | W~1 | this commit |
 | 2026-11-06 | T7 done: `implreview.mjs` (`buildDiff` from the clone against the baseline tree with lockfiles removed, `buildReviewPrompt` with plan 40000, notes 20000, diff 80000 characters and a nonce drawn again until absent, `parseFindings` with label fallback, control stripping and a 500-character cut, `reviewRun` with one retry, a 0.5 USD cap and a credential check) and the implementation branch of `gradeRun` (pass1, pass2, green_attempt, check and adherence fields, `impl_cost_usd` and `fix_cost_usd` through `splitCosts`, review block, `review_error`, exit 5 at the batch ceiling, exit 9 for a credential in the review, review cost in the run and batch judge spend). The plan text for the review comes from the frozen snapshot, not from the agent clone. Tests: `implreview.test.mjs` (8) and 10 new cases in `grade.test.mjs`; no real call | W~1 | this commit |
 | 2026-11-05 | T6 done: `impldriver.mjs` (`executeImplRun`: preflight with snapshot, adapter, `checks.json`, arm, baseline and pristine-toolchain checks; history-free clone plus a copy of the pristine node_modules; probe; turn loop with `classifyTurn` unchanged, fixed question answer, `plan_gap_questions` and `max_questions`; end-of-turn clone sweep, outside-clone and canary detection, 30 s disk poll; attempts with restore, feedback and the attempt boundary; `--continue` in `agent` and `checking`; per-session cost totals and `cost_mismatch`), `implverify.mjs` (`runVerification`, `runShared`), dispatch for stage `implementation` in `driver.mjs` (arm, task and plans x samples, exit 9 for a credential in check output), `--task/--arm/--rep` exit 2, exit 8 stays for `ablation` and `model_tier`. Tests: five new files (`impldriver*.test.mjs` plus `implverify.test.mjs`, shared helpers in `impldrivekit.mjs`), fake CLI gained `tool_calls`, `tool_results`, `cli_total` and the effects `rm`, `link`, `spawn`. Two T4 corrections found by the tests: `adherence` counts only the first `## Skipped` heading (E29), `buildVerifyTree` takes `expectedMissing` (files the clone overlay removed on purpose). No real model call was made | W~1 | this commit |
 | 2026-11-05 | Branch and worktree created from the parent branch after the pilot and the blind review of the three replicate-2 plans | W~1 | `f576257` |
@@ -102,6 +104,10 @@ node .claude/skills/writing-specs-lite/scripts/lint.mjs spec workflow/specs/2026
 | D~3 | 2026-11-05 | Plan T6 names one `impldriver.test.mjs`; the tests are split over `impldriver.test.mjs`, `impldriver-controls.test.mjs`, `impldriver-attempts.test.mjs`, `impldriver-cost.test.mjs` and `implverify.test.mjs` | None for the behaviour; on this machine a `git` call costs about 0.5 s, so one toy run takes about 25 s and the files must run in parallel | Shared helpers are in `impldrivekit.mjs` (not a test); every test cites its E id |
 | D~4 | 2026-11-05 | The old `driver.test.mjs` test "arm with stage implementation exits 8" is kept for a specplan experiment that names an implementation arm (a stage mismatch still exits 8); the plan's wish for exit 3 is a new test with a real implementation experiment | The experiment with `stage: implementation` is dispatched | Rewritten as described; the three-stage loop now covers `ablation` and `model_tier` only |
 | D~5 | 2026-11-05 | The commits of T6 are four slices by file group, not by feature, because `impldriver.mjs` was written as one module | The slice names in the plan step 10 are approximate | Commit messages say what each slice holds |
+
+## 5a. Questions for the owner (T8 step 5 gate)
+
+- **Q~1:** (a) confirm the ceilings in `experiments/impl-pilot-001.json` (4 USD per run, 30 USD per batch, within your 40 USD soft cap; reviews add up to 0.5 USD each, 6 runs); (b) how the real batch is protected: a separate low-privilege Windows user, or explicit acceptance that the agent turn has your file and network access; (c) whether a dedicated API key with a console spend cap is used; (d) that you are available while it runs; (e) the arm approval: review `arms/implementer-cheap.json` (it has Bash) and the approval hash `ab9558d504c21459`. Nothing real starts before all five are answered here.
 
 ## 6. Known Gaps
 

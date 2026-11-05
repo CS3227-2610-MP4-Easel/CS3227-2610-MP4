@@ -244,11 +244,13 @@ function npmCli() {
 
 /** `npm ci --ignore-scripts` from the lockfile, registry fixed, user and global npm config empty. */
 export async function npmCi({ dir, env, timeoutMs = 15 * 60 * 1000 }) {
-  const empty = path.join(env.TEMP, 'empty.npmrc');
-  fs.writeFileSync(empty, '');
+  const userrc = path.join(env.TEMP, 'user.npmrc');
+  const globalrc = path.join(env.TEMP, 'global.npmrc'); // npm refuses one file loaded as both user and global config
+  fs.writeFileSync(userrc, '');
+  fs.writeFileSync(globalrc, '');
   const r = await runCommand({
     argv: ['node', npmCli(), 'ci', '--ignore-scripts', '--registry', REGISTRY], cwd: dir, timeoutMs,
-    env: { ...env, npm_config_userconfig: empty, npm_config_globalconfig: empty },
+    env: { ...env, npm_config_userconfig: userrc, npm_config_globalconfig: globalrc },
   });
   if (r.code !== 0) throw new Error(`exit ${r.code}${r.timedOut ? ' (timeout)' : ''}`);
 }

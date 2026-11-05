@@ -2,6 +2,8 @@
 // files and renamed, after a credential scan of all three. Verdicts are over pooled replicates; no winner is declared.
 import fs from 'node:fs';
 import path from 'node:path';
+import { writeImplReport } from './implreport.mjs';
+import { ReportError } from './reporterror.mjs';
 import { readQuestions } from './questions.mjs';
 import { scan } from './secrets.mjs';
 import { geometricMean, maxOf, median, minOf, summarizeArm, verdict } from './stats.mjs';
@@ -12,9 +14,7 @@ const MED_FIELDS = ['arm_cost_usd', 'agent_s', 'in_tok', 'out_tok', 'peak_prompt
 const QUALITY_FIELDS = new Set(['issues_found', 'lint_errors_spec', 'lint_errors_plan', 'rubric_spec', 'rubric_plan', 'rubric_total']);
 export const MEDIAN_COLUMNS = ['experiment_id', 'task_id', 'arm_id', 'n', 'n_aborted', ...MED_FIELDS.map((f) => `med_${f}`), 'min_arm_cost_usd', 'max_arm_cost_usd', 'min_rubric_total', 'max_rubric_total', 'gm_arm_cost_usd', 'gm_agent_s', 'gm_total_tok', 'gm_excluded', 'single_task', 'verdict'];
 
-export class ReportError extends Error {
-  constructor(message, exit) { super(message); this.exit = exit; }
-}
+export { ReportError };
 
 const cell = (v) => {
   if (v === null || v === undefined) return '';
@@ -97,6 +97,10 @@ export function buildMedians(rows, experimentId) {
 
 /** Writes the three CSVs; exit 9 and no file touched when any of them holds a credential pattern. */
 export function writeReport({ expRoot, outDir, experimentId }) {
+  // an implementation experiment has its own columns and formulas (SD6); the spec-and-plan output is unchanged
+  try {
+    if (readJson(path.join(expRoot, 'experiments', `${experimentId}.json`)).stage === 'implementation') return writeImplReport({ expRoot, outDir, experimentId });
+  } catch (e) { if (e instanceof ReportError) throw e; }
   const rows = collectRuns(expRoot, experimentId);
   if (!rows.length) throw new ReportError(`no finished runs for experiment ${experimentId}`, 2);
   const runsCsv = `${[RUN_COLUMNS.join(','), ...rows.map((r) => line(RUN_COLUMNS, r))].join('\n')}\n`;
