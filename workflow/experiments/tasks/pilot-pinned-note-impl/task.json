@@ -1,0 +1,34 @@
+{
+  "id": "pilot-pinned-note-impl",
+  "stage": "implementation",
+  "base_commit": "160053ce006b6a54bc85d87f9cf380242fdef95a",
+  "brief_file": "brief.md",
+  "setup_command": ["npm", "ci", "--ignore-scripts"],
+  "post_setup": ["node", "node_modules/prisma/build/index.js", "generate", "--schema", "src/be/db/prisma/schema.prisma"],
+  "checks": {
+    "typecheck": [
+      { "argv": ["node", "node_modules/typescript/bin/tsc", "-b"], "cwd": ".", "timeout_s": 300 },
+      { "argv": ["node", "node_modules/typescript/bin/tsc", "--noEmit", "-p", "."], "cwd": "src/fe", "timeout_s": 300 }
+    ],
+    "lint": null,
+    "tests": {
+      "own_argv": ["node", "--import", "tsx", "--test", "--test-reporter=tap"],
+      "baseline_files": ["tests/**/*.test.ts", "src/be/**/*.test.ts"],
+      "timeout_s": 300
+    },
+    "shared": {
+      "argv": ["node", "workflow/experiments/tasks/pilot-pinned-note-impl/acceptance/runner.mjs"],
+      "timeout_s": 300
+    }
+  },
+  "protected_globs": ["**/tsconfig*.json", "tests/**", "**/*.test.ts"],
+  "acceptance": {
+    "folder": "acceptance",
+    "checks_file": "acceptance/checks.json",
+    "adapters": {
+      "superpowers-r2": "acceptance/adapters/superpowers-r2.mjs",
+      "lite-r2": "acceptance/adapters/lite-r2.mjs",
+      "full-r2": "acceptance/adapters/full-r2.mjs"
+    }
+  }
+}
