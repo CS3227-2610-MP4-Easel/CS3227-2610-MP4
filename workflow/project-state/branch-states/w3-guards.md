@@ -56,7 +56,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-06 | Pre-PR check: test fake keys built at runtime so the source holds no key-shaped literal for the CI Gitleaks scan (it scans every commit in the PR range, so the earlier commits `cc32b13` and `f9d32cf` still hold them; Gitleaks is not installed locally, so unverified); Known Gap added for `prompt_version` not covering the suffix (W17). 372 tests, 372 pass, none skipped | W3 | this commit |
+| 2026-11-06 | Gitleaks (run by the operator over `46b33b1..HEAD`) flagged the fake key in `run.test.ts` at `cc32b13:513` and `f9d32cf:499` (`generic-api-key`); the operator chose ignore entries over a history rewrite, so both fingerprints are in `.gitleaksignore` with a comment, next to W12's reviewed canary. The PR should call this out for review | W3 | this commit |
+| 2026-11-06 | Pre-PR check: test fake keys built at runtime so the source holds no key-shaped literal for the CI Gitleaks scan (it scans every commit in the PR range, so the earlier commits `cc32b13` and `f9d32cf` still hold them; Gitleaks is not installed locally, so unverified); Known Gap added for `prompt_version` not covering the suffix (W17). 372 tests, 372 pass, none skipped | W3 | c7f5f3b |
 | 2026-11-06 | Merged `development` after PR #14 merged (`46b33b1`); no conflicts; `STATE.md` and `guardrails.md` unchanged since the old base; 372 tests, 372 pass, none skipped | W3 | b736c65 |
 | 2026-11-06 | Merged `w2-gateway` (PR #14 review fixes: follow-up writes after a final row no longer lose the answer; W1's Prisma 7 test fixed, so D~1 is resolved); one conflict in `run.test.ts`'s `world()` signature, both sides' options kept; no W3 code changed. 372 tests, 372 pass, none skipped | W3 | 7c76405 |
 | 2026-11-06 | Gate 3: operator approved the branch | W3 | b88572e |
