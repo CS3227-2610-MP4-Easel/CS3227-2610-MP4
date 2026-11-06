@@ -23,7 +23,7 @@
 | T5 Shared checks and adapters | T2 | T3, T4 | 3 | Done |
 | T6 Implementation driver | T3, T4, T5 | - | 4 | Done |
 | T7 Code review and `exp grade` | T6 | - | 5 | Done |
-| T8 Report and pilot run | T7 | - | 6 | In progress |
+| T8 Report and pilot run | T7 | - | 6 | Done |
 
 Executor note: run inline, task by task in table order. T3, T4 and T5 share no files, so wave 3 may be split across subagents, one per task. The spec's `implementation-order.md` lists E93 to E104 under no task; this plan assigns them (E93 to T2; E94 to E98, E103, E104 to T4; E99 to E102 to T6) and the close-out records that in the branch state. Two other departures from the spec's file hazards are recorded the same way: T4 edits `clone.mjs` (`historyFreeTree`) and T6 edits it again (`prepareImplClone`), and review spend uses the existing `judge` cost class.
 
@@ -264,7 +264,7 @@ The IPC contract (data-model.md, a snippet): parent sends `{id: 1, method: "crea
 - [x] 6. GATE: run `exp run impl-pilot-001 --yes implementer-cheap=<approved hash>` (six runs, each up to two attempts) in the background; do not edit files under `workflow/experiments/` while it runs; handle `--continue` for any interrupted run.
 - [x] 7. GATE: run `exp grade <run-id>` (each makes one real review call, up to 0.5 USD; covered by the step 5 ceilings and answers) for every extracted run; compare each run's cost with the CLI total (N1, E73); run `exp report impl-pilot-001`; cross-check the printed pass counts against the CSV.
 - [x] 8. Record in the branch state the per-plan pass@1 and pass@2 as counts, cost to green, expected cost to green, the review findings by severity, adherence metrics, and the line `underpowered: 2 samples per plan`. State what the numbers do not show; do not rank the arms.
-- [ ] 9. Commit the CSVs under `docs/telemetry/experiments/` and the branch state: `docs: implementation pilot result (experiment framework)` with `Task: T8`.
+- [x] 9. Commit the CSVs under `docs/telemetry/experiments/` and the branch state: `docs: implementation pilot result (experiment framework)` with `Task: T8`.
 
 ### Close-out
 - [ ] Every Traceability row verified; `<BUILD>` green on Windows (background); `exp check --secrets` clean; `<LINT plan> --closeout` passes.
