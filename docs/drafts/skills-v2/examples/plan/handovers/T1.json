@@ -1,0 +1,13 @@
+{
+  "task": "T1",
+  "status": "done",
+  "summary": "Added buildGreeting with one test.",
+  "commit": "a1b2c3d",
+  "produces": [
+    { "kind": "symbol", "name": "buildGreeting", "where": "src/greet/build.ts", "note": "(name: string) => string" }
+  ],
+  "next": "Does not validate input.",
+  "deviations": [],
+  "edge_cases": [],
+  "checks": { "build": "pass", "tests": "1 pass", "lint": "pass" }
+}
