@@ -8,7 +8,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Base:** 160053c (the `INT` commit last merged into the parent branch)
 - **Owner:** Xiao-Congchen (PM)
 - **Status:** In review
-- **Approved:** —
+- **Approved:** 2026-11-07 by the owner (chat: "close out and merge the changes", merge into w7-pm-plan-flow)
 - **Last updated:** 2026-11-06 by Claude Sonnet 5.5 (S6): T1 to T8 done, close-out review fixes applied, waiting for the owner at gate 3
 
 **Untouched:** Architecture, Conventions

@@ -271,4 +271,4 @@ The IPC contract (data-model.md, a snippet): parent sends `{id: 1, method: "crea
 - [x] Code review of the branch diff (Implementer and Attacker lenses, one round); fix findings.
 - [x] Spec index status, plan Task order and branch state reflect reality; the E93 to E104 assignment recorded as a Changes line; amendments, if any, recorded as decisions.
 - [x] Branch state: workstream `In review`, session rows removed, Changes lines complete; Known Gap (agent turn exposure, no sandbox, plausible-value builds, agent spend not counted) written; the layout Convention (new files and CSVs) written; `Handover` items kept: classifier overcount fix, Codex driver, real W7 comparison; note `guide out of date: no developer-guide section covers process tooling`.
-- [ ] GATE: ask the operator to review the branch (`AGENTS.md` § 8, gate 3); write `Approved` only on their yes, and never push, open a PR or merge before it.
+- [x] GATE: ask the operator to review the branch (`AGENTS.md` § 8, gate 3); write `Approved` only on their yes, and never push, open a PR or merge before it.
