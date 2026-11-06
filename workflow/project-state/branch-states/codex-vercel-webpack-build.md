@@ -8,7 +8,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** In review
 - **Approved:** —
-- **Last updated:** 2026-11-06 by Codex — frontend Webpack build hotfix
+- **Last updated:** 2026-11-06 by Codex — credential-free Prisma generation fix
 
 **Untouched:** Architecture, Conventions, Known Gaps, Decisions, Deviations
 
@@ -31,10 +31,11 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| build-hotfix | Vercel frontend build compatibility | In review | — | — | `next build --webpack` passes with `APP_TIER=preview` | — |
+| build-hotfix | Vercel frontend build compatibility | In review | — | — | Prisma generation and `next build --webpack` pass without `DATABASE_URL` | — |
 
 ## 3. Changes
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
 | 2026-11-06 | Explicitly select Webpack for the Next.js production build because Next.js 16 rejects the existing custom Webpack config under default Turbopack | build-hotfix | 95139e7 |
+| 2026-11-06 | Allow Prisma client generation to use a localhost placeholder when `DATABASE_URL` is absent, without changing runtime database requirements | build-hotfix | this commit |
