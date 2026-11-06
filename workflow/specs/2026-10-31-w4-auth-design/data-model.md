@@ -37,5 +37,5 @@ No other transition exists in W4: role, email and display name are not edited, a
 
 ## Architecture areas changed
 - `architecture/auth.md` - Now and Paths at fold; remove `requireMember`.
-- `architecture/foundation.md` - the token check and user lookup are supplied by `auth`; `packages/api` wires them.
+- `architecture/foundation.md` - the token check and user lookup are supplied by `auth`; `src/be/api` wires them into `createApiApp(deps)`; the code lives in `src/be/auth` (C~9).
 - `architecture/core.md` - gains `requireMember` through W5.

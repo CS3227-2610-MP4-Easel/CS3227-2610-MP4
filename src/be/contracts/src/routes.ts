@@ -9,9 +9,11 @@ export type RouteDefinition = {
   querySchema?: unknown;
   responseSchema: unknown;
   policyKey: string;
+  /** Runs before authorization with the raw request; a returned `Response` ends the request (W4 limiter and body-size limit). */
+  before?: (context: { requestId: string; request: Request }) => Promise<Response | void>;
   handler: (context: ApiContext) => Promise<Response>;
 };
-export type ApiContext = { requestId: string; request: { method: string; path: string; params: Record<string, string>; query: URLSearchParams; body: unknown }; /** Values parsed by the route's params/query/body schemas; the raw `request` is unvalidated. */ input: { params: unknown; query: unknown; body: unknown }; principal?: { firebaseUid: string; userId: string; role: "PM" | "DEV_LEAD" | "DEVELOPER" } };
+export type ApiContext = { requestId: string; request: { method: string; path: string; params: Record<string, string>; query: URLSearchParams; body: unknown }; /** Values parsed by the route's params/query/body schemas; the raw `request` is unvalidated. */ input: { params: unknown; query: unknown; body: unknown }; principal?: { firebaseUid: string; userId: string; role: "PM" | "DEV_LEAD" | "DEVELOPER" }; /** Verified token identity on `TOKEN` routes, where the caller may have no `users` row. */ identity?: { firebaseUid: string; email: string } };
 
 export function validateRouteRegistration(routes: RouteDefinition[]): void {
   const policies = getPolicyMap();

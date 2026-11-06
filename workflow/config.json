@@ -8,5 +8,15 @@
     "lint": "npm run lint",
     "schema": "npm --workspace @agile/db run prisma:validate",
     "experiments": "node --test \"workflow/experiments/**/*.test.mjs\""
+  },
+  "process_security": {
+    "agent_policy": "workflow/agent-permissions.json",
+    "policy_validator": "npm run check:agent-policy",
+    "sensitive_path_manifest": "workflow/security-sensitive-paths.json",
+    "policy_mediator": "npm run mediate:agent",
+    "policy_hook": "scripts/agent-pre-tool-hook.mjs",
+    "trusted_reviewers": ["@teleifo", "@ludannnn", "@Xiao-Congchen"],
+    "approval_roles": "two_trusted_people_other_than_pr_author",
+    "approval_source": "github_pull_request_reviews"
   }
 }

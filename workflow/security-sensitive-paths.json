@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "paths": [
+    ".github/**",
+    "CODEOWNERS",
+    "package.json",
+    "package-lock.json",
+    ".githooks/**",
+    ".gitleaks.toml",
+    ".gitleaksignore",
+    ".gitignore",
+    "scripts/**",
+    "workflow/**",
+    ".claude/**",
+    ".codex/**",
+    "src/be/contracts/**",
+    "src/be/*/test/**",
+    "tests/**",
+    "tests/security/attack-corpus/**"
+  ]
+}

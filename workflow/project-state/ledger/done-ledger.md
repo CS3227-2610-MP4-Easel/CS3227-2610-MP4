@@ -4,6 +4,81 @@ The full chronological record of every change, newest first. One line each: what
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-03 | Developer guide checkpoint documented W1 source-root, contracts, filtered DB, API registration, testing, and handover seams | W1 | `docs/guide/` |
+| 2026-11-03 | Folded branch state `w1` | — | archive |
+| 2026-11-03 | Resolved follow-up blockers: Next extension resolution, runtime/type raw-SQL boundary, numeric/array/date/enum OpenAPI fidelity, and trailing blank lines; 71 tests, typechecks, Prisma validation, production build, and diff checks pass | W1 | 41d062a |
+| 2026-11-03 | Follow-up audit confirmed four remaining blockers: frontend production import resolution, runtime raw-SQL exposure, incomplete Zod-to-OpenAPI constraints, and trailing blank lines; fixes started | W1 | S11; PR #5 follow-up |
+| 2026-11-03 | Audited both PR #5 review rounds; extended nested sanitization to `findFirstOrThrow` and replaced the remaining non-empty OpenAPI placeholders for task events and lead standup pages; full verification remains green | W1 | 27bc37b |
+| 2026-11-03 | Implemented all six review fixes: relation-aware visibility, recursive nested sanitization, archived-write authorization ordering, compound selectors, concrete OpenAPI schemas, and the Next health adapter; 70 tests, typechecks, lint, Prisma validation, and diff checks pass | W1 | 27bc37b |
+| 2026-11-03 | Operator reversed the frontend boundary only for the minimal health-route adapter; review-fix implementation resumed | W1 | C26; S10 |
+| 2026-11-03 | New review identified five backend visibility/auth/selector/OpenAPI fixes plus a missing Next health adapter; implementation paused because the adapter conflicts with C23/C24 | W1 | S10; human decision required |
+| 2026-11-03 | Operator approved the source-root migration branch at Gate 3 | W1 | review approval |
+| 2026-11-03 | T5 close-out complete: traceability evidence, final verification, diff review, and closeout lint pass; source-root branch is ready for Gate 3 | W1 | plan T5 |
+| 2026-11-03 | T4 complete: integrated layout, package-link, PR #6 ownership, full test, typecheck, Prisma, diff, and plan verification pass; removed one ignored stale build artifact under deleted `apps/web` | W1 | plan T4 |
+| 2026-11-03 | T3 complete: migrated workspace/import/recovery tests, guide and normative path references, and guardrails; 66 tests, typechecks, Prisma validation, and plan lint pass | W1 | plan T3 |
+| 2026-11-02 | T2 verification recorded: Prisma validation passed with `DATABASE_URL`; full tests intentionally deferred to T3 because three existing assertions still use old paths | W1 | plan T2 evidence |
+| 2026-11-02 | T2 complete: regenerated workspace lockfile, rewired backend TypeScript references and Prisma path, updated ignore rules, and verified backend plus frontend typechecks | W1 | plan T2 |
+| 2026-11-02 | T2 configuration rewiring started; root workspace includes `src/fe` and `src/be/*`, backend references use the new depth, and frontend typecheck remains standalone per PR #6 ownership | W1 | C25; plan T2 |
+| 2026-11-02 | Operator authorized getting `w10-ui-mockups` locally and merging it into `w1` to satisfy H~1 | W1 | merge prerequisite |
+| 2026-11-02 | Operator approved the source-root migration plan at Gate 2; execution stopped because `src/fe` is absent from the checkout | W1 | H~1 pending |
+| 2026-11-02 | T1 complete: moved four backend packages under `src/be` and removed obsolete `apps/web`; `src/fe` untouched | W1 | plan T1 |
+| 2026-11-02 | Fetched `origin/development` at `03d91d2` and merged it into `w1`; PR #6 frontend tree is present | W1 | merge commit |
+| 2026-11-02 | Drafted source-root migration plan with five serialized tasks; plan lint clean | W1 | Gate 2 pending |
+| 2026-11-02 | Operator approved the backend source-root spec at Gate 1 | W1 | spec approved; plan in progress |
+| 2026-11-02 | Amended source-root spec for `src/fe` + `src/be/*`, direct `apps/web` deletion, exact shared-root updates, and PR #6 prerequisite; spec lint clean | W1 | C24; Gate 1 pending |
+| 2026-11-02 | Operator directed removal of obsolete `apps/web`; source-root design now depends on PR #6's `src/fe` being present for verification | W1 | C24 |
+| 2026-11-02 | Amended backend source-root spec for option 2 with exact commands, file inventory, entrypoint matrix, recovery behavior, and PR #6 handover; spec lint clean | W1 | C23; Gate 1 pending |
+| 2026-11-02 | Operator selected option 2; W1 scope narrowed to backend relocation only, with frontend/backend integration deferred to PR #6 handover | W1 | C23 |
+| 2026-11-02 | Second-round reviews found PR #6 `src/fe` is standalone and incompatible with the assumed `@agile/web` integration; implementation paused for ownership decision | W1 | Q12 pending |
+| 2026-11-02 | Second-round Implementer review of backend source-root spec completed; lint clean; remaining findings concern transitional TypeScript ownership/path, exact Prisma command, file inventory, and package-entrypoint matrix | W1 | review report in chat |
+| 2026-11-02 | Drafted backend source-root migration spec; no frontend or runtime contract changes included | W1 | Q12; spec pending Gate 1 |
+| 2026-11-02 | Operator clarified the source-root split: PR #6 owns `src/fe`; this branch proposes backend packages under `src/be` | W1 | C22; A~2 |
+| 2026-11-02 | PR #6 handover point 1 inspected; implementation paused because it conflicts with AD-01a/b and the recorded monorepo layout | W1 | Q12 pending |
+| 2026-11-02 | T5 close-out verification complete: 66 tests pass, typecheck and approved spec/plan lint pass, diff review clean; Gate 3 pending | W1 | 024e632 |
+| 2026-11-02 | T4 reconciled endpoint 6/42/36, standup-date rules, and normative architecture docs with PR #6; targeted tests and typecheck green | W1 | 9ab629b |
+| 2026-11-02 | T3 OpenAPI schema registry, component emission, and recursive ref parity completed; targeted contract/API tests and typecheck green | W1 | 4075c0b |
+| 2026-11-02 | T2 recursive visibility, compound selector normalization, and mutation recheck seam completed; targeted DB/API tests and typecheck green | W1 | fe1b1b7 |
+| 2026-11-02 | T1 typed authorization resolution completed; targeted API tests and typecheck green | W1 | bd81bc3 |
+| 2026-11-02 | Dev Lead approved the review-repairs implementation plan at Gate 2; T1 started | W1 | review-repairs plan |
+| 2026-11-02 | Review-repairs design approved at Gate 1; plan drafted and both spec and plan lint clean; implementation is paused for Gate 2 | W1 | review-repairs design and plan |
+| 2026-11-02 | Maintainer high-risk review of amended review-repairs design found material ownership, resolver-shape, normative-source, OpenAPI-mapping, and visibility-metadata gaps | W1 | review report in chat |
+| 2026-11-02 | Tester/QA high-risk review of amended review-repairs design found blocking gaps in requirement-to-test traceability, normative PR #6 source reconciliation, recursive visibility/resource matrix coverage, OpenAPI failure observability, and race/date boundary evidence | W1 | review report in chat |
+| 2026-11-02 | Attacker high-risk review of amended review-repairs design found three blocking gaps: archived-write error semantics, unspecified authorization/use race isolation, and missing root-project visibility coverage | W1 | review report in chat |
+| 2026-11-02 | Implementer high-risk review of amended review-repairs design found blocking gaps in resolver outputs/transaction handoff, recursive visibility contract, OpenAPI registry typing, normative endpoint-42 reconciliation, and standup-date boundary semantics | W1 | review report in chat |
+| 2026-11-02 | Operator reversed C20 for endpoint 42 and adopted PR #6 behavior; review-repairs design amended with explicit resolver, visibility, OpenAPI, date, and race semantics | W1 | C21; spec amendment |
+| 2026-11-02 | Two review rounds completed; amended review-repairs design now has explicit resolver types/ownership, visibility registry, OpenAPI mapping/failure rules, endpoint-42 doc parity, date truth table, and race oracle; spec lint passes | W1 | review-repairs design |
+| 2026-11-02 | Implementer high-risk review of amended repair bundle completed; blocking/material findings returned for resolver interface, recursive DB contract, OpenAPI registry, transaction seam, normative file scope, and date semantics | W1 | review report in chat |
+| 2026-11-02 | Attacker high-risk review found authorization, tenancy, malformed-input, bypass, and consistency gaps; spec lint still passes | W1 | review report in chat |
+| 2026-11-02 | Tester/QA high-risk review found one normative contract conflict and coverage gaps in resource resolution, recursive visibility, unique reads, OpenAPI failure behavior, and standup date boundaries | W1 | review report in chat |
+| 2026-11-02 | Implementer/high-risk review found blocking gaps in resolver, visibility, OpenAPI, contract reconciliation, and date seams; spec lint passes | W1 | review report in chat |
+| 2026-11-02 | Maintainer/high-risk review found four blocking maintainability findings; spec lint still passes | W1 | review report in chat |
+| 2026-11-02 | Operator selected approach 1: repair existing authorization, DB visibility, OpenAPI, and contract seams in place | W1 | approach decision |
+| 2026-11-02 | Dev Lead approved the repaired W1 branch at fresh Gate 3 | W1 | 7eb8392 |
+| 2026-11-02 | Final read-only review passed with no Critical or Important findings; post-commit verification is green | W1 | ab69775 |
+| 2026-11-02 | T9 repaired normative schemas, stable operation IDs, OpenAPI schema/status emission and parity, Prisma read extension, package entrypoints, consumer fixtures, and generated-artifact ignore coverage | W1 | ab69775 |
+| 2026-11-02 | Late read-only review found filtered-client, contract-schema, package-export, OpenAPI-parity, policy-ID, and consumer-fixture gaps; W1 is reopened for fixes | W1 | review follow-up |
+| 2026-11-02 | Dev Lead approved W1 at Gate 3 after closeout verification | W1 | 462bdb3 |
+| 2026-11-02 | T8 frozen-first consumer fixtures and full verification completed; W1 ready for Gate 3 | W1 | 462bdb3 |
+| 2026-11-02 | T7 OpenAPI parity, import-boundary, raw-query, collision, and project-scope verification completed; tests and typecheck green | W1 | db82d3a |
+| 2026-11-02 | T6 Hono API boundary, health route, request-id, auth seam, input validation, and redaction completed; tests and typecheck green | W1 | 5507538 |
+| 2026-11-02 | T5 initial migration, partial-index SQL parity, compatibility checks, and recovery procedure completed; tests and typecheck green | W1 | 35c1742 |
+| 2026-11-02 | T4 Prisma schema, filtered client, project boundaries, and version seam completed; validation, tests, and typecheck green | W1 | ddbc25e |
+| 2026-11-02 | T3 57-entry policy map and collision-safe route registration completed; tests and typecheck green | W1 | 5b697c8 |
+| 2026-11-02 | T2 shared schemas, errors, pagination, and frozen-first interfaces completed; tests and typecheck green | W1 | 028272a |
+| 2026-11-02 | T1 workspace scaffold, package boundaries, scripts, and typecheck baseline completed | W1 | f3340db |
+| 2026-11-02 | Dev Lead approved the W1 implementation plan at Gate 2 | W1 | d6e6f0d |
+| 2026-11-02 | Dev Lead approved the W1 spec at Gate 1 | W1 | c1aa20f |
+| 2026-11-02 | W1 foundation spec drafted using normative architecture contracts; lint passes | W1 | c1aa20f |
+| 2026-11-03 | Fixed filtered reads, nested visibility and raw SQL access; 79 tests including PostgreSQL integration, typecheck and lint pass | W1 | 8f649c4 |
+| 2026-11-03 | Fixed paginated OpenAPI response shapes and path parameters; independent OpenAPI validation passes | W1 | b86b89a |
+| 2026-11-03 | Added redaction cycle handling, JSON 404s, and missing visibility policy detection; remaining review fixes pending | W1 | 324b048 |
+| 2026-11-03 | Mapped DB domain errors, made maintenance stub fail, and forwarded HEAD/OPTIONS; targeted tests and typecheck pass | W1 | 324b048 |
+| 2026-11-03 | Added authorization rollback, scoped principals, bounded transaction retries, and transaction callback typing; 84 tests pass, one skipped | W1 | d3599e7 |
+| 2026-11-03 | Added write filtering, fail-closed model delegates, transaction ownership, 500 logging and package import; 87 tests pass, one DB integration skipped; production build fails with duplicate React | W1 | d3599e7 |
+| 2026-11-03 | Aligned workspace React and verified production build; database integration remains environment-dependent | W1 | 6ccc3e4 |
+| 2026-11-03 | Review follow-up: added `registerRoute` (policy gate, authorize, parse, commit/rollback) with a shared `ROUTES` list that `createApiApp` registers; `ApiContext` gains `input`; MEMBER operations whose resolver returns no project now 404; 100 tests pass against PostgreSQL 16, typecheck passes. Authorization runs before input parsing, so resolvers see `body: undefined` | W1 | this commit |
+| 2026-11-03 | Added `createPredicateEvaluator(requireMember)` implementing NONE, MEMBER, MEMBER_PROJECTS, SELF, ASSIGNEE, MEMBER_OR_ASSIGNEE and ADDER per the spec's fixed semantics; 100 tests pass against PostgreSQL | W1 | this commit |
+| 2026-11-03 | Independent review of PR #5 against a real PostgreSQL 16: 88/88 tests pass and the filtered client behaves correctly on compound keys, soft-delete and archived hiding, `_count`, aggregates and writes; found no registration glue, a fail-open null project, and three smaller leaks (Known Gaps) | W1 | review report in chat |
 | 2026-11-02 | Developer guide first write: W10 front end (overview, setup, architecture, components, flow rules, testing) | W10 | `docs/guide/` |
 | 2026-11-02 | Folded branch state `w10-ui-mockups` | — | archive |
 | 2026-11-02 | Spec approved by the operator (gate 1); Q9 closed as SD13, Q10 as SD12 | W10 | this commit |

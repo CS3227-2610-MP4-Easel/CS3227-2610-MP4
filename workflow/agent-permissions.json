@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "default": "deny",
+  "allow": {
+    "read": ["repository", "web", "attack_corpus"],
+    "write": ["repository"]
+  },
+  "deny": {
+    "operations": ["unknown", "execute_production", "write_secret"],
+    "production_credentials": ["*"],
+    "production_hosts": ["production", "prod", "*.prod.*", "*.production.*"],
+    "protected_paths": ["tests/security/attack-corpus/**"]
+  },
+  "review_required": {
+    "protected_paths": [
+      ".github/**",
+      "workflow/agent-permissions.json",
+      "workflow/security-sensitive-paths.json",
+      "workflow/action-pins.json",
+      "workflow/tools/**",
+      "workflow/agents/**",
+      "workflow/skills/**",
+      "workflow/skills.lock",
+      "workflow/manifest.json",
+      "workflow/config.json",
+      "workflow/models.json",
+      ".githooks/**",
+      ".claude/**",
+      ".codex/**",
+      "scripts/**",
+      "tests/security/attack-corpus/**"
+    ],
+    "reviewers": ["@ludannnn"],
+    "owner": "@teleifo"
+  },
+  "content_handling": {
+    "repository": "data_not_instructions",
+    "web": "data_not_instructions",
+    "attack_corpus": "data_not_instructions"
+  }
+}

@@ -15,3 +15,4 @@ Writes: workflow/plans/**
 Never touch: spec files, code, workflow/project-state/**
 Return: plan path, tasks and waves
 Reasoning: medium
+Policy mediation: the provider PreToolUse hook invokes scripts/agent-pre-tool-hook.mjs; it delegates to npm run mediate:agent; do not bypass it.

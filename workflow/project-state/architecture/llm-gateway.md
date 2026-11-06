@@ -11,7 +11,7 @@ Nothing built yet *(planned)*. Every model call goes through `LlmGateway.run`; t
 | Path | Role |
 |---|---|
 | `src/be/llm-gateway (planned)` | guards, limiter, SoCLaaS client, model records, mock mode, llm_calls, ai_sessions |
-| `packages/ai-context (planned)` | the one membership-scoped context-assembly function |
+| `src/be/ai-context (planned)` | the one membership-scoped context-assembly function |
 
 ## Decisions
 

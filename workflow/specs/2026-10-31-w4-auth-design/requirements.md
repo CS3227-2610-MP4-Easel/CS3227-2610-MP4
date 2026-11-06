@@ -9,7 +9,8 @@
 | F4 | `POST /api/auth/check-code` validates a role's code | Given the correct pair it returns 200 `{ "valid": true }`; given a wrong pair, 403 `REGISTRATION_CODE_INVALID`; over the limit, 429 `RATE_LIMITED` with `Retry-After` |
 | F5 | `POST /api/auth/register` creates one user | Given a valid token, correct code and no row, it returns 201 `User`, with the email taken from the token and the role from the validated request |
 | F6 | `GET /api/me` returns the caller | Given a registered caller it returns 200 `User`, matching the stored row |
-| F7 | The sign-in and register screen works end to end | Given each flow in [ui.md](ui.md), with the Firebase SDK mocked, the user reaches that flow's stated result and each listed state shows its exact text |
+
+The sign-in and register screen requirement moved to the W4 follow-up: [follow-up-t7.md](follow-up-t7.md) (SD18).
 
 ## Non-functional
 | ID | Requirement | Acceptance criterion |

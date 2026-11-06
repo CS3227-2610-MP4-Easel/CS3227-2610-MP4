@@ -1,0 +1,10 @@
+title = "Agile Platform secret scan"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Only reviewed scanner fixtures are allowlisted."
+paths = [
+  "^tests/process-security/fixtures/false-positive/"
+]
