@@ -56,6 +56,8 @@ test("E46 F6 links in a text answer", () => {
 test("E47 F6 a link split across fields is caught by the joined check", () => {
   assert.equal(asJson('["java", "script:alert(1)"]'), "LINK");
   assert.equal(asJson('["www", ".evil.io"]'), "LINK");
+  assert.equal(asJson('["mail", "to:person@example.com"]'), "LINK");
+  assert.equal(asJson('["10.0", ".0.1"]'), "LINK");
 });
 
 test("F6 the joined check also covers HTML, Markdown, the boundary and secrets", () => {
@@ -72,6 +74,7 @@ test("F6 M3 alone, and a ZWJ outside an emoji sequence", () => {
 });
 
 test("E48 F6 HTML: escaped, comment, fullwidth, entity, unterminated, closing tag", () => {
+  assert.equal(asText("<p onclick=alert(1)>"), "HTML");
   assert.equal(asJson('["' + esc("003c") + "img src=x" + esc("003e") + '"]'), "HTML");
   for (const answer of ["<!-- x -->", `${U(0xff1c)}img${U(0xff1e)}`, "&#60;img", "<img src=x onerror=", "</div>", "&lt;script&gt;"]) {
     assert.equal(asText(answer), "HTML", answer);

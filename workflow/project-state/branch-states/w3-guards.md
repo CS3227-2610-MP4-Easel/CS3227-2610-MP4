@@ -57,6 +57,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-07 | PR #15 review: reject more HTML tags and split link schemes and IP addresses; regression tests and guard version 3. Typecheck, lint and Prisma validation pass; full suite: 343 pass, 4 process-security failures on Windows, 26 database tests skipped | W3 | this commit |
 | 2026-11-07 | PR #15 review: reject live keys shorter than the secret guard's minimum; regression test | W3 | this commit |
 | 2026-11-07 | PR #15 review: check schema-transformed output; regression test and guard version 2 | W3 | this commit |
 | 2026-11-06 | Gitleaks (run by the operator over `46b33b1..HEAD`) flagged the fake key in `run.test.ts` at `cc32b13:513` and `f9d32cf:499` (`generic-api-key`); the operator chose ignore entries over a history rewrite, so both fingerprints are in `.gitleaksignore` with a comment, next to W12's reviewed canary. The PR should call this out for review | W3 | this commit |
@@ -121,6 +122,7 @@ New entries (spec conventions.md § Known limits, accepted at Gate 1):
 
 ## 8. Deviations
 
+- **PR #15 output checks:** The approved rules omitted several HTML elements and did not apply the scheme and IP checks to joined strings. The review fixes expand both checks and may reject more benign generic text and joined fields.
 - **PR #15 review fix:** The approved output specification checked only pre-schema JSON. Schema-transformed results now receive the same checks. The API spec reflects this security correction; fresh branch review is needed.
 - **Short live keys:** The approved output specification ignored short secrets while live settings accepted them. Settings now reject keys shorter than eight characters, matching the guard's minimum.
 

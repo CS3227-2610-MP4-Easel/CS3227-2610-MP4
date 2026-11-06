@@ -18,7 +18,7 @@ export const OUTPUT_RULES: readonly OutputRule[] = [
   { id: "L4", step: "5a", source: String.raw`\b(?:javascript|vbscript):`, flags: "iu" },
   { id: "L5", step: "5b", source: String.raw`\b(?:mailto|data|file|tel|sms|ftp|blob|intent):(?=\S)`, flags: "iu" },
   { id: "L6", step: "5b", source: String.raw`\b\d{1,3}(?:\.\d{1,3}){3}\b`, flags: "iu" },
-  { id: "H1", step: "6", source: String.raw`<\/?(?:a|img|script|iframe|svg|style|link|object|embed|form|input|button|meta|base|video|audio|source|frame|math|body|html|div|span|table|details)(?=[\s/>])`, flags: "iu" },
+  { id: "H1", step: "6", source: String.raw`<\/?(?:a|abbr|address|area|article|aside|audio|b|base|bdi|bdo|blockquote|body|br|button|canvas|caption|cite|code|col|colgroup|data|datalist|dd|del|details|dfn|dialog|div|dl|dt|em|embed|fieldset|figcaption|figure|footer|form|frame|h[1-6]|head|header|hgroup|hr|html|i|iframe|img|input|ins|kbd|label|legend|li|link|main|map|mark|math|menu|meta|meter|nav|noscript|object|ol|optgroup|option|output|p|picture|pre|progress|q|rp|rt|ruby|s|samp|script|search|section|select|slot|small|source|span|strong|style|sub|summary|sup|table|tbody|td|template|textarea|tfoot|th|thead|time|title|tr|track|u|ul|var|video|wbr|svg)(?=[\s/>])`, flags: "iu" },
   { id: "H2", step: "6", source: String.raw`<\/[a-z]`, flags: "iu" },
   { id: "H3", step: "6", source: String.raw`<[!?]`, flags: "iu" },
   { id: "H4", step: "6", source: String.raw`&(?:#\d{1,7}|#x[0-9a-f]{1,6}|[a-z]{2,8});`, flags: "iu" },
@@ -31,7 +31,7 @@ export const OUTPUT_RULES: readonly OutputRule[] = [
 /** As the input set, but CR, U+FE0F and a ZWJ between two pictographs (emoji sequences) are allowed (spec SD13). */
 export const OUTPUT_INVISIBLE_SOURCE = String.raw`(?![\n\t\r])[\p{Cc}\p{Co}\p{Cs}\u{FE00}-\u{FE0E}\u{E0100}-\u{E01EF}\u{115F}\u{1160}\u{3164}\u{FFA0}]|(?!\u{200D})\p{Cf}|(?<!\p{Extended_Pictographic}\u{FE0F}?)\u{200D}|\u{200D}(?!\p{Extended_Pictographic})`;
 
-export const OUTPUT_STEPS = ["refusal", "parse", "collect", "nfkc", "forbidden-chars", "links-stripped", "links-as-is", "html", "markdown", "boundary", "secret", "joined:links-stripped+html+markdown+boundary+secret", "length", "schema", "check-schema-result"] as const;
+export const OUTPUT_STEPS = ["refusal", "parse", "collect", "nfkc", "forbidden-chars", "links-stripped", "links-as-is", "html", "markdown", "boundary", "secret", "joined:links-stripped+links-as-is+html+markdown+boundary+secret", "length", "schema", "check-schema-result"] as const;
 
 const forbidden = new RegExp(OUTPUT_INVISIBLE_SOURCE, "u");
 const rulesFor = (step: OutputRule["step"]) => OUTPUT_RULES.filter((rule) => rule.step === step).map((rule) => new RegExp(rule.source, rule.flags));
@@ -75,10 +75,10 @@ function collect(value: unknown): string[] | null {
   return out;
 }
 
-/** Steps 5a, 6, 7, 8 and 9: the checks that also run on the joined strings. */
+/** Steps 5-9: the checks that also run on the joined strings. */
 function leaks(text: string, context: OutputContext): OutputReason | null {
   const flat = text.replace(/[\t\n\r]/g, "");
-  if (stripped.some((p) => p.test(flat))) return "LINK";
+  if (stripped.some((p) => p.test(flat)) || asIs.some((p) => p.test(text))) return "LINK";
   if (html.some((p) => p.test(text))) return "HTML";
   if (markdown.some((p) => p.test(text))) return "MARKDOWN_LINK";
   if (context.boundary && text.toLowerCase().includes(context.boundary.toLowerCase())) return "BOUNDARY";

@@ -89,11 +89,11 @@ In this order; the first failure returns. Patterns use flags `iu` (no `g`) unles
 | 1 | `text.trim()` parses as JSON and is a plain object whose only own key is `refusal` with value `true` (either output kind) | `REFUSED`, `REFUSAL` |
 | 2 | `json` kind: `JSON.parse(text)` | `SCHEMA_FAIL`, `PARSE` |
 | 3 | Collect checked strings with an explicit stack (no recursion): `text` kind, the text; `json` kind, every string value and every own key (`Object.keys`) at any depth, in document order (array items by index; for an object, each key then its value). More than 64 levels or more than 10,000 strings | `SCHEMA_FAIL`, `SHAPE` |
-| - | Steps 4 to 9 run on each checked string, NFKC-normalised, in document order; then steps 5a, 6, 7, 8 and 9 run once more on all checked strings joined with `""` (a link or tag split across fields) | - |
+| - | Steps 4 to 9 run on each checked string, NFKC-normalised, in document order; then steps 5a, 5b, 6, 7, 8 and 9 run once more on all checked strings joined with `""` (a link or tag split across fields) | - |
 | 4 | any `\p{Cc}` except `\n`, `\t`, `\r`; any `\p{Cf}` except U+200D between two `\p{Extended_Pictographic}` code points (emoji ZWJ sequences); `\p{Co}`; `\p{Cs}`; variation selectors except U+FE0F (emoji presentation); Hangul fillers (as § Invisible characters) | `SCHEMA_FAIL`, `FORBIDDEN_CHAR` |
 | 5a | on a copy with `\t`, `\n`, `\r` removed: `[a-z][a-z0-9+.-]{1,15}://`; `(^\|[^:\w])//[\p{L}\p{N}]`; `\bwww\.`; `\b(javascript\|vbscript):` | `SCHEMA_FAIL`, `LINK` |
-| 5b | on the string as it is (whitespace kept; not on the join): `\b(mailto\|data\|file\|tel\|sms\|ftp\|blob\|intent):(?=\S)`; `\b\d{1,3}(\.\d{1,3}){3}\b` | `SCHEMA_FAIL`, `LINK` |
-| 6 | `<\/?(a\|img\|script\|iframe\|svg\|style\|link\|object\|embed\|form\|input\|button\|meta\|base\|video\|audio\|source\|frame\|math\|body\|html\|div\|span\|table\|details)(?=[\s/>])`; `<\/[a-z]`; `<[!?]`; `&(#\d{1,7}\|#x[0-9a-f]{1,6}\|[a-z]{2,8});` | `SCHEMA_FAIL`, `HTML` |
+| 5b | on the string as it is (whitespace kept), including the join: `\b(mailto\|data\|file\|tel\|sms\|ftp\|blob\|intent):(?=\S)`; `\b\d{1,3}(\.\d{1,3}){3}\b` | `SCHEMA_FAIL`, `LINK` |
+| 6 | HTML element opening tags (the H1 list in `output-check.ts`), any closing tag, declarations, comments and entities | `SCHEMA_FAIL`, `HTML` |
 | 7 | `\]\(`; `\]\[`; `!\[` | `SCHEMA_FAIL`, `MARKDOWN_LINK` |
 | 8 | contains `context.boundary` (case-insensitive) | `SCHEMA_FAIL`, `BOUNDARY` |
 | 9 | contains any `context.secrets` entry of 8+ characters (NFKC of both), or matches `(?<![\w-])sk-[A-Za-z0-9_-]{16,}` (case-sensitive) | `SCHEMA_FAIL`, `SECRET` |

@@ -53,4 +53,4 @@ export function rulesFingerprint(parts: ReturnType<typeof fingerprintParts> = fi
  * and for control-flow changes the fingerprint cannot see (spec conventions.md § GUARD_VERSION bump checklist).
  * It is a manual string rather than the hash itself so that a refactor with identical behaviour does not empty every cache (spec SD6).
  */
-export const GUARD_VERSION = "2";
+export const GUARD_VERSION = "3";

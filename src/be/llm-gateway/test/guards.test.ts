@@ -9,6 +9,7 @@ import { checkOutput, defaultGuards, fingerprintParts, GUARD_LIMITS, GUARD_VERSI
 const KNOWN: Record<string, string> = {
   "1": "5021d942e0e450e2493bd12973d84a230bee0dfdb76e8a606f06f7523155709d",
   "2": "80912b96260892a531c15252d9864913d47c1d109801427874fca29540994d2e",
+  "3": "b09f1c67e4e7d8ece5fdbb18c840905dd443384ff9d7f72c91b4527bd18a6aae",
 };
 
 test("F7 the guards are exported from the package", () => {
