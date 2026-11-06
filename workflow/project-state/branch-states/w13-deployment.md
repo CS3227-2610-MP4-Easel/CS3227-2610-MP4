@@ -24,7 +24,7 @@ the W1 application runnable on the dev and production tiers.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-06 | Codex | W13 | Active | PR #18 deployment failed on missing `VERCEL_PROJECT_ID`; CI has two stale workflow-validator assertions | Add branch-specific `VERCEL_PROJECT_ID`, update the two validator expectations, then rerun PR checks | 2026-11-06 |
+| S1 | 2026-11-06 | Codex | W13 | Active | W13 CI fix in progress; deployment still needs the branch-scoped `VERCEL_PROJECT_ID` | Run the focused and full checks, commit the test fix, push, then inspect PR #18 and Vercel | 2026-11-06 |
 
 **Remaining**
 
@@ -36,7 +36,7 @@ the W1 application runnable on the dev and production tiers.
 - [x] Incorporated the plan-review findings: migration manifest, workflow validator/action pins, preview dependency seam, and fixed deployment checks are now listed.
 - [x] Gate 2: operator approved the W13 plan on 2026-11-06; approved-plan lint passes.
 - [ ] **Handover:** owner configures the canonical Vercel development project and variables, then reviews/merges W13 into `development`; record merged SHA and dev smoke evidence before starting T5.
-- [ ] **Blocker:** PR #18 Vercel build fails during API route configuration because branch-scoped Preview variables omit `VERCEL_PROJECT_ID`; CI workspace fails F11/F7 because tests still expect the pre-W13 `pull_request trigger` error wording after `scripts/check-workflows.mjs` added the trusted `push` workflow exception.
+- [ ] **Blocker:** PR #18 Vercel build fails during API route configuration because branch-scoped Preview variables omit `VERCEL_PROJECT_ID`; CI workspace is being corrected to expect the validator's current `unexpected workflow trigger` wording.
 
 ## 2. Workstreams
 
@@ -59,6 +59,7 @@ the W1 application runnable on the dev and production tiers.
 | 2026-11-06 | Completed T3: added migration checksum manifest, production direct-target preflight, forward-only migration runner, recovery evidence validator, and W13 runbook; focused tests, Prisma validation, lint, and diff checks pass | W13 | 24cabd0 |
 | 2026-11-06 | Completed T4 implementation: added the fixed development deployment check, merged-SHA/resource validation, preview variable isolation, degraded AI result, and workflow-validator support; focused tests, workflow/security checks, lint, secret scan, and diff checks pass | W13 | pending T4 commit |
 | 2026-11-06 | Merged current `development` (including the Vercel build hotfix and intervening W2 work) into W13; no conflicts | W13 | merge `d153509` |
+| 2026-11-06 | Updated the two stale workflow-security assertions to match the trusted development deployment trigger validator; Vercel still needs the branch-scoped project identity | W13 | current fix |
 
 ## 7. Decisions
 
