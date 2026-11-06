@@ -1,5 +1,6 @@
 import type { Feature } from "@agile/contracts";
 import { FEATURES, MODELS, SOCLAAS_BASE_URL } from "./config.js";
+import { OUTPUT_LIMITS } from "./output-check.js";
 
 export type AppTier = "local" | "dev" | "preview" | "prod" | "test";
 export type LlmMode = "mock" | "live";
@@ -33,7 +34,7 @@ export function loadGatewaySettings(env: Record<string, string | undefined>): Ga
   let apiKey: string | null = null;
   if (llmMode === "live") {
     const key = env.SOCLAAS_API_KEY;
-    if (!key || /\s/.test(key)) invalid("SOCLAAS_API_KEY");
+    if (!key || key.length < OUTPUT_LIMITS.minSecretLength || /\s/.test(key)) invalid("SOCLAAS_API_KEY");
     apiKey = key;
   }
 

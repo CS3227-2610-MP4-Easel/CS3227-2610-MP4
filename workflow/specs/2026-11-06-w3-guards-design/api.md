@@ -13,7 +13,7 @@ All operations are in-process functions of `@agile/llm-gateway` (`src/be/llm-gat
 
 `defaultGuards.input(text, maxChars)` calls `sanitiseInput(text, maxChars)` and returns `{ blocked: true }` when `blocked`, else `{ text, flagged, cut }`. `defaultGuards.output` is `checkOutput`. `run` ignores `reason`.
 
-**Secrets.** `GatewayDeps` gains `secrets?: readonly string[]` (default `[]`). `runtime.ts` passes `[settings.apiKey]` in live mode while still giving the gateway settings with `apiKey: null` (W2's rule that the gateway's settings never hold the key stays). Entries shorter than 8 characters are ignored, so an empty key never matches everything.
+**Secrets.** `GatewayDeps` gains `secrets?: readonly string[]` (default `[]`). `runtime.ts` passes `[settings.apiKey]` in live mode while still giving the gateway settings with `apiKey: null` (W2's rule that the gateway's settings never hold the key stays). Entries shorter than 8 characters are ignored, so an empty key never matches everything; live settings reject keys shorter than 8 characters.
 
 ## `sanitiseInput(text: string, maxChars = Infinity): { text: string; flagged: boolean; blocked: boolean; cut: boolean }`
 

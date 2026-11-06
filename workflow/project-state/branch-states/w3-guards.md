@@ -32,7 +32,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] Gate 2: W3 plan approved by ludannnn on 2026-11-06.
 - [x] Close-out: branch-diff review (Attacker, Tester); findings fixed or recorded in Changes.
 - [x] Gate 3: operator approved the branch (ludannnn, 2026-11-06).
-- [ ] Finish the short-key fix, then review the PR #15 fixes and push them to update the PR.
+- [ ] Owner branch review after PR #15 fixes; push the commits to update the PR.
 - [ ] **Handover:** W6, W7, W8, W9 follow W3's rules for sections (spec conventions.md § Rules for features): `trusted: true` only for server-built text; anything users typed or uploaded, and any stored model output reused as input, is `trusted: false`; `STATIC` sections are always trusted (`run` throws `INVALID_LLM_CALL` otherwise) and section names are literals; each untrusted section's budget leaves room for the 49-character wrapper plus its name line, and the statics leave room for the ~280-character suffix.
 - [ ] **Handover:** W7 checks "empty after sanitising" with `sanitiseInput(text).blocked`; every feature maps `BLOCKED_INPUT` to 422 `VALIDATION_FAILED`; PM endpoints map `REQUEST_REFUSED` to 422, Dev Lead and Developer endpoints to the degraded 200 (architecture §8).
 - [ ] **Handover:** W9 calls `sanitiseInput` per item to store each item's and summary's own `flagged`, and imports `GUARD_VERSION` (never copies it) into the `item_summaries` unique key (AD-67).
@@ -49,7 +49,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W3 | Guards (untrusted-text pipeline) | In review | [spec](../../specs/2026-11-06-w3-guards-design.md) | [plan](../../plans/2026-11-06-w3-guards.md) | Schema fix done; short-key fix pending | — |
+| W3 | Guards (untrusted-text pipeline) | In review | [spec](../../specs/2026-11-06-w3-guards-design.md) | [plan](../../plans/2026-11-06-w3-guards.md) | PR #15 fixes reviewed; owner review needed | — |
 
 ---
 
@@ -57,6 +57,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-07 | PR #15 review: reject live keys shorter than the secret guard's minimum; regression test | W3 | this commit |
 | 2026-11-07 | PR #15 review: check schema-transformed output; regression test and guard version 2 | W3 | this commit |
 | 2026-11-06 | Gitleaks (run by the operator over `46b33b1..HEAD`) flagged the fake key in `run.test.ts` at `cc32b13:513` and `f9d32cf:499` (`generic-api-key`); the operator chose ignore entries over a history rewrite, so both fingerprints are in `.gitleaksignore` with a comment, next to W12's reviewed canary. The PR should call this out for review | W3 | this commit |
 | 2026-11-06 | Pre-PR check: test fake keys built at runtime so the source holds no key-shaped literal for the CI Gitleaks scan (it scans every commit in the PR range, so the earlier commits `cc32b13` and `f9d32cf` still hold them; Gitleaks is not installed locally, so unverified); Known Gap added for `prompt_version` not covering the suffix (W17). 372 tests, 372 pass, none skipped | W3 | c7f5f3b |
@@ -121,6 +122,7 @@ New entries (spec conventions.md § Known limits, accepted at Gate 1):
 ## 8. Deviations
 
 - **PR #15 review fix:** The approved output specification checked only pre-schema JSON. Schema-transformed results now receive the same checks. The API spec reflects this security correction; fresh branch review is needed.
+- **Short live keys:** The approved output specification ignored short secrets while live settings accepted them. Settings now reject keys shorter than eight characters, matching the guard's minimum.
 
 ---
 

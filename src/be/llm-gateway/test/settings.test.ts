@@ -22,6 +22,7 @@ test("E2 unsafe or malformed settings name the setting, never the value", () => 
   rejects({ APP_TIER: "dev" }, "LLM_MODE");
   for (const mode of ["Live", "", " live"]) rejects({ APP_TIER: "local", LLM_MODE: mode }, "LLM_MODE");
   rejects({ APP_TIER: "dev", LLM_MODE: "live" }, "SOCLAAS_API_KEY");
+  rejects({ ...live, SOCLAAS_API_KEY: "short" }, "SOCLAAS_API_KEY");
   rejects({ ...live, SOCLAAS_API_KEY: "sk marker key" }, "SOCLAAS_API_KEY");
   for (const url of ["https://evil.example/v1", "http://soclaas-api.comp.nus.edu.sg/v1", "https://soclaas-api.comp.nus.edu.sg:8443/v1", "https://u:p@soclaas-api.comp.nus.edu.sg/v1", "https://soclaas-api.comp.nus.edu.sg/v1?x=1", "https://soclaas-api.comp.nus.edu.sg/v1#f", "https://soclaas-api.comp.nus.edu.sg/v1/"]) {
     rejects({ ...live, SOCLAAS_BASE_URL: url }, "SOCLAAS_BASE_URL");
