@@ -1,5 +1,6 @@
 import type { Feature } from "@agile/contracts";
 import { FEATURES, MODELS, SOCLAAS_BASE_URL } from "./config.js";
+import { OUTPUT_LIMITS } from "./output-check.js";
 
 export type AppTier = "local" | "dev" | "preview" | "prod" | "test";
 export type LlmMode = "mock" | "live";
@@ -33,7 +34,7 @@ export function loadGatewaySettings(env: Record<string, string | undefined>): Ga
   let apiKey: string | null = null;
   if (llmMode === "live") {
     const key = env.SOCLAAS_API_KEY;
-    if (!key || /\s/.test(key)) invalid("SOCLAAS_API_KEY");
+    if (!key || key.length < OUTPUT_LIMITS.minSecretLength || /\s/.test(key)) invalid("SOCLAAS_API_KEY");
     apiKey = key;
   }
 
@@ -56,6 +57,11 @@ export function loadGatewaySettings(env: Record<string, string | undefined>): Ga
 /** The model a feature uses after the settings override. */
 export function modelFor(settings: Pick<GatewaySettings, "modelOverrides">, feature: Feature): string {
   return settings.modelOverrides[feature] ?? FEATURES[feature].model;
+}
+
+/** What the output guard must never let through: the SoCLaaS key in live mode (spec SD8); the gateway's own settings drop the key. */
+export function gatewaySecrets(settings: Pick<GatewaySettings, "llmMode" | "apiKey">): string[] {
+  return settings.llmMode === "live" && settings.apiKey ? [settings.apiKey] : [];
 }
 
 const TIERS: readonly AppTier[] = ["local", "dev", "preview", "prod", "test"];
