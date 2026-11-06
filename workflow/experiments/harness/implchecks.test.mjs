@@ -174,6 +174,20 @@ test('E32: a changed dependency or lockfile sets deps_changed, validates the loc
   assert.deepEqual(fixtureCalls, [res.dir], 'npm ci ran once, in the verify tree');
 });
 
+test('a reinstall after a dependency change receives the task post_setup (for example prisma generate)', async () => {
+  fixtureCalls = [];
+  const fx = fixture();
+  put(path.join(fx.clone, 'package.json'), PKG({ dependencies: { a: '1', extra: '2' } }));
+  put(path.join(fx.clone, 'package-lock.json'), lock({
+    'node_modules/typescript': { version: '5.0.0', resolved: `${REG}typescript/-/typescript-5.0.0.tgz`, integrity: 'sha512-AAA' },
+    'node_modules/a': { version: '1.0.0', resolved: `${REG}a/-/a-1.0.0.tgz`, integrity: 'sha512-BBB' },
+    'node_modules/extra': { version: '2.0.0', resolved: `${REG}extra/-/extra-2.0.0.tgz`, integrity: 'sha512-CCC' },
+  }));
+  let seen = null;
+  await build(fx, { install: async ({ postSetup }) => { seen = postSetup; }, postSetup: ['npx', 'prisma', 'generate'] });
+  assert.deepEqual(seen, ['npx', 'prisma', 'generate']);
+});
+
 test('E97: a lockfile resolving to file:, git or another registry, or altering a baseline package, is unsafe_deps and no install runs', async () => {
   const cases = {
     'file: tarball': lock({ 'node_modules/typescript': { version: '5.0.0', resolved: 'file:../evil.tgz', integrity: 'sha512-AAA' }, 'node_modules/a': { version: '1.0.0', resolved: `${REG}a/-/a-1.0.0.tgz`, integrity: 'sha512-BBB' } }),

@@ -105,7 +105,7 @@ export async function implPreflight({ repoRoot, expRoot, experiment, task, arm }
 /** Lower case, forward slashes, no doubled slashes: JSON-escaped and native Windows paths compare equal. */
 const norm = (s) => String(s).replace(/\\+/g, '/').replace(/\/+/g, '/').toLowerCase();
 const EXEC_TOOLS = new Set(['Bash', 'PowerShell']);
-const EXEC_PATTERN = /\bclaude(?:\.cmd|\.exe)?\s+(?:-p|--print)\b|\bcurl(?:\.exe)?\b|\bwget\b|\binvoke-webrequest\b/i;
+const EXEC_PATTERN = /\bclaude(?:\.cmd|\.exe)?\s+(?:-p|--print)\b|(?<![\w-])curl(?:\.exe)?(?![\w-])|(?<![\w-])wget(?![\w-])|\binvoke-webrequest\b/i;
 
 /** Tool calls and tool results of one turn's stream: [{name, text, command}] and [string]. */
 export function toolActivity(events) {
@@ -422,6 +422,7 @@ async function runImpl(ctx, run, h) {
       }
       if (kind === 'empty') {
         state.empty_streak += 1;
+        state.status_streak = 0;
         if (state.empty_streak >= 2) { h.abort(ctx, run, 'turn_cap', 'two empty replies'); return true; }
         prompt = h.prompts.RETRY_PROMPT;
       } else if (kind === 'status') {

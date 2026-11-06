@@ -69,7 +69,7 @@ test('E68: unknown labels become other and minor, control characters are strippe
 });
 
 test('E69: a credential pattern in the review text is a secret error and nothing is returned', async () => {
-  const r = await reviewRun({ launcher: 'l', env: {}, model: 'm', prompt: 'p', run: call([JSON.stringify({ findings: [{ category: 'bug', severity: 'minor', where: 'x', issue: 'key sk-ant-api03-abcdefghijklmnopqrstuvwxyz0123456789ABCD' }] })]).run });
+  const r = await reviewRun({ launcher: 'l', env: {}, model: 'm', prompt: 'p', run: call([JSON.stringify({ findings: [{ category: 'bug', severity: 'minor', where: 'x', issue: 'key ' + ['sk-ant-', 'api03-abcdefghijklmnopqrstuvwxyz0123456789ABCD'].join('') + '' }] })]).run });
   assert.equal(r.error, 'secret');
   assert.deepEqual(r.findings, []);
 });

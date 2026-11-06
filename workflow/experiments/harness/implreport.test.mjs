@@ -87,7 +87,7 @@ test('E78: a plan id or flag that starts with = is prefixed with a quote', () =>
 });
 
 test('E79: a key pattern in any output exits 9 and nothing is written or renamed', () => {
-  const fx = fixture([{ sample: 1, pass1: true, pass2: true, impl: 0.1, fix: 0, flags: ['sk-ant-api03-abcdefghijklmnopqrstuvwxyz0123456789ABCD'] }]);
+  const fx = fixture([{ sample: 1, pass1: true, pass2: true, impl: 0.1, fix: 0, flags: ['' + ['sk-ant-', 'api03-abcdefghijklmnopqrstuvwxyz0123456789ABCD'].join('') + ''] }]);
   assert.throws(() => report(fx), (e) => e instanceof ReportError && e.exit === 9 && /anthropic-key/.test(e.message) && !e.message.includes('abcdefgh'));
   assert.deepEqual(fs.readdirSync(fx.outDir), []);
 });

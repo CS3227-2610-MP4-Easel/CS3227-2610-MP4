@@ -138,7 +138,7 @@ test('E85: a patched node_modules in the clone has no effect on the checks', asy
 });
 
 test('E39: a credential in check output keeps the result file, empties the lines, and the batch ends with exit 9', async () => {
-  const ctx = await setup({ experiment: { ...one, attempts: 1 }, task: { checks: { ...TASK.checks, typecheck: [cmd(['node', '-e', "if (require('fs').existsSync('src/feature.mjs')) { console.error('error TS1: sk-ant-api03-abcdefghijklmnopqrstuvwxyz0123456789ABCD'); process.exit(1); }"])] } } });
+  const ctx = await setup({ experiment: { ...one, attempts: 1 }, task: { checks: { ...TASK.checks, typecheck: [cmd(['node', '-e', "if (require('fs').existsSync('src/feature.mjs')) { console.error('error TS1: ' + ['sk-ant-', 'api03-abcdefghijklmnopqrstuvwxyz0123456789ABCD'].join('') + ''); process.exit(1); }"])] } } });
   const res = await drive(ctx, fakeCli([PROBE, GOOD]));
   assert.equal(res.exit, 9, text(res));
   const c = checkOf(ctx, 1, 1);

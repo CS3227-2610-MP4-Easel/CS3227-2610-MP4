@@ -84,7 +84,7 @@ export async function runVerification(o) {
     const flags = new Set(runFlags);
     const ids = checksList.map((c) => c.id);
     const build = await buildVerifyTree({
-      baselineTree, clone, planFiles, scratch, protectedGlobs: task.protected_globs ?? [], env, expectedMissing: overlayMissing,
+      baselineTree, clone, planFiles, scratch, protectedGlobs: task.protected_globs ?? [], env, expectedMissing: overlayMissing, postSetup: task.post_setup ?? [],
       ...(deps.install ? { install: deps.install } : {}),
     });
     for (const f of build.flags) flags.add(f);

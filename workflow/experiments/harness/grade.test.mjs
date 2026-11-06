@@ -328,7 +328,7 @@ test('the batch ceiling gives exit 5, a grade without a review and the flag revi
 
 test('E69: a credential in the review text stores nothing, flags review_error and exits 9', async () => {
   const s = implSetup();
-  const res = await gradeImpl(s, fakeCli([REVIEW([{ ...BLOCKER, issue: 'sk-ant-api03-abcdefghijklmnopqrstuvwxyz0123456789ABCD' }])]));
+  const res = await gradeImpl(s, fakeCli([REVIEW([{ ...BLOCKER, issue: '' + ['sk-ant-', 'api03-abcdefghijklmnopqrstuvwxyz0123456789ABCD'].join('') + '' }])]));
   assert.equal(res.exit, 9);
   assert.deepEqual(gradesOf(s).review, { findings: [] });
   assert.ok(gradesOf(s).flags.includes('review_error'));

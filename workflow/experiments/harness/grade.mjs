@@ -193,7 +193,12 @@ async function gradeImplRun({ expRoot, runId, paths, manifest, state, launcher, 
         try { return fs.readFileSync(path.join(snapDir, 'files', ...f.path.split('/')), 'utf8'); } catch { return ''; }
       });
       let notes = null;
-      try { notes = fs.readFileSync(path.join(manifest.clone_path, 'IMPLEMENTATION-NOTES.md'), 'utf8'); } catch { /* none */ }
+      try {
+        // a link or hardlink here could point at a local secret that the review call would then read
+        const notesPath = path.join(manifest.clone_path, 'IMPLEMENTATION-NOTES.md');
+        const st = fs.lstatSync(notesPath);
+        if (st.isFile() && st.nlink === 1) notes = fs.readFileSync(notesPath, 'utf8');
+      } catch { /* none */ }
       const diff = buildDiff({ clone: manifest.clone_path, baselineTree, changed: last.changed_files, deleted: last.deleted_files });
       const { prompt, diffTruncated } = buildReviewPrompt({ plans, notes, diff, paths: [...last.changed_files, ...last.deleted_files] });
       if (diffTruncated) flags.add('diff_truncated');

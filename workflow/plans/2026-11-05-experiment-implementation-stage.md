@@ -119,7 +119,7 @@ Executor note: run inline, task by task in table order. T3, T4 and T5 share no f
 - [x] 5. In `driver.test.mjs` keep the existing test `E11: an arm with stage implementation exits 8 before any clone or run folder exists` and add cases for an experiment with `stage` `ablation` and `model_tier` (no `arm_ids` needed) expecting exit 8 before any call; run only these with `node --test --test-name-pattern "stage" workflow/experiments/harness/driver.test.mjs`; expect PASS.
 - [x] 6. Write a failing `spawn.test.mjs` case (`effort: 'low'` adds `--effort low`, an invalid value throws, no `effort` leaves the args unchanged) and an arm-validator case in `schema.test.mjs` (`effort` allowed values); implement in `spawn.mjs` and `schema.mjs`; run `<TEST spawn>` and `<TEST schema>`; PASS. Create `arms/implementer-cheap.json`; run `node workflow/experiments/harness/exp.mjs check`; expect exit 0.
 - [x] 7. Update branch state: Progress, Changes line.
-- [ ] 8. Commit: `feat: implementation stage schemas, validation and toy fixtures (experiment framework)` with `Task: T2`.
+- [x] 8. Commit: `feat: implementation stage schemas, validation and toy fixtures (experiment framework)` with `Task: T2`.
 
 ### T3: `exp snapshot`
 **Delivers:** frozen plan snapshots | **Satisfies:** F1, E1, E2, E3, E4, E5, E6, E7 | **Depends on:** T2 | **Wave:** 3
@@ -267,8 +267,8 @@ The IPC contract (data-model.md, a snippet): parent sends `{id: 1, method: "crea
 - [x] 9. Commit the CSVs under `docs/telemetry/experiments/` and the branch state: `docs: implementation pilot result (experiment framework)` with `Task: T8`.
 
 ### Close-out
-- [ ] Every Traceability row verified; `<BUILD>` green on Windows (background); `exp check --secrets` clean; `<LINT plan> --closeout` passes.
-- [ ] Code review of the branch diff (Implementer and Attacker lenses, one round); fix findings.
-- [ ] Spec index status, plan Task order and branch state reflect reality; the E93 to E104 assignment recorded as a Changes line; amendments, if any, recorded as decisions.
-- [ ] Branch state: workstream `In review`, session rows removed, Changes lines complete; Known Gap (agent turn exposure, no sandbox, plausible-value builds, agent spend not counted) written; the layout Convention (new files and CSVs) written; `Handover` items kept: classifier overcount fix, Codex driver, real W7 comparison; note `guide out of date: no developer-guide section covers process tooling`.
+- [x] Every Traceability row verified; `<BUILD>` green on Windows (background); `exp check --secrets` clean; `<LINT plan> --closeout` passes.
+- [x] Code review of the branch diff (Implementer and Attacker lenses, one round); fix findings.
+- [x] Spec index status, plan Task order and branch state reflect reality; the E93 to E104 assignment recorded as a Changes line; amendments, if any, recorded as decisions.
+- [x] Branch state: workstream `In review`, session rows removed, Changes lines complete; Known Gap (agent turn exposure, no sandbox, plausible-value builds, agent spend not counted) written; the layout Convention (new files and CSVs) written; `Handover` items kept: classifier overcount fix, Codex driver, real W7 comparison; note `guide out of date: no developer-guide section covers process tooling`.
 - [ ] GATE: ask the operator to review the branch (`AGENTS.md` § 8, gate 3); write `Approved` only on their yes, and never push, open a PR or merge before it.

@@ -142,7 +142,7 @@ const sameBytes = (a, b) => a.length === b.length && a.equals(b);
  * (`unsafe_path`, `unsafe_deps`) when the attempt is red before any check. Never runs git; never follows a link.
  * `planFiles` maps repo-relative path to the snapshot's bytes (the reference besides the baseline tree).
  */
-export async function buildVerifyTree({ baselineTree, clone, planFiles, scratch, protectedGlobs = [], limits = WALK_LIMITS, install = defaultInstall, env, expectedMissing = new Set() }) {
+export async function buildVerifyTree({ baselineTree, clone, planFiles, scratch, protectedGlobs = [], limits = WALK_LIMITS, install = defaultInstall, env, expectedMissing = new Set(), postSetup = [] }) {
   const out = { dir: null, changed: [], deleted: [], plan_changed: [], protected_changed: [], flags: [], reasons: [], depsChanged: false };
   const walked = walkClone(clone, limits);
   if (walked.unsafe.length) {
@@ -205,7 +205,7 @@ export async function buildVerifyTree({ baselineTree, clone, planFiles, scratch,
   if (out.depsChanged) {
     for (const d of toolchainDirs(dir)) fs.rmSync(path.join(dir, ...d.split('/')), { recursive: true, force: true });
     try {
-      await install({ dir, env });
+      await install({ dir, env, postSetup });
     } catch (e) {
       out.flags.push('unsafe_deps');
       out.reasons.push(`npm ci from the agent lockfile failed: ${e.message}`);
@@ -284,9 +284,14 @@ export async function npmCi({ dir, env, timeoutMs = 15 * 60 * 1000 }) {
   if (r.code !== 0) throw new Error(`exit ${r.code}${r.timedOut ? ' (timeout)' : ''}`);
 }
 
-async function defaultInstall({ dir, env }) {
+async function defaultInstall({ dir, env, postSetup }) {
   if (!env) throw new Error('the check environment is required for npm ci');
   await npmCi({ dir, env });
+  // the task's post_setup (for example `prisma generate`) must run after a reinstall too, as it does for the baseline
+  if (postSetup?.length) {
+    const r = await runCommand({ argv: postSetup, cwd: dir, env, timeoutMs: 15 * 60 * 1000 });
+    if (r.code !== 0) throw new Error(`post_setup exit ${r.code}${r.timedOut ? ' (timeout)' : ''}`);
+  }
 }
 
 // ---- process sweep (E98) -----------------------------------------------------------------------------------------
