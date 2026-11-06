@@ -101,3 +101,39 @@ The two lite clones were verified again with the fixed verify step (reinstall fo
 What the protected edits are (lite s2 against the pristine baseline): count assertions that any correct build of this feature has to change, because the feature adds three endpoints (57 to 60 in `authorization-matrix`, `openapi-parity` and `policy` tests), a new model (`EpicNote` in `filtered-client` and `schema-parity`), and a project reference in `tsconfig.json`; the other protected test edit is added tests in `log-redaction`. So the task's `protected_globs` forbid edits the feature itself requires. Both lite runs were therefore marked not green for two harness or task-design reasons, not for failing code: the Prisma gap, then the protected-file rule. Conclusion for the question of whether the lite plan beat or lost to the superpowers plan: no evidence either way; the lite builds are functionally sound on every automated check, and the superpowers runs that went green did so after restoring the protected files at attempt 2 (not examined).
 
 Consequence for the numbers in section 3: lite pass@1 0/2 and pass@2 0/2 understates lite. The rule needs a task fix (let the plan's own tests and count assertions be edited, or protect only behaviour) before the next comparison.
+
+## 10. Addendum: do separate deliverables save reading? Is the larger spec and plan worth it? (2026-11-07)
+
+Question raised by the owner: the lite flow splits the spec and plan into separate files so an agent need not read what it does not need; is that what happens, is reading several files the same as reading one with the same content, and do the separate files get bigger?
+
+**Size and cost of writing the spec and plan** (replicate 2 of each arm, from the snapshots):
+
+| Arm | Files | Words | Bytes | Plan cost (USD) | Rubric (of 40) |
+|---|---|---|---|---|---|
+| superpowers | 2 | 3,261 | 22,112 | 0.35 | 28.5 |
+| lite | 9 | 9,697 | 61,772 | 1.74 | 32.5 |
+| full | 9 | 16,346 | 100,628 | 4.49 | 33.5 |
+
+Lite is about 3x the words and 5x the cost of superpowers; full is about 5x the words and 13x the cost. Lite is lighter than full, not lighter than superpowers. The plan file itself also grew: the superpowers plan is 15.6 KB, the lite plan 20.9 KB (about 34% larger), because the lite plan carries its own task steps and so absorbs content that the spec would otherwise hold.
+
+**What the builder read** (the four completed implementation transcripts; the Read tool plus a check of Bash commands):
+
+| Plan | Files in plan | Files read | Distinct bytes read |
+|---|---|---|---|
+| superpowers | spec + plan | both, each read twice | 22 KB (47 KB with re-reads) |
+| lite | 8 spec files + plan | the plan file once, in both runs; the spec files essentially never (a few Bash commands touched the spec folder; lite s2 touched `ui.md` twice) | 21 KB |
+
+So the split worked as designed: the lite builder skipped about 41 KB of spec files. That is partly by instruction (the build prompt says the plan is the specification and the lite plan carries its own task steps), not by the agent choosing well. Caveat: this rests on transcripts, mostly Bash, and "never read the specs" is likely, not proven.
+
+**One file versus several with the same content:** the token cost is the same. The saving comes only from files that are never opened; splitting a 22 KB document into nine files saves nothing if all nine are read. Lite's builder read about as much as the superpowers builder (21 KB against 22 KB) because the lite plan file alone is about the size of the whole superpowers plan.
+
+**Where the extra cost is.** The 5x sits in plan writing (more text produced, plus more review and subagent work), not in building: the lite builds cost 1.76 and 2.25 USD against 1.43 and 1.52 for superpowers, about 0.4 to 0.7 more. Total tool-result text over a build was similar (184 KB lite, 191 to 201 KB superpowers), most of it code, not plan.
+
+**What the data says about whether it paid off:** after the fixes of section 9, both lite builds pass every automated check except the badly drawn protected-file rule; the superpowers builds were 8 of 8 and 3 of 8 shared checks; advisory review counts do not separate the plans. With n=2 per plan this mildly favours lite on correctness and costs 5x at plan time. It does not show that the larger spec and plan produce fewer later issues, and it does not show that they do not.
+
+**What would make a split plan pay off:**
+- each plan task names the spec section it touches, so the builder reads only that section;
+- reviewers, not builders, read the full spec;
+- the plan file stays about the size of the superpowers plan instead of absorbing the spec.
+
+**Next pilot:** add a lean-plan arm (superpowers plus the acceptance checks only), and have the harness log per-file reads, so reading is measured directly instead of reconstructed from transcripts.
