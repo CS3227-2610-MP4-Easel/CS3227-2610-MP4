@@ -25,7 +25,7 @@ test("E33 usageSessions: the caller's sessions in [from, to), newest first, with
   await session(me, "12:00:00");
   await session(other, "09:30:00");
   await base.aiSession.create({ data: { feature: "DEV_STANDUP", userId: me, env: "dev", startedAt: at("09:15:00"), lastActivityAt: at("09:15:00") } });
-  await base.llmCall.createMany({ data: [call(me, { sessionId: early.id, costMicrousd: 5n }), call(me, { sessionId: early.id, status: "SCHEMA_FAIL", promptTokens: null, completionTokens: null, costMicrousd: 104n })] });
+  await base.llmCall.createMany({ data: [call(me, { sessionId: early.id, costMicrousd: 5n }), call(me, { sessionId: early.id, status: "SCHEMA_FAIL", promptTokens: null, completionTokens: null, costMicrousd: 104n }), call(me, { sessionId: early.id, env: "dev", costMicrousd: 1_000n })] });
 
   const atFrom = await session(me, "00:00:00");
   const page = await usageSessions(base, me, { from: at("00:00:00"), to: at("12:00:00"), page: 0, size: 20 }, "test");
@@ -69,14 +69,15 @@ test("E34 usageSummary: one row per feature and model for this tier, aggregate o
   assert.ok(!JSON.stringify(summary).includes(a) && !JSON.stringify(summary).includes(b), "no user ids");
 }));
 
-test("E35 E19 failureReason: UPSTREAM_LIMIT only for the owner's rate-limited call", { skip }, () => withIntegrationDb(async (base, { user }) => {
+test("E35 E19 failureReason: UPSTREAM_LIMIT only for the owner's rate-limited call in this tier", { skip }, () => withIntegrationDb(async (base, { user }) => {
   const owner = await user();
   const other = await user();
   const limited = await base.llmCall.create({ data: call(owner, { status: "RATE_LIMITED" }) });
   const ok = await base.llmCall.create({ data: call(owner) });
-  assert.equal(await failureReason(base, limited.id, owner), "UPSTREAM_LIMIT");
-  assert.equal(await failureReason(base, ok.id, owner), null);
-  assert.equal(await failureReason(base, randomUUID(), owner), null);
-  assert.equal(await failureReason(base, "not-a-uuid", owner), null);
-  assert.equal(await failureReason(base, limited.id, other), null);
+  assert.equal(await failureReason(base, limited.id, owner, "test"), "UPSTREAM_LIMIT");
+  assert.equal(await failureReason(base, ok.id, owner, "test"), null);
+  assert.equal(await failureReason(base, randomUUID(), owner, "test"), null);
+  assert.equal(await failureReason(base, "not-a-uuid", owner, "test"), null);
+  assert.equal(await failureReason(base, limited.id, other, "test"), null);
+  assert.equal(await failureReason(base, limited.id, owner, "dev"), null, "another tier's call");
 }));

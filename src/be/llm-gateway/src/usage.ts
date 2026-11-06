@@ -26,7 +26,7 @@ export async function usageSessions(db: PrismaClient, userId: string, query: Usa
     db.aiSession.findMany({ where, orderBy: [{ startedAt: "desc" }, { id: "desc" }], skip: page * size, take: size }),
   ]);
   const sums = sessions.length === 0 ? [] : await db.llmCall.groupBy({
-    by: ["sessionId"], where: { sessionId: { in: sessions.map((s) => s.id) } },
+    by: ["sessionId"], where: { env: tier, sessionId: { in: sessions.map((s) => s.id) } },
     _count: { _all: true }, _sum: { promptTokens: true, completionTokens: true, costMicrousd: true },
   });
   const bySession = new Map(sums.map((row) => [row.sessionId, row]));
@@ -67,9 +67,9 @@ export async function usageSummary(db: PrismaClient, query: { from?: Date; to?: 
     .sort((a, b) => a.feature.localeCompare(b.feature) || a.model.localeCompare(b.model));
 }
 
-/** `UPSTREAM_LIMIT` when the caller's own call ended on a SoCLaaS 429 (spec SD9); null otherwise. */
-export async function failureReason(db: PrismaClient, callId: string, userId: string): Promise<"UPSTREAM_LIMIT" | null> {
+/** `UPSTREAM_LIMIT` when the caller's own call in this tier ended on a SoCLaaS 429 (spec SD9); null otherwise. */
+export async function failureReason(db: PrismaClient, callId: string, userId: string, tier: AppTier): Promise<"UPSTREAM_LIMIT" | null> {
   if (!UUID.test(callId)) return null;
-  const row = await db.llmCall.findUnique({ where: { id: callId }, select: { userId: true, status: true } });
-  return row && row.userId === userId && row.status === "RATE_LIMITED" ? "UPSTREAM_LIMIT" : null;
+  const row = await db.llmCall.findUnique({ where: { id: callId }, select: { userId: true, env: true, status: true } });
+  return row && row.userId === userId && row.env === tier && row.status === "RATE_LIMITED" ? "UPSTREAM_LIMIT" : null;
 }
