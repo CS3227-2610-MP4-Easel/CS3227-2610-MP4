@@ -38,7 +38,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] GATE: operator pushed `w2-gateway` and opened PR #14 into `development` (2026-11-06).
 - [ ] **Handover:** W15 calls `usageSummary` with a date range (it reads every matching row to compute the means) and gates endpoint 57 by role; `usageSessions`, `usageSummary` and `failureReason` all take `settings.tier`.
 - [ ] **Handover:** the endpoints that call `Sessions.open` check the caller's project membership, and those that call `close` check owner or approver (SD11); `Sessions` does neither.
-- [ ] **Handover:** the W2 integration tests skip without `W1_INTEGRATION_DATABASE_URL`, and W12's CI does not set it; whoever owns CI should give it a Postgres 16 so they run there.
+- [ ] **Handover:** the W2 integration tests skip without `W1_INTEGRATION_DATABASE_URL`, and W12's CI does not set it; the CI owner (Dev Lead, W12) adds a Postgres 16 service to `.github/workflows/ci.yml`, sets the variable, and makes a missing integration database fail the job. A PR #14 reviewer asked for this ("should fix"); the operator chose to hand it to W12 rather than edit CI on this branch (2026-11-06).
 - [x] Agent policy narrowed on its own branch, `w12-agent-policy-scope` (operator's decision; its C~1), merged as PR #13; the uncommitted local copies were discarded and `development` merged in (`e568668`, C~2).
 - [ ] **Handover:** W15 owns endpoints 56 and 57 and their resolvers; W1's handover listed "session and usage" resolvers under W2 (spec SD3).
 - [ ] **Handover:** W7, W8 and W9 register their mock responses with `registerMockResponse` at import of their module, put their rules in `STATIC` sections (non-static sections can be dropped when the prompt is over budget), and call `assertStaticSectionsFit` in a test.
@@ -60,6 +60,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-06 | PR #14 review (should fix): W1's `visibility-integration.test.ts` uses the `PrismaPg` adapter (Prisma 7 removed `datasourceUrl`), reversing the D~1 choice (C~3); CI Postgres handed to W12. 306 tests, 306 pass, none skipped | W2 | this commit |
+| 2026-11-06 | PR #14 review (must fix): after a call's row is finalised, a failed session touch or breaker write no longer throws `LLM_CALL_FAILED`; it logs `llm_call_followup_failed` with `callId` and status and returns the answer that matches the row, so a paid, recorded `OK` is never reported as a failure. Cost: one idle-clock refresh or one breaker count can be lost. Regression test fails on the old code; 306 tests, 305 pass, 1 fails (D~1), none skipped | W2 | e644f02 |
 | 2026-11-06 | PR #14 review fix: `usageSessions` sums only this tier's calls, and `failureReason` takes the tier and ignores another tier's call (D~3); tests cover a `dev` call on a `test` session and a `dev` lookup; 305 tests, 304 pass, 1 fails (D~1), none skipped | W2 | PR #14 |
 | 2026-11-06 | PR #14 opened into `development` | W2 | PR #14 |
 | 2026-11-06 | Merged `development` (W12 agent policy PR #13) into the branch after discarding the uncommitted policy copies; 305 tests, 304 pass, 1 fails (D~1), none skipped | W2 | e568668 |
@@ -139,8 +141,17 @@ New entry:
 - **Rejected:** disabling hooks locally (sidesteps a team control); editing the policy on this branch (W12 owner's file, review required).
 - **Superseded (2026-11-06):** the operator narrowed the policy on `w12-agent-policy-scope`, merged as PR #13. The agent now commits and writes `workflow/` records; the operator still pushes and writes the process-control files.
 
+### C~3 — Fix W1's Prisma 7 test on this branch (reverses the D~1 choice)
+
+- **Date:** 2026-11-06
+- **Who asked:** operator (ludannnn), "Reverse: fix it here", after a PR #14 reviewer asked that the failure get an owner so the full suite can be green
+- **Decision:** `src/be/db/test/visibility-integration.test.ts` builds its client with the `PrismaPg` adapter, as W4's integration tests do; the file is W1's, so the PR flags it for the Dev Lead.
+- **Why:** a two-line fix that turns the suite green with a database; leaving it waiting on W1's owner kept a known failure in every run.
+- **Rejected:** keeping D~1 and naming W1's owner (the operator's 2026-11-05 choice).
+- **Supersedes:** the operator's choice recorded in D~1.
+
 ## 8. Deviations
 
-- **D~1 — A W1 integration test fails under Prisma 7, left failing on purpose (T1):** `src/be/db/test/visibility-integration.test.ts:10` builds `new PrismaClient({ datasourceUrl: url })`, an option Prisma 7 removed, so it fails with "Unknown property datasourceUrl" whenever `W1_INTEGRATION_DATABASE_URL` is set. CI sets no database, so it skips there; the Prisma 7 merge (`9077725`) updated W4's tests but not this one. Not caused by W2. The operator chose to leave it failing (2026-11-05); the fix is the `PrismaPg` adapter pattern W4's tests use. Consequence: `npm test` with a database shows 1 failure on this branch until W1's owner fixes it.
+- **D~1 — A W1 integration test fails under Prisma 7, left failing on purpose (T1):** `src/be/db/test/visibility-integration.test.ts:10` builds `new PrismaClient({ datasourceUrl: url })`, an option Prisma 7 removed, so it fails with "Unknown property datasourceUrl" whenever `W1_INTEGRATION_DATABASE_URL` is set. CI sets no database, so it skips there; the Prisma 7 merge (`9077725`) updated W4's tests but not this one. Not caused by W2. The operator chose to leave it failing (2026-11-05); the fix is the `PrismaPg` adapter pattern W4's tests use. Consequence: `npm test` with a database shows 1 failure on this branch until W1's owner fixes it. **Resolved 2026-11-06 (C~3):** fixed on this branch after the PR #14 review; the full suite passes.
 - **D~2 — Internal errors do not count towards the breaker (close-out):** spec api.md § Breaker update says every call ending `UPSTREAM_ERROR` adds one. A provider error that is not an `UpstreamError` (for example a mock that throws, or a bug) is still recorded as `UPSTREAM_ERROR` but no longer counts, because the Attacker review showed one user's input could otherwise trip the breaker for everyone. Real 5xx, network and timeout failures still count.
 - **D~3 — Small interface adaptations (T6, T7):** `createLlmGateway` takes two extra optional seams, `mockResponses` and `stateKeyPrefix` (test isolation); `usageSessions`, `usageSummary` and (after PR #14 review) `failureReason` take the tier as an explicit argument, and `failureReason` returns null for another tier's call; `run` throws `LLM_CALL_FAILED` (row finalised `UPSTREAM_ERROR`) when something throws after its row is written, a case the spec did not list. No frozen interface changed.

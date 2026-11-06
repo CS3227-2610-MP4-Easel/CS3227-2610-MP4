@@ -187,9 +187,15 @@ export function createLlmGateway(deps: GatewayDeps): LlmGateway {
         // The lease sweep got there first: the row is already TIMEOUT and this result is discarded.
         if (updated === 0) return { ok: false, code: "AI_UNAVAILABLE", callId };
 
-        if (status === "OK") await sessions.touch(call.sessionId);
-        // An internal error (not an upstream failure) is recorded as UPSTREAM_ERROR but must not trip the breaker for everyone.
-        if (last.ok || last.kind !== "OTHER") await recordOutcome(breaker, status);
+        // The row is final and the call is paid for, so the answer must match it: a failed follow-up write is logged, not thrown
+        // (PR #14 review). The cost is a session idle clock that is not refreshed, or one breaker count lost.
+        try {
+          if (status === "OK") await sessions.touch(call.sessionId);
+          // An internal error (not an upstream failure) is recorded as UPSTREAM_ERROR but must not trip the breaker for everyone.
+          if (last.ok || last.kind !== "OTHER") await recordOutcome(breaker, status);
+        } catch {
+          console.warn("llm_call_followup_failed", { callId, status });
+        }
         if (LOGGED_STATUSES.has(status)) console.warn("llm_call_failed", { callId, status });
         if (status !== "OK") return { ok: false, code: CODE_FOR_STATUS[status], callId };
         return { ok: true, value, callId, flagged, truncated: fitted.truncated || cut, cacheHit: false, promptTokens: promptTokens ?? 0, completionTokens: completionTokens ?? 0, costMicroUsd: cost };

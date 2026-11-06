@@ -10,12 +10,13 @@ const MIN = 60_000;
 const B = "0123456789abcdef";
 
 /** One gateway over in-memory fakes, with the default call's session usable and a mock response registered; the boundary is fixed unless `boundary: "random"`. */
-function world(options: { steps?: Step[]; refuse?: Record<string, number>; settings?: Parameters<typeof testSettings>[0]; guards?: GuardPipeline; mockResponses?: Map<string, MockRespond>; provider?: "fake" | "mock"; boundary?: (() => string) | "random"; secrets?: string[] } = {}) {
+function world(options: { steps?: Step[]; refuse?: Record<string, number>; settings?: Parameters<typeof testSettings>[0]; guards?: GuardPipeline; mockResponses?: Map<string, MockRespond>; provider?: "fake" | "mock"; failTouch?: boolean; boundary?: (() => string) | "random"; secrets?: string[] } = {}) {
   const clock = fakeClock();
   const store = fakeGatewayDb();
   const call = textCall();
   store.sessions.set(call.sessionId, { projectId: call.projectId });
   const { sessions, touched } = fakeSessions(new Map([[call.sessionId, { userId: call.caller.userId, feature: call.feature }]]));
+  if (options.failTouch) sessions.touch = async () => { throw new Error("connection reset: session detail"); };
   const { hit, keys } = fakeHit(options.refuse);
   const mockResponses = options.mockResponses ?? new Map<string, MockRespond>([["DEV_STANDUP", () => "Yesterday: fixed login."]]);
   const fake = fakeProvider(clock, options.steps ?? [{ text: "Yesterday: fixed login." }]);
@@ -325,6 +326,32 @@ test("E27 replacement guards plug in: changed text, blocked input, flags and ref
   const refused = world({ guards: { ...defaultGuards, output: () => ({ ok: false, status: "REFUSED" }) } });
   assert.deepEqual(await refused.gateway.run(refused.call), { ok: false, code: "REQUEST_REFUSED", callId: refused.store.calls[0].id });
   assert.equal(refused.store.calls[0].status, "REFUSED");
+});
+
+test("PR #14 review: a failed session or breaker write after the row is final keeps the answer and the row consistent", async () => {
+  const breakerDown = (w: ReturnType<typeof world>) => {
+    (w.store.db.llmGatewayState as unknown as { upsert: () => Promise<never> }).upsert = async () => { throw new Error("connection reset: breaker detail"); };
+  };
+
+  const touchFails = world({ failTouch: true });
+  const touched = await quietly(() => touchFails.gateway.run(touchFails.call));
+  assert.equal(touched.result.ok && touched.result.value, "Yesterday: fixed login.");
+  assert.equal(touchFails.store.calls[0].status, "OK");
+  assert.deepEqual(touched.warnings, [["llm_call_followup_failed", { callId: touchFails.store.calls[0].id, status: "OK" }]]);
+
+  const closing = world();
+  closing.store.state.set("breaker", { failures: 1, openUntil: null }); // an OK call writes to close the breaker
+  breakerDown(closing);
+  const closed = await quietly(() => closing.gateway.run(closing.call));
+  assert.equal(closed.result.ok, true);
+  assert.equal(closing.store.calls[0].status, "OK");
+
+  const failing = world({ steps: [{ fail: "HTTP_5XX" }] });
+  breakerDown(failing);
+  const failed = await quietly(() => failing.gateway.run(failing.call));
+  assert.deepEqual(failed.result, { ok: false, code: "AI_UNAVAILABLE", callId: failing.store.calls[0].id });
+  assert.equal(failing.store.calls[0].status, "UPSTREAM_ERROR");
+  for (const { warnings } of [touched, closed, failed]) assert.ok(!JSON.stringify(warnings).includes("detail"), "no database detail is logged");
 });
 
 test("E36 breaker updates are read then write: concurrent failures may lose an increment", async () => {
