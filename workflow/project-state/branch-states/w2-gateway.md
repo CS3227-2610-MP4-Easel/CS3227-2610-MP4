@@ -60,6 +60,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-06 | PR #14 review (must fix): after a call's row is finalised, a failed session touch or breaker write no longer throws `LLM_CALL_FAILED`; it logs `llm_call_followup_failed` with `callId` and status and returns the answer that matches the row, so a paid, recorded `OK` is never reported as a failure. Cost: one idle-clock refresh or one breaker count can be lost. Regression test fails on the old code; 306 tests, 305 pass, 1 fails (D~1), none skipped | W2 | this commit |
 | 2026-11-06 | PR #14 review fix: `usageSessions` sums only this tier's calls, and `failureReason` takes the tier and ignores another tier's call (D~3); tests cover a `dev` call on a `test` session and a `dev` lookup; 305 tests, 304 pass, 1 fails (D~1), none skipped | W2 | PR #14 |
 | 2026-11-06 | PR #14 opened into `development` | W2 | PR #14 |
 | 2026-11-06 | Merged `development` (W12 agent policy PR #13) into the branch after discarding the uncommitted policy copies; 305 tests, 304 pass, 1 fails (D~1), none skipped | W2 | e568668 |
