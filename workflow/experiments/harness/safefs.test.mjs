@@ -11,7 +11,7 @@ const reasons = (res) => res.unsafe.map((u) => `${u.path}: ${u.reason}`).join('\
 test('E35, E104: names outside ^[A-Za-z0-9_][A-Za-z0-9_./-]*$, device names and trailing dots are refused', () => {
   const bad = ['a&calc.test.ts', '-x.ts', 'a^b.ts', 'a%b.ts', 'a b.ts', 'dir/a b.ts', 'x.ts.', 'dir./x.ts', 'aux', 'docs/NUL.txt', 'com1.ts', 'a.ts:stream', '.hidden.ts', '', 'a\\b.ts', 'dir/x.ts '];
   for (const name of bad) assert.ok(cloneNameProblem(name), `should refuse ${JSON.stringify(name)}`);
-  for (const name of ['src/be/api/x.test.ts', '_x.ts', 'a/b-c_d.1.ts', 'tests/pinned-note.test.ts', 'src/.keep', 'docs/console.md']) {
+  for (const name of ['src/be/api/x.test.ts', '_x.ts', 'a/b-c_d.1.ts', 'tests/pinned-note.test.ts', 'src/.keep', 'docs/console.md', 'src/fe/app/[[...slug]]/page.tsx', 'src/fe/app/(g)/@s/x.ts']) {
     assert.equal(cloneNameProblem(name), null, name);
   }
 });

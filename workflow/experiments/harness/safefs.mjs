@@ -5,9 +5,10 @@ import path from 'node:path';
 
 export const WALK_LIMITS = { maxFileBytes: 5 * 1024 * 1024, maxFiles: 20000, maxMs: 120000 };
 // build output of the framework tools is skipped like dist (a `next build` in the clone writes files above the size limit)
-const SKIP_DIRS = new Set(['.git', 'node_modules', 'dist', '.next', '.turbo']);
+const SKIP_DIRS = new Set(['.git', 'node_modules', 'dist', '.next', '.turbo', '.tmp-pg']);
 const RESERVED = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i;
-const NAME_RE = /^[A-Za-z0-9_][A-Za-z0-9_./-]*$/;
+// brackets, parentheses and @ are Next.js route-folder names ([[...slug]], (group), @slot); no shell sees these names
+const NAME_RE = /^[A-Za-z0-9_][A-Za-z0-9_./()@[\]-]*$/;
 
 export const isSkippedName = (name, isDir) => (isDir ? SKIP_DIRS.has(name) : name.endsWith('.tsbuildinfo'));
 
