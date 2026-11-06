@@ -58,6 +58,11 @@ export function modelFor(settings: Pick<GatewaySettings, "modelOverrides">, feat
   return settings.modelOverrides[feature] ?? FEATURES[feature].model;
 }
 
+/** What the output guard must never let through: the SoCLaaS key in live mode (spec SD8); the gateway's own settings drop the key. */
+export function gatewaySecrets(settings: Pick<GatewaySettings, "llmMode" | "apiKey">): string[] {
+  return settings.llmMode === "live" && settings.apiKey ? [settings.apiKey] : [];
+}
+
 const TIERS: readonly AppTier[] = ["local", "dev", "preview", "prod", "test"];
 
 /** Names the setting only; the value may be a secret. */

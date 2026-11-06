@@ -1,13 +1,14 @@
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import type { PrismaClient } from "@prisma/client";
 import type { Hit } from "@agile/auth";
 import { LlmCallSchema, type LlmCall, type LlmGateway, type LlmResult } from "@agile/contracts";
 import { isInTransaction } from "@agile/db";
 import { admitBreaker, recordOutcome } from "./breaker.js";
-import { assertStaticSectionsFit, costMicroUsd, fitSections, reservation } from "./budget.js";
+import { assertStaticSectionsFit, costMicroUsd, fitSections, PLACEHOLDER_BOUNDARY, reservation } from "./budget.js";
 import { systemClock, type Clock } from "./clock.js";
 import { FEATURES, LIMITS, MODELS } from "./config.js";
-import { defaultGuards, type GuardPipeline } from "./guards.js";
+import { defaultGuards, GUARD_LIMITS, type GuardPipeline } from "./guards.js";
+import { cleanTrustedText, injectionFlag } from "./sanitise.js";
 import { checkBudget, checkWindows } from "./limits.js";
 import { mockRegistry, UpstreamError, type LlmProvider, type MockRespond, type ProviderResult, type UpstreamKind } from "./providers.js";
 import { modelFor, type GatewaySettings } from "./settings.js";
@@ -26,6 +27,10 @@ export type GatewayDeps = {
   mockResponses?: ReadonlyMap<string, MockRespond>;
   /** Prefix for the breaker and budget state keys, so integration tests can isolate their state rows. */
   stateKeyPrefix?: string;
+  /** Strings no answer may echo, such as the SoCLaaS key; the gateway's settings never hold the key (spec SD8). */
+  secrets?: readonly string[];
+  /** Boundary source, for tests; defaults to 8 random bytes in hex. */
+  boundary?: () => string;
 };
 
 type FinalStatus = "OK" | "SCHEMA_FAIL" | "UPSTREAM_ERROR" | "TIMEOUT" | "RATE_LIMITED" | "REFUSED";
@@ -38,8 +43,20 @@ const sha256 = (text: string) => createHash("sha256").update(text, "utf8").diges
 
 /** The one path every model call takes (contracts §5.1, spec api.md § run). */
 export function createLlmGateway(deps: GatewayDeps): LlmGateway {
-  const { settings, db, hit, sessions, provider, guards = defaultGuards, clock = systemClock, mockResponses = mockRegistry, stateKeyPrefix = "" } = deps;
+  const { settings, db, hit, sessions, provider, guards = defaultGuards, clock = systemClock, mockResponses = mockRegistry, stateKeyPrefix = "", secrets = [] } = deps;
   const breaker = { db, clock, key: `${stateKeyPrefix}breaker` };
+  const draw = deps.boundary ?? (() => randomBytes(GUARD_LIMITS.boundaryLength / 2).toString("hex"));
+
+  /** A fresh boundary that appears in no section name or text as sent; both failures are programmer errors (spec SD11). */
+  function pickBoundary(sections: LlmCall["sections"]): string {
+    const texts = sections.flatMap((s) => [s.name, s.text]).map((t) => t.toLowerCase());
+    for (let attempt = 0; attempt < GUARD_LIMITS.boundaryDraws; attempt++) {
+      const candidate = draw();
+      if (!/^[0-9a-f]{16}$/.test(candidate)) throw new Error("BOUNDARY_INVALID");
+      if (!texts.some((t) => t.includes(candidate))) return candidate;
+    }
+    throw new Error("BOUNDARY_COLLISION");
+  }
 
   async function admit(call: LlmCall): Promise<LlmResult | null> {
     if (FEATURES[call.feature].role !== call.caller.role) return { ok: false, code: "ROLE_DENIED" };
@@ -87,6 +104,8 @@ export function createLlmGateway(deps: GatewayDeps): LlmGateway {
       }
       // Zod may copy the schema object; the caller's own output schema is used for validation.
       const call = { ...parsed.data, output: input.output } as LlmCall;
+      // Static text goes into the system message unwrapped, so it must be the feature's own (spec SD9).
+      if (call.sections.some((s) => s.kind === "STATIC" && !s.trusted)) throw new Error("INVALID_LLM_CALL");
       if (isInTransaction()) throw new Error("LLM_CALL_IN_TRANSACTION");
 
       const refused = await admit(call);
@@ -103,12 +122,15 @@ export function createLlmGateway(deps: GatewayDeps): LlmGateway {
       };
 
       let flagged = false;
+      let cut = false;
       const sections = [];
       for (const section of call.sections) {
-        if (section.trusted) { sections.push(section); continue; }
-        const guarded = guards.input(section.text);
+        if (section.kind === "STATIC") { sections.push(section); continue; }
+        // A trusted section still loses tags and invisible characters, in case a feature mislabels user text (spec api.md § Wrapping).
+        if (section.trusted) { sections.push({ ...section, text: cleanTrustedText(section.text) }); continue; }
+        const guarded = guards.input(section.text, section.budgetTokens * GUARD_LIMITS.inputCapFactor);
         if ("blocked" in guarded) {
-          const prefixHash = sha256(fitSections(call.feature, model, call.sections.filter((s) => s.kind === "STATIC")).system);
+          const prefixHash = sha256(fitSections(call.feature, model, call.sections.filter((s) => s.kind === "STATIC"), PLACEHOLDER_BOUNDARY).system);
           const row = await db.llmCall.create({
             data: { ...base, createdAt: now, promptVersion: prefixHash.slice(0, 12), prefixHash, status: "BLOCKED_INPUT", attempts: 0, estimatedPromptTokens: 0, sectionTokens: {}, flagged, truncated: false, costMicrousd: 0n, latencyMs: 0 },
             select: { id: true },
@@ -116,16 +138,20 @@ export function createLlmGateway(deps: GatewayDeps): LlmGateway {
           return { ok: false, code: "BLOCKED_INPUT", callId: row.id };
         }
         flagged ||= guarded.flagged;
+        cut ||= guarded.cut === true;
         sections.push({ ...section, text: guarded.text });
       }
+      // An instruction split across fields (a title and a description) is flagged too, whichever guards are in use.
+      flagged ||= injectionFlag(sections.filter((s) => !s.trusted).map((s) => s.text).join("\n"));
 
-      const fitted = fitSections(call.feature, model, sections);
+      const boundary = pickBoundary(sections);
+      const fitted = fitSections(call.feature, model, sections, boundary);
       const prefixHash = sha256(fitted.system);
       const reserved = reservation(call.feature, model);
       const { id: callId } = await db.llmCall.create({
         data: {
           ...base, createdAt: now, promptVersion: prefixHash.slice(0, 12), prefixHash, status: "IN_FLIGHT", leaseExpiresAt: new Date(now.getTime() + LIMITS.leaseMs),
-          attempts: 0, estimatedPromptTokens: fitted.estimatedPromptTokens, sectionTokens: fitted.sectionTokens, flagged, truncated: fitted.truncated, costMicrousd: BigInt(reserved),
+          attempts: 0, estimatedPromptTokens: fitted.estimatedPromptTokens, sectionTokens: fitted.sectionTokens, flagged, truncated: fitted.truncated || cut, costMicrousd: BigInt(reserved),
         },
         select: { id: true },
       });
@@ -143,7 +169,7 @@ export function createLlmGateway(deps: GatewayDeps): LlmGateway {
         let value: unknown;
         if (!last.ok) status = STATUS_FOR_KIND[last.kind];
         else {
-          const checked = guards.output(last.result.text, call.output);
+          const checked = guards.output(last.result.text, call.output, { boundary, secrets });
           if (checked.ok) { status = "OK"; value = checked.value; } else status = checked.status;
         }
         const promptTokens = last.ok ? last.result.promptTokens : null;
@@ -166,7 +192,7 @@ export function createLlmGateway(deps: GatewayDeps): LlmGateway {
         if (last.ok || last.kind !== "OTHER") await recordOutcome(breaker, status);
         if (LOGGED_STATUSES.has(status)) console.warn("llm_call_failed", { callId, status });
         if (status !== "OK") return { ok: false, code: CODE_FOR_STATUS[status], callId };
-        return { ok: true, value, callId, flagged, truncated: fitted.truncated, cacheHit: false, promptTokens: promptTokens ?? 0, completionTokens: completionTokens ?? 0, costMicroUsd: cost };
+        return { ok: true, value, callId, flagged, truncated: fitted.truncated || cut, cacheHit: false, promptTokens: promptTokens ?? 0, completionTokens: completionTokens ?? 0, costMicroUsd: cost };
       } catch {
         // Anything that throws after the insert still finalises the row, so its reservation does not linger until a sweep.
         if (!finalised) {
