@@ -1,6 +1,6 @@
 # W6 AI Context Assembly Design
 
-- **Status:** In review
+- **Status:** Approved (ludannnn, 2026-11-06)
 - **Risk tier:** High - it is the tenancy control for every AI prompt: it decides which project's data, and whose, can reach a model (threat T4, C-05, C-28).
 - **Workstream:** W6 | **Plan:** not written yet
 - **Constraints consulted:** AD-25, AD-27, AD-28, AD-56 (A-08), AD-11, AD-17, A-03, A-18; architecture §4 (components, table ownership, dependency direction), §7 (trust boundaries), §11; contracts §5.2 (`AiContext.assemble`), §5.4 (`Core.requireMember`); concerns C-05, C-13, C-28; guardrails Binding Decisions (AD-25, AD-55), Known Gaps (typed SQL disabled, unvalidated relation filters); W3 spec conventions.md § Rules for features
