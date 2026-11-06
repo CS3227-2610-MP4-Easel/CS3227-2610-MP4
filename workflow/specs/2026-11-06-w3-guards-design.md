@@ -1,6 +1,6 @@
 # W3 Guards (Untrusted-Text Pipeline) Design
 
-- **Status:** In review
+- **Status:** Approved (ludannnn, 2026-11-06)
 - **Risk tier:** High - it is the control between user-written text and an external model (prompt injection, exfiltration through output, personal data sent to SoCLaaS), and every AI feature relies on it.
 - **Workstream:** W3 | **Plan:** not written yet
 - **Constraints consulted:** AD-25, AD-26, AD-64 (A-12), AD-67 (A-09); architecture §7 (trust boundaries, pipeline additions), §8; concern C-09; contracts §5.1; guardrails Binding Decisions (AD-25) and Out of Scope (A-07); `architecture/llm-gateway.md`; W2 spec SD1 and api.md § Guard slot
@@ -48,7 +48,7 @@ Seven functional and five non-functional requirements, with acceptance criteria,
 | SD1 | Risk tier High, four lenses | slicing.md records W3 as "Big, high"; untrusted text reaches an external model. Rejected: Medium with three lenses | operator, 2026-11-06 |
 | SD2 | The input guard blocks only when a non-empty untrusted section is empty after sanitising; injection patterns only set `flagged` | Architecture §7: flagged input is marked, not blocked; the closed output formats and human approval are the safeguards. Rejected: never block (features would each re-check emptiness); block on injection (reverses §7) | operator, 2026-11-06 |
 | SD3 | The gateway wraps untrusted sections after fitting and appends the security suffix to the end of the user message; `output` receives the boundary and key as a third argument | Truncation must happen before wrapping and never cut the suffix (§7, C-09); the suffix sits in the user message so the system prompt and `prefix_hash` stay stable across calls. Rejected: wrapping inside `input` (truncation could cut the closing tag) | operator, 2026-11-06 |
-| SD4 | Redact emails, phone numbers, NRIC/FIN and NUS matric; also NUSNET ids | T11 asks for "emails, phone numbers and ID-like strings". Rejected: also long digit runs | operator, 2026-11-06; NUSNET added by the author, to confirm at Gate 1 |
+| SD4 | Redact emails, phone numbers, NRIC/FIN and NUS matric; also NUSNET ids | T11 asks for "emails, phone numbers and ID-like strings". Rejected: also long digit runs | operator, 2026-11-06; NUSNET added by the author, confirmed at Gate 1 |
 | SD5 | Output checks run on every string in the parsed JSON (keys and values) and on their concatenation, not on the raw text | JSON escapes (`<`) would hide `<` and `:` from a raw-text scan; a link can be split across fields. Rejected: raw-text scan only | author; split-field case from the Attacker lens |
 | SD6 | `GUARD_VERSION` is a manual string; a test requires it to be a key of a `KNOWN` map whose value is `rulesFingerprint()` over all rule data, limits, templates and step orders | W9's summary cache key includes it (AD-67, C-06). Rejected: hashing at runtime (any refactor would invalidate every cache); hashing `JSON.stringify` of `RegExp` objects (serialises to `{}`, found by all four lenses) | author |
 | SD8 | The key reaches the output guard through a new `secrets` dependency that `runtime.ts` fills; the gateway's settings keep `apiKey: null` | W2 removes the key from the gateway's settings so it cannot be logged (Implementer and Tester lenses found the check was dead). Rejected: putting the key back into settings; dropping the exact-key check | author |

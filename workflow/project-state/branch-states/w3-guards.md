@@ -25,11 +25,11 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-06 | Claude Opus 5.5 | W3 | Blocked — needs human | Spec reviewed (2 rounds), lint clean; Gate 1 asked | On the operator's yes: set the index `Status: Approved (ludannnn, <date>)`, run `lint.mjs spec … --approved`, mark W3 `Spec'd`, then start `writing-plans-lite` | 2026-11-06 |
+| S1 | 2026-11-06 | Claude Opus 5.5 | W3 | Active | Gate 1 approved; writing the plan | Write `workflow/plans/2026-11-06-w3-guards.md` with `writing-plans-lite` (T1-T3 from the spec), review it, then ask Gate 2 | 2026-11-06 |
 
 **Remaining**
 
-- [ ] Gate 1: W3 spec approved by the operator.
+- [x] Gate 1: W3 spec approved by ludannnn on 2026-11-06, including NUSNET redaction (SD4) and the known limits.
 - [ ] Gate 2: W3 plan approved by the operator.
 - [ ] While stacked: if `w2-gateway` gets more review fixes, merge it into this branch (watch `guards.ts`).
 - [ ] After PR #14 merges: merge `development` into this branch, move `Base`, and only then open the W3 PR into `development`. If W2 was squash-merged, rebase onto `development` instead.
@@ -40,7 +40,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W3 | Guards (untrusted-text pipeline) | Not started | [spec](../../specs/2026-11-06-w3-guards-design.md) (in review) | — | Spec reviewed, awaiting Gate 1; stacked on W2 | — |
+| W3 | Guards (untrusted-text pipeline) | Spec'd | [spec](../../specs/2026-11-06-w3-guards-design.md) | — | Spec approved at Gate 1; plan next; stacked on W2 | — |
 
 ---
 
@@ -48,6 +48,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-06 | Spec approved at Gate 1 by the operator | W3 | this commit |
 | 2026-11-06 | W3 spec drafted (7 F, 5 N, E1-E56, T1-T3) and reviewed in two rounds (Implementer, Tester, Maintainer, Attacker; then Implementer, Attacker): about 10 distinct blocking findings fixed, among them a blind `GUARD_VERSION` fingerprint, a key check that could never fire in production, newline- and field-split injection, uncapped input, a throwing output walk, PII and link bypasses, and false positives on emoji, generics and headings; lint clean | W3 | 53488a7 |
 | 2026-11-06 | Branch created from `w2-gateway` at `f8e5e0f` (stacked, so W3 can start before PR #14 merges) | W3 | this commit |
 
