@@ -24,7 +24,7 @@ the W1 application runnable on the dev and production tiers.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-06 | Codex | W13 | Active | W13 CI fix in progress; deployment still needs the branch-scoped `VERCEL_PROJECT_ID` | Run the focused and full checks, commit the test fix, push, then inspect PR #18 and Vercel | 2026-11-06 |
+| S1 | 2026-11-06 | Codex | W13 | Active | CI is green; Vercel system project identity differs from the slug recorded in W13 | Run identity-focused checks, commit the identity correction, push, then redeploy and inspect Vercel | 2026-11-06 |
 
 **Remaining**
 
@@ -36,7 +36,7 @@ the W1 application runnable on the dev and production tiers.
 - [x] Incorporated the plan-review findings: migration manifest, workflow validator/action pins, preview dependency seam, and fixed deployment checks are now listed.
 - [x] Gate 2: operator approved the W13 plan on 2026-11-06; approved-plan lint passes.
 - [ ] **Handover:** owner configures the canonical Vercel development project and variables, then reviews/merges W13 into `development`; record merged SHA and dev smoke evidence before starting T5.
-- [ ] **Blocker:** PR #18 Vercel build fails during API route configuration because branch-scoped Preview variables omit `VERCEL_PROJECT_ID`; CI workspace is being corrected to expect the validator's current `unexpected workflow trigger` wording.
+- [ ] **Blocker:** PR #18 Vercel build fails during API route configuration because W13 expected the project slug, while Vercel injects its canonical `prj_...` system project ID; CI is green after the assertion correction.
 
 ## 2. Workstreams
 
@@ -60,6 +60,7 @@ the W1 application runnable on the dev and production tiers.
 | 2026-11-06 | Completed T4 implementation: added the fixed development deployment check, merged-SHA/resource validation, preview variable isolation, degraded AI result, and workflow-validator support; focused tests, workflow/security checks, lint, secret scan, and diff checks pass | W13 | pending T4 commit |
 | 2026-11-06 | Merged current `development` (including the Vercel build hotfix and intervening W2 work) into W13; no conflicts | W13 | merge `d153509` |
 | 2026-11-06 | Updated the two stale workflow-security assertions to match the trusted development deployment trigger validator; Vercel still needs the branch-scoped project identity | W13 | current fix |
+| 2026-11-06 | Confirmed Vercel injects project ID `prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd`; aligned tier resource validation, deployment verification, manifest fixtures, and tests with that canonical system identity | W13 | current fix |
 
 ## 7. Decisions
 

@@ -5,8 +5,8 @@ import { classifyDevAiProbe, validatePreviewEnvironment, verifyDevDeployment } f
 const sha = "0123456789abcdef0123456789abcdef01234567";
 
 test("E2/E26 dev deployment binds the merged SHA, project, and alias", () => {
-  assert.deepEqual(verifyDevDeployment({ metadata: { githubCommitSha: sha, project: "agile-platform", alias: "development" }, mergedSha: sha }), { tier: "dev", commit: sha, project: "agile-platform", alias: "development" });
-  assert.throws(() => verifyDevDeployment({ metadata: { githubCommitSha: "f".repeat(40), project: "agile-platform", alias: "development" }, mergedSha: sha }), /SHA/);
+  assert.deepEqual(verifyDevDeployment({ metadata: { githubCommitSha: sha, project: "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd", alias: "development" }, mergedSha: sha }), { tier: "dev", commit: sha, project: "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd", alias: "development" });
+  assert.throws(() => verifyDevDeployment({ metadata: { githubCommitSha: "f".repeat(40), project: "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd", alias: "development" }, mergedSha: sha }), /SHA/);
   assert.throws(() => verifyDevDeployment({ metadata: { githubCommitSha: sha, project: "other", alias: "development" }, mergedSha: sha }), /project/);
 });
 

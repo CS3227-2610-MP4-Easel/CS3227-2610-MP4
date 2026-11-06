@@ -5,7 +5,7 @@ import { createAuthRuntime, loadAuthSettings, validateTierResources } from "../s
 const base = {
   APP_TIER: "dev",
   FIREBASE_PROJECT_ID: "agile-platform-dev",
-  VERCEL_PROJECT_ID: "agile-platform",
+  VERCEL_PROJECT_ID: "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd",
   VERCEL_ENV: "preview",
   VERCEL_GIT_COMMIT_REF: "development",
   NEON_HOST: "dev.neon.tech",

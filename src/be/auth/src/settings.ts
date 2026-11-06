@@ -11,12 +11,13 @@ export type AuthSettings = {
 };
 
 type TierResource = { tier: AppTier; branch: string; vercelProject: string; vercelAlias: string; firebaseProjectId: string | null; neonHost: string | null; neonProject: string | null; soclaasBaseUrl: string | null; env: string };
+const VERCEL_PROJECT_ID = "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd";
 const RESOURCES: readonly TierResource[] = [
-  { tier: "local", branch: "local", vercelProject: "agile-platform", vercelAlias: "local", firebaseProjectId: "agile-platform-local", neonHost: "localhost", neonProject: "local", soclaasBaseUrl: "mock://soclaas", env: "local" },
-  { tier: "dev", branch: "development", vercelProject: "agile-platform", vercelAlias: "development", firebaseProjectId: "agile-platform-dev", neonHost: "dev.neon.tech", neonProject: "agile-platform-dev", soclaasBaseUrl: "https://dev.soclaas.example", env: "dev" },
-  { tier: "preview", branch: "pull-request", vercelProject: "agile-platform", vercelAlias: "preview", firebaseProjectId: null, neonHost: null, neonProject: null, soclaasBaseUrl: null, env: "preview" },
-  { tier: "prod", branch: "main", vercelProject: "agile-platform", vercelAlias: "production", firebaseProjectId: "agile-platform-prod", neonHost: "prod.neon.tech", neonProject: "agile-platform-prod", soclaasBaseUrl: "https://prod.soclaas.example", env: "prod" },
-  { tier: "test", branch: "test", vercelProject: "agile-platform", vercelAlias: "test", firebaseProjectId: "agile-platform-test", neonHost: "localhost", neonProject: "test", soclaasBaseUrl: "mock://soclaas", env: "test" },
+  { tier: "local", branch: "local", vercelProject: VERCEL_PROJECT_ID, vercelAlias: "local", firebaseProjectId: "agile-platform-local", neonHost: "localhost", neonProject: "local", soclaasBaseUrl: "mock://soclaas", env: "local" },
+  { tier: "dev", branch: "development", vercelProject: VERCEL_PROJECT_ID, vercelAlias: "development", firebaseProjectId: "agile-platform-dev", neonHost: "dev.neon.tech", neonProject: "agile-platform-dev", soclaasBaseUrl: "https://dev.soclaas.example", env: "dev" },
+  { tier: "preview", branch: "pull-request", vercelProject: VERCEL_PROJECT_ID, vercelAlias: "preview", firebaseProjectId: null, neonHost: null, neonProject: null, soclaasBaseUrl: null, env: "preview" },
+  { tier: "prod", branch: "main", vercelProject: VERCEL_PROJECT_ID, vercelAlias: "production", firebaseProjectId: "agile-platform-prod", neonHost: "prod.neon.tech", neonProject: "agile-platform-prod", soclaasBaseUrl: "https://prod.soclaas.example", env: "prod" },
+  { tier: "test", branch: "test", vercelProject: VERCEL_PROJECT_ID, vercelAlias: "test", firebaseProjectId: "agile-platform-test", neonHost: "localhost", neonProject: "test", soclaasBaseUrl: "mock://soclaas", env: "test" },
 ];
 
 /** Checks only non-secret deployment identity fields; values are never included in failures. */

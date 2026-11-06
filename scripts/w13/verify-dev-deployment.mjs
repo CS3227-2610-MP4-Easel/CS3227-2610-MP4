@@ -1,4 +1,4 @@
-const DEV = { tier: "dev", project: "agile-platform", alias: "development" };
+const DEV = { tier: "dev", project: "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd", alias: "development" };
 const PREVIEW_SECRET_NAMES = ["DATABASE_URL", "DIRECT_DATABASE_URL", "FIREBASE_PROJECT_ID", "REGISTRATION_CODE_PM", "REGISTRATION_CODE_DEV_LEAD", "REGISTRATION_CODE_DEVELOPER", "RATE_KEY_SECRET", "SOCLAAS_BASE_URL", "SOCLAAS_API_KEY"];
 
 export function verifyDevDeployment({ metadata, mergedSha, manifest = DEV }) {
