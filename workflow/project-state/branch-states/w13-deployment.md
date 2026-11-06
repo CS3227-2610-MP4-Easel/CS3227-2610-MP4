@@ -24,7 +24,7 @@ the W1 application runnable on the dev and production tiers.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-06 | Codex | W13 | Active | CI is green; preview validation still assumes a literal `pull-request` ref | Add preview branch-ref regression coverage, commit, push, then redeploy and inspect Vercel | 2026-11-06 |
+| S1 | 2026-11-06 | Codex | W13 | Active | PR #18 CI and Vercel deployment are green at `007ebef` | Owner performs Gate 3 branch review; retain code-owner review and merge as handover | 2026-11-06 |
 
 **Remaining**
 
@@ -36,7 +36,7 @@ the W1 application runnable on the dev and production tiers.
 - [x] Incorporated the plan-review findings: migration manifest, workflow validator/action pins, preview dependency seam, and fixed deployment checks are now listed.
 - [x] Gate 2: operator approved the W13 plan on 2026-11-06; approved-plan lint passes.
 - [ ] **Handover:** owner configures the canonical Vercel development project and variables, then reviews/merges W13 into `development`; record merged SHA and dev smoke evidence before starting T5.
-- [ ] **Blocker:** PR #18 Vercel build reaches resource validation but rejects the actual preview source ref `w13-deployment` as not equal to the manifest label `pull-request`; CI is green.
+- [x] Resolved blocker: Vercel system project ID and actual preview source branch refs now validate; PR #18 CI and Vercel deployment pass at `007ebef`.
 
 ## 2. Workstreams
 
@@ -62,6 +62,7 @@ the W1 application runnable on the dev and production tiers.
 | 2026-11-06 | Updated the two stale workflow-security assertions to match the trusted development deployment trigger validator; Vercel still needs the branch-scoped project identity | W13 | current fix |
 | 2026-11-06 | Confirmed Vercel injects project ID `prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd`; aligned tier resource validation, deployment verification, manifest fixtures, and tests with that canonical system identity | W13 | current fix |
 | 2026-11-06 | Corrected preview resource validation to accept actual non-protected PR branch refs while retaining exact development and production identity checks | W13 | current fix |
+| 2026-11-06 | Pushed `007ebef`; PR #18 workspace, typecheck, lint, contract, dependency, secret, workflow-security, Vercel, and preview-comment checks all pass | W13 | PR #18 |
 
 ## 7. Decisions
 
