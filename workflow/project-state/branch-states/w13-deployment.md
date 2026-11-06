@@ -24,7 +24,7 @@ the W1 application runnable on the dev and production tiers.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-06 | Codex | W13 | Active | W13 synchronized with merged `development`; T4 owner gate remains | Owner configures the canonical Vercel dev tier, then reviews/merges W13 | 2026-11-06 |
+| S1 | 2026-11-06 | Codex | W13 | Active | PR #18 deployment failed on missing `VERCEL_PROJECT_ID`; CI has two stale workflow-validator assertions | Add branch-specific `VERCEL_PROJECT_ID`, update the two validator expectations, then rerun PR checks | 2026-11-06 |
 
 **Remaining**
 
@@ -36,6 +36,7 @@ the W1 application runnable on the dev and production tiers.
 - [x] Incorporated the plan-review findings: migration manifest, workflow validator/action pins, preview dependency seam, and fixed deployment checks are now listed.
 - [x] Gate 2: operator approved the W13 plan on 2026-11-06; approved-plan lint passes.
 - [ ] **Handover:** owner configures the canonical Vercel development project and variables, then reviews/merges W13 into `development`; record merged SHA and dev smoke evidence before starting T5.
+- [ ] **Blocker:** PR #18 Vercel build fails during API route configuration because branch-scoped Preview variables omit `VERCEL_PROJECT_ID`; CI workspace fails F11/F7 because tests still expect the pre-W13 `pull_request trigger` error wording after `scripts/check-workflows.mjs` added the trusted `push` workflow exception.
 
 ## 2. Workstreams
 
