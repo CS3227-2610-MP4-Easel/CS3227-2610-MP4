@@ -8,7 +8,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-06 by Codex — Gate 2 approved by operator
+- **Last updated:** 2026-11-06 by Codex — T1 tier configuration and preview runtime complete
 
 ---
 
@@ -24,7 +24,7 @@ the W1 application runnable on the dev and production tiers.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-06 | Codex | W13 | Active | Starting T1: tier configuration and preview runtime | Run T1 checklist step 1: write failing settings/runtime tests | 2026-11-06 |
+| S1 | 2026-11-06 | Codex | W13 | Active | T1 complete: tier configuration and preview runtime | Commit T1 and start T2 seed tests | 2026-11-06 |
 
 **Remaining**
 
@@ -40,7 +40,7 @@ the W1 application runnable on the dev and production tiers.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | Planned | [spec](../../specs/2026-11-06-w13-deployment-design.md) | [plan](../../plans/2026-11-06-w13-deployment.md) | T1 starting: tier configuration and preview runtime | — |
+| W13 | Environments, seed data and deployment | Building | [spec](../../specs/2026-11-06-w13-deployment-design.md) | [plan](../../plans/2026-11-06-w13-deployment.md) | T1 complete; T2 next: deterministic non-production seed | — |
 
 ## 3. Changes
 
@@ -52,6 +52,7 @@ the W1 application runnable on the dev and production tiers.
 | 2026-11-06 | Finalized the Gate 1 spec with W4 local-auth clarification, fixed preview runtime, resource allowlist, immutable SHA/deployment checks, smoke contract, seed/recovery evidence, and CI security boundaries | W13 | 21c1f77 |
 | 2026-11-06 | Read-only Implementer/High-risk review of Gate 2 plan found blocking/high parity and repository-seam issues; no plan/spec/source edits made | W13 | review in chat |
 | 2026-11-06 | Revised the W13 plan to address the review findings; plan lint has 0 errors and 1 expected new-file warning | W13 | this commit |
+| 2026-11-06 | Completed T1: added the non-secret tier manifest, exact resource identity validation, credential-free preview runtime, and focused regression tests; baseline, focused tests, lint, workflow validation, and diff checks pass | W13 | pending T1 commit |
 
 ## 7. Decisions
 

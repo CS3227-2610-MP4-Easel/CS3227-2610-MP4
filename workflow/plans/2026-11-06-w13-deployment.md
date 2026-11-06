@@ -18,7 +18,7 @@
 
 | Task | Depends on | Can run concurrently with | Wave | Status |
 |---|---|---|---|---|
-| T1 | — | T2 | 1 | Not started |
+| T1 | — | T2 | 1 | Done |
 | T2 | — | T1 | 1 | Not started |
 | T3 | T1 | — | 2 | Not started |
 | T4 | T1, T3 | — | 3 | Not started |
@@ -79,11 +79,11 @@
 
 **Checklist**
 
-- [ ] 1. Write failing settings/runtime tests for exact manifest matching, preview no-DB startup, emulator rejection, and cross-tier mismatch.
-- [ ] 2. Add the manifest and validation seam; ensure URLs/project IDs are not workflow inputs.
-- [ ] 3. Implement DB-free preview startup and the documented `500 INTERNAL` auth/data behavior.
-- [ ] 4. Run `node --import tsx --test src/be/auth/test/tier-settings.test.ts src/be/auth/test/settings.test.ts`; expect PASS.
-- [ ] 5. Run `npm run lint` and `npm run check:workflows`.
+- [x] 1. Write failing settings/runtime tests for exact manifest matching, preview no-DB startup, emulator rejection, and cross-tier mismatch.
+- [x] 2. Add the manifest and validation seam; ensure URLs/project IDs are not workflow inputs.
+- [x] 3. Implement DB-free preview startup and the documented `500 INTERNAL` auth/data behavior.
+- [x] 4. Run `node --import tsx --test src/be/auth/test/tier-settings.test.ts src/be/auth/test/settings.test.ts`; expect PASS.
+- [x] 5. Run `npm run lint` and `npm run check:workflows`.
 - [ ] 6. Update branch state and commit: `feat: bind runtime settings to deployment tiers`.
 
 ### T2: Deterministic non-production seed

@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "tiers": [
+    { "tier": "local", "branch": "local", "vercelProject": "agile-platform", "vercelAlias": "local", "firebaseProjectId": "agile-platform-local", "neonHost": "localhost", "neonProject": "local", "soclaasBaseUrl": "mock://soclaas", "env": "local" },
+    { "tier": "dev", "branch": "development", "vercelProject": "agile-platform", "vercelAlias": "development", "firebaseProjectId": "agile-platform-dev", "neonHost": "dev.neon.tech", "neonProject": "agile-platform-dev", "soclaasBaseUrl": "https://dev.soclaas.example", "env": "dev" },
+    { "tier": "preview", "branch": "pull-request", "vercelProject": "agile-platform", "vercelAlias": "preview", "firebaseProjectId": null, "neonHost": null, "neonProject": null, "soclaasBaseUrl": null, "env": "preview" },
+    { "tier": "prod", "branch": "main", "vercelProject": "agile-platform", "vercelAlias": "production", "firebaseProjectId": "agile-platform-prod", "neonHost": "prod.neon.tech", "neonProject": "agile-platform-prod", "soclaasBaseUrl": "https://prod.soclaas.example", "env": "prod" },
+    { "tier": "test", "branch": "test", "vercelProject": "agile-platform", "vercelAlias": "test", "firebaseProjectId": "agile-platform-test", "neonHost": "localhost", "neonProject": "test", "soclaasBaseUrl": "mock://soclaas", "env": "test" }
+  ]
+}
