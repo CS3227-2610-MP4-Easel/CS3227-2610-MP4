@@ -8,7 +8,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-06 by Codex — Gate 1 approved by operator
+- **Last updated:** 2026-11-06 by Codex — Gate 2 approved by operator
 
 ---
 
@@ -24,7 +24,7 @@ the W1 application runnable on the dev and production tiers.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-06 | Codex | W13 | Active | Writing Gate 2 implementation plan | Verify plan paths, lint, review, then request Gate 2 approval | 2026-11-06 |
+| S1 | 2026-11-06 | Codex | W13 | Active | Starting T1: tier configuration and preview runtime | Run T1 checklist step 1: write failing settings/runtime tests | 2026-11-06 |
 
 **Remaining**
 
@@ -32,12 +32,15 @@ the W1 application runnable on the dev and production tiers.
 - [x] Complete the requested Tester/QA High-risk read-only review; findings reported in chat.
 - [x] Complete final four-lens High-risk review; spec lint passed with 0 errors and 0 warnings.
 - [x] Gate 1: operator approved the W13 spec on 2026-11-06; approved-spec lint passes.
+- [x] Read-only Implementer/plan review completed; plan lint has 0 errors and 1 path warning, but blocking/high findings remain in dependencies, workflow-validator compatibility, preview runtime seam, migration manifest path, and smoke-harness executability.
+- [x] Incorporated the plan-review findings: migration manifest, workflow validator/action pins, preview dependency seam, and fixed deployment checks are now listed.
+- [x] Gate 2: operator approved the W13 plan on 2026-11-06; approved-plan lint passes.
 
 ## 2. Workstreams
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | Spec'd | [spec](../../specs/2026-11-06-w13-deployment-design.md) | — | Gate 1 spec drafted; review pending | — |
+| W13 | Environments, seed data and deployment | Planned | [spec](../../specs/2026-11-06-w13-deployment-design.md) | [plan](../../plans/2026-11-06-w13-deployment.md) | T1 starting: tier configuration and preview runtime | — |
 
 ## 3. Changes
 
@@ -47,6 +50,8 @@ the W1 application runnable on the dev and production tiers.
 | 2026-11-06 | Read-only Tester/QA High-risk re-review: spec lint passes, but deployment-owner execution, API error coverage, seed content, recovery evidence, evidence completeness, and CI/runtime redaction traceability remain incomplete | W13 | review in chat |
 | 2026-11-06 | Final Implementer/High-risk read-only review: blocking gaps remain in dev deployment identity, immutable production binding, preview startup, smoke fixtures, and resource allowlists | W13 | review in chat |
 | 2026-11-06 | Finalized the Gate 1 spec with W4 local-auth clarification, fixed preview runtime, resource allowlist, immutable SHA/deployment checks, smoke contract, seed/recovery evidence, and CI security boundaries | W13 | 21c1f77 |
+| 2026-11-06 | Read-only Implementer/High-risk review of Gate 2 plan found blocking/high parity and repository-seam issues; no plan/spec/source edits made | W13 | review in chat |
+| 2026-11-06 | Revised the W13 plan to address the review findings; plan lint has 0 errors and 1 expected new-file warning | W13 | this commit |
 
 ## 7. Decisions
 
