@@ -15,7 +15,7 @@
 ## Task order
 | Task | Depends on | Can run concurrently with | Wave | Status |
 |---|---|---|---|---|
-| T1 Package and allow-list | - | T3 | 1 | Not started |
+| T1 Package and allow-list | - | T3 | 1 | Done |
 | T2 Assembly | T1 | - | 2 | Not started |
 | T3 Source scan | - | T1 | 1 | Not started |
 
@@ -69,12 +69,14 @@
 | Test | `src/be/ai-context/test/allow-list.test.ts` | E9, E33, E37; the allow-list table pinned field by field |
 
 **Checklist**
-- [ ] 1. Create the package files and the root reference; run `npm install` to update `package-lock.json` (GATE: if the agent policy refuses it, ask the operator to run `npm install` and stop until done).
-- [ ] 2. Write failing `allow-list.test.ts`: the 13 allow-list rows field by field; `FEATURE_ROLES` equal to the gateway's `FEATURES[f].role` both ways and trusted sources `["lead.facts"]` (E33); registry errors and reset (E9 first two cases, E37). Run `npm test`; expect FAIL (modules missing).
-- [ ] 3. Implement `allow-list.ts`, `errors.ts`, `registry.ts`, `index.ts`, `testing.ts`.
-- [ ] 4. `npm test`, `npm run typecheck`, `npm run lint` green.
-- [ ] 5. Update branch state: Progress `T1/3 done`, Changes line.
-- [ ] 6. Commit: `feat: add the ai-context package with the per-feature allow-list and registries, so owners can register their sources (W6)`.
+- [x] 1. Create the package files and the root reference; run `npm install` to update `package-lock.json` (GATE: if the agent policy refuses it, ask the operator to run `npm install` and stop until done).
+- [x] 2. Write failing `allow-list.test.ts`: the 13 allow-list rows field by field; `FEATURE_ROLES` equal to the gateway's `FEATURES[f].role` both ways and trusted sources `["lead.facts"]` (E33); registry errors and reset (E9 first two cases, E37). Run `npm test`; expect FAIL (modules missing).
+- [x] 3. Implement `allow-list.ts`, `errors.ts`, `registry.ts`, `index.ts`, `testing.ts`.
+- [x] 4. `npm test`, `npm run typecheck`, `npm run lint` green.
+- [x] 5. Update branch state: Progress `T1/3 done`, Changes line.
+- [x] 6. Commit: `feat: add the ai-context package with the per-feature allow-list and registries, so owners can register their sources (W6)`.
+
+**Notes for next task:** the contracts use `zod/v3`; `ai-context` uses `zod` v4 for its own option schemas and only `import type`s from contracts. `npm install` was allowed for the agent. A second test also pins `facts`' max chars to the longest valid `FACT_KEYS` row.
 
 ### T2: Assembly
 **Delivers:** `assemble` and `assembleWith` for W7-W9 | **Satisfies:** F2, F3, F4, F5, F6, F7, N1, N3, N4 | **Depends on:** T1 | **Wave:** 2

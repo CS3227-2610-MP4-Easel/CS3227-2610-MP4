@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-06 | Claude Opus 5.5 | W6 | Active | Gate 2 approved; executing T1 | T1 step 1: create the `src/be/ai-context` package files and run `npm install` | 2026-11-06 |
+| S1 | 2026-11-06 | Claude Opus 5.5 | W6 | Active | T1 done; T3 next (wave 1) | T3 step 1: write `src/be/ai-context/test/source-scan.test.ts` with the E30 fixtures against a stub scanner | 2026-11-06 |
 
 **Remaining**
 
@@ -39,7 +39,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W6 | AI context assembly | Building | [spec](../../specs/2026-11-06-w6-ai-context-design.md) | [plan](../../plans/2026-11-06-w6-ai-context.md) | Task 1/3 in flight: package and allow-list | — |
+| W6 | AI context assembly | Building | [spec](../../specs/2026-11-06-w6-ai-context-design.md) | [plan](../../plans/2026-11-06-w6-ai-context.md) | Task 1/3 done; T3 source scan next | — |
 
 ---
 
@@ -47,7 +47,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-06 | Plan written (T1-T3, close-out), reviewed (Implementer lens: 1 blocking, 5 other, all fixed: rule-1 packages, synchronous source throws, per-source option copies, the single warning, rule-4 file set, a stub-first scan test) and approved at Gate 2 | W6 | this commit |
+| 2026-11-06 | T1: new `@agile/ai-context` workspace (package, tsconfig, root reference, lockfile via `npm install`); `allow-list.ts` (allow-list, source ids, feature roles, `FACT_KEYS`, option schemas), `errors.ts`, `registry.ts` (duplicates refused), `testing.ts` subpath with the reset; 5 tests (allow-list and fact keys pinned, E9, E33, E37); 311 tests, 311 pass, none skipped | W6 | this commit |
+| 2026-11-06 | Plan written (T1-T3, close-out), reviewed (Implementer lens: 1 blocking, 5 other, all fixed: rule-1 packages, synchronous source throws, per-source option copies, the single warning, rule-4 file set, a stub-first scan test) and approved at Gate 2 | W6 | 460691a |
 | 2026-11-06 | Spec approved at Gate 1 by the operator | W6 | cb00e15 |
 | 2026-11-06 | W6 spec drafted (7 F, 5 N, E1-E45, T1-T3) and reviewed in two rounds (Implementer, Tester, Maintainer, Attacker; then Implementer, Attacker): about 16 distinct blocking findings fixed, among them the core → ai-context dependency inversion, the frozen `assemble` narrowing (operator: sign-off at PR, C~2), nondeterministic failures, a membership race, free text in the trusted facts section, rows changed after checking, production reset of the registries, and source-scan bypasses; lint clean | W6 | this commit |
 | 2026-11-06 | Branch created from `development` at `46b33b1` (after PR #14 merged) | W6 | this commit |
