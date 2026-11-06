@@ -7,9 +7,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w3-guards (stacked on `w2-gateway` at `f8e5e0f`, whose last `INT` merge is `94ebc77`)
 - **Base:** 94ebc77
 - **Owner:** ludannnn (Developer member)
-- **Status:** In review
-- **Approved:** —
-- **Last updated:** 2026-11-06 by Claude Opus 5.5 — close-out done; awaiting Gate 3
+- **Status:** Approved
+- **Approved:** ludannnn 2026-11-06
+- **Last updated:** 2026-11-06 by Claude Opus 5.5 — Gate 3 approved; waits for PR #14
 
 **Untouched:** Conventions, Deviations
 
@@ -31,7 +31,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] Gate 1: W3 spec approved by ludannnn on 2026-11-06, including NUSNET redaction (SD4) and the known limits.
 - [x] Gate 2: W3 plan approved by ludannnn on 2026-11-06.
 - [x] Close-out: branch-diff review (Attacker, Tester); findings fixed or recorded in Changes.
-- [ ] Gate 3: the operator reviews the branch.
+- [x] Gate 3: operator approved the branch (ludannnn, 2026-11-06).
 - [ ] **Handover:** W6, W7, W8, W9 follow W3's rules for sections (spec conventions.md § Rules for features): `trusted: true` only for server-built text; anything users typed or uploaded, and any stored model output reused as input, is `trusted: false`; `STATIC` sections are always trusted (`run` throws `INVALID_LLM_CALL` otherwise) and section names are literals; each untrusted section's budget leaves room for the 49-character wrapper plus its name line, and the statics leave room for the ~280-character suffix.
 - [ ] **Handover:** W7 checks "empty after sanitising" with `sanitiseInput(text).blocked`; every feature maps `BLOCKED_INPUT` to 422 `VALIDATION_FAILED`; PM endpoints map `REQUEST_REFUSED` to 422, Dev Lead and Developer endpoints to the degraded 200 (architecture §8).
 - [ ] **Handover:** W9 calls `sanitiseInput` per item to store each item's and summary's own `flagged`, and imports `GUARD_VERSION` (never copies it) into the `item_summaries` unique key (AD-67).
@@ -47,7 +47,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W3 | Guards (untrusted-text pipeline) | In review | [spec](../../specs/2026-11-06-w3-guards-design.md) | [plan](../../plans/2026-11-06-w3-guards.md) | T1-T3 and close-out done; awaiting Gate 3; guide out of date: llm-gateway | — |
+| W3 | Guards (untrusted-text pipeline) | In review | [spec](../../specs/2026-11-06-w3-guards-design.md) | [plan](../../plans/2026-11-06-w3-guards.md) | Approved at Gate 3; PR after PR #14 merges; guide out of date: llm-gateway | — |
 
 ---
 
@@ -55,7 +55,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-06 | Close-out review of the branch diff (Attacker, Tester). Fixed: **blocking** — `wrapSection` used `String.replace`, so `$'` or `` $` `` in user text forged a real closing or opening `<data-B>` tag (text outside the wrapper) and a literal `{B}` revealed the boundary; now a template literal, with a regression test (fails on the old code) and a test that it matches `WRAPPER_TEMPLATE` (fingerprint unchanged; `GUARD_VERSION` not bumped, as nothing has cached a summary yet). Test gaps: a vacuous E32 assertion, joined-string checks for HTML, Markdown, boundary and secret, M3 alone, a bare ZWJ, I5 negatives, the short-secret and NFKC-secret rules, E36 payload contents, E43 cap through `run`, E26 suffix arithmetic, E51 written as JSON escapes. Not taken: database or replacement-guard errors before the insert still propagate unwrapped (W2 behaviour, programmer errors per SD11; no prompt text is in those rows); W3 test titles share some E numbers with W2's, told apart by their F IDs. 371 tests, 370 pass, 1 fails (D~1), none skipped | W3 | this commit |
+| 2026-11-06 | Gate 3: operator approved the branch | W3 | this commit |
+| 2026-11-06 | Close-out review of the branch diff (Attacker, Tester). Fixed: **blocking** — `wrapSection` used `String.replace`, so `$'` or `` $` `` in user text forged a real closing or opening `<data-B>` tag (text outside the wrapper) and a literal `{B}` revealed the boundary; now a template literal, with a regression test (fails on the old code) and a test that it matches `WRAPPER_TEMPLATE` (fingerprint unchanged; `GUARD_VERSION` not bumped, as nothing has cached a summary yet). Test gaps: a vacuous E32 assertion, joined-string checks for HTML, Markdown, boundary and secret, M3 alone, a bare ZWJ, I5 negatives, the short-secret and NFKC-secret rules, E36 payload contents, E43 cap through `run`, E26 suffix arithmetic, E51 written as JSON escapes. Not taken: database or replacement-guard errors before the insert still propagate unwrapped (W2 behaviour, programmer errors per SD11; no prompt text is in those rows); W3 test titles share some E numbers with W2's, told apart by their F IDs. 371 tests, 370 pass, 1 fails (D~1), none skipped | W3 | f9d32cf |
 | 2026-11-06 | T3: guards live in `run`. `guards.ts` (slot with `maxChars` and `OutputContext`, optional `reason`, `defaultGuards`, `GUARD_LIMITS`, wrapper and suffix templates, `fingerprintParts`/`rulesFingerprint`, `GUARD_VERSION` "1"); `budget.ts` (untrusted sections wrapped, suffix always last, budget counted on the strings as sent, `security-suffix` static check); `gateway.ts` (untrusted STATIC refused, input cap, trusted sections cleaned, joined injection flag, validated boundary with collision redraw, `secrets` to the output guard); `settings.ts` `gatewaySecrets`, wired in `runtime.ts`. W2 tests changed only as the spec listed (`fit.test.ts`, `run.test.ts:49`, `:304`); 21 new tests (E18-E33, E36, E39-E43, E53, F7, SD8). Steps run implementation-first, then tests, against the plan's order (all tests written before commit). 367 tests, 366 pass, 1 fails (D~1), none skipped | W3 | cc32b13 |
 | 2026-11-06 | T2: `output-check.ts`: `checkOutput` (exact refusal, parse, iterative document-order walk with depth and count limits, forbidden characters allowing emoji sequences, links with and without whitespace, an HTML tag-name list and entities, Markdown links, boundary, secrets and the `sk-` pattern, each string then their join, raw-length check, schema; never throws); 17 unit tests (E33, E35, E37, E44-E56, document order); 343 tests, 342 pass, 1 fails (D~1), none skipped | W3 | aca25b6 |
 | 2026-11-06 | T1: `sanitise.ts`: `sanitiseInput` (cut, NFKC with digit and dot folding, line endings, invisible characters, delimiter tags to stability with the 10-pass bracket strip, PII P1-P6, flag), `injectionFlag` (two match copies, confusable map), `cleanTrustedText`; rule data as `{ id, source, flags }`; 21 unit tests (E1-E17, E34, E37, F4); 326 tests, 325 pass, 1 fails (D~1 from W2), none skipped | W3 | adae4a9 |
