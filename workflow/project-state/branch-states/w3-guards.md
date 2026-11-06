@@ -7,11 +7,11 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w3-guards (started stacked on `w2-gateway`; `development` merged in at `46b33b1` after PR #14 merged)
 - **Base:** 46b33b1
 - **Owner:** ludannnn (Developer member)
-- **Status:** Approved
-- **Approved:** ludannnn 2026-11-06
-- **Last updated:** 2026-11-06 by Claude Opus 5.5 — Gate 3 approved; waits for PR #14
+- **Status:** In review
+- **Approved:** ludannnn 2026-11-06 before PR review fixes; fresh branch review needed
+- **Last updated:** 2026-11-07 by Codex — PR #15 review fixes
 
-**Untouched:** Conventions, Deviations
+**Untouched:** Conventions
 
 ---
 
@@ -32,6 +32,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] Gate 2: W3 plan approved by ludannnn on 2026-11-06.
 - [x] Close-out: branch-diff review (Attacker, Tester); findings fixed or recorded in Changes.
 - [x] Gate 3: operator approved the branch (ludannnn, 2026-11-06).
+- [ ] Finish the short-key fix, then review the PR #15 fixes and push them to update the PR.
 - [ ] **Handover:** W6, W7, W8, W9 follow W3's rules for sections (spec conventions.md § Rules for features): `trusted: true` only for server-built text; anything users typed or uploaded, and any stored model output reused as input, is `trusted: false`; `STATIC` sections are always trusted (`run` throws `INVALID_LLM_CALL` otherwise) and section names are literals; each untrusted section's budget leaves room for the 49-character wrapper plus its name line, and the statics leave room for the ~280-character suffix.
 - [ ] **Handover:** W7 checks "empty after sanitising" with `sanitiseInput(text).blocked`; every feature maps `BLOCKED_INPUT` to 422 `VALIDATION_FAILED`; PM endpoints map `REQUEST_REFUSED` to 422, Dev Lead and Developer endpoints to the degraded 200 (architecture §8).
 - [ ] **Handover:** W9 calls `sanitiseInput` per item to store each item's and summary's own `flagged`, and imports `GUARD_VERSION` (never copies it) into the `item_summaries` unique key (AD-67).
@@ -48,7 +49,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W3 | Guards (untrusted-text pipeline) | In review | [spec](../../specs/2026-11-06-w3-guards-design.md) | [plan](../../plans/2026-11-06-w3-guards.md) | Approved at Gate 3; PR after PR #14 merges; guide out of date: llm-gateway | — |
+| W3 | Guards (untrusted-text pipeline) | In review | [spec](../../specs/2026-11-06-w3-guards-design.md) | [plan](../../plans/2026-11-06-w3-guards.md) | Schema fix done; short-key fix pending | — |
 
 ---
 
@@ -56,6 +57,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-07 | PR #15 review: check schema-transformed output; regression test and guard version 2 | W3 | this commit |
 | 2026-11-06 | Gitleaks (run by the operator over `46b33b1..HEAD`) flagged the fake key in `run.test.ts` at `cc32b13:513` and `f9d32cf:499` (`generic-api-key`); the operator chose ignore entries over a history rewrite, so both fingerprints are in `.gitleaksignore` with a comment, next to W12's reviewed canary. The PR should call this out for review | W3 | this commit |
 | 2026-11-06 | Pre-PR check: test fake keys built at runtime so the source holds no key-shaped literal for the CI Gitleaks scan (it scans every commit in the PR range, so the earlier commits `cc32b13` and `f9d32cf` still hold them; Gitleaks is not installed locally, so unverified); Known Gap added for `prompt_version` not covering the suffix (W17). 372 tests, 372 pass, none skipped | W3 | c7f5f3b |
 | 2026-11-06 | Merged `development` after PR #14 merged (`46b33b1`); no conflicts; `STATE.md` and `guardrails.md` unchanged since the old base; 372 tests, 372 pass, none skipped | W3 | b736c65 |
@@ -115,6 +117,10 @@ New entries (spec conventions.md § Known limits, accepted at Gate 1):
 - **Guard false positives** — an 8-digit number split by a space (`8901 2345`) and some UUID segments are redacted as phones; "system prompt" in prose is flagged; four-part version numbers (`10.0.0.1`) and `<a ` in prose fail the output guard.
 - **`llm_calls.prompt_version` does not cover the security suffix** — `prompt_version` and `prefix_hash` hash the system message only (spec SD3, so the prefix stays stable), so a change to the suffix template leaves them unchanged; `GUARD_VERSION` changes but is not stored on `llm_calls`. W17 should record `GUARD_VERSION` in `experiment` (or add it to the version) before comparing prompt or guard variants.
 - **A poisoned item can make the model refuse** — text that steers the model to `{"refusal":true}` fails that call with `REQUEST_REFUSED`; refusals do not trip the breaker and the item's flag is shown to the reader.
+
+## 8. Deviations
+
+- **PR #15 review fix:** The approved output specification checked only pre-schema JSON. Schema-transformed results now receive the same checks. The API spec reflects this security correction; fresh branch review is needed.
 
 ---
 

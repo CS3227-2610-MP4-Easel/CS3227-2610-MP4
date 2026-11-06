@@ -145,6 +145,12 @@ test("E55 F6 ordinary text, generics, headings and emoji pass", () => {
   assert.deepEqual(checkOutput('{"x":1}', json(z.object({ x: z.number() })), ctx), { ok: true, value: { x: 1 } });
 });
 
+test("schema transformations cannot introduce unsafe output", () => {
+  const decode = z.string().transform((value) => decodeURIComponent(value));
+  assert.equal(asJson('"%3Cscript%3E"', decode), "HTML");
+  assert.deepEqual(checkOutput('"hello%20world"', json(decode), ctx), { ok: true, value: "hello world" });
+});
+
 test("E56 F6 documented false positives", () => {
   assert.equal(asText("release 10.0.0.1"), "LINK");
   assert.equal(asText("if a<a href"), "HTML");

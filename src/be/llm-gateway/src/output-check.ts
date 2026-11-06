@@ -31,7 +31,7 @@ export const OUTPUT_RULES: readonly OutputRule[] = [
 /** As the input set, but CR, U+FE0F and a ZWJ between two pictographs (emoji sequences) are allowed (spec SD13). */
 export const OUTPUT_INVISIBLE_SOURCE = String.raw`(?![\n\t\r])[\p{Cc}\p{Co}\p{Cs}\u{FE00}-\u{FE0E}\u{E0100}-\u{E01EF}\u{115F}\u{1160}\u{3164}\u{FFA0}]|(?!\u{200D})\p{Cf}|(?<!\p{Extended_Pictographic}\u{FE0F}?)\u{200D}|\u{200D}(?!\p{Extended_Pictographic})`;
 
-export const OUTPUT_STEPS = ["refusal", "parse", "collect", "nfkc", "forbidden-chars", "links-stripped", "links-as-is", "html", "markdown", "boundary", "secret", "joined:links-stripped+html+markdown+boundary+secret", "length", "schema"] as const;
+export const OUTPUT_STEPS = ["refusal", "parse", "collect", "nfkc", "forbidden-chars", "links-stripped", "links-as-is", "html", "markdown", "boundary", "secret", "joined:links-stripped+html+markdown+boundary+secret", "length", "schema", "check-schema-result"] as const;
 
 const forbidden = new RegExp(OUTPUT_INVISIBLE_SOURCE, "u");
 const rulesFor = (step: OutputRule["step"]) => OUTPUT_RULES.filter((rule) => rule.step === step).map((rule) => new RegExp(rule.source, rule.flags));
@@ -87,13 +87,7 @@ function leaks(text: string, context: OutputContext): OutputReason | null {
   return null;
 }
 
-function check(text: string, output: LlmCall["output"], context: OutputContext): CheckedOutput {
-  if (isRefusal(text)) return { ok: false, status: "REFUSED", reason: "REFUSAL" };
-  let parsed: unknown;
-  if (output.kind === "json") {
-    try { parsed = JSON.parse(text); } catch { return fail("PARSE"); }
-  }
-  const strings = output.kind === "json" ? collect(parsed) : [text];
+function checkStrings(strings: string[] | null, context: OutputContext): CheckedOutput | null {
   if (strings === null) return fail("SHAPE");
   const normalised = strings.map((s) => s.normalize("NFKC"));
   for (const s of normalised) {
@@ -104,12 +98,24 @@ function check(text: string, output: LlmCall["output"], context: OutputContext):
   }
   const joined = leaks(normalised.join(""), context);
   if (joined) return fail(joined);
+  return null;
+}
+
+function check(text: string, output: LlmCall["output"], context: OutputContext): CheckedOutput {
+  if (isRefusal(text)) return { ok: false, status: "REFUSED", reason: "REFUSAL" };
+  let parsed: unknown;
+  if (output.kind === "json") {
+    try { parsed = JSON.parse(text); } catch { return fail("PARSE"); }
+  }
+  const failure = checkStrings(output.kind === "json" ? collect(parsed) : [text], context);
+  if (failure) return failure;
   if (output.kind === "text") {
     const length = [...text].length;
     return length === 0 || length > output.maxChars ? fail("LENGTH") : { ok: true, value: text };
   }
   const result = (output.schema as SafeParser).safeParse(parsed);
-  return result.success ? { ok: true, value: result.data } : fail("SCHEMA");
+  if (!result.success) return fail("SCHEMA");
+  return checkStrings(collect(result.data), context) ?? { ok: true, value: result.data };
 }
 
 /** The W3 output guard (spec api.md § checkOutput): the first failing step wins, and it never throws (N1). */

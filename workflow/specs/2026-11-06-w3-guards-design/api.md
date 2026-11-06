@@ -98,7 +98,7 @@ In this order; the first failure returns. Patterns use flags `iu` (no `g`) unles
 | 8 | contains `context.boundary` (case-insensitive) | `SCHEMA_FAIL`, `BOUNDARY` |
 | 9 | contains any `context.secrets` entry of 8+ characters (NFKC of both), or matches `(?<![\w-])sk-[A-Za-z0-9_-]{16,}` (case-sensitive) | `SCHEMA_FAIL`, `SECRET` |
 | 10 | `text` kind: code points of the original (not normalised) text are 0 or over `maxChars` (W2's rule) | `SCHEMA_FAIL`, `LENGTH` |
-| 11 | `json` kind: `schema.safeParse(parsed)`; the parser's error is discarded | `SCHEMA_FAIL`, `SCHEMA` |
+| 11 | `json` kind: `schema.safeParse(parsed)`; the parser's error is discarded; repeat steps 3–9 on the schema's returned data | `SCHEMA_FAIL`, `SCHEMA` or the failing guard reason |
 | - | otherwise | `ok: true`, `value` = the original text (text kind) or the schema's `data` (json kind) |
 
 `run` maps `SCHEMA_FAIL` to `AI_UNAVAILABLE` and `REFUSED` to `REQUEST_REFUSED` as in W2; neither counts toward the breaker.
