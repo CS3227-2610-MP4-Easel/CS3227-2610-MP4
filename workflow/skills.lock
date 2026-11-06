@@ -17,6 +17,15 @@
   "executing-plans-lite": {
     "checksum": "f86a48c988275b1609795610f67074766b30b02d3e016b99db36c6d9cd9f98c5"
   },
+  "writing-specs-lite-v2": {
+    "checksum": "a697d2e9e89b56854dd0837728d50b109a7965006e7ca9b0403a92e56443c935"
+  },
+  "writing-plans-lite-v2": {
+    "checksum": "aa9ec66f04ab4241443475d84dade6b7295f6d8b575c140042bc61ffc90289af"
+  },
+  "executing-plans-lite-v2": {
+    "checksum": "258ac06b3dcaa7ec422d3541b934f76ba026ce3a88a837b74477c1ba587a76fd"
+  },
   "update-documentation": {
     "checksum": "0dbdb2bad08695216540ec09b6bfc6c172ac5e6b60ce0aa96a2028f2f3e1142f"
   },
