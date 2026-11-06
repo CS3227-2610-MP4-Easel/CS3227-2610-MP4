@@ -20,7 +20,7 @@
 |---|---|---|---|---|
 | T1 | — | T2 | 1 | Done |
 | T2 | — | T1 | 1 | Done |
-| T3 | T1 | — | 2 | Not started |
+| T3 | T1 | — | 2 | Done |
 | T4 | T1, T3 | — | 3 | Not started |
 | T5 | T3, T4 | — | 4 | Post-merge |
 | T6 | T1, T3, T5 | T4 | 5 | Not started |
@@ -123,10 +123,10 @@
 
 **Checklist**
 
-- [ ] 1. Write failing tests for Prisma validation, clean/previous compatibility, checksum, URL cleanup, recovery thresholds, target restrictions, and evidence completeness.
-- [ ] 2. Implement the migration preflight and exact Prisma commands from the spec.
-- [ ] 3. Implement evidence validation and write the manual recovery runbook.
-- [ ] 4. Run focused migration tests, `npm --workspace @agile/db run prisma:validate`, and `npm run lint`.
+- [x] 1. Write failing tests for Prisma validation, clean/previous compatibility, checksum, URL cleanup, recovery thresholds, target restrictions, and evidence completeness.
+- [x] 2. Implement the migration preflight and exact Prisma commands from the spec.
+- [x] 3. Implement evidence validation and write the manual recovery runbook.
+- [x] 4. Run focused migration tests, `npm --workspace @agile/db run prisma:validate`, and `npm run lint`.
 - [ ] 5. Update branch state and commit: `feat: add W13 migration and recovery controls`.
 
 ### T4: Development Vercel deployment
