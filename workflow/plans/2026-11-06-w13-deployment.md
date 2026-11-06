@@ -19,7 +19,7 @@
 | Task | Depends on | Can run concurrently with | Wave | Status |
 |---|---|---|---|---|
 | T1 | — | T2 | 1 | Done |
-| T2 | — | T1 | 1 | Not started |
+| T2 | — | T1 | 1 | Done |
 | T3 | T1 | — | 2 | Not started |
 | T4 | T1, T3 | — | 3 | Not started |
 | T5 | T3, T4 | — | 4 | Post-merge |
@@ -101,11 +101,11 @@
 
 **Checklist**
 
-- [ ] 1. Write failing seed tests for empty, repeated, invalid-tier, production-target, content, and secret cases.
-- [ ] 2. Implement deterministic keys and seed data; reject production and unsupported tiers before Prisma construction.
-- [ ] 3. Assert the full logical dataset is unchanged after a second run.
-- [ ] 4. Run the seed test and `npm --workspace @agile/db run prisma:validate`; expect PASS.
-- [ ] 5. Run `npm run scan:secrets`.
+- [x] 1. Write failing seed tests for empty, repeated, invalid-tier, production-target, content, and secret cases.
+- [x] 2. Implement deterministic keys and seed data; reject production and unsupported tiers before Prisma construction.
+- [x] 3. Assert the full logical dataset is unchanged after a second run.
+- [x] 4. Run the seed test and `npm --workspace @agile/db run prisma:validate`; expect PASS.
+- [x] 5. Run `npm run scan:secrets`.
 - [ ] 6. Update branch state and commit: `feat: add deterministic development seed data`.
 
 ### T3: Migration compatibility and recovery evidence
