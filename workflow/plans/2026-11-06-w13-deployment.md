@@ -21,7 +21,7 @@
 | T1 | — | T2 | 1 | Done |
 | T2 | — | T1 | 1 | Done |
 | T3 | T1 | — | 2 | Done |
-| T4 | T1, T3 | — | 3 | Not started |
+| T4 | T1, T3 | — | 3 | Ready for owner gate |
 | T5 | T3, T4 | — | 4 | Post-merge |
 | T6 | T1, T3, T5 | T4 | 5 | Not started |
 | T7 | T1, T4, T6 | — | 6 | Not started |
@@ -140,12 +140,13 @@
 | Create | `.github/workflows/w13-dev-check.yml` | Verify the owner-merged `development` SHA and tier manifest; do not receive production credentials; record dev smoke result with `degraded` AI fallback. The owner’s Vercel Git integration deploy remains an external `GATE:` action, not a CI token path. |
 | Create | `scripts/w13/verify-dev-deployment.mjs` | Compare Vercel deployment metadata SHA/project/alias to the merged commit and manifest. |
 | Create | `tests/w13/dev-deployment.test.ts` | Cover E2, E26, E41-E42 and preview variable isolation. |
+| Modify | `scripts/check-workflows.mjs` | Allow only the fixed owner-merge dev check workflow to use its protected `push` trigger; retain pull-request restrictions elsewhere. |
 
 **Checklist**
 
-- [ ] 1. Write failing workflow/script tests for merged-SHA, alias, missing settings, preview isolation, and dev AI degradation.
-- [ ] 2. Implement the fixed dev check without production secrets.
-- [ ] 3. Run `npm run check:workflows`, `npm run check:agent-policy`, and focused W13 tests.
+- [x] 1. Write failing workflow/script tests for merged-SHA, alias, missing settings, preview isolation, and dev AI degradation.
+- [x] 2. Implement the fixed dev check without production secrets.
+- [x] 3. Run `npm run check:workflows`, `npm run check:agent-policy`, and focused W13 tests.
 - [ ] 4. `GATE:` repository owner configures the canonical Vercel dev project/alias and merges a reviewed commit to `development`.
 - [ ] 5. Record the deployed SHA and smoke evidence; update branch state and commit: `feat: verify W13 development deployment`.
 

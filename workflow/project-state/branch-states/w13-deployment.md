@@ -8,7 +8,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-06 by Codex — T3 migration compatibility and recovery evidence complete
+- **Last updated:** 2026-11-06 by Codex — T4 implementation complete; owner deployment gate pending
 
 ---
 
@@ -24,7 +24,7 @@ the W1 application runnable on the dev and production tiers.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-06 | Codex | W13 | Active | T3 complete: migration compatibility and recovery evidence | Commit T3 and start T4 dev deployment checks | 2026-11-06 |
+| S1 | 2026-11-06 | Codex | W13 | Active | T4 implementation complete: development deployment checks | Commit T4; owner must configure/merge the dev deployment before T5 | 2026-11-06 |
 
 **Remaining**
 
@@ -40,7 +40,7 @@ the W1 application runnable on the dev and production tiers.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | Building | [spec](../../specs/2026-11-06-w13-deployment-design.md) | [plan](../../plans/2026-11-06-w13-deployment.md) | T3 complete; T4 next: development deployment checks | — |
+| W13 | Environments, seed data and deployment | Building | [spec](../../specs/2026-11-06-w13-deployment-design.md) | [plan](../../plans/2026-11-06-w13-deployment.md) | T4 implementation complete; owner deployment gate pending before T5 | — |
 
 ## 3. Changes
 
@@ -54,7 +54,8 @@ the W1 application runnable on the dev and production tiers.
 | 2026-11-06 | Revised the W13 plan to address the review findings; plan lint has 0 errors and 1 expected new-file warning | W13 | this commit |
 | 2026-11-06 | Completed T1: added the non-secret tier manifest, exact resource identity validation, credential-free preview runtime, and focused regression tests; baseline, focused tests, lint, workflow validation, and diff checks pass | W13 | 8512c44 |
 | 2026-11-06 | Completed T2: added deterministic non-production users, project, memberships, checkpoint, epic, tasks, and three closed sprints with idempotent upserts; seed tests, Prisma validation with non-production URL, lint, and secret scan pass | W13 | pending T2 commit |
-| 2026-11-06 | Completed T3: added migration checksum manifest, production direct-target preflight, forward-only migration runner, recovery evidence validator, and W13 runbook; focused tests, Prisma validation, lint, and diff checks pass | W13 | pending T3 commit |
+| 2026-11-06 | Completed T3: added migration checksum manifest, production direct-target preflight, forward-only migration runner, recovery evidence validator, and W13 runbook; focused tests, Prisma validation, lint, and diff checks pass | W13 | 24cabd0 |
+| 2026-11-06 | Completed T4 implementation: added the fixed development deployment check, merged-SHA/resource validation, preview variable isolation, degraded AI result, and workflow-validator support; focused tests, workflow/security checks, lint, secret scan, and diff checks pass | W13 | pending T4 commit |
 
 ## 7. Decisions
 
