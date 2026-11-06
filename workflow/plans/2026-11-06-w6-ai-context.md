@@ -17,7 +17,7 @@
 |---|---|---|---|---|
 | T1 Package and allow-list | - | T3 | 1 | Done |
 | T2 Assembly | T1 | - | 2 | Not started |
-| T3 Source scan | - | T1 | 1 | Not started |
+| T3 Source scan | - | T1 | 1 | Done |
 
 ## Traceability
 | Requirement | Task(s) | Verified by |
@@ -133,12 +133,14 @@ Intended shape:
 ```
 
 **Checklist**
-- [ ] 1. Write `source-scan.test.ts` with the E30 fixtures (each a separate test case) against a stub `scan` that returns no findings; run `npm test`; expect the "reported" fixtures to FAIL.
-- [ ] 2. Implement the scanner (rules 1-4 with their file sets) in the test file; E30 green.
-- [ ] 3. Add E31 over the repository: `filesScanned > 0`, no findings.
-- [ ] 4. `npm test`, `npm run typecheck`, `npm run lint` green.
-- [ ] 5. Update branch state: Progress, Changes line.
-- [ ] 6. Commit: `test: add the AD-25 source scan, so features cannot build prompts from their own queries (W6)`.
+- [x] 1. Write `source-scan.test.ts` with the E30 fixtures (each a separate test case) against a stub `scan` that returns no findings; run `npm test`; expect the "reported" fixtures to FAIL.
+- [x] 2. Implement the scanner (rules 1-4 with their file sets) in the test file; E30 green.
+- [x] 3. Add E31 over the repository: `filesScanned > 0`, no findings.
+- [x] 4. `npm test`, `npm run typecheck`, `npm run lint` green.
+- [x] 5. Update branch state: Progress, Changes line.
+- [x] 6. Commit: `test: add the AD-25 source scan, so features cannot build prompts from their own queries (W6)`.
+
+**Notes for next task:** a multi-line import is reported on the module name's line (`ts.preProcessFile` positions). Rule 4 blanks comments and quoted strings before matching, so a template literal argument counts as computed.
 
 ### Close-out
 - [ ] Every Traceability row verified; `<BUILD>` green; `npm test` green.

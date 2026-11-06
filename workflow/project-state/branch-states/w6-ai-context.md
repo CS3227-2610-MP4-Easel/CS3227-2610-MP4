@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-06 | Claude Opus 5.5 | W6 | Active | T1 done; T3 next (wave 1) | T3 step 1: write `src/be/ai-context/test/source-scan.test.ts` with the E30 fixtures against a stub scanner | 2026-11-06 |
+| S1 | 2026-11-06 | Claude Opus 5.5 | W6 | Active | Wave 1 done (T1, T3); T2 next | T2 step 1: write failing `src/be/ai-context/test/assemble.test.ts` per the plan | 2026-11-06 |
 
 **Remaining**
 
@@ -39,7 +39,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W6 | AI context assembly | Building | [spec](../../specs/2026-11-06-w6-ai-context-design.md) | [plan](../../plans/2026-11-06-w6-ai-context.md) | Task 1/3 done; T3 source scan next | — |
+| W6 | AI context assembly | Building | [spec](../../specs/2026-11-06-w6-ai-context-design.md) | [plan](../../plans/2026-11-06-w6-ai-context.md) | Tasks 1 and 3 done; T2 assembly next | — |
 
 ---
 
@@ -47,7 +47,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-06 | T1: new `@agile/ai-context` workspace (package, tsconfig, root reference, lockfile via `npm install`); `allow-list.ts` (allow-list, source ids, feature roles, `FACT_KEYS`, option schemas), `errors.ts`, `registry.ts` (duplicates refused), `testing.ts` subpath with the reset; 5 tests (allow-list and fact keys pinned, E9, E33, E37); 311 tests, 311 pass, none skipped | W6 | this commit |
+| 2026-11-06 | T3: `source-scan.test.ts`: a pure scanner (imports read with `ts.preProcessFile`) for rules 1-4 (gateway files reach only `@agile/contracts`, `@agile/ai-context`, `@agile/llm-gateway`, followed through relative imports; no `…Unsafe` raw methods outside `src/be/db/src`; the `testing` subpath only in `src/be/api/src`; no computed imports in gateway files); 17 fixture tests (E30) and the repository scan (E31, no findings); 329 tests, 329 pass, none skipped | W6 | this commit |
+| 2026-11-06 | T1: new `@agile/ai-context` workspace (package, tsconfig, root reference, lockfile via `npm install`); `allow-list.ts` (allow-list, source ids, feature roles, `FACT_KEYS`, option schemas), `errors.ts`, `registry.ts` (duplicates refused), `testing.ts` subpath with the reset; 5 tests (allow-list and fact keys pinned, E9, E33, E37); 311 tests, 311 pass, none skipped | W6 | 38f74de |
 | 2026-11-06 | Plan written (T1-T3, close-out), reviewed (Implementer lens: 1 blocking, 5 other, all fixed: rule-1 packages, synchronous source throws, per-source option copies, the single warning, rule-4 file set, a stub-first scan test) and approved at Gate 2 | W6 | 460691a |
 | 2026-11-06 | Spec approved at Gate 1 by the operator | W6 | cb00e15 |
 | 2026-11-06 | W6 spec drafted (7 F, 5 N, E1-E45, T1-T3) and reviewed in two rounds (Implementer, Tester, Maintainer, Attacker; then Implementer, Attacker): about 16 distinct blocking findings fixed, among them the core → ai-context dependency inversion, the frozen `assemble` narrowing (operator: sign-off at PR, C~2), nondeterministic failures, a membership race, free text in the trusted facts section, rows changed after checking, production reset of the registries, and source-scan bypasses; lint clean | W6 | this commit |
