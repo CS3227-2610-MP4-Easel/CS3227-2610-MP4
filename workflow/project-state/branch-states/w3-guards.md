@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-06 | Claude Opus 5.5 | W3 | Active | Gate 2 approved; executing T1 | T1 step 1: write failing `src/be/llm-gateway/test/sanitise.test.ts` per the plan | 2026-11-06 |
+| S1 | 2026-11-06 | Claude Opus 5.5 | W3 | Active | T1 done; T2 next | T2 step 1: write failing `src/be/llm-gateway/test/output-check.test.ts` per the plan | 2026-11-06 |
 
 **Remaining**
 
@@ -40,7 +40,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W3 | Guards (untrusted-text pipeline) | Building | [spec](../../specs/2026-11-06-w3-guards-design.md) | [plan](../../plans/2026-11-06-w3-guards.md) | Task 1/3 in flight: input guard | — |
+| W3 | Guards (untrusted-text pipeline) | Building | [spec](../../specs/2026-11-06-w3-guards-design.md) | [plan](../../plans/2026-11-06-w3-guards.md) | Task 1/3 done; T2 output guard next | — |
 
 ---
 
@@ -48,6 +48,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-06 | T1: `sanitise.ts`: `sanitiseInput` (cut, NFKC with digit and dot folding, line endings, invisible characters, delimiter tags to stability with the 10-pass bracket strip, PII P1-P6, flag), `injectionFlag` (two match copies, confusable map), `cleanTrustedText`; rule data as `{ id, source, flags }`; 21 unit tests (E1-E17, E34, E37, F4); 326 tests, 325 pass, 1 fails (D~1 from W2), none skipped | W3 | this commit |
 | 2026-11-06 | Plan written (T1-T3, close-out), reviewed (Implementer lens: no blocking, 2 major and 3 minor, all fixed: testable fingerprint, `gatewaySecrets` helper, wave-1 imports, traversal order, line ranges) and approved at Gate 2 | W3 | this commit |
 | 2026-11-06 | Spec wording: two edge-case strings reworded (`e123456`, the LANGUAGE TAG character) so the plan lint does not read them as edge-case IDs; meaning unchanged; logged as skill feedback | W3 | this commit |
 | 2026-11-06 | Spec approved at Gate 1 by the operator | W3 | a01418f |
