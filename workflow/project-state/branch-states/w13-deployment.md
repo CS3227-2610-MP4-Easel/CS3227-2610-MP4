@@ -4,11 +4,11 @@
 describes `INT`; read it for context and write here instead of editing it.
 
 - **Branch:** w13-deployment (from `INT` at `94ebc77134ffd4ab00e0bda3c3fe9c2ff933ef01`)
-- **Base:** 94ebc77134ffd4ab00e0bda3c3fe9c2ff933ef01
+- **Base:** d153509 (updated after merging current `development`)
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-06 by Codex — T4 implementation complete; owner deployment gate pending
+- **Last updated:** 2026-11-06 by Codex — merged current `development`; owner deployment gate pending
 
 ---
 
@@ -24,7 +24,7 @@ the W1 application runnable on the dev and production tiers.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-06 | Codex | W13 | Active | T4 implementation complete: development deployment checks | Commit T4; owner must configure/merge the dev deployment before T5 | 2026-11-06 |
+| S1 | 2026-11-06 | Codex | W13 | Active | W13 synchronized with merged `development`; T4 owner gate remains | Owner configures the canonical Vercel dev tier, then reviews/merges W13 | 2026-11-06 |
 
 **Remaining**
 
@@ -35,6 +35,7 @@ the W1 application runnable on the dev and production tiers.
 - [x] Read-only Implementer/plan review completed; plan lint has 0 errors and 1 path warning, but blocking/high findings remain in dependencies, workflow-validator compatibility, preview runtime seam, migration manifest path, and smoke-harness executability.
 - [x] Incorporated the plan-review findings: migration manifest, workflow validator/action pins, preview dependency seam, and fixed deployment checks are now listed.
 - [x] Gate 2: operator approved the W13 plan on 2026-11-06; approved-plan lint passes.
+- [ ] **Handover:** owner configures the canonical Vercel development project and variables, then reviews/merges W13 into `development`; record merged SHA and dev smoke evidence before starting T5.
 
 ## 2. Workstreams
 
@@ -56,6 +57,7 @@ the W1 application runnable on the dev and production tiers.
 | 2026-11-06 | Completed T2: added deterministic non-production users, project, memberships, checkpoint, epic, tasks, and three closed sprints with idempotent upserts; seed tests, Prisma validation with non-production URL, lint, and secret scan pass | W13 | pending T2 commit |
 | 2026-11-06 | Completed T3: added migration checksum manifest, production direct-target preflight, forward-only migration runner, recovery evidence validator, and W13 runbook; focused tests, Prisma validation, lint, and diff checks pass | W13 | 24cabd0 |
 | 2026-11-06 | Completed T4 implementation: added the fixed development deployment check, merged-SHA/resource validation, preview variable isolation, degraded AI result, and workflow-validator support; focused tests, workflow/security checks, lint, secret scan, and diff checks pass | W13 | pending T4 commit |
+| 2026-11-06 | Merged current `development` (including the Vercel build hotfix and intervening W2 work) into W13; no conflicts | W13 | merge `d153509` |
 
 ## 7. Decisions
 

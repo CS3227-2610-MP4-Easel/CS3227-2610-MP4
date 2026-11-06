@@ -137,9 +137,9 @@
 
 | Action | Path | What changes |
 |---|---|---|
-| Create | `.github/workflows/w13-dev-check.yml` | Verify the owner-merged `development` SHA and tier manifest; do not receive production credentials; record dev smoke result with `degraded` AI fallback. The owner’s Vercel Git integration deploy remains an external `GATE:` action, not a CI token path. |
-| Create | `scripts/w13/verify-dev-deployment.mjs` | Compare Vercel deployment metadata SHA/project/alias to the merged commit and manifest. |
-| Create | `tests/w13/dev-deployment.test.ts` | Cover E2, E26, E41-E42 and preview variable isolation. |
+| Modify | `.github/workflows/w13-dev-check.yml` | Verify the owner-merged `development` SHA and tier manifest; do not receive production credentials; record dev smoke result with `degraded` AI fallback. The owner’s Vercel Git integration deploy remains an external `GATE:` action, not a CI token path. |
+| Modify | `scripts/w13/verify-dev-deployment.mjs` | Compare Vercel deployment metadata SHA/project/alias to the merged commit and manifest. |
+| Modify | `tests/w13/dev-deployment.test.ts` | Cover E2, E26, E41-E42 and preview variable isolation. |
 | Modify | `scripts/check-workflows.mjs` | Allow only the fixed owner-merge dev check workflow to use its protected `push` trigger; retain pull-request restrictions elsewhere. |
 
 **Checklist**
