@@ -31,7 +31,13 @@ export function validateTierResources(env: Record<string, string | undefined>): 
     ["VERCEL_GIT_COMMIT_REF", expected.branch], ["NEON_HOST", expected.neonHost],
     ["NEON_PROJECT", expected.neonProject], ["SOCLAAS_BASE_URL", expected.soclaasBaseUrl],
   ];
-  for (const [name, value] of fields) if (value !== null && env[name] !== value) invalid(name);
+  for (const [name, value] of fields) {
+    if (name === "VERCEL_GIT_COMMIT_REF" && expected.tier === "preview") {
+      if (env[name] === "development" || env[name] === "main") invalid(name);
+      continue;
+    }
+    if (value !== null && env[name] !== value) invalid(name);
+  }
 }
 
 /** Pure over an env map; throws naming the failing setting, never its value (N4). */

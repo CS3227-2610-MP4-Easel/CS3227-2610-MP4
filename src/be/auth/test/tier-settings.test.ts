@@ -28,6 +28,18 @@ test("E1 preview runtime does not require or construct a database client", () =>
   assert.rejects(runtime.resolvePrincipal("Bearer token"), /AUTH_NOT_CONFIGURED/);
 });
 
+test("E3 preview accepts the actual pull-request branch ref but not protected tiers", () => {
+  const preview = {
+    APP_TIER: "preview",
+    VERCEL_PROJECT_ID: "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd",
+    VERCEL_ENV: "preview",
+    VERCEL_GIT_COMMIT_REF: "w13-deployment",
+  };
+  assert.doesNotThrow(() => validateTierResources(preview));
+  assert.throws(() => validateTierResources({ ...preview, VERCEL_GIT_COMMIT_REF: "development" }), /VERCEL_GIT_COMMIT_REF/);
+  assert.throws(() => validateTierResources({ ...preview, VERCEL_GIT_COMMIT_REF: "main" }), /VERCEL_GIT_COMMIT_REF/);
+});
+
 test("E32 emulator mode remains rejected on local", () => {
   assert.throws(() => loadAuthSettings({ APP_TIER: "local", FIREBASE_AUTH_EMULATOR_HOST: "localhost:9099" }), /FIREBASE_AUTH_EMULATOR_HOST/);
 });
