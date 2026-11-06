@@ -123,7 +123,7 @@ test("E15 F3 I1-I7 positives, including mid-text I6, newline-split I1 and a conf
 });
 
 test("E16 F3 benign text is not flagged", () => {
-  for (const input of ["fix the system: auth module", "show the rules page", "act as reviewer for PR 12", "previous sprint", "you are now assigned to task 5", "print the report", "new instruction manual"]) {
+  for (const input of ["fix the system: auth module", "show the rules page", "act as reviewer for PR 12", "previous sprint", "you are now assigned to task 5", "print the report", "new instruction manual", "jailbreaking", "developer modes"]) {
     assert.equal(clean(input).flagged, false, input);
   }
 });

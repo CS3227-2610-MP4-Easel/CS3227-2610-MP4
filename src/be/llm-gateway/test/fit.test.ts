@@ -101,6 +101,8 @@ test("E26 F5 the estimate counts the strings as sent and never exceeds the limit
   assert.equal(fitted.estimatedPromptTokens, estimateTokens(fitted.system, MODEL) + estimateTokens(fitted.user, MODEL));
   assert.ok(fitted.estimatedPromptTokens <= FEATURES.DEV_STANDUP.maxPromptTokens);
   assert.deepEqual(Object.keys(fitted.sectionTokens).sort(), ["a", "b", "c", "rules"]);
+  const sectionSum = Object.values(fitted.sectionTokens).reduce((a, b) => a + b, 0);
+  assert.ok(sectionSum + estimateTokens(SUFFIX, MODEL) <= fitted.estimatedPromptTokens, "the suffix is counted in the estimate, not in a section");
 });
 
 test("E27 F5 the static budget includes the suffix", () => {

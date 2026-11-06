@@ -7,11 +7,11 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w3-guards (stacked on `w2-gateway` at `f8e5e0f`, whose last `INT` merge is `94ebc77`)
 - **Base:** 94ebc77
 - **Owner:** ludannnn (Developer member)
-- **Status:** Draft
+- **Status:** In review
 - **Approved:** —
-- **Last updated:** 2026-11-06 by Claude Opus 5.5 — T1-T3 built; close-out next
+- **Last updated:** 2026-11-06 by Claude Opus 5.5 — close-out done; awaiting Gate 3
 
-**Untouched:** Conventions, Known Gaps, Deviations
+**Untouched:** Conventions, Deviations
 
 ---
 
@@ -25,13 +25,19 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-06 | Claude Opus 5.5 | W3 | Active | T1-T3 done; close-out | Close-out step 2: Attacker and Tester review of the branch diff (`git diff f8e5e0f..HEAD -- src/`), then the rest of the plan's Close-out | 2026-11-06 |
 
 **Remaining**
 
 - [x] Gate 1: W3 spec approved by ludannnn on 2026-11-06, including NUSNET redaction (SD4) and the known limits.
 - [x] Gate 2: W3 plan approved by ludannnn on 2026-11-06.
-- [ ] Close-out: branch-diff review (Attacker, Tester), Known Gaps and Handovers written, then Gate 3.
+- [x] Close-out: branch-diff review (Attacker, Tester); findings fixed or recorded in Changes.
+- [ ] Gate 3: the operator reviews the branch.
+- [ ] **Handover:** W6, W7, W8, W9 follow W3's rules for sections (spec conventions.md § Rules for features): `trusted: true` only for server-built text; anything users typed or uploaded, and any stored model output reused as input, is `trusted: false`; `STATIC` sections are always trusted (`run` throws `INVALID_LLM_CALL` otherwise) and section names are literals; each untrusted section's budget leaves room for the 49-character wrapper plus its name line, and the statics leave room for the ~280-character suffix.
+- [ ] **Handover:** W7 checks "empty after sanitising" with `sanitiseInput(text).blocked`; every feature maps `BLOCKED_INPUT` to 422 `VALIDATION_FAILED`; PM endpoints map `REQUEST_REFUSED` to 422, Dev Lead and Developer endpoints to the degraded 200 (architecture §8).
+- [ ] **Handover:** W9 calls `sanitiseInput` per item to store each item's and summary's own `flagged`, and imports `GUARD_VERSION` (never copies it) into the `item_summaries` unique key (AD-67).
+- [ ] **Handover:** W9 and W7 output schemas must not need URLs, angle brackets, HTML entities, `](`, `![`, `scheme:` values or dotted-quad numbers; such strings fail the output guard.
+- [ ] **Handover:** W11's corpus can read the rule tables (`DELIMITER_RULES`, `PII_RULES`, `INJECTION_RULES`, `OUTPUT_RULES`) and the `reason` codes from `checkOutput`; per AD-26 the corpus is reviewed by a different owner than the guards' author (Developer).
+- [ ] **Handover:** whoever changes a guard rule bumps `GUARD_VERSION` and adds its `KNOWN` entry in `src/be/llm-gateway/test/guards.test.ts` (spec conventions.md § bump checklist).
 - [ ] While stacked: if `w2-gateway` gets more review fixes, merge it into this branch (watch `guards.ts`).
 - [ ] After PR #14 merges: merge `development` into this branch, move `Base`, and only then open the W3 PR into `development`. If W2 was squash-merged, rebase onto `development` instead.
 
@@ -41,7 +47,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W3 | Guards (untrusted-text pipeline) | Building | [spec](../../specs/2026-11-06-w3-guards-design.md) | [plan](../../plans/2026-11-06-w3-guards.md) | Task 3/3 done; close-out review next | — |
+| W3 | Guards (untrusted-text pipeline) | In review | [spec](../../specs/2026-11-06-w3-guards-design.md) | [plan](../../plans/2026-11-06-w3-guards.md) | T1-T3 and close-out done; awaiting Gate 3; guide out of date: llm-gateway | — |
 
 ---
 
@@ -49,7 +55,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-06 | T3: guards live in `run`. `guards.ts` (slot with `maxChars` and `OutputContext`, optional `reason`, `defaultGuards`, `GUARD_LIMITS`, wrapper and suffix templates, `fingerprintParts`/`rulesFingerprint`, `GUARD_VERSION` "1"); `budget.ts` (untrusted sections wrapped, suffix always last, budget counted on the strings as sent, `security-suffix` static check); `gateway.ts` (untrusted STATIC refused, input cap, trusted sections cleaned, joined injection flag, validated boundary with collision redraw, `secrets` to the output guard); `settings.ts` `gatewaySecrets`, wired in `runtime.ts`. W2 tests changed only as the spec listed (`fit.test.ts`, `run.test.ts:49`, `:304`); 21 new tests (E18-E33, E36, E39-E43, E53, F7, SD8). Steps run implementation-first, then tests, against the plan's order (all tests written before commit). 367 tests, 366 pass, 1 fails (D~1), none skipped | W3 | this commit |
+| 2026-11-06 | Close-out review of the branch diff (Attacker, Tester). Fixed: **blocking** — `wrapSection` used `String.replace`, so `$'` or `` $` `` in user text forged a real closing or opening `<data-B>` tag (text outside the wrapper) and a literal `{B}` revealed the boundary; now a template literal, with a regression test (fails on the old code) and a test that it matches `WRAPPER_TEMPLATE` (fingerprint unchanged; `GUARD_VERSION` not bumped, as nothing has cached a summary yet). Test gaps: a vacuous E32 assertion, joined-string checks for HTML, Markdown, boundary and secret, M3 alone, a bare ZWJ, I5 negatives, the short-secret and NFKC-secret rules, E36 payload contents, E43 cap through `run`, E26 suffix arithmetic, E51 written as JSON escapes. Not taken: database or replacement-guard errors before the insert still propagate unwrapped (W2 behaviour, programmer errors per SD11; no prompt text is in those rows); W3 test titles share some E numbers with W2's, told apart by their F IDs. 371 tests, 370 pass, 1 fails (D~1), none skipped | W3 | this commit |
+| 2026-11-06 | T3: guards live in `run`. `guards.ts` (slot with `maxChars` and `OutputContext`, optional `reason`, `defaultGuards`, `GUARD_LIMITS`, wrapper and suffix templates, `fingerprintParts`/`rulesFingerprint`, `GUARD_VERSION` "1"); `budget.ts` (untrusted sections wrapped, suffix always last, budget counted on the strings as sent, `security-suffix` static check); `gateway.ts` (untrusted STATIC refused, input cap, trusted sections cleaned, joined injection flag, validated boundary with collision redraw, `secrets` to the output guard); `settings.ts` `gatewaySecrets`, wired in `runtime.ts`. W2 tests changed only as the spec listed (`fit.test.ts`, `run.test.ts:49`, `:304`); 21 new tests (E18-E33, E36, E39-E43, E53, F7, SD8). Steps run implementation-first, then tests, against the plan's order (all tests written before commit). 367 tests, 366 pass, 1 fails (D~1), none skipped | W3 | cc32b13 |
 | 2026-11-06 | T2: `output-check.ts`: `checkOutput` (exact refusal, parse, iterative document-order walk with depth and count limits, forbidden characters allowing emoji sequences, links with and without whitespace, an HTML tag-name list and entities, Markdown links, boundary, secrets and the `sk-` pattern, each string then their join, raw-length check, schema; never throws); 17 unit tests (E33, E35, E37, E44-E56, document order); 343 tests, 342 pass, 1 fails (D~1), none skipped | W3 | aca25b6 |
 | 2026-11-06 | T1: `sanitise.ts`: `sanitiseInput` (cut, NFKC with digit and dot folding, line endings, invisible characters, delimiter tags to stability with the 10-pass bracket strip, PII P1-P6, flag), `injectionFlag` (two match copies, confusable map), `cleanTrustedText`; rule data as `{ id, source, flags }`; 21 unit tests (E1-E17, E34, E37, F4); 326 tests, 325 pass, 1 fails (D~1 from W2), none skipped | W3 | adae4a9 |
 | 2026-11-06 | Plan written (T1-T3, close-out), reviewed (Implementer lens: no blocking, 2 major and 3 minor, all fixed: testable fingerprint, `gatewaySecrets` helper, wave-1 imports, traversal order, line ranges) and approved at Gate 2 | W3 | 0c71e8d |
@@ -90,6 +97,17 @@ Replaces W2's proposed Now (W2 branch state §4.1); fold W2's first, then this.
 | C~2 | 2026-11-06 | W3's scope: High tier, block only emptied input, wrap after fitting with the suffix in the user message, the PII list | operator's four answers before the spec | spec SD1 to SD4 |
 
 Drift: AD-24's price refresh and AD-17's automatic ratio calibration are not built (W2 spec SD4).
+
+---
+
+## 6. Known Gaps
+
+New entries (spec conventions.md § Known limits, accepted at Gate 1):
+
+- **The injection flag is a floor, not a proof** — NFKC and a small lookalike map do not fold every confusable (Greek nu, Cyrillic k and others evade the patterns), and obfuscated personal data ("a at b dot com") is not redacted. The wrapper, the closed output formats and human approval are the real safeguards (AD-25, architecture §7).
+- **Zero-width characters are lost on input** — removing every format character deletes ZWJ and ZWNJ, damaging emoji sequences and some Persian and Indic text sent to the model; output keeps only emoji ZWJ sequences and U+FE0F.
+- **Guard false positives** — an 8-digit number split by a space (`8901 2345`) and some UUID segments are redacted as phones; "system prompt" in prose is flagged; four-part version numbers (`10.0.0.1`) and `<a ` in prose fail the output guard.
+- **A poisoned item can make the model refuse** — text that steers the model to `{"refusal":true}` fails that call with `REQUEST_REFUSED`; refusals do not trip the breaker and the item's flag is shown to the reader.
 
 ---
 

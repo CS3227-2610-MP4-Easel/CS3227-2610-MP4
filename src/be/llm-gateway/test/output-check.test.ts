@@ -58,6 +58,19 @@ test("E47 F6 a link split across fields is caught by the joined check", () => {
   assert.equal(asJson('["www", ".evil.io"]'), "LINK");
 });
 
+test("F6 the joined check also covers HTML, Markdown, the boundary and secrets", () => {
+  assert.equal(asJson('["<", "img src=x>"]'), "HTML");
+  assert.equal(asJson('["[a]", "(b)"]'), "MARKDOWN_LINK");
+  assert.equal(asJson(`["${B.slice(0, 8)}", "${B.slice(8)}"]`), "BOUNDARY");
+  assert.equal(asJson('["sk-aaaaaaaa", "aaaaaaaa"]'), "SECRET");
+  assert.equal(asJson('["ab", "cd"]'), "ok");
+});
+
+test("F6 M3 alone, and a ZWJ outside an emoji sequence", () => {
+  assert.equal(asText("![alt"), "MARKDOWN_LINK");
+  assert.equal(asText(`a${U(0x200d)}b`), "FORBIDDEN_CHAR");
+});
+
 test("E48 F6 HTML: escaped, comment, fullwidth, entity, unterminated, closing tag", () => {
   assert.equal(asJson('["' + esc("003c") + "img src=x" + esc("003e") + '"]'), "HTML");
   for (const answer of ["<!-- x -->", `${U(0xff1c)}img${U(0xff1e)}`, "&#60;img", "<img src=x onerror=", "</div>", "&lt;script&gt;"]) {
@@ -79,8 +92,8 @@ test("E50 F6 own keys are checked, including __proto__", () => {
 });
 
 test("E51 F6 forbidden characters in output; a raw control character is a parse failure", () => {
-  for (const cp of [0x07, 0x200b, 0x202e, 0xfeff, 0xfe0e, 0xe0001]) {
-    assert.equal(asJson(JSON.stringify(["a" + U(cp)])), "FORBIDDEN_CHAR", cp.toString(16));
+  for (const escape of [esc("0007"), esc("200b"), esc("202e"), esc("feff"), esc("fe0e"), esc("db40") + esc("dc01")]) {
+    assert.equal(asJson(`["a${escape}"]`), "FORBIDDEN_CHAR", escape);
   }
   assert.equal(asJson('["a' + U(0x07) + '"]'), "PARSE");
 });
@@ -108,6 +121,9 @@ test("E53 F6 boundary and secret leaks; an empty secret matches nothing", () => 
   assert.equal(asText(`sk-${"a".repeat(16)}`), "SECRET");
   assert.equal(asText(`disk-${"a".repeat(20)}`), "ok");
   assert.equal(asText("a clean answer", { boundary: B, secrets: [""] }), "ok");
+  assert.equal(asText("too short", { boundary: B, secrets: ["short"] }), "ok", "secrets under 8 characters are ignored");
+  const fullwidthKey = U(...[..."KEY12345678"].map((c) => c.charCodeAt(0) + 0xfee0));
+  assert.equal(asText("echo KEY12345678", { boundary: B, secrets: [fullwidthKey] }), "SECRET", "secrets are compared after NFKC");
 });
 
 test("E54 F6 length counts the original text's code points", () => {
