@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { loadGatewaySettings } from "../src/index.js";
+import { gatewaySecrets, loadGatewaySettings } from "../src/index.js";
 
 const KEY = "sk-marker-key-123";
 const live = { APP_TIER: "dev", LLM_MODE: "live", SOCLAAS_API_KEY: KEY };
@@ -22,6 +22,7 @@ test("E2 unsafe or malformed settings name the setting, never the value", () => 
   rejects({ APP_TIER: "dev" }, "LLM_MODE");
   for (const mode of ["Live", "", " live"]) rejects({ APP_TIER: "local", LLM_MODE: mode }, "LLM_MODE");
   rejects({ APP_TIER: "dev", LLM_MODE: "live" }, "SOCLAAS_API_KEY");
+  rejects({ ...live, SOCLAAS_API_KEY: "short" }, "SOCLAAS_API_KEY");
   rejects({ ...live, SOCLAAS_API_KEY: "sk marker key" }, "SOCLAAS_API_KEY");
   for (const url of ["https://evil.example/v1", "http://soclaas-api.comp.nus.edu.sg/v1", "https://soclaas-api.comp.nus.edu.sg:8443/v1", "https://u:p@soclaas-api.comp.nus.edu.sg/v1", "https://soclaas-api.comp.nus.edu.sg/v1?x=1", "https://soclaas-api.comp.nus.edu.sg/v1#f", "https://soclaas-api.comp.nus.edu.sg/v1/"]) {
     rejects({ ...live, SOCLAAS_BASE_URL: url }, "SOCLAAS_BASE_URL");
@@ -52,4 +53,9 @@ test("E3 valid live and override settings load", () => {
 test("E40 APP_TIER missing or unknown", () => {
   rejects({}, "APP_TIER");
   rejects({ APP_TIER: "staging" }, "APP_TIER");
+});
+
+test("W3 SD8 gatewaySecrets hands the output guard the key in live mode only", () => {
+  assert.deepEqual(gatewaySecrets(loadGatewaySettings(live)), [KEY]);
+  assert.deepEqual(gatewaySecrets(loadGatewaySettings({ APP_TIER: "test", LLM_MODE: "mock" })), []);
 });
