@@ -11,7 +11,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Approved:** —
 - **Last updated:** 2026-11-06 by Claude Opus 5.5 — branch created, spec starting
 
-**Untouched:** Architecture, Conventions, Known Gaps, Deviations
+**Untouched:** Conventions, Known Gaps, Deviations
 
 ---
 
@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-06 | Claude Opus 5.5 | W6 | Active | Wave 1 done (T1, T3); T2 next | T2 step 1: write failing `src/be/ai-context/test/assemble.test.ts` per the plan | 2026-11-06 |
+| S1 | 2026-11-06 | Claude Opus 5.5 | W6 | Active | T1-T3 done; close-out | Close-out step 2: Attacker and Tester review of the branch diff (`git diff origin/development...HEAD -- src/be/ai-context`), then the rest of the plan's Close-out | 2026-11-06 |
 
 **Remaining**
 
@@ -39,7 +39,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W6 | AI context assembly | Building | [spec](../../specs/2026-11-06-w6-ai-context-design.md) | [plan](../../plans/2026-11-06-w6-ai-context.md) | Tasks 1 and 3 done; T2 assembly next | — |
+| W6 | AI context assembly | Building | [spec](../../specs/2026-11-06-w6-ai-context-design.md) | [plan](../../plans/2026-11-06-w6-ai-context.md) | Task 3/3 done; close-out review next | — |
 
 ---
 
@@ -47,12 +47,35 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-06 | T3: `source-scan.test.ts`: a pure scanner (imports read with `ts.preProcessFile`) for rules 1-4 (gateway files reach only `@agile/contracts`, `@agile/ai-context`, `@agile/llm-gateway`, followed through relative imports; no `…Unsafe` raw methods outside `src/be/db/src`; the `testing` subpath only in `src/be/api/src`; no computed imports in gateway files); 17 fixture tests (E30) and the repository scan (E31, no findings); 329 tests, 329 pass, none skipped | W6 | this commit |
+| 2026-11-06 | T2: `assemble.ts`: `getAiContext` and `createAiContext` (the `testing` subpath) with the nine steps (input, role, core, membership, missing sources, `allSettled` behind a 10 s deadline with per-source frozen copies, snapshots and check-major row checks in allow-list order, membership re-check, build from snapshots); fresh `NotMember`, fixed codes, no `cause`; `type-checks.ts` proves the frozen `AiContext` type (its negative control was shown live by disarming it); 39 tests (E1-E29, E34-E45); removing the re-check was shown to fail 6 of them; 368 tests, 368 pass, none skipped | W6 | this commit |
+| 2026-11-06 | T3: `source-scan.test.ts`: a pure scanner (imports read with `ts.preProcessFile`) for rules 1-4 (gateway files reach only `@agile/contracts`, `@agile/ai-context`, `@agile/llm-gateway`, followed through relative imports; no `…Unsafe` raw methods outside `src/be/db/src`; the `testing` subpath only in `src/be/api/src`; no computed imports in gateway files); 17 fixture tests (E30) and the repository scan (E31, no findings); 329 tests, 329 pass, none skipped | W6 | 1f8d2b6 |
 | 2026-11-06 | T1: new `@agile/ai-context` workspace (package, tsconfig, root reference, lockfile via `npm install`); `allow-list.ts` (allow-list, source ids, feature roles, `FACT_KEYS`, option schemas), `errors.ts`, `registry.ts` (duplicates refused), `testing.ts` subpath with the reset; 5 tests (allow-list and fact keys pinned, E9, E33, E37); 311 tests, 311 pass, none skipped | W6 | 38f74de |
 | 2026-11-06 | Plan written (T1-T3, close-out), reviewed (Implementer lens: 1 blocking, 5 other, all fixed: rule-1 packages, synchronous source throws, per-source option copies, the single warning, rule-4 file set, a stub-first scan test) and approved at Gate 2 | W6 | 460691a |
 | 2026-11-06 | Spec approved at Gate 1 by the operator | W6 | cb00e15 |
 | 2026-11-06 | W6 spec drafted (7 F, 5 N, E1-E45, T1-T3) and reviewed in two rounds (Implementer, Tester, Maintainer, Attacker; then Implementer, Attacker): about 16 distinct blocking findings fixed, among them the core → ai-context dependency inversion, the frozen `assemble` narrowing (operator: sign-off at PR, C~2), nondeterministic failures, a membership race, free text in the trusted facts section, rows changed after checking, production reset of the registries, and source-scan bypasses; lint clean | W6 | this commit |
 | 2026-11-06 | Branch created from `development` at `46b33b1` (after PR #14 merged) | W6 | this commit |
+
+---
+
+## 4. Architecture
+
+> Legend: `C` = project decision. AD-nn entries are in docs/architecture.
+
+### 4.1 LLM gateway and AI context (`architecture/llm-gateway.md`)
+
+**Now (proposed, addition only):** fold after W2's and W3's proposed Now for this area, replacing "except `ai-context` (W6)" with "complete", and add: `src/be/ai-context` (`@agile/ai-context`) is built. `getAiContext().assembleWith(caller, feature, targetProjectId, options)` (beside the frozen `assemble`, which serves only features without required options) returns the stored-data sections a feature may use and their provenance. It checks the input, the caller's role for the feature and the caller's membership of the target project through the frozen `Core.requireMember`, then calls every allow-listed source of the feature at once (each with its own frozen copy of the options, behind a 10-second deadline), snapshots each source's rows and checks them in allow-list order (shape, count, type, length, the closed `key=value` vocabulary for the one trusted section, project, owner, requested items, and per-project membership for the PM's cross-project retrieval), checks membership again, and builds the sections from the snapshots. Any failure returns nothing. Sources are registered by the owning modules (`registerContextSource`; the API composition root registers the core and the `core.*` sources), so `ai-context` imports no other module. A source-scan test keeps gateway-calling files away from database packages and unsafe raw queries.
+
+| Path | Role |
+|---|---|
+| `src/be/ai-context/src/allow-list.ts` | per-feature allow-list, source ids, feature roles, `FACT_KEYS`, option schemas |
+| `src/be/ai-context/src/assemble.ts` | `getAiContext`, `createAiContext`, snapshots and row checks |
+| `src/be/ai-context/src/registry.ts` | source and core registries |
+| `src/be/ai-context/src/testing.ts` | `@agile/ai-context/testing` (reset, `createAiContext`), kept out of production by the source scan |
+
+| ID | Date | Decision | Why / who asked | Source |
+|---|---|---|---|---|
+| C~1 | 2026-11-06 | Source registry; membership through the frozen `Core`; High tier | operator's three answers | spec SD1-SD3 |
+| C~2 | 2026-11-06 | Keep the frozen `assemble`; `assembleWith` signed off at the PR (AD-11) | operator | spec SD4 |
 
 ---
 

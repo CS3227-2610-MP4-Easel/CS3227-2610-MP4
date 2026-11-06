@@ -16,7 +16,7 @@
 | Task | Depends on | Can run concurrently with | Wave | Status |
 |---|---|---|---|---|
 | T1 Package and allow-list | - | T3 | 1 | Done |
-| T2 Assembly | T1 | - | 2 | Not started |
+| T2 Assembly | T1 | - | 2 | Done |
 | T3 Source scan | - | T1 | 1 | Done |
 
 ## Traceability
@@ -106,13 +106,13 @@ return build(sections, rows);                       // step 9: from snapshots on
 `withDeadline` clears its timer when the source settles, and a late rejection is already handled by `allSettled` (E38: no unhandled rejection).
 
 **Checklist**
-- [ ] 1. Write failing `assemble.test.ts` with a fake core (sequence-numbered calls, per-project and per-call throws) and fake sources (sequence numbers, recorded options): input and allow-list (E1-E4, E40), membership (E5, E6, E36, E41), registries (E7, E8, E9 late-source case, E34), row checks (E10-E17, E35, E39 generated from `ALLOW_LIST`, E42, E44), cross-project (E18-E20, E43), output (E21-E25), failure and logging (E26-E29, E38, E45). Every test that registers calls `resetContextRegistries()` in `afterEach`. Run `npm test`; expect FAIL.
-- [ ] 2. Implement steps 1-5 (validation, role, core, membership, missing sources) in `assemble.ts`.
-- [ ] 3. Implement steps 6-9: per-source `argsFor` (frozen caller copy, deep-frozen `structuredClone` of the options), the async wrapper and deadline, `allSettled`, snapshots, row checks in check-major order with one `console.warn("context_scope_violation", { sourceId, check })` at the single place that throws `ContextScopeViolation`, the re-check, the build; then the frozen `assemble`.
-- [ ] 4. Add `type-checks.ts`; `npm run typecheck` green with the `@ts-expect-error` live (E32); `git diff --exit-code src/be/contracts/src/frozen.ts`.
-- [ ] 5. `npm test` green; `<BUILD>` green.
-- [ ] 6. Update branch state: Progress `T2/3 done`, Changes line, an Architecture block for `llm-gateway` / `ai-context` (the area's AI-context paragraph and the `src/be/ai-context` path, from planned to built).
-- [ ] 7. Commit: `feat: add assembleWith with membership, per-row scope checks and snapshots, so every prompt gets only data the caller may see (W6)`.
+- [x] 1. Write failing `assemble.test.ts` with a fake core (sequence-numbered calls, per-project and per-call throws) and fake sources (sequence numbers, recorded options): input and allow-list (E1-E4, E40), membership (E5, E6, E36, E41), registries (E7, E8, E9 late-source case, E34), row checks (E10-E17, E35, E39 generated from `ALLOW_LIST`, E42, E44), cross-project (E18-E20, E43), output (E21-E25), failure and logging (E26-E29, E38, E45). Every test that registers calls `resetContextRegistries()` in `afterEach`. Run `npm test`; expect FAIL.
+- [x] 2. Implement steps 1-5 (validation, role, core, membership, missing sources) in `assemble.ts`.
+- [x] 3. Implement steps 6-9: per-source `argsFor` (frozen caller copy, deep-frozen `structuredClone` of the options), the async wrapper and deadline, `allSettled`, snapshots, row checks in check-major order with one `console.warn("context_scope_violation", { sourceId, check })` at the single place that throws `ContextScopeViolation`, the re-check, the build; then the frozen `assemble`.
+- [x] 4. Add `type-checks.ts`; `npm run typecheck` green with the `@ts-expect-error` live (E32); `git diff --exit-code src/be/contracts/src/frozen.ts`.
+- [x] 5. `npm test` green; `<BUILD>` green.
+- [x] 6. Update branch state: Progress `T2/3 done`, Changes line, an Architecture block for `llm-gateway` / `ai-context` (the area's AI-context paragraph and the `src/be/ai-context` path, from planned to built).
+- [x] 7. Commit: `feat: add assembleWith with membership, per-row scope checks and snapshots, so every prompt gets only data the caller may see (W6)`.
 
 ### T3: Source scan
 **Delivers:** the AD-25 rules in CI | **Satisfies:** N2 | **Depends on:** - | **Wave:** 1
