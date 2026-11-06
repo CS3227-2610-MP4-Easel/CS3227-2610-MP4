@@ -4,8 +4,8 @@
 describes `INT`; read it for context and write here instead of editing it.
 `sync-project-state` folds this file in after the branch merges.
 
-- **Branch:** w3-guards (stacked on `w2-gateway`, last merged in at `ca30bd1`; W2's last `INT` merge is `94ebc77`)
-- **Base:** 94ebc77
+- **Branch:** w3-guards (started stacked on `w2-gateway`; `development` merged in at `46b33b1` after PR #14 merged)
+- **Base:** 46b33b1
 - **Owner:** ludannnn (Developer member)
 - **Status:** Approved
 - **Approved:** ludannnn 2026-11-06
@@ -38,8 +38,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - [ ] **Handover:** W9 and W7 output schemas must not need URLs, angle brackets, HTML entities, `](`, `![`, `scheme:` values or dotted-quad numbers; such strings fail the output guard.
 - [ ] **Handover:** W11's corpus can read the rule tables (`DELIMITER_RULES`, `PII_RULES`, `INJECTION_RULES`, `OUTPUT_RULES`) and the `reason` codes from `checkOutput`; per AD-26 the corpus is reviewed by a different owner than the guards' author (Developer).
 - [ ] **Handover:** whoever changes a guard rule bumps `GUARD_VERSION` and adds its `KNOWN` entry in `src/be/llm-gateway/test/guards.test.ts` (spec conventions.md § bump checklist).
-- [ ] While stacked: if `w2-gateway` gets more review fixes, merge it into this branch (watch `guards.ts`).
-- [ ] After PR #14 merges: merge `development` into this branch, move `Base`, and only then open the W3 PR into `development`. If W2 was squash-merged, rebase onto `development` instead.
+- [x] While stacked: `w2-gateway`'s review fixes merged in (`7c76405`).
+- [x] After PR #14 merged (`46b33b1`, a merge commit): `development` merged into this branch, `Base` moved.
+- [ ] GATE: operator pushes `w3-guards` and opens the W3 PR into `development`.
 
 ---
 
@@ -55,7 +56,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-06 | Merged `w2-gateway` (PR #14 review fixes: follow-up writes after a final row no longer lose the answer; W1's Prisma 7 test fixed, so D~1 is resolved); one conflict in `run.test.ts`'s `world()` signature, both sides' options kept; no W3 code changed. 372 tests, 372 pass, none skipped | W3 | this commit |
+| 2026-11-06 | Merged `development` after PR #14 merged (`46b33b1`); no conflicts; `STATE.md` and `guardrails.md` unchanged since the old base; 372 tests, 372 pass, none skipped | W3 | this commit |
+| 2026-11-06 | Merged `w2-gateway` (PR #14 review fixes: follow-up writes after a final row no longer lose the answer; W1's Prisma 7 test fixed, so D~1 is resolved); one conflict in `run.test.ts`'s `world()` signature, both sides' options kept; no W3 code changed. 372 tests, 372 pass, none skipped | W3 | 7c76405 |
 | 2026-11-06 | Gate 3: operator approved the branch | W3 | b88572e |
 | 2026-11-06 | Close-out review of the branch diff (Attacker, Tester). Fixed: **blocking** — `wrapSection` used `String.replace`, so `$'` or `` $` `` in user text forged a real closing or opening `<data-B>` tag (text outside the wrapper) and a literal `{B}` revealed the boundary; now a template literal, with a regression test (fails on the old code) and a test that it matches `WRAPPER_TEMPLATE` (fingerprint unchanged; `GUARD_VERSION` not bumped, as nothing has cached a summary yet). Test gaps: a vacuous E32 assertion, joined-string checks for HTML, Markdown, boundary and secret, M3 alone, a bare ZWJ, I5 negatives, the short-secret and NFKC-secret rules, E36 payload contents, E43 cap through `run`, E26 suffix arithmetic, E51 written as JSON escapes. Not taken: database or replacement-guard errors before the insert still propagate unwrapped (W2 behaviour, programmer errors per SD11; no prompt text is in those rows); W3 test titles share some E numbers with W2's, told apart by their F IDs. 371 tests, 370 pass, 1 fails (D~1), none skipped | W3 | f9d32cf |
 | 2026-11-06 | T3: guards live in `run`. `guards.ts` (slot with `maxChars` and `OutputContext`, optional `reason`, `defaultGuards`, `GUARD_LIMITS`, wrapper and suffix templates, `fingerprintParts`/`rulesFingerprint`, `GUARD_VERSION` "1"); `budget.ts` (untrusted sections wrapped, suffix always last, budget counted on the strings as sent, `security-suffix` static check); `gateway.ts` (untrusted STATIC refused, input cap, trusted sections cleaned, joined injection flag, validated boundary with collision redraw, `secrets` to the output guard); `settings.ts` `gatewaySecrets`, wired in `runtime.ts`. W2 tests changed only as the spec listed (`fit.test.ts`, `run.test.ts:49`, `:304`); 21 new tests (E18-E33, E36, E39-E43, E53, F7, SD8). Steps run implementation-first, then tests, against the plan's order (all tests written before commit). 367 tests, 366 pass, 1 fails (D~1), none skipped | W3 | cc32b13 |
