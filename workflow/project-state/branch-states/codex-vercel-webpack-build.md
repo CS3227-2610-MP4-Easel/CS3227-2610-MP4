@@ -6,7 +6,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** codex/vercel-webpack-build (from `INT` at `94ebc77134ffd4ab00e0bda3c3fe9c2ff933ef01`)
 - **Base:** 94ebc77134ffd4ab00e0bda3c3fe9c2ff933ef01
 - **Owner:** operator / repository owner
-- **Status:** Draft
+- **Status:** In review
 - **Approved:** —
 - **Last updated:** 2026-11-06 by Codex — frontend Webpack build hotfix
 
@@ -22,7 +22,6 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-06 | Codex | build hotfix | Active | Build script change | Commit the package change and prepare the PR | 2026-11-06 |
 
 **Remaining**
 
@@ -38,4 +37,4 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-06 | Explicitly select Webpack for the Next.js production build because Next.js 16 rejects the existing custom Webpack config under default Turbopack | build-hotfix | this commit |
+| 2026-11-06 | Explicitly select Webpack for the Next.js production build because Next.js 16 rejects the existing custom Webpack config under default Turbopack | build-hotfix | 95139e7 |
