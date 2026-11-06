@@ -1,13 +1,15 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { createDbClient } from "../src/client.js";
 
 const url = process.env.W1_INTEGRATION_DATABASE_URL;
 
 test("filtered Prisma reads enforce visibility through selections, omissions, relations and transactions", { skip: !url }, async () => {
-  const base = new PrismaClient({ datasourceUrl: url });
+  // Prisma 7 removed `datasourceUrl`; the driver adapter is the replacement (as W4's integration tests do).
+  const base = new PrismaClient({ adapter: new PrismaPg({ connectionString: url as string }) });
   const db = createDbClient(base);
   const id = randomUUID();
   let userId = "";

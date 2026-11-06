@@ -1,5 +1,6 @@
 import { PrismaClient, Prisma } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { runInTransactionScope } from "./transaction-scope.js";
 import { applyVisibilityToArgs, isVisibleUniqueResult, normalizeUniqueSelector, sanitizeVisibleResult, VISIBILITY_POLICY } from "./visibility.js";
 const modelNames = new Map(Prisma.dmmf.datamodel.models.map(({ name }) => [name[0].toLowerCase() + name.slice(1), name]));
 
@@ -83,7 +84,7 @@ function hideRawSql<T extends object>(client: T): Omit<T, RawSqlMethodName> {
       if (property === "$transaction") {
         const transaction = Reflect.get(target, property, receiver) as (...args: any[]) => unknown;
         return (input: unknown, ...options: unknown[]) => typeof input === "function"
-          ? transaction.call(target, (tx: object) => input(wrapUniqueReads(hideRawSql(tx))), ...options)
+          ? transaction.call(target, (tx: object) => runInTransactionScope(() => input(wrapUniqueReads(hideRawSql(tx)))), ...options)
           : transaction.call(target, input, ...options);
       }
       return Reflect.get(target, property, receiver);
