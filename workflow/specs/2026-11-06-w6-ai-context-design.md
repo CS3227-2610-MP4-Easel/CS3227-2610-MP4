@@ -1,5 +1,7 @@
 # W6 AI Context Assembly Design
 
+Amended 2026-11-06: see branch state C~3 (source-scan rules 1, 3 and 4 tightened after the close-out Attacker review).
+
 - **Status:** Approved (ludannnn, 2026-11-06)
 - **Risk tier:** High - it is the tenancy control for every AI prompt: it decides which project's data, and whose, can reach a model (threat T4, C-05, C-28).
 - **Workstream:** W6 | **Plan:** not written yet

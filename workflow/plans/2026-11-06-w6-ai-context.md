@@ -143,9 +143,9 @@ Intended shape:
 **Notes for next task:** a multi-line import is reported on the module name's line (`ts.preProcessFile` positions). Rule 4 blanks comments and quoted strings before matching, so a template literal argument counts as computed.
 
 ### Close-out
-- [ ] Every Traceability row verified; `<BUILD>` green; `npm test` green.
-- [ ] Review the branch diff with the Attacker and Tester lenses (read-only reviewer agents); fix blocking findings or record them as Deviations.
-- [ ] Spec index status and plan Task order reflect reality; amendments recorded in the branch state.
-- [ ] Branch state: W6 `In review`, session rows cleared, Changes complete, Handovers for W5 (wiring, boot test, `requireMember` owner), W7-W9 (sources, `assembleWith`, file split), W8 (`FACT_KEYS`), the PR's AD-11 sign-off (SD4), and `slicing.md` W8 depends on W6; Deviation for the frozen `assemble` narrowing; `guide out of date: llm-gateway`.
+- [x] Every Traceability row verified; `<BUILD>` green; `npm test` green.
+- [x] Review the branch diff with the Attacker and Tester lenses (read-only reviewer agents); fix blocking findings or record them as Deviations.
+- [x] Spec index status and plan Task order reflect reality; amendments recorded in the branch state.
+- [x] Branch state: W6 `In review`, session rows cleared, Changes complete, Handovers for W5 (wiring, boot test, `requireMember` owner), W7-W9 (sources, `assembleWith`, file split), W8 (`FACT_KEYS`), the PR's AD-11 sign-off (SD4), and `slicing.md` W8 depends on W6; Deviation for the frozen `assemble` narrowing; `guide out of date: llm-gateway`.
 - [ ] Ask the operator to review the branch (Gate 3); write `Approved` only on their yes.
 - [ ] GATE: the operator pushes `w6-ai-context` and opens the PR into `development`, asking the PM and the Dev Lead to sign off SD4 under AD-11.

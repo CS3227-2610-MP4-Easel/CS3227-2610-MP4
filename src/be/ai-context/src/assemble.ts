@@ -65,12 +65,35 @@ function withDeadline<T>(work: Promise<T>, ms: number): Promise<T> {
   return Promise.race([work, deadline]).finally(() => clearTimeout(timer));
 }
 
+/** `instanceof` on a hostile value (a Proxy whose prototype lookup throws) must not leak that value's own error. */
+function isNotMember(error: unknown): boolean {
+  try {
+    return error instanceof NotMember;
+  } catch {
+    return false;
+  }
+}
+
 /** Membership through the core: a fresh `NotMember` (never the core's own object), anything else a fixed code. */
 async function requireMember(core: MemberCheck, userId: string, projectId: string): Promise<void> {
   try {
     await core.requireMember(userId, projectId);
   } catch (error) {
-    throw error instanceof NotMember ? new NotMember() : new Error("CORE_FAILED");
+    throw isNotMember(error) ? new NotMember() : new Error("CORE_FAILED");
+  }
+}
+
+/** The source's rows as snapshots, reading at most `maxRows + 1` entries so a huge or hostile array cannot spin or throw. */
+function readRows(value: unknown, maxRows: number): { snaps: (Snapshot | null)[]; tooMany: boolean } | null {
+  try {
+    if (!Array.isArray(value)) return null;
+    const length = value.length;
+    const take = Math.min(length, maxRows + 1);
+    const snaps: (Snapshot | null)[] = [];
+    for (let i = 0; i < take; i++) snaps.push(snapshot(value[i]));
+    return { snaps, tooMany: length > maxRows };
+  } catch {
+    return null;
   }
 }
 
@@ -84,11 +107,10 @@ type CheckContext = { core: MemberCheck; caller: Caller; targetProjectId: string
 /** Spec api.md § Row checks, check-major: each check runs over all rows before the next. */
 async function checkSection(spec: SectionSpec, value: unknown, ctx: CheckContext): Promise<Snapshot[]> {
   const fail = (check: string) => violation(spec.sourceId, check);
-  if (!Array.isArray(value)) return fail("shape");
-  const rows = Array.from(value, snapshot);
-  if (rows.some((row) => row === null || !validShape(row))) return fail("shape");
-  const snaps = rows as Snapshot[];
-  if (snaps.length > spec.maxRows) fail("count");
+  const read = readRows(value, spec.maxRows);
+  if (!read || read.snaps.some((row) => row === null || !validShape(row))) return fail("shape");
+  if (read.tooMany) fail("count");
+  const snaps = read.snaps as Snapshot[];
   if (snaps.some((row) => !(spec.types as string[]).includes(row.type))) fail("type");
   if (snaps.some((row) => [...row.text].length > spec.maxChars)) fail("length");
   if (spec.scope.includes("format") && snaps.some((row) => !validFact(row.text))) fail("format");
@@ -104,7 +126,7 @@ async function checkSection(spec: SectionSpec, value: unknown, ctx: CheckContext
       try {
         await ctx.core.requireMember(ctx.caller.userId, projectId);
       } catch (error) {
-        if (error instanceof NotMember) fail("membership");
+        if (isNotMember(error)) fail("membership");
         throw new Error("CORE_FAILED");
       }
     }
@@ -139,7 +161,7 @@ function makeContext(getCore: () => MemberCheck | null, getSource: (id: SourceId
     const checked: Snapshot[][] = [];
     for (const [i, spec] of specs.entries()) {
       const result = settled[i];
-      if (result.status === "rejected") throw result.reason instanceof NotMember ? new NotMember() : new Error(`CONTEXT_SOURCE_FAILED:${spec.sourceId}`);
+      if (result.status === "rejected") throw isNotMember(result.reason) ? new NotMember() : new Error(`CONTEXT_SOURCE_FAILED:${spec.sourceId}`);
       checked.push(await checkSection(spec, result.value, checkContext));
     }
 

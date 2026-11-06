@@ -162,8 +162,11 @@ test("E6 F3 membership is checked before every source and again after all of the
 });
 
 test("E36 F3 a member removed while sources ran gets NotMember and nothing else", async () => {
-  const w = world({}, { deny: (_p, index) => (index === 1 ? new NotMember() : undefined) });
-  await assert.rejects(run(w, "LEAD_DIGEST"), NotMember);
+  const removed = new NotMember();
+  const w = world({}, { deny: (_p, index) => (index === 1 ? removed : undefined) });
+  await assert.rejects(run(w, "LEAD_DIGEST"), (e: unknown) => e instanceof NotMember && e !== removed);
+  assert.equal(w.core.calls.length, 2, "it was the re-check that refused");
+  assert.equal(w.called().length, 3, "after every source had run");
 });
 
 test("E41 F3 any other core error is CORE_FAILED without detail", async () => {
@@ -197,6 +200,7 @@ test("E9 F7 a source registered after getAiContext() is still used", async () =>
 
 test("E34 F7 createAiContext uses only its injected inputs, copied at creation", async () => {
   registerCore({ requireMember: async () => { throw new Error("registry core used"); } });
+  registerContextSource("lead.facts", async () => { throw new Error("registry source used"); });
   const fake = fakeCore();
   const sources = new Map<SourceId, ContextSource>((["lead.facts", "lead.changes", "lead.previousDigest"] as const).map((id) => [id, async () => VALID[id]() as never]));
   const ctx = createAiContext({ core: fake.core, sources });
@@ -225,6 +229,27 @@ test("E10 F4 malformed rows fail shape; a 64-character id passes", async () => {
   await run(world({ "core.checkpoints": () => [row("CHECKPOINT", "i".repeat(64))] }), "PM_PLAN_OUTLINE");
 });
 
+test("E10 E28 F4 a hostile array fails shape without leaking; a huge array fails count at once", async () => {
+  const getterArray = [row("CHECKPOINT", "c-1")];
+  Object.defineProperty(getterArray, 0, { get() { throw new Error("ROW-TEXT-MARKER"); } });
+  await assert.rejects(run(world({ "core.checkpoints": () => getterArray }), "PM_PLAN_OUTLINE"), violation("core.checkpoints", "shape"));
+  const { proxy, revoke } = Proxy.revocable([] as unknown[], {});
+  revoke();
+  // A revoked Proxy already fails when the source's promise resolves (the `then` lookup throws): a fixed code, nothing leaked.
+  await assert.rejects(run(world({ "core.checkpoints": () => proxy }), "PM_PLAN_OUTLINE"), { message: "CONTEXT_SOURCE_FAILED:core.checkpoints" });
+  const huge = new Array(2 ** 32 - 1);
+  for (let i = 0; i <= 50; i++) huge[i] = row("CHECKPOINT", `c-${i}`);
+  const start = Date.now();
+  await assert.rejects(run(world({ "core.checkpoints": () => huge }), "PM_PLAN_OUTLINE"), violation("core.checkpoints", "count"));
+  assert.ok(Date.now() - start < 1000);
+});
+
+test("E26 E28 N1 a rejection whose prototype lookup throws is a plain CONTEXT_SOURCE_FAILED", async () => {
+  const hostile = new Proxy({}, { getPrototypeOf() { throw new Error("ROW-TEXT-MARKER"); } });
+  await assert.rejects(run(world({ "core.checkpoints": () => Promise.reject(hostile) }), "PM_PLAN_OUTLINE"), { message: "CONTEXT_SOURCE_FAILED:core.checkpoints" });
+  await assert.rejects(run(world({}, { deny: () => hostile }), "PM_PLAN_OUTLINE"), { message: "CORE_FAILED" });
+});
+
 test("E11 F4 too many rows fail count", async () => {
   await assert.rejects(run(world({ "core.projectBrief": () => [row("PROJECT", "p-1"), row("PROJECT", "p-2")] }), "PM_PLAN_OUTLINE"), violation("core.projectBrief", "count"));
   const ids = Array.from({ length: 11 }, (_, i) => ITEM(i + 1));
@@ -250,7 +275,8 @@ test("E39 F4 every section's row and length limits are exact", async () => {
       const rows = (count: number, chars: number) => () => ids.slice(0, count).map((id) => ({ projectId: P, ref: { type: spec.types[0], id }, ownerId: U, text: text(chars) }));
       const options = spec.scope.includes("requested") ? { itemIds: ids.slice(0, spec.maxRows) } : OPTIONS_FOR(feature);
       const label = `${feature}/${spec.name}`;
-      await run(world({ [spec.sourceId]: rows(spec.maxRows, spec.maxChars) }), feature, options);
+      const atLimit = await run(world({ [spec.sourceId]: rows(spec.maxRows, spec.maxChars) }), feature, options);
+      assert.equal(atLimit.sections.find((s) => s.name === spec.name)?.text.split("\n").length, spec.maxRows, label);
       await assert.rejects(run(world({ [spec.sourceId]: rows(spec.maxRows + 1, spec.maxChars) }), feature, spec.scope.includes("requested") ? { itemIds: ids.slice(0, spec.maxRows) } : options), violation(spec.sourceId, "count"), label);
       await assert.rejects(run(world({ [spec.sourceId]: rows(1, spec.maxChars + 1) }), feature, options), violation(spec.sourceId, "length"), label);
     }
@@ -294,8 +320,9 @@ test("E42 F4 checks run check-major: a type fault in row 1 wins over a project f
 
 test("E18 F5 similar items from another member project are checked once per project", async () => {
   const w = world({ "pm.similarItems": () => [row("EPIC", "e-1"), row("TASK", "t-1", { projectId: Q }), row("TASK", "t-2", { projectId: Q })] });
-  await run(w, "PM_PLAN_OUTLINE");
+  const { provenance } = await run(w, "PM_PLAN_OUTLINE");
   assert.deepEqual(w.core.calls.map((c) => c.projectId), [P, Q, P]);
+  assert.deepEqual(provenance.filter((p) => p.section === "similar-items").map((p) => p.projectId), [P, Q, Q]);
 });
 
 test("E43 F5 similar items from the target need no membership call", async () => {
@@ -380,6 +407,7 @@ test("E25 F6 sources cannot change each other's options or the caller's", async 
   assert.equal(seenByB[0].options.window?.from.getTime(), WINDOW().from.getTime());
   assert.equal("extra" in seenByB[0].options, false);
   assert.equal(input.window.from.getTime(), WINDOW().from.getTime());
+  assert.equal("extra" in input, false);
   assert.ok(Object.isFrozen(seenByB[0].caller));
 });
 
@@ -423,7 +451,8 @@ test("E38 N4 failures are deterministic whatever the timing; no unhandled reject
 test("E45 N4 a source that never settles fails at its deadline", async () => {
   const start = Date.now();
   await assert.rejects(run(world({ "core.checkpoints": () => new Promise(() => {}) }, { timeout: 20 }), "PM_PLAN_OUTLINE"), { message: "CONTEXT_SOURCE_FAILED:core.checkpoints" });
-  assert.ok(Date.now() - start < 1000);
+  const elapsed = Date.now() - start;
+  assert.ok(elapsed >= 15 && elapsed < 1000, `${elapsed} ms`);
 });
 
 test("E44 F4 F6 output is built from the rows as checked", async () => {
@@ -432,37 +461,57 @@ test("E44 F4 F6 output is built from the rows as checked", async () => {
   const first = await run(world({ "core.checkpoints": () => [getterRow] }), "PM_PLAN_OUTLINE");
   assert.equal(first.sections.find((s) => s.name === "checkpoints")?.text, "a");
 
+  // The fake core runs `delay` on its second call, the step-8 re-check, which comes after every snapshot.
   const returned = [row("CHECKPOINT", "c-1")];
-  let release = () => {};
-  const w = world({ "core.checkpoints": () => returned }, { delay: () => new Promise<void>((resolve) => { returned[0].text = "changed"; release = resolve; resolve(); }) });
+  const w = world({ "core.checkpoints": () => returned }, { delay: async () => { returned[0].text = "changed"; returned[0].ref.id = "c-changed"; } });
   const result = await run(w, "PM_PLAN_OUTLINE");
-  release();
+  assert.equal(returned[0].text, "changed", "the change really happened");
   assert.equal(result.sections.find((s) => s.name === "checkpoints")?.text, "CHECKPOINT:c-1");
+  assert.ok(result.provenance.some((p) => p.id === "c-1") && !result.provenance.some((p) => p.id === "c-changed"));
+
+  const throwing = { projectId: P, ref: { type: "CHECKPOINT", id: "c-1" }, get text(): string { throw new Error("getter"); } };
+  await assert.rejects(run(world({ "core.checkpoints": () => [throwing] }), "PM_PLAN_OUTLINE"), violation("core.checkpoints", "shape"));
 });
 
 test("E28 N1 no row text, id, option value or detail reaches an error or a log", async () => {
   const MARKERS = ["ROW-TEXT-MARKER", "id-marker-1", "QUERY-MARKER", "12345678-1234-4123-8123-123456789abc", "db detail"];
   const marked = (extra: Record<string, unknown> = {}) => ({ projectId: P, ref: { type: "CHECKPOINT", id: "id-marker-1" }, text: "ROW-TEXT-MARKER", ...extra });
-  const failures: Array<[string, ReturnType<typeof world>, Feature, object, boolean]> = [
-    ["shape", world({ "core.checkpoints": () => [marked({ projectId: "ROW-TEXT-MARKER" })] }), "PM_PLAN_OUTLINE", { query: "QUERY-MARKER" }, true],
-    ["count", world({ "core.projectBrief": () => [marked({ ref: { type: "PROJECT", id: "id-marker-1" } }), marked({ ref: { type: "PROJECT", id: "id-marker-1" } })] }), "PM_PLAN_OUTLINE", { query: "QUERY-MARKER" }, true],
-    ["type", world({ "core.checkpoints": () => [marked({ ref: { type: "TASK", id: "id-marker-1" } })] }), "PM_PLAN_OUTLINE", { query: "QUERY-MARKER" }, true],
-    ["length", world({ "core.checkpoints": () => [marked({ text: "ROW-TEXT-MARKER".repeat(30) })] }), "PM_PLAN_OUTLINE", { query: "QUERY-MARKER" }, true],
-    ["format", world({ "lead.facts": () => [{ projectId: P, ref: { type: "FACTS", id: "id-marker-1" }, text: "ROW-TEXT-MARKER=1" }] }), "LEAD_DIGEST", {}, true],
-    ["project", world({ "core.checkpoints": () => [marked({ projectId: Q })] }), "PM_PLAN_OUTLINE", { query: "QUERY-MARKER" }, true],
-    ["owner", world({ "dev.itemSummaries": () => [{ ...marked({ ownerId: V }), ref: { type: "ITEM_SUMMARY", id: "id-marker-1" } }] }), "DEV_STANDUP", { window: WINDOW() }, true],
-    ["requested", world({ "dev.activityItems": () => [{ ...marked({ ownerId: U }), ref: { type: "ACTIVITY_ITEM", id: "id-marker-1" } }] }), "DEV_SUMMARY", { itemIds: ["12345678-1234-4123-8123-123456789abc"] }, true],
-    ["membership", world({ "pm.similarItems": () => [{ ...marked({ projectId: Q }), ref: { type: "EPIC", id: "id-marker-1" } }] }, { deny: (p) => (p === Q ? new NotMember() : undefined) }), "PM_PLAN_OUTLINE", { query: "QUERY-MARKER" }, true],
-    ["source failed", world({ "core.checkpoints": () => { throw new Error("db detail ROW-TEXT-MARKER"); } }), "PM_PLAN_OUTLINE", { query: "QUERY-MARKER" }, false],
-    ["core failed", world({}, { deny: () => new Error("db detail") }), "PM_PLAN_OUTLINE", { query: "QUERY-MARKER" }, false],
+  const MARKED_ID = "12345678-1234-4123-8123-123456789abc";
+  const Q_OPTS = { query: "QUERY-MARKER" };
+  const deny = (p: string) => (p === Q ? new NotMember() : undefined);
+  class Lookalike extends NotMember { constructor() { super(); this.message = "ROW-TEXT-MARKER"; } }
+  // [name, call, the check a violation must name (null for other errors)]
+  const failures: Array<[string, () => Promise<unknown>, string | null]> = [
+    ["shape", () => run(world({ "core.checkpoints": () => [marked({ projectId: "ROW-TEXT-MARKER" })] }), "PM_PLAN_OUTLINE", Q_OPTS), "shape"],
+    ["count", () => run(world({ "core.projectBrief": () => [marked({ ref: { type: "PROJECT", id: "id-marker-1" } }), marked({ ref: { type: "PROJECT", id: "id-marker-1" } })] }), "PM_PLAN_OUTLINE", Q_OPTS), "count"],
+    ["type", () => run(world({ "core.checkpoints": () => [marked({ ref: { type: "TASK", id: "id-marker-1" } })] }), "PM_PLAN_OUTLINE", Q_OPTS), "type"],
+    ["length", () => run(world({ "core.checkpoints": () => [marked({ text: "ROW-TEXT-MARKER".repeat(30) })] }), "PM_PLAN_OUTLINE", Q_OPTS), "length"],
+    ["format", () => run(world({ "lead.facts": () => [{ projectId: P, ref: { type: "FACTS", id: "id-marker-1" }, text: "ROW-TEXT-MARKER=1" }] }), "LEAD_DIGEST", {}), "format"],
+    ["project", () => run(world({ "core.checkpoints": () => [marked({ projectId: Q })] }), "PM_PLAN_OUTLINE", Q_OPTS), "project"],
+    ["owner", () => run(world({ "dev.itemSummaries": () => [{ ...marked({ ownerId: V }), ref: { type: "ITEM_SUMMARY", id: "id-marker-1" } }] }), "DEV_STANDUP", { window: WINDOW() }), "owner"],
+    ["requested", () => run(world({ "dev.activityItems": () => [{ ...marked({ ownerId: U }), ref: { type: "ACTIVITY_ITEM", id: "id-marker-1" } }] }), "DEV_SUMMARY", { itemIds: [MARKED_ID] }), "requested"],
+    ["membership", () => run(world({ "pm.similarItems": () => [{ ...marked({ projectId: Q }), ref: { type: "EPIC", id: "id-marker-1" } }] }, { deny }), "PM_PLAN_OUTLINE", Q_OPTS), "membership"],
+    ["invalid query", () => run(world(), "PM_PLAN_OUTLINE", { query: "QUERY-MARKER".repeat(600) }), null],
+    ["invalid item ids", () => run(world(), "DEV_SUMMARY", { itemIds: [MARKED_ID, MARKED_ID] }), null],
+    ["role denied", () => run(world(), "LEAD_DIGEST", {}, CALLER.DEV), null],
+    ["core not registered", () => getAiContext().assembleWith(CALLER.PM, "PM_PLAN_OUTLINE", P, Q_OPTS), null],
+    ["source missing", () => run(world({}, { omit: ["core.checkpoints"] }), "PM_PLAN_OUTLINE", Q_OPTS), null],
+    ["source failed", () => run(world({ "core.checkpoints": () => { throw new Error("db detail ROW-TEXT-MARKER"); } }), "PM_PLAN_OUTLINE", Q_OPTS), null],
+    ["source timeout", () => run(world({ "core.checkpoints": () => new Promise(() => {}) }, { timeout: 10 }), "PM_PLAN_OUTLINE", Q_OPTS), null],
+    ["source lookalike NotMember", () => run(world({ "core.checkpoints": () => { throw new Lookalike(); } }), "PM_PLAN_OUTLINE", Q_OPTS), null],
+    ["core failed at step 4", () => run(world({}, { deny: () => new Error("db detail") }), "PM_PLAN_OUTLINE", Q_OPTS), null],
+    ["core failed at step 8", () => run(world({}, { deny: (_p, i) => (i === 1 ? new Error("db detail") : undefined) }), "PM_PLAN_OUTLINE", Q_OPTS), null],
   ];
-  for (const [name, w, feature, options, isViolation] of failures) {
+  const errorLog = mock.method(console, "error", () => {});
+  for (const [name, call, check] of failures) {
     warn.mock.resetCalls();
-    const error = await run(w, feature, options).then(() => assert.fail(`${name} did not fail`), (e: unknown) => e as Error);
+    const error = await call().then(() => assert.fail(`${name} did not fail`), (e: unknown) => e as Error);
     for (const text of [error.message, JSON.stringify(error), String(error.stack), JSON.stringify(warn.mock.calls.map((c) => c.arguments))]) {
       for (const marker of MARKERS) assert.ok(!text.includes(marker), `${name}: ${marker}`);
     }
     assert.equal(error.cause, undefined, name);
-    assert.equal(warn.mock.callCount(), isViolation ? 1 : 0, name);
+    if (check) assert.equal((error as ContextScopeViolation).check, check, name);
+    assert.equal(warn.mock.callCount(), check ? 1 : 0, name);
   }
+  assert.equal(errorLog.mock.callCount(), 0);
 });
