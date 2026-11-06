@@ -93,3 +93,11 @@ Green after an attempt requires: typecheck 0 errors, lint 0 errors, at least one
 3. Add a ground-truth defect set or a blinded second reviewer, and weight review findings by severity.
 4. Find the cause of the silent batch exit; fix the resumed-run CLI total.
 5. Size the sample with a power calculation, then run `full-r2` and the others with at least 5 samples per plan.
+
+## 9. Addendum: offline re-check of the two lite builds (2026-11-07, no model spend)
+
+The two lite clones were verified again with the fixed verify step (reinstall followed by the task's `post_setup`, so the Prisma client is generated). Result for both: typecheck 0 errors, own tests 58 and 65 passed with 0 failed, 0 newly failing baseline tests, 8 of 8 shared checks passed. The only remaining red is the flag `protected_modified`. The recorded grades above are unchanged; this is a re-check, not a new grade.
+
+What the protected edits are (lite s2 against the pristine baseline): count assertions that any correct build of this feature has to change, because the feature adds three endpoints (57 to 60 in `authorization-matrix`, `openapi-parity` and `policy` tests), a new model (`EpicNote` in `filtered-client` and `schema-parity`), and a project reference in `tsconfig.json`; the other protected test edit is added tests in `log-redaction`. So the task's `protected_globs` forbid edits the feature itself requires. Both lite runs were therefore marked not green for two harness or task-design reasons, not for failing code: the Prisma gap, then the protected-file rule. Conclusion for the question of whether the lite plan beat or lost to the superpowers plan: no evidence either way; the lite builds are functionally sound on every automated check, and the superpowers runs that went green did so after restoring the protected files at attempt 2 (not examined).
+
+Consequence for the numbers in section 3: lite pass@1 0/2 and pass@2 0/2 understates lite. The rule needs a task fix (let the plan's own tests and count assertions be edited, or protect only behaviour) before the next comparison.
