@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-06 | Claude Opus 5.5 | W3 | Active | T1 done; T2 next | T2 step 1: write failing `src/be/llm-gateway/test/output-check.test.ts` per the plan | 2026-11-06 |
+| S1 | 2026-11-06 | Claude Opus 5.5 | W3 | Active | Wave 1 done (T1, T2); T3 next | T3 step 1: write failing `guards.test.ts`, new `fit.test.ts` and `run.test.ts` rows per the plan | 2026-11-06 |
 
 **Remaining**
 
@@ -40,7 +40,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W3 | Guards (untrusted-text pipeline) | Building | [spec](../../specs/2026-11-06-w3-guards-design.md) | [plan](../../plans/2026-11-06-w3-guards.md) | Task 1/3 done; T2 output guard next | — |
+| W3 | Guards (untrusted-text pipeline) | Building | [spec](../../specs/2026-11-06-w3-guards-design.md) | [plan](../../plans/2026-11-06-w3-guards.md) | Task 2/3 done; T3 wiring next | — |
 
 ---
 
@@ -48,6 +48,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-06 | T2: `output-check.ts`: `checkOutput` (exact refusal, parse, iterative document-order walk with depth and count limits, forbidden characters allowing emoji sequences, links with and without whitespace, an HTML tag-name list and entities, Markdown links, boundary, secrets and the `sk-` pattern, each string then their join, raw-length check, schema; never throws); 17 unit tests (E33, E35, E37, E44-E56, document order); 343 tests, 342 pass, 1 fails (D~1), none skipped | W3 | this commit |
 | 2026-11-06 | T1: `sanitise.ts`: `sanitiseInput` (cut, NFKC with digit and dot folding, line endings, invisible characters, delimiter tags to stability with the 10-pass bracket strip, PII P1-P6, flag), `injectionFlag` (two match copies, confusable map), `cleanTrustedText`; rule data as `{ id, source, flags }`; 21 unit tests (E1-E17, E34, E37, F4); 326 tests, 325 pass, 1 fails (D~1 from W2), none skipped | W3 | this commit |
 | 2026-11-06 | Plan written (T1-T3, close-out), reviewed (Implementer lens: no blocking, 2 major and 3 minor, all fixed: testable fingerprint, `gatewaySecrets` helper, wave-1 imports, traversal order, line ranges) and approved at Gate 2 | W3 | this commit |
 | 2026-11-06 | Spec wording: two edge-case strings reworded (`e123456`, the LANGUAGE TAG character) so the plan lint does not read them as edge-case IDs; meaning unchanged; logged as skill feedback | W3 | this commit |
