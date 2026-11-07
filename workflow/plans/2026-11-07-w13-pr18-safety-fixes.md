@@ -28,7 +28,7 @@
 | T2 Runtime database enforcement | T1 | - | 2 | Done |
 | T3 Migration boundary, fixtures, and whitespace | T1 | - | 2 | Done |
 | T4 Protected preview provisioning check | T1 | - | 2 | Post-merge |
-| T5 Close-out | T2, T3 | - | 3 | Not started |
+| T5 Close-out | T2, T3 | - | 3 | In progress |
 
 ## Traceability
 
@@ -132,6 +132,7 @@ export function validatePreviewEnvironment(env: Record<string, string | undefine
 | Modify | `src/be/auth/test/tier-settings.test.ts` | Add valid dev/prod runtime construction with injected bases, cross-tier URL failures before base use, missing/wrong Neon observations, malformed/missing URL failures, preview credential rejection, and redaction assertions. |
 | Create | `src/be/llm-gateway/test/runtime.test.ts` | Exercise valid dev/prod construction through the test seam, cross-tier URL/observation failures before client factory invocation, preview rejection, and local/test URL-only acceptance. |
 | Modify | `src/be/llm-gateway/test/settings.test.ts` | Add shared preview-policy and exact canonical endpoint assertions for dev/prod settings. |
+| Modify | `tests/setup-auth-env.ts` | Give the process-wide test tier its exact local/test database URL so API module bootstrap satisfies the new pre-Prisma target contract. |
 
 **Implementation shape**
 

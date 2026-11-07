@@ -8,7 +8,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Building
 - **Approved:** operator, 2026-11-07 — Gate 3 branch review approved and push authorized
-- **Last updated:** 2026-11-07 by Codex — T3 complete; migration/seed tests, Prisma validation, and diff check pass; close-out starting
+- **Last updated:** 2026-11-07 by Codex — close-out verification in progress; T1–T3 complete and T4 remains post-merge
 
 ---
 
@@ -99,6 +99,7 @@ the W1 application runnable on the dev and production tiers.
 | 2026-11-07 | T1 implemented canonical dev/prod targets, shared preview credential policy, verifier delegation, aligned manifest/fixtures, and regression tests; focused tests (33) and lint pass | W13 | T1 |
 | 2026-11-07 | T2 implemented pre-Prisma runtime target validation for auth/gateway, local/test URL semantics, gateway test seam, and regression coverage; focused tests (13), lint, and typecheck pass | W13 | T2 |
 | 2026-11-07 | T3 aligned production migration/seed fixtures to the confirmed Neon target, added direct-target regression coverage, and removed the three PR whitespace errors; focused tests (9), Prisma validation, and diff check pass | W13 | T3 |
+| 2026-11-07 | Close-out found the existing test bootstrap claimed `APP_TIER=test` without a database URL; amended T2 to bind that bootstrap to `postgresql://localhost/agile_platform` before rerunning the full suite | W13 | T2 amendment |
 
 ## 7. Decisions
 
