@@ -1,7 +1,7 @@
 {
   "task": "T3",
   "status": "done",
-  "summary": "Implemented core epic/task lifecycle services and route factory; review fixes add supported project locking, pagination, filters, optional status block fields, and CONFLICT_VERSION. Full suite passes.",
+  "summary": "Implemented planning services/routes; review fixes add locking, pagination, filters, optional block fields, CONFLICT_VERSION, and exact blocked=false parsing. Full suite passes.",
   "commit": "pending",
   "produces": [
     { "kind": "symbol", "name": "createEpics", "where": "src/be/core/src/epics.ts", "note": "Project-scoped epic listing and serialized creation." },

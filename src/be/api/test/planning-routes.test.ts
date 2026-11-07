@@ -24,6 +24,7 @@ test("planning list accepts all supported task filters and maps version conflict
   const routes = createPlanningRoutes(services);
   const list = routes.find((route) => route.operationId === "TASK_LIST")!;
   assert.deepEqual(parseInput(list.querySchema as any, { epicId: id, sprintId: id, assigneeId: id, status: "TODO", blocked: "true" }), { page: 0, size: 20, epicId: id, sprintId: id, assigneeId: id, status: "TODO", blocked: true });
+  assert.deepEqual(parseInput(list.querySchema as any, { blocked: "false" }), { page: 0, size: 20, blocked: false });
   const patch = routes.find((route) => route.operationId === "TASK_UPDATE")!;
   const response = await patch.handler({ requestId: "rid", request: { method: "PATCH", path: "/", params: {}, query: new URLSearchParams(), body: undefined }, principal: { firebaseUid: "uid", userId: id, role: "PM" }, input: { params: { id }, query: {}, body: { version: 1 } } });
   assert.equal(response.status, 200);
