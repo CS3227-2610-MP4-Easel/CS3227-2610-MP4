@@ -25,7 +25,8 @@ export function createCore({ db, archivedMembership = async () => false }: CoreD
     },
     async assertWritable(projectId) {
       const project = await db.project?.findFirst({ where: { id: projectId }, select: { status: true } });
-      if (project?.status !== "ACTIVE") throw new Error("CONFLICT_STATE");
+      if (!project) throw new Error("NOT_FOUND");
+      if (project.status !== "ACTIVE") throw new Error("CONFLICT_STATE");
     },
     progress: unavailable,
     velocity: unavailable,
