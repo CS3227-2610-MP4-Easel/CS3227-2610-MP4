@@ -9,9 +9,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** Xiao-Congchen (PM)
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-07 by Claude Sonnet 5.5 — merged INT, dependencies checked
+- **Last updated:** 2026-11-07 by Claude Sonnet 5.5 — W7 spec drafted, lint clean, one review round folded; awaiting Gate 1
 
-**Untouched:** Architecture, Conventions, Known Gaps, Decisions, Deviations
+**Untouched:** Architecture, Conventions, Known Gaps, Deviations (the spec lists the entries to write at the fold: a Known Gap for keyword retrieval, a Deviation for archived-project 404, and pm/core architecture Now blocks once code exists)
 
 ---
 
@@ -25,11 +25,14 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-07 | Claude Sonnet 5.5 | W7 | Active | Branch on `INT` `faa1c08`; dependencies checked | Write the W7 spec (`writing-specs-lite-v2`), Big tier, against W2, W3, W6 as built and W5's frozen contracts; done when lint is clean and Gate 1 is asked | 2026-11-07 |
+| S1 | 2026-11-07 | Claude Sonnet 5.5 | W7 | Active | Spec written and reviewed (Implementer, Tester, Maintainer, Attacker); lint clean | Spec approved (Gate 1). Write the plan with `writing-plans-lite-v2` from `workflow/specs/2026-11-07-w7-pm-plan-flow-design.md`; task 1 amends contracts §5.3 and the W2 spec; Developer sign-off on the `Sessions` change is needed before Gate 2 | 2026-11-07 |
 
 **Remaining**
 
-- [ ] W7 spec, Gate 1; plan, Gate 2; build; branch review, Gate 3.
+- [x] W7 spec approved at Gate 1 (2026-11-07).
+- [ ] Plan, Gate 2; build; branch review, Gate 3.
+- [ ] **Handover W2 owner (Developer):** spec SD3 changes `Sessions.assertUsable` (a `PM_PLAN_OUTLINE` session also admits `PM_PLAN_EXPAND`) and amends contracts §5.3; sign-off needed before Gate 2 (AD-11, as C59).
+- [ ] **Handover W5 owner (Dev Lead):** W7 creates `src/be/core` with only `applyPlan`, `PlanInputSchema`, `countPlan`; W5 merges its exports; W5 locks the project row (`update` of `updated_at`) before epic inserts, adds `Core.assertWritable`, registers `proposalResolvers`, and its project resolver reads path parameter `id` for endpoint 34.
 - [ ] Ask W5's owner (Dev Lead) for a delivery estimate (already open in STATE.md Upcoming); W7's build and its membership checks need W5's `requireMember`. Before then, build against the frozen contracts and the W6 testing seams.
 - [ ] Carry STATE.md Upcoming items addressed to W7 into the spec: W6 sources and `assembleWith` (`pm.similarItems`, titles only, at most 5, filtered by member projects); W3 section rules, blocked-input handling (`BLOCKED_INPUT` to 422 `VALIDATION_FAILED`, `REQUEST_REFUSED` to 422) and output schemas without URLs or angle brackets; W2 mock responses, static sections and `assertStaticSectionsFit`; W7 proposal resolvers.
 
@@ -39,7 +42,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W7 | PM plan flow (proposals, pm) | Not started | — | — | Branch created; dependencies check next | — |
+| W7 | PM plan flow (proposals, pm) | Spec'd (approved at Gate 1, 2026-11-07) | [spec](../../specs/2026-11-07-w7-pm-plan-flow-design.md) | — | Spec approved; plan next (`writing-plans-lite-v2`) | — |
 
 ---
 
@@ -49,3 +52,27 @@ describes `INT`; read it for context and write here instead of editing it.
 |---|---|---|---|
 | 2026-11-07 | Branch created from `development` at `7caa23d`; branch state written | W7 | this commit |
 | 2026-11-07 | Fast-forwarded to `INT` `faa1c08` (PR #21 folded W2, W3, W4, W6, W12 into `STATE.md`); no overlap, Base moved; dependency status recorded (W5 still Not started) | W7 | this commit |
+| 2026-11-07 | W7 spec written (Big, High tier; 56 edge cases, 12 threats) and reviewed by Implementer, Tester, Maintainer and Attacker lenses; findings folded; lint clean | W7 | this commit |
+| 2026-11-07 | W7 spec approved by the operator at Gate 1; `lint.mjs spec --approved` passes | W7 | this commit |
+
+---
+
+## 4. Decisions
+
+> Legend: `C` = project decision. AD-nn entries are in docs/architecture.
+
+### C~1 — W7 scope: backend only, W7 builds `applyPlan`, one session per plan
+
+- **Date:** 2026-11-07.
+- **Who asked:** the operator (PM), answering three questions while the W7 spec was written.
+- **Decision:** (1) W7 covers endpoints 34, 35, 37, 40, 41 in the backend only; the New Plan screen is wired later. (2) W7 builds `applyPlan`, `PlanInputSchema` and `countPlan` in a new `src/be/core`; W5 builds the rest of core. (3) A plan keeps one session: W2 maps `PM_PLAN_EXPAND` to the `PM_PLAN_OUTLINE` session feature.
+- **Why:** slicing lists `core` as a W7 area and approve must be testable end to end; the architecture says one session per plan. Rejected: the screen in W7; waiting for W5 with a fake; a second `PM_PLAN_EXPAND` session per plan (two sessions per plan, 10 plans a day).
+- **Follow-up:** the Developer (W2 owner) signs off on the `Sessions` change before Gate 2 (AD-11).
+
+### C~2 — Similar-item retrieval by keyword match
+
+- **Date:** 2026-11-07.
+- **Who asked:** the AI proposed it; the operator asked what retrieval is for and about pros and cons, then approved the spec including it at Gate 1.
+- **Decision (spec SD5):** keyword match (A) rather than Postgres full-text through a new `@agile/db` function (B). The filtered client has no raw SQL and typed SQL is disabled. Contracts §5.3 and AD-28's wording would be amended, and a Known Gap recorded at the fold.
+- **Why:** no new SQL surface or migration before the 10 Nov freeze. Rejected: B; Prisma `fullTextSearch` preview.
+- **Status:** confirmed at Gate 1.
