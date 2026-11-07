@@ -6,9 +6,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w13-deployment (from `INT` at `94ebc77134ffd4ab00e0bda3c3fe9c2ff933ef01`)
 - **Base:** d153509 (updated after merging current `development`)
 - **Owner:** operator / repository owner
-- **Status:** In review
-- **Approved:** —
-- **Last updated:** 2026-11-07 by Codex — canonical development Neon target correction committed; owner deployment gate pending
+- **Status:** Approved
+- **Approved:** operator, 2026-11-07 — Gate 3 branch review approved and push authorized
+- **Last updated:** 2026-11-07 by Codex — Gate 3 approved; pushing branch
 
 ---
 
@@ -26,6 +26,7 @@ the W1 application runnable on the dev and production tiers.
 |---|---|---|---|---|---|---|---|
 | S1 | 2026-11-07 | Codex | W13 | Blocked — needs human | T5 Neon recovery rehearsal and evidence | Owner completes the four T5 gate actions and supplies the redacted evidence object | 2026-11-07 |
 | S2 | 2026-11-07 | Codex | W13 | Done | Updated canonical development Neon target from operator-confirmed console values | Owner reviews the correction with the existing W13 Gate 3 diff | 2026-11-07 |
+| S3 | 2026-11-07 | Codex | W13 | Active | Push approved branch to origin | Confirm remote branch update, then hand off PR creation | 2026-11-07 |
 
 **Remaining**
 
@@ -94,7 +95,7 @@ the W1 application runnable on the dev and production tiers.
 
 ## 9. Handover
 
-- **Gate 3 branch review:** owner must review the complete W13 diff and approve this branch before any push, PR creation, or merge.
+- **Gate 3 branch review:** approved by the operator on 2026-11-07; push authorized.
 - **Environment configuration:** owner must restrict `w13-development-verification` to `development`, require reviewers/CODEOWNERS protection, and provide read-only `VERCEL_TOKEN` plus non-secret `VERCEL_TEAM_ID` before the development push check can run.
 - **Provider evidence:** no live Vercel, Neon, Firebase, or SoCLaaS credentials were used locally; provider evidence remains a post-merge owner action.
 
