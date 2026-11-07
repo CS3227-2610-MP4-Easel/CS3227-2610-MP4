@@ -32,7 +32,7 @@
 ## Task order
 | Task | File | Depends on | Concurrent with | Wave | Weight | Review | Status |
 |---|---|---|---|---|---|---|---|
-| T1 Core package and authorization seams | `tasks/T1.md` | - | - | 1 | complex | full | Not started |
+| T1 Core package and authorization seams | `tasks/T1.md` | - | - | 1 | complex | full | Done |
 | T2 Projects, membership, and checkpoints | `tasks/T2.md` | T1 | - | 2 | complex | full | Not started |
 | T3 Epics and task lifecycle | `tasks/T3.md` | T1, T2 | - | 3 | complex | full | Not started |
 | T4 Derived functions, apply seams, and context sources | `tasks/T4.md` | T1, T3 | - | 4 | complex | full | Not started |
