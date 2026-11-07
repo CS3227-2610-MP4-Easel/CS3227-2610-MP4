@@ -14,13 +14,29 @@ test("E19 registration adapter registers exactly four W5 core source ids", () =>
 
 test("E31-E33 and E38 sources are project/user scoped, ordered, capped, and omit oversized values", async () => {
   const sources = createCoreContextSources({
+    projectMember: { findFirst: async () => ({ projectId }) },
     project: { findFirst: async () => ({ id: projectId, brief: "b".repeat(4301) }) },
-    checkpoint: { findMany: async () => [{ id: "c1", name: "soon", targetDate: "2026-12-01" }] },
-    taskEvent: { findMany: async (query) => { assert.deepEqual(query.where, { projectId, actorId: userId }); return [{ id: 2, taskId: "t", actorId: userId, type: "STATUS_CHANGED", at: "2026-12-01T00:00:00.000Z" }]; } },
-    task: { findMany: async (query) => { assert.deepEqual(query.where, { projectId, assigneeId: userId, blocked: true }); return [{ id: "t", assigneeId: userId, title: "x".repeat(801), blockedReason: "wait" }]; } },
+    checkpoint: { findMany: async () => [{ id: "c1", projectId, name: "soon", targetDate: "2026-12-01" }] },
+    taskEvent: { findMany: async (query) => { assert.deepEqual(query.where, { projectId, actorId: userId }); return [{ id: 2, projectId, taskId: "t", actorId: userId, type: "STATUS_CHANGED", at: "2026-12-01T00:00:00.000Z" }]; } },
+    task: { findMany: async (query) => { assert.deepEqual(query.where, { projectId, assigneeId: userId, blocked: true }); return [{ id: "t", projectId, assigneeId: userId, title: "x".repeat(801), blockedReason: "wait" }]; } },
   });
   assert.deepEqual(await sources.projectBrief(args), []);
   assert.equal((await sources.checkpoints(args))[0].ref.type, "CHECKPOINT");
   assert.equal((await sources.taskEvents(args))[0].ownerId, userId);
   assert.deepEqual(await sources.blockedTasks(args), []);
+});
+
+test("project brief and checkpoints require membership and never emit out-of-scope rows", async () => {
+  const sources = createCoreContextSources({
+    projectMember: { findFirst: async ({ where }: any) => where.userId === userId ? { projectId } : null },
+    project: { findFirst: async () => ({ id: "other", projectId: "other", brief: "secret" }) },
+    checkpoint: { findMany: async () => [{ id: "c", projectId: "other", name: "secret", targetDate: "2026-12-01" }] },
+  } as any);
+  assert.deepEqual(await sources.projectBrief(args), []);
+  assert.deepEqual(await sources.checkpoints(args), []);
+});
+
+test("storage failures have the source-specific core failure code", async () => {
+  const sources = createCoreContextSources({ projectMember: { findFirst: async () => { throw new Error("database detail"); } } } as any);
+  await assert.rejects(() => sources.projectBrief(args), /CORE_SOURCE_FAILED:core\.projectBrief/);
 });

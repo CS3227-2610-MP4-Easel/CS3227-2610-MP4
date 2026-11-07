@@ -39,3 +39,25 @@ test("E36 stale and out-of-scope replan targets fail before mutation", async () 
   await assert.rejects(() => createApply().applyReplan(tx, projectId, { suggestions: [{ id: "00000000-0000-4000-8000-000000000005", type: "REASSIGN_TASK", taskId, assigneeId }] }, actorId), /VALIDATION_FAILED/);
   assert.deepEqual(tx.calls, []);
 });
+
+test("apply rejects impossible calendar dates before any write", async () => {
+  const tx = transaction();
+  await assert.rejects(() => createApply().applyPlan(tx, projectId, { checkpoints: [{ name: "bad", targetDate: "2026-02-30" }], epics: [] }, actorId), /VALIDATION_FAILED/);
+  await assert.rejects(() => createApply().applyReplan(tx, projectId, { suggestions: [{ id: "00000000-0000-4000-8000-000000000005", type: "MOVE_CHECKPOINT_DATE", checkpointId: taskId, newTargetDate: "2026-02-30" }] }, actorId), /VALIDATION_FAILED/);
+  assert.deepEqual(tx.calls, []);
+});
+
+test("applyPlan leaves rollback to its supplied transaction after an event insert failure", async () => {
+  const state = { checkpoints: 0, epics: 0, tasks: 0, events: 0 };
+  const tx: any = transaction();
+  tx.checkpoint.create = async () => { state.checkpoints++; return { id: "checkpoint" }; };
+  tx.epic.create = async () => { state.epics++; return { id: "epic" }; };
+  tx.task.create = async () => { state.tasks++; return { id: taskId }; };
+  tx.taskEvent.create = async () => { state.events++; throw new Error("event insert failed"); };
+  const suppliedTransaction = async (work: () => Promise<void>) => {
+    const before = { ...state };
+    try { await work(); } catch (error) { Object.assign(state, before); throw error; }
+  };
+  await assert.rejects(() => suppliedTransaction(() => createApply().applyPlan(tx, projectId, { checkpoints: [{ name: "first", targetDate: "2026-12-01" }], epics: [{ title: "e", tasks: [{ title: "t", storyPoints: 3 }] }] }, actorId)), /event insert failed/);
+  assert.deepEqual(state, { checkpoints: 0, epics: 0, tasks: 0, events: 0 });
+});

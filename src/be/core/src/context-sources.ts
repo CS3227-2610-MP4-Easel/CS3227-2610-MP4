@@ -9,6 +9,7 @@ export type CoreContextRegister = (id: "core.projectBrief" | "core.checkpoints" 
 
 export type ContextSourceDb = {
   project?: { findFirst(args: Row): Promise<Row | null> };
+  projectMember?: { findFirst(args: Row): Promise<Row | null> };
   checkpoint?: { findMany(args: Row): Promise<Row[]> };
   taskEvent?: { findMany(args: Row): Promise<Row[]> };
   task?: { findMany(args: Row): Promise<Row[]> };
@@ -19,36 +20,43 @@ const text = (parts: Array<[string, unknown]>, max: number) => {
   const rendered = parts.filter(([, value]) => value !== null && value !== undefined && value !== "").map(([key, value]) => `${key}: ${String(value)}`).join("\n");
   return chars(rendered, max);
 };
+const source = async <T>(id: string, work: () => Promise<T>): Promise<T> => {
+  try { return await work(); } catch { throw new Error(`CORE_SOURCE_FAILED:${id}`); }
+};
+const member = async (db: ContextSourceDb, userId: string, projectId: string) =>
+  Boolean(await db.projectMember?.findFirst({ where: { userId, projectId }, select: { projectId: true } }));
 
 /** Source-side caps deliberately omit an over-limit row; ai-context should never receive a truncated value. */
 export function createCoreContextSources(db: ContextSourceDb): Readonly<Record<"projectBrief" | "checkpoints" | "taskEvents" | "blockedTasks", CoreContextSource>> {
   return Object.freeze({
-    projectBrief: async ({ projectId }) => {
-      const row = await db.project?.findFirst({ where: { id: projectId }, select: { id: true, brief: true } });
+    projectBrief: async ({ caller, projectId }) => source("core.projectBrief", async () => {
+      if (!await member(db, caller.userId, projectId)) return [];
+      const row = await db.project?.findFirst({ where: { id: projectId }, select: { id: true, projectId: true, brief: true } });
       const rendered = chars(row?.brief, 4300);
-      return row && rendered ? [{ projectId, ref: { type: "PROJECT", id: row.id }, text: rendered }] : [];
-    },
-    checkpoints: async ({ projectId }) => {
-      const rows = await db.checkpoint?.findMany({ where: { projectId }, orderBy: [{ targetDate: "asc" }, { id: "asc" }], take: 50, select: { id: true, name: true, targetDate: true } }) ?? [];
-      return rows.flatMap((row) => {
+      return row && row.id === projectId && (row.projectId === undefined || row.projectId === projectId) && rendered ? [{ projectId, ref: { type: "PROJECT", id: row.id }, text: rendered }] : [];
+    }),
+    checkpoints: async ({ caller, projectId }) => source("core.checkpoints", async () => {
+      if (!await member(db, caller.userId, projectId)) return [];
+      const rows = await db.checkpoint?.findMany({ where: { projectId }, orderBy: [{ targetDate: "asc" }, { id: "asc" }], take: 50, select: { id: true, projectId: true, name: true, targetDate: true } }) ?? [];
+      return rows.filter((row) => row.projectId === projectId).flatMap((row) => {
         const rendered = text([["name", row.name], ["target_date", row.targetDate instanceof Date ? row.targetDate.toISOString().slice(0, 10) : row.targetDate]], 300);
         return rendered ? [{ projectId, ref: { type: "CHECKPOINT" as const, id: row.id }, text: rendered }] : [];
       });
-    },
-    taskEvents: async ({ caller, projectId }) => {
-      const rows = await db.taskEvent?.findMany({ where: { projectId, actorId: caller.userId }, orderBy: [{ at: "desc" }, { id: "desc" }], take: 200, select: { id: true, taskId: true, actorId: true, type: true, fromValue: true, toValue: true, at: true } }) ?? [];
-      return rows.flatMap((row) => {
+    }),
+    taskEvents: async ({ caller, projectId }) => source("core.taskEvents", async () => {
+      const rows = await db.taskEvent?.findMany({ where: { projectId, actorId: caller.userId }, orderBy: [{ at: "desc" }, { id: "desc" }], take: 200, select: { id: true, projectId: true, taskId: true, actorId: true, type: true, fromValue: true, toValue: true, at: true } }) ?? [];
+      return rows.filter((row) => row.projectId === projectId && row.actorId === caller.userId).flatMap((row) => {
         const rendered = text([["task", row.taskId], ["event", row.type], ["from", row.fromValue], ["to", row.toValue], ["at", row.at instanceof Date ? row.at.toISOString() : row.at]], 400);
         return rendered ? [{ projectId, ref: { type: "TASK_EVENT" as const, id: String(row.id) }, ownerId: row.actorId, text: rendered }] : [];
       });
-    },
-    blockedTasks: async ({ caller, projectId }) => {
-      const rows = await db.task?.findMany({ where: { projectId, assigneeId: caller.userId, blocked: true }, orderBy: [{ updatedAt: "desc" }, { id: "desc" }], take: 50, select: { id: true, assigneeId: true, title: true, description: true, blockedReason: true } }) ?? [];
-      return rows.flatMap((row) => {
+    }),
+    blockedTasks: async ({ caller, projectId }) => source("core.blockedTasks", async () => {
+      const rows = await db.task?.findMany({ where: { projectId, assigneeId: caller.userId, blocked: true }, orderBy: [{ updatedAt: "desc" }, { id: "desc" }], take: 50, select: { id: true, projectId: true, assigneeId: true, title: true, description: true, blockedReason: true } }) ?? [];
+      return rows.filter((row) => row.projectId === projectId && row.assigneeId === caller.userId).flatMap((row) => {
         const rendered = text([["title", row.title], ["reason", row.blockedReason], ["description", row.description]], 800);
         return rendered ? [{ projectId, ref: { type: "TASK" as const, id: row.id }, ownerId: row.assigneeId, text: rendered }] : [];
       });
-    },
+    }),
   });
 }
 

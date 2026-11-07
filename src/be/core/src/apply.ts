@@ -3,7 +3,10 @@ import { writeTaskEvent } from "./task-events.js";
 
 type Row = Record<string, any>;
 const uuid = z.string().uuid();
-const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => {
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+});
 const storyPoints = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(5), z.literal(8), z.literal(13)]).nullable();
 const task = z.object({ title: z.string().min(1).max(200), description: z.string().max(4000).optional(), acceptanceCriteria: z.array(z.string().max(300)).max(12).optional(), storyPoints, assigneeId: uuid.nullable().optional(), sprintId: uuid.nullable().optional() }).strict();
 const epic = z.object({ title: z.string().min(1).max(200), description: z.string().max(4000).optional(), checkpointName: z.string().max(200).nullable().optional(), tasks: z.array(task).optional(), expansion: z.object({ status: z.string(), tasks: z.array(task).nullable() }).passthrough().optional() }).passthrough();
