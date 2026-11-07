@@ -109,7 +109,7 @@ export function validateWorkflowText(text, pins, file = "workflow.yml") {
   }
   for (const job of Object.values(jobs)) {
     if (!job || typeof job !== "object") continue;
-    if (Object.prototype.hasOwnProperty.call(job, "environment")) {
+    if (Object.prototype.hasOwnProperty.call(job, "environment") && !trustedDevDeployment) {
       errors.push(`${file}: environments are forbidden in pull-request workflows`);
     }
     if (containsSelfHosted(job["runs-on"])) {

@@ -24,7 +24,7 @@ the W1 application runnable on the dev and production tiers.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-07 | Codex | W13 | Active | Gate 2 approved; starting T1 baseline and implementation | Run baseline checks, then implement T1 | 2026-11-07 |
+| S1 | 2026-11-07 | Codex | W13 | Active | T1 implementation complete; running task-level regression suite | Commit T1, then start T2 canonical target tests | 2026-11-07 |
 
 **Remaining**
 
@@ -46,7 +46,7 @@ the W1 application runnable on the dev and production tiers.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | Building | [spec](../../specs/2026-11-07-w13-deployment-safety-design.md) | [plan](../../plans/2026-11-07-w13-deployment-safety.md) | T1 baseline and implementation starting after Gate 2 approval | — |
+| W13 | Environments, seed data and deployment | Building | [spec](../../specs/2026-11-07-w13-deployment-safety-design.md) | [plan](../../plans/2026-11-07-w13-deployment-safety.md) | T1 complete pending commit; T2 next | — |
 
 ## 3. Changes
 
@@ -70,6 +70,16 @@ the W1 application runnable on the dev and production tiers.
 | 2026-11-07 | Operator approved the focused safety correction and reversed the plan's no-token Vercel gate in favor of a protected read-only metadata lookup; implementation remains gated on the amended spec | W13 | C~4 |
 | 2026-11-07 | Amended the safety plan after read-only review: protected pre-checkout metadata handoff, service-fixture tests, one canonical tier loader, exact migration executor seam, and complete edge-case traceability; spec lint 0/0 and plan lint 0 errors/2 non-blocking warnings | W13 | plan pending Gate 2 |
 | 2026-11-07 | Operator approved Gate 2 for the safety-correction implementation plan; execution starts with T1 baseline | W13 | Gate 2 |
+| 2026-11-07 | T1 implemented protected pre-checkout Vercel metadata correlation, exact deployment verification, sanitized handoff, and workflow/service-fixture tests; focused checks pass | W13 | T1 pending commit |
+
+## 8. Deviations
+
+### D~1 — Full-tree secret scan has pre-existing false positives
+
+- **Found:** 2026-11-07 during T1 closeout.
+- **What:** `npm run scan:secrets` reports eight existing `generic-api-key` matches in historical experiment/test files, all with redacted synthetic values; none are in the T1 diff. The commit hook's staged scan passed.
+- **Consequence:** The full-tree scan remains non-green until the pre-existing findings are separately baselined or removed; T1 does not weaken the scanner or alter unrelated files.
+- **Evidence:** `npm run scan:secrets` exit 1; staged scan passed during commit `3eec13d`.
 
 ## 7. Decisions
 
