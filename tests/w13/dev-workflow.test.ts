@@ -23,6 +23,7 @@ test("E14/E27 protected metadata lookup precedes checkout and never exposes its 
 test("E4/E21/E22/E26 workflow selects exactly one current Vercel check and sanitizes fields", () => {
   assert.match(workflow, /commits\/\$\{GITHUB_SHA\}\/check-runs/);
   assert.match(workflow, /external_id/);
+  assert.match(workflow, /startswith\("dpl_"\)/);
   assert.match(workflow, /v13\/deployments\/\$\{deployment_id\}/);
   assert.match(workflow, /v2\/deployments\/\$\{deployment_id\}\/aliases/);
   assert.match(workflow, /\.uid == \$id/);

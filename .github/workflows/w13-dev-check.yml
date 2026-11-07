@@ -36,7 +36,7 @@ jobs:
               -H "Authorization: Bearer ${GH_TOKEN}" \
               "https://api.github.com/repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/check-runs" \
               -o "${checks_file}"
-            deployment_id="$(jq -r '[.check_runs[] | select((.app.slug // "") == "vercel" or (.app.name // "") == "Vercel") | (.external_id // ((.details_url // "") | capture("(?<id>dpl_[A-Za-z0-9]+)").id))] | map(select(. != null and . != "")) | unique | if length == 1 then .[0] else empty end' "${checks_file}" || true)"
+            deployment_id="$(jq -r '[.check_runs[] | select((.app.slug // "") == "vercel" or (.app.name // "") == "Vercel") | (((.external_id // "") | select(startswith("dpl_"))) // ((.details_url // "") | capture("(?<id>dpl_[A-Za-z0-9]+)").id))] | map(select(. != null and . != "")) | unique | if length == 1 then .[0] else empty end' "${checks_file}" || true)"
             if [ -n "${deployment_id}" ]; then
               curl --fail --silent --show-error \
                 -H "Authorization: Bearer ${VERCEL_TOKEN}" \

@@ -21,8 +21,8 @@
 | T1 | Verify the current Vercel deployment from protected metadata | — | T2, T3 | 1 | Done |
 | T2 | Create the canonical tier target loader and protect seed execution | — | T1, T3 | 1 | Done |
 | T3 | Enforce every migration manifest entry and minimize child environments | — | T1, T2 | 1 | Done |
-| T4 | Separate Vercel environment names and require dev/prod resources | T2 | T1, T3 | 2 | In progress |
-| T5 | Integrate, run the full verification suite, and record evidence | T1, T2, T3, T4 | — | 3 | Not started |
+| T4 | Separate Vercel environment names and require dev/prod resources | T2 | T1, T3 | 2 | Done |
+| T5 | Integrate, run the full verification suite, and record evidence | T1, T2, T3, T4 | — | 3 | In review |
 
 ## Traceability
 
@@ -131,7 +131,7 @@
 - [x] 2. Implement shared-map resource validation and production `vercelEnv=production` behavior.
 - [x] 3. Verify preview credential denial and error redaction.
 - [x] 4. Run focused auth tests, `npm run lint`, and `npm run typecheck`.
-- [ ] 5. Update branch-state Progress and Changes, then commit `fix: enforce production deployment identity (W13)` with `Workstream: W13` and `Task: T4`.
+- [x] 5. Update branch-state Progress and Changes, then commit `fix: enforce production deployment identity (W13)` with `Workstream: W13` and `Task: T4`.
 
 **Notes for next task:** Auth now imports the same canonical target loader as seed and migration. Dev/prod resource validation is unconditional; production requires Vercel `production` and `main`, while preview remains credential-free.
 
@@ -148,10 +148,10 @@
 
 **Checklist**
 
-- [ ] 1. Reconcile all task checklists, branch state, spec status, and this plan.
-- [ ] 2. Run `npm test`, `npm run lint`, `npm run typecheck`, `npm run check:workflows -- --base-sha "$(git rev-parse origin/development)" --base-branch development --pr-number 18 --bootstrap-pr-number 18`, `npm run check:agent-policy`, `npm run scan:secrets`, and `git diff --check`.
-- [ ] 3. Review the complete branch diff and resolve confirmed findings; do not treat a provider check or local fixture as production approval.
-- [ ] 4. Set W13 to `In review`, clear the session row, and record all evidence and handover items in branch state.
+- [x] 1. Reconcile all task checklists, branch state, spec status, and this plan.
+- [x] 2. Run `npm test`, `npm run lint`, `npm run typecheck`, `npm run check:workflows -- --base-sha "$(git rev-parse origin/development)" --base-branch development --pr-number 18 --bootstrap-pr-number 18`, `npm run check:agent-policy`, `npm run scan:secrets`, and `git diff --check`.
+- [x] 3. Review the complete branch diff and resolve confirmed findings; do not treat a provider check or local fixture as production approval.
+- [x] 4. Set W13 to `In review`, clear the session row, and record all evidence and handover items in branch state.
 - [ ] 5. Ask the owner for Gate 3 branch review. Do not push, open, or merge from this task without the owner's review approval.
 
 Task implementation is performed inline on this branch, so branch-state updates and commits serialize the otherwise independent waves. The Vercel metadata request runs before checkout in the protected workflow step; checked-out code receives only sanitized metadata. T2 creates the shared validated tier-manifest loader; auth and migration import that loader, and T4 depends on T2.

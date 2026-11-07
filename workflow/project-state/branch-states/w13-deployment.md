@@ -6,7 +6,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w13-deployment (from `INT` at `94ebc77134ffd4ab00e0bda3c3fe9c2ff933ef01`)
 - **Base:** d153509 (updated after merging current `development`)
 - **Owner:** operator / repository owner
-- **Status:** Draft
+- **Status:** In review
 - **Approved:** —
 - **Last updated:** 2026-11-06 by Codex — merged current `development`; owner deployment gate pending
 
@@ -24,7 +24,7 @@ the W1 application runnable on the dev and production tiers.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-07 | Codex | W13 | Active | T4 committed; T5 integration and closeout checks in progress | Run plan lint, full verification suite, and review the branch diff | 2026-11-07 |
+|---|---|---|---|---|---|---|---|
 
 **Remaining**
 
@@ -46,7 +46,7 @@ the W1 application runnable on the dev and production tiers.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | Building | [spec](../../specs/2026-11-07-w13-deployment-safety-design.md) | [plan](../../plans/2026-11-07-w13-deployment-safety.md) | T1 d33b572; T2 1a83108; T3 2eb8604; T4 d8ede9c; T5 in progress | — |
+| W13 | Environments, seed data and deployment | In review | [spec](../../specs/2026-11-07-w13-deployment-safety-design.md) | [plan](../../plans/2026-11-07-w13-deployment-safety.md) | T1 d33b572; T2 6fd84c7; T3 2eb8604; T4 d8ede9c; T5 checks complete; Gate 3 pending | — |
 
 ## 3. Changes
 
@@ -79,6 +79,7 @@ the W1 application runnable on the dev and production tiers.
 | 2026-11-07 | T4 corrected production Vercel environment mapping, reused canonical tier targets, made dev/prod validation unconditional, and added production/preview tests; 331 tests passed/26 skipped, lint/typecheck passed | W13 | T4 pending commit |
 | 2026-11-07 | T4 committed after full regression: 331 tests passed/26 skipped, lint/typecheck passed, staged secret scan passed | W13 | d8ede9c |
 | 2026-11-07 | Tightened the T2 seed seam after review: the client factory is internal-only and target validation still precedes construction; focused seed tests, lint, and full suite remain green | W13 | T2 follow-up |
+| 2026-11-07 | T5 closeout checks passed: 331 tests passed/26 skipped, lint, typecheck, workflow validation, agent policy, and diff check passed; full-tree scan remains D~1 | W13 | Gate 3 pending |
 
 ## 8. Deviations
 
@@ -88,6 +89,12 @@ the W1 application runnable on the dev and production tiers.
 - **What:** `npm run scan:secrets` reports eight existing `generic-api-key` matches in historical experiment/test files, all with redacted synthetic values; none are in the T1 diff. The commit hook's staged scan passed.
 - **Consequence:** The full-tree scan remains non-green until the pre-existing findings are separately baselined or removed; T1 does not weaken the scanner or alter unrelated files.
 - **Evidence:** `npm run scan:secrets` exit 1; staged scan passed during commit `3eec13d`.
+
+## 9. Handover
+
+- **Gate 3 branch review:** owner must review the complete W13 diff and approve this branch before any push, PR creation, or merge.
+- **Environment configuration:** owner must restrict `w13-development-verification` to `development`, require reviewers/CODEOWNERS protection, and provide read-only `VERCEL_TOKEN` plus non-secret `VERCEL_TEAM_ID` before the development push check can run.
+- **Provider evidence:** no live Vercel, Neon, Firebase, or SoCLaaS credentials were used locally; provider evidence remains a post-merge owner action.
 
 ## 7. Decisions
 
