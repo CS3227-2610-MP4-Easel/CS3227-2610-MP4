@@ -15,6 +15,9 @@ import {
   UploadResponseSchema,
   SummaryResponseSchema,
   PlanApprovalSchema,
+  PlanCreateBodySchema,
+  ProposalVersionBodySchema,
+  EmptyBodySchema,
   ReplanApprovalSchema,
   LeadOverviewSchema,
   UsageSummarySchema,
@@ -67,8 +70,26 @@ test("F2 normative AI response schemas cover proposal, facts, digest, standup, a
   assert.equal(ProgressSchema.safeParse({ pointsTotal: 0, pointsDone: 0, percent: 0, unestimatedTasks: 0, velocity: [] }).success, true);
   assert.equal(UploadResponseSchema.safeParse({ received: 0, created: 0, updated: 0, unchanged: 0, rejected: [], needsSummary: [] }).success, true);
   assert.equal(SummaryResponseSchema.safeParse({ summaries: [], failed: [] }).success, true);
-  assert.equal(PlanApprovalSchema.safeParse({ proposalId: id, status: "APPROVED", created: { checkpoints: [], epics: [], tasks: [] } }).success, true);
+  assert.equal(PlanApprovalSchema.safeParse({ proposalId: id, status: "APPROVED", created: { checkpoints: 1, epics: 3, tasks: 9 } }).success, true);
+  assert.equal(PlanApprovalSchema.safeParse({ proposalId: id, status: "APPROVED", created: { checkpoints: [], epics: [], tasks: [] } }).success, false);
   assert.equal(ReplanApprovalSchema.safeParse({ proposalId: id, status: "APPROVED", applied: [] }).success, true);
   assert.equal(LeadOverviewSchema.safeParse([{ project: { id, name: "Project", brief: null, status: "ACTIVE", createdBy: id, createdAt: instant, updatedAt: instant, version: 1 }, facts: { pointsTotal: 0, pointsDone: 0, pointsRemaining: 0, projectedCompletionDate: null }, latestDigest: { status: "NONE" } }]).success, true);
   assert.equal(UsageSummarySchema.safeParse([]).success, true);
+});
+
+test("E47 plan body schemas are strict and count code points", () => {
+  const idea = (n: number, ch = "a") => ({ idea: ch.repeat(n) });
+  assert.equal(PlanCreateBodySchema.safeParse(idea(19)).success, false);
+  assert.equal(PlanCreateBodySchema.safeParse(idea(20)).success, true);
+  assert.equal(PlanCreateBodySchema.safeParse(idea(6000)).success, true);
+  assert.equal(PlanCreateBodySchema.safeParse(idea(6001)).success, false);
+  assert.equal(PlanCreateBodySchema.safeParse(idea(20, "😀")).success, true);
+  assert.equal(PlanCreateBodySchema.safeParse(idea(6000, "😀")).success, true);
+  assert.equal(PlanCreateBodySchema.safeParse(idea(19, "😀")).success, false);
+  assert.equal(PlanCreateBodySchema.safeParse({ ...idea(20), extra: 1 }).success, false);
+  assert.equal(ProposalVersionBodySchema.safeParse({ version: 1 }).success, true);
+  assert.equal(ProposalVersionBodySchema.safeParse({ version: 0 }).success, false);
+  assert.equal(ProposalVersionBodySchema.safeParse({ version: 1, extra: 1 }).success, false);
+  assert.equal(EmptyBodySchema.safeParse({}).success, true);
+  assert.equal(EmptyBodySchema.safeParse({ extra: 1 }).success, false);
 });
