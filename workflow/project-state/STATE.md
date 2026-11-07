@@ -5,7 +5,7 @@
 - **Phase:** Pre-implementation. The architecture passed its readiness gate for the first slice on 2026-10-29; the W10 clickable prototype and W1 backend foundation/API skeleton are merged, while feature work remains.
 - **Stack:** TypeScript monorepo, Next.js App Router with a Hono API under `/api`, Prisma, Postgres (Neon), Firebase Auth, Vercel (Hobby), NUS SoCLaaS
 - **Branch:** `INT` = `development`; `main` is the release branch. This file describes `INT` only.
-- **Last updated:** 2026-11-07 by ws fold — folded w12-agent-policy-scope
+- **Last updated:** 2026-11-07 by ws fold — folded w3-guards
 - **Last verified against repo:** 2026-11-03
 - **Developer guide:** seeded 2026-11-02 from W10, [guide](../../docs/guide/index.md)
 - **Deadline:** 13 Nov 2026. Feature freeze end of 10 Nov (AD-69), production deploy 11 Nov (AD-70).
@@ -61,6 +61,12 @@ Verification commands are configured in `workflow/config.json`: `npm test`, `npm
 | W13 smoke checks on the deployed tiers (the limiter trusts `x-vercel-forwarded-for`, so dev and prod must run behind Vercel; on any other host a client can pick its own bucket): a forged `x-vercel-forwarded-for` must not change the limiter bucket, and a token from another Firebase project must get 401. `RATE_KEY_SECRET` must differ between dev and prod. | Workstream | see item | handed over from `w4-auth` | 2026-11-07 |
 | the integration tests (E8, E10, E22, E23, E26, E35, E41) skip when `W1_INTEGRATION_DATABASE_URL` is unset, and the repo has no CI workflow; whoever adds CI should give it a Postgres 16 and fail when the URL is missing. | Workstream | see item | handed over from `w4-auth` | 2026-11-07 |
 | add `REGISTRATION_CODE_*` and `RATE_KEY_SECRET` per tier in W13, and confirm `firebase-admin` verifies with only a project id on Vercel. Firebase's verify-token page says a service account is needed; if the smoke test fails, record a Deviation. | Workstream | see item | handed over from `w4-auth` | 2026-11-07 |
+| W6, W7, W8, W9 follow W3's rules for sections (spec conventions.md § Rules for features): `trusted: true` only for server-built text; anything users typed or uploaded, and any stored model output reused as input, is `trusted: false`; `STATIC` sections are always trusted (`run` throws `INVALID_LLM_CALL` otherwise) and section names are literals; each untrusted section's budget leaves room for the 49-character wrapper plus its name line, and the statics leave room for the ~280-character suffix. | Workstream | see item | handed over from `w3-guards` | 2026-11-07 |
+| W7 checks "empty after sanitising" with `sanitiseInput(text).blocked`; every feature maps `BLOCKED_INPUT` to 422 `VALIDATION_FAILED`; PM endpoints map `REQUEST_REFUSED` to 422, Dev Lead and Developer endpoints to the degraded 200 (architecture §8). | Workstream | see item | handed over from `w3-guards` | 2026-11-07 |
+| W9 calls `sanitiseInput` per item to store each item's and summary's own `flagged`, and imports `GUARD_VERSION` (never copies it) into the `item_summaries` unique key (AD-67). | Workstream | see item | handed over from `w3-guards` | 2026-11-07 |
+| W9 and W7 output schemas must not need URLs, angle brackets, HTML entities, `](`, `![`, `scheme:` values or dotted-quad numbers; such strings fail the output guard. | Workstream | see item | handed over from `w3-guards` | 2026-11-07 |
+| W11's corpus can read the rule tables (`DELIMITER_RULES`, `PII_RULES`, `INJECTION_RULES`, `OUTPUT_RULES`) and the `reason` codes from `checkOutput`; per AD-26 the corpus is reviewed by a different owner than the guards' author (Developer). | Workstream | see item | handed over from `w3-guards` | 2026-11-07 |
+| whoever changes a guard rule bumps `GUARD_VERSION` and adds its `KNOWN` entry in `src/be/llm-gateway/test/guards.test.ts` (spec conventions.md § bump checklist). | Workstream | see item | handed over from `w3-guards` | 2026-11-07 |
 
 ---
 
@@ -70,7 +76,7 @@ Verification commands are configured in `workflow/config.json`: `npm test`, `npm
 |---|---|---|---|---|---|---|
 | W1 | Foundation and API skeleton | Done | [review-repairs spec](../../specs/2026-11-02-w1-review-repairs-design.md); [backend source-root spec](../../specs/2026-11-02-w1-backend-source-root-design.md) | [review-repairs plan](../../plans/2026-11-02-w1-review-repairs-plan.md); [source-root plan](../../plans/2026-11-02-w1-backend-source-root-plan.md) | Merged 2026-11-03; resolver/auth handovers remain; confirmed 2026-11-03 | Documented 2026-11-03 |
 | W2 | Gateway runtime and mock | Done | [spec](../../specs/2026-11-05-w2-gateway-design.md) | [plan](../../plans/2026-11-05-w2-gateway.md) | T1–T7 done; approved at Gate 3; PR #14 merged 2026-11-06; guide confirmed 2026-11-07 | Pending |
-| W3 | Guards (untrusted-text pipeline) | Not started | — | — | Tier 1 · Big · owner Developer · after W2 | — |
+| W3 | Guards (untrusted-text pipeline) | In review | [spec](../../specs/2026-11-06-w3-guards-design.md) | [plan](../../plans/2026-11-06-w3-guards.md) | PR #15 fixes reviewed; owner review needed | — |
 | W4 | Auth and registration | In review | [spec](../../specs/2026-10-31-w4-auth-design.md) | [plan](../../plans/2026-11-04-w4-auth.md) | T0–T6 done; PR #10 open | guide out of date: auth |
 | W5 | Core planning (projects to tasks) | Not started | — | — | Tier 1 · Big · owner Dev Lead · after W1, W4 | — |
 | W6 | AI context assembly | Not started | — | — | Tier 1 · Big · owner Developer · signature frozen first | — |
@@ -154,6 +160,8 @@ Status: `Not started` · `Spec'd` · `Planned` · `Building` · `Blocked — nee
 | C50 | Tokens are verified with `firebase-admin` | decisions/C50.md |
 | C47 | AD-57 kept despite its Firebase assumption being wrong | decisions/C47.md |
 | C55 | Narrow the agent pre-tool policy to process-control files | decisions/C55.md |
+| C57 | W3 starts stacked on `w2-gateway` | decisions/C57.md |
+| C56 | W3's scope choices | decisions/C56.md |
 
 ---
 
