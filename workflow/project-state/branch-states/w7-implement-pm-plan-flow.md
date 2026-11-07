@@ -43,7 +43,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W7 | PM plan flow (proposals, pm) | Planned | [spec](../../specs/2026-11-07-w7-pm-plan-flow-design.md) | [plan](../../plans/2026-11-07-w7-pm-plan-flow/plan.md) | Wave 1 done (T1-T3); wave 2 next: T4, T5, T8, T9 | — |
+| W7 | PM plan flow (proposals, pm) | Planned | [spec](../../specs/2026-11-07-w7-pm-plan-flow-design.md) | [plan](../../plans/2026-11-07-w7-pm-plan-flow/plan.md) | Waves 1-2 done (T1-T5, T8, T9); T6+T7 next, then T10, T11 | — |
 
 ---
 
@@ -57,6 +57,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-07 | W7 spec approved by the operator at Gate 1; `lint.mjs spec --approved` passes | W7 | this commit |
 | 2026-11-07 | Wave 1 built and reviewed (full, three lenses each): T2 scaffolded the core, proposals and pm workspaces; T3 added strict plan body schemas and made the approve response three counts; T1 added the session feature map, contract and AD-28 text. Fix rounds: tighter T3 tests, version and idea bounds; T1 closed/idle/foreign session tests and an own-keys-only map lookup. Rejected: lone-surrogate and control-character rules on the idea (the spec does not ask; the gateway sanitiser handles them); an EXPAND-session self-map test (it correctly fails). Learned: 
 pm install removes the generated Prisma client, so 	sc -b fails until `prisma:generate` runs (now in the plan's Shared context) | W7 | this commit |
+| 2026-11-07 | Wave 2 built: T4 `applyPlan` (12 database tests incl. a real lock barrier), T5 proposals create/view/resolvers (7 database tests), T8 `pm.similarItems` and settings, T9 output schemas, sections and mocks. Run against a local Postgres in Docker (`w7-pg`, port 5433; variables in untracked `.ws/w7.env`). Whole suite: 497 tests, 493 pass, 4 fail - all in `tests/process-security/agent-hook.test.ts` (F8 shell-write mediation, unrelated to W7; not compared with the base branch). The real database also found the session-rule regression (C~3) that skipped tests had hidden | W7 | this commit |
 | 2026-11-07 | W7 plan written (11 tasks, 6 waves), reviewed by an Implementer-lens reviewer, approved at Gate 2; `lint.mjs plan --approved` passes | W7 | this commit |
 
 ---
@@ -88,3 +89,11 @@ pm install removes the generated Prisma client, so 	sc -b fails until `prisma:ge
 - **Decision:** `assertUsable` passes when `row.feature === feature` or `row.feature === SESSION_FEATURE[feature]` (own keys only). An outline session admits expand calls; an expand session still rejects outline calls (E2).
 - **Why:** keeps every existing W2 behaviour and adds only the new case. Rejected: changing W2's E26 test to open an outline session (hides the regression). The earlier Tester-lens suggestion to cover the self case was wrongly rejected on 2026-11-07 and is now accepted.
 - **Follow-up:** the spec hash in the plan is restamped (`112dc7d0a8c1`); T1 gets a second fix round.
+
+### C~4 — Fewer reviews and combined dispatch for the rest of the W7 build
+
+- **Date:** 2026-11-07.
+- **Who asked:** the operator, mid-build: only run review agents for non-trivial work and combine a few tests together; the spec was already reviewed thoroughly, so reviewing and implementing every task separately is not needed.
+- **Decision:** from T5 the per-task review level is lowered (T5, T6, T7, T10, T11 `light`; T8, T9 `none`). T6+T7 and T8+T9 each go to one implementer. One combined light review runs after T7 and one after T11. The whole-branch `code-review` at close-out stays. T1-T4 keep their `full` reviews.
+- **Why:** the first four tasks' reviews found no blocking problem and cost about five subagent runs each; the real regression (the session rule) was found by running the tests against a real database, not by a reviewer.
+- **Rejected:** keeping `full` on every task as planned; skipping the close-out review.

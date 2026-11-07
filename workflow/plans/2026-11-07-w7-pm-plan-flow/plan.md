@@ -19,7 +19,7 @@
 ## Shared context
 **Commands**
 - Build: `npm run typecheck` and `npm run lint` (`tsc -b`); schema `npm --workspace @agile/db run prisma:validate`.
-- Test one file (a local Postgres runs in Docker, migrated; the file `.ws/w7.env` holds the two variables): `node --env-file .ws/w7.env --import tsx --import ./tests/setup-auth-env.ts --test <path>`. All: the same with `scripts/discover-tests.mjs`-style `npm test` after exporting the variables. Integration tests must RUN, not skip: report pass/fail/skipped counts.
+- Test one file (a local Postgres runs in Docker, migrated; the file `.ws/w7.env` holds the two variables): `node --env-file .ws/w7.env --import tsx --import ./tests/setup-auth-env.ts --test <path>`. All: `node --env-file .ws/w7.env scripts/discover-tests.mjs`. Integration tests must RUN, not skip: report pass/fail/skipped counts.
 - After any `npm install`, run `npm --workspace @agile/db run prisma:generate` (install removes the generated client and `tsc -b` then fails).
 - Integration tests need `DATABASE_URL` and `W1_INTEGRATION_DATABASE_URL`; they skip without the second (pattern: `{ skip: !integrationUrl }`). If `.ws/w7.env` or the database is missing, stop and report `blocked`.
 
@@ -45,16 +45,16 @@ only your own task's files. Contract tests marked read-only are not edited.
 | T1 Session feature map and contract text | `tasks/T1.md` | - | T2, T3 | 1 | standard | full | Done |
 | T2 Scaffold core, proposals, pm workspaces | `tasks/T2.md` | - | T1, T3 | 1 | trivial | full | Done |
 | T3 Contract schemas for endpoints 34-41 | `tasks/T3.md` | - | T1, T2 | 1 | standard | full | Done |
-| T4 applyPlan in core | `tasks/T4.md` | T2 | T5, T8, T9 | 2 | complex | full | Not started |
-| T5 Proposals: create, view, resolvers | `tasks/T5.md` | T2, T3 | T4, T8, T9 | 2 | complex | full | Not started |
-| T6 Proposals: expand claim and store | `tasks/T6.md` | T5 | - | 3 | complex | full | Not started |
-| T7 Proposals: approve and reject | `tasks/T7.md` | T4, T5, T6 | - | 4 | complex | full | Not started |
-| T8 pm: similar-items source and settings | `tasks/T8.md` | T2 | T4, T5, T9 | 2 | standard | full | Not started |
-| T9 pm: schemas, sections, mocks | `tasks/T9.md` | T2 | T4, T5, T8 | 2 | standard | full | Not started |
-| T10 pm: plan flow | `tasks/T10.md` | T1, T5, T6, T7, T8, T9 | - | 5 | complex | full | Not started |
-| T11 API routes, wiring, end to end | `tasks/T11.md` | T3, T10 | - | 6 | complex | full | Not started |
+| T4 applyPlan in core | `tasks/T4.md` | T2 | T5, T8, T9 | 2 | complex | full | Done |
+| T5 Proposals: create, view, resolvers | `tasks/T5.md` | T2, T3 | T4, T8, T9 | 2 | complex | light | Done |
+| T6 Proposals: expand claim and store | `tasks/T6.md` | T5 | - | 3 | complex | light | In progress |
+| T7 Proposals: approve and reject | `tasks/T7.md` | T4, T5, T6 | - | 4 | complex | light | Not started |
+| T8 pm: similar-items source and settings | `tasks/T8.md` | T2 | T4, T5, T9 | 2 | standard | none | Done |
+| T9 pm: schemas, sections, mocks | `tasks/T9.md` | T2 | T4, T5, T8 | 2 | standard | none | Done |
+| T10 pm: plan flow | `tasks/T10.md` | T1, T5, T6, T7, T8, T9 | - | 5 | complex | light | Not started |
+| T11 API routes, wiring, end to end | `tasks/T11.md` | T3, T10 | - | 6 | complex | light | Not started |
 
-Bundles: none.
+Bundles: T6+T7 and T8+T9 may each share one subagent; T6+T7 get one combined review after T7, T10+T11 one combined review after T11 (operator, 2026-11-07: reviews only for non-trivial work, fewer of them; T1-T4 were reviewed at `full`).
 
 ## Traceability
 | Requirement | Task(s) | Verified by |
