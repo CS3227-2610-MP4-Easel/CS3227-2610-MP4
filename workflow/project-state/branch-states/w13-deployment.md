@@ -24,7 +24,7 @@ the W1 application runnable on the dev and production tiers.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-07 | Codex | W13 | Active | T4 implementation complete; full regression passed | Commit T4, then run T5 integration checks | 2026-11-07 |
+| S1 | 2026-11-07 | Codex | W13 | Active | T4 committed; T5 integration and closeout checks in progress | Run plan lint, full verification suite, and review the branch diff | 2026-11-07 |
 
 **Remaining**
 
@@ -46,7 +46,7 @@ the W1 application runnable on the dev and production tiers.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | Building | [spec](../../specs/2026-11-07-w13-deployment-safety-design.md) | [plan](../../plans/2026-11-07-w13-deployment-safety.md) | T1 d33b572; T2 1a83108; T3 2eb8604; T4 complete pending commit | — |
+| W13 | Environments, seed data and deployment | Building | [spec](../../specs/2026-11-07-w13-deployment-safety-design.md) | [plan](../../plans/2026-11-07-w13-deployment-safety.md) | T1 d33b572; T2 1a83108; T3 2eb8604; T4 d8ede9c; T5 in progress | — |
 
 ## 3. Changes
 
@@ -77,6 +77,8 @@ the W1 application runnable on the dev and production tiers.
 | 2026-11-07 | T3 enforced complete migration-manifest equality/checksums, canonical direct target validation, executor order, and child-env minimization; 329 tests passed/26 skipped, lint/typecheck/Prisma validation passed | W13 | T3 pending commit |
 | 2026-11-07 | T3 committed after full regression: 329 tests passed/26 skipped, lint/typecheck/Prisma validation passed, staged secret scan passed | W13 | 2eb8604 |
 | 2026-11-07 | T4 corrected production Vercel environment mapping, reused canonical tier targets, made dev/prod validation unconditional, and added production/preview tests; 331 tests passed/26 skipped, lint/typecheck passed | W13 | T4 pending commit |
+| 2026-11-07 | T4 committed after full regression: 331 tests passed/26 skipped, lint/typecheck passed, staged secret scan passed | W13 | d8ede9c |
+| 2026-11-07 | Tightened the T2 seed seam after review: the client factory is internal-only and target validation still precedes construction; focused seed tests, lint, and full suite remain green | W13 | T2 follow-up |
 
 ## 8. Deviations
 
