@@ -19,6 +19,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
+          VERCEL_DEV_ALIAS: ${{ vars.VERCEL_DEV_ALIAS }}
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           PUSH_TIMESTAMP: ${{ github.event.head_commit.timestamp }}
@@ -27,6 +28,7 @@ jobs:
           set -euo pipefail
           : "${VERCEL_TOKEN:?missing protected Vercel token}"
           : "${VERCEL_TEAM_ID:?missing Vercel team id}"
+          : "${VERCEL_DEV_ALIAS:?missing development alias hostname}"
           checks_file="${RUNNER_TEMP}/w13-check-runs.json"
           deployment_file="${RUNNER_TEMP}/w13-deployment.json"
           aliases_file="${RUNNER_TEMP}/w13-aliases.json"
@@ -46,8 +48,8 @@ jobs:
                 -H "Authorization: Bearer ${VERCEL_TOKEN}" \
                 "https://api.vercel.com/v2/deployments/${deployment_id}/aliases?teamId=${VERCEL_TEAM_ID}" \
                 -o "${aliases_file}"
-              if jq -e --arg sha "${GITHUB_SHA}" --arg project "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd" --arg pushed "${PUSH_TIMESTAMP}" --arg id "${deployment_id}" '.uid == $id and .projectId == $project and .meta.githubCommitSha == $sha and .readyState == "READY" and ((.createdAt | if type == "number" then . else fromdateiso8601 * 1000 end) > (($pushed | fromdateiso8601) * 1000))' "${deployment_file}" >/dev/null && jq -e --arg alias "development" --arg id "${deployment_id}" '[.[] | select(.alias == $alias and .deploymentId == $id)] | length == 1' "${aliases_file}" >/dev/null; then
-                jq -n --arg id "${deployment_id}" --arg sha "${GITHUB_SHA}" --arg project "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd" --arg alias "development" --arg state "READY" --arg created "$(jq -r '.createdAt | if type == "number" then (. / 1000 | todateiso8601) else . end' "${deployment_file}")" --arg owner "${deployment_id}" '{deploymentId:$id,githubCommitSha:$sha,project:$project,alias:$alias,aliasOwner:$owner,readyState:$state,createdAt:$created}' > "${METADATA_FILE}"
+              if jq -e --arg sha "${GITHUB_SHA}" --arg project "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd" --arg pushed "${PUSH_TIMESTAMP}" --arg id "${deployment_id}" '(.uid // .id) == $id and .projectId == $project and .meta.githubCommitSha == $sha and .readyState == "READY" and ((.createdAt | if type == "number" then . else fromdateiso8601 * 1000 end) > (($pushed | fromdateiso8601) * 1000))' "${deployment_file}" >/dev/null && jq -e --arg alias "${VERCEL_DEV_ALIAS}" '.aliases | if type == "array" then ([.[] | select(.alias == $alias)] | length) == 1 else false end' "${aliases_file}" >/dev/null; then
+                jq -n --arg id "${deployment_id}" --arg sha "${GITHUB_SHA}" --arg project "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd" --arg alias "${VERCEL_DEV_ALIAS}" --arg state "READY" --arg created "$(jq -r '.createdAt | if type == "number" then (. / 1000 | todateiso8601) else . end' "${deployment_file}")" --arg owner "${deployment_id}" '{deploymentId:$id,githubCommitSha:$sha,project:$project,alias:$alias,aliasOwner:$owner,readyState:$state,createdAt:$created}' > "${METADATA_FILE}"
                 exit 0
               fi
             fi
@@ -71,4 +73,5 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_PUSH_TIMESTAMP: ${{ github.event.head_commit.timestamp }}
           W13_VERCEL_METADATA_FILE: ${{ runner.temp }}/w13-vercel-metadata.json
+          VERCEL_DEV_ALIAS: ${{ vars.VERCEL_DEV_ALIAS }}
       - run: node --import tsx --test tests/w13/dev-deployment.test.ts

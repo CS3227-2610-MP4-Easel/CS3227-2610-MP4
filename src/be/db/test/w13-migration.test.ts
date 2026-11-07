@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { readFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { buildMigrationCommand, runProductionMigration, validateMigrationInputs, validateMigrationManifest } from "../../../../scripts/w13/migrate-production.mjs";
 import { validateRecoveryEvidence } from "../../../../scripts/w13/recovery-evidence.mjs";
 
@@ -37,6 +39,26 @@ test("E9/E29 executor sees validation then deploy with an allowlisted environmen
   assert.equal(calls[0].options.env.DATABASE_URL, env.DIRECT_DATABASE_URL);
   assert.equal(calls[0].options.env.DIRECT_DATABASE_URL, undefined);
   assert.equal(calls[0].options.env.VERCEL_TOKEN, undefined);
+});
+
+test("wrong migration checksum rejects before invoking Prisma", async () => {
+  const root = await mkdtemp(join(tmpdir(), "w13-migration-"));
+  let calls = 0;
+  try {
+    const migration = join(root, "src/be/db/prisma/migrations/00000000000000_init");
+    const manifest = join(root, "workflow/deployment");
+    await mkdir(migration, { recursive: true });
+    await mkdir(manifest, { recursive: true });
+    await writeFile(join(migration, "migration.sql"), "SELECT 1;\n");
+    await writeFile(join(manifest, "migrations.manifest"), `00000000000000_init/migration.sql ${"0".repeat(64)}\n`);
+    await assert.rejects(runProductionMigration(env, root, async () => {
+      calls += 1;
+      return { stdout: "", stderr: "" };
+    }), /checksum/);
+    assert.equal(calls, 0);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });
 
 test("E12/E25 migration failures do not expose credential values", async () => {

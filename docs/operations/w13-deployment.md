@@ -1,5 +1,12 @@
 # W13 deployment and recovery runbook
 
+## Development deployment check
+
+The protected `w13-development-verification` environment needs a read-only
+`VERCEL_TOKEN`, `VERCEL_TEAM_ID`, and `VERCEL_DEV_ALIAS`. Set `VERCEL_DEV_ALIAS`
+to the exact development hostname shown by Vercel, without `https://`. The
+check compares it with the selected deployment's `aliases[]` response.
+
 ## Production migration
 
 Production migration is an owner-approved protected GitHub Environment operation. It runs only

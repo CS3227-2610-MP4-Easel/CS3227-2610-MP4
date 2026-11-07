@@ -6,9 +6,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w13-deployment (from `INT` at `94ebc77134ffd4ab00e0bda3c3fe9c2ff933ef01`)
 - **Base:** faa1c08 (updated after merging current `development`)
 - **Owner:** operator / repository owner
-- **Status:** Draft
-- **Approved:** operator, 2026-11-07 — Gate 3 branch review approved; merge authorized
-- **Last updated:** 2026-11-08 by Codex — PR #18 review corrections in progress; Gate 3 re-review needed
+- **Status:** In review
+- **Previous Gate 3:** operator, 2026-11-07 — superseded by the 2026-11-08 corrections; re-review required
+- **Last updated:** 2026-11-08 by Codex — PR #18 review corrections complete; Gate 3 re-review needed
 
 ---
 
@@ -24,10 +24,6 @@ the W1 application runnable on the dev and production tiers.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-07 | Codex | W13 | Blocked — needs human | T5 Neon recovery rehearsal and evidence | Owner completes the four T5 gate actions and supplies the redacted evidence object | 2026-11-07 |
-| S2 | 2026-11-07 | Codex | W13 | Done | Updated canonical development Neon target from operator-confirmed console values | Owner reviews the correction with the existing W13 Gate 3 diff | 2026-11-07 |
-| S3 | 2026-11-07 | Codex | W13 | Done | Pushed approved branch to origin | Owner creates the PR into `development` and monitors CI/Vercel | 2026-11-07 |
-| S4 | 2026-11-08 | Codex | W13 | Active | Fix migration checksum test, Vercel alias check, and integration conflict | Add failing tests, implement fixes, merge development, verify, then request Gate 3 re-review | 2026-11-08 |
 
 **Remaining**
 
@@ -53,7 +49,7 @@ the W1 application runnable on the dev and production tiers.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | Approved | [spec](../../specs/2026-11-07-w13-deployment-safety-design.md); [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | T1–T3 and close-out done; T4 post-merge owner check; Gate 3 approved | — |
+| W13 | Environments, seed data and deployment | In review | [spec](../../specs/2026-11-07-w13-deployment-safety-design.md); [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | PR #18 corrections ready for Gate 3 re-review; T4 post-merge | — |
 
 ## 3. Changes
 
@@ -103,6 +99,7 @@ the W1 application runnable on the dev and production tiers.
 | 2026-11-07 | Close-out passed: 316 tests passed/26 skipped, lint, typecheck, Prisma validation, workflow validation, and diff check passed; branch handed to Gate 3 review | W13 | close-out |
 | 2026-11-07 | Operator approved Gate 3 branch review; merge authorized; no push performed | W13 | Gate 3 |
 | 2026-11-08 | Merged current `development` into W13 and retained W3's gateway secret-output guard while preserving W13 runtime target validation | W13 | PR #18 review correction |
+| 2026-11-08 | Tested migration checksum failure before executor calls; matched Vercel's deployment-scoped `aliases[]` response against a protected hostname and updated sanitized verification | W13 | PR #18 review correction |
 
 ## 7. Decisions
 
@@ -128,8 +125,10 @@ the W1 application runnable on the dev and production tiers.
 
 ## 9. Handover
 
-- **Gate 3 branch review:** approved by the operator on 2026-11-07; push authorized.
-- **Environment configuration:** owner must restrict `w13-development-verification` to `development`, require reviewers/CODEOWNERS protection, and provide read-only `VERCEL_TOKEN` plus non-secret `VERCEL_TEAM_ID` before the development push check can run.
+- **Gate 3 branch review:** the operator's 2026-11-07 approval authorized pushing W13. The 2026-11-08 correction head needs re-review before merge.
+- **Environment configuration:** owner must restrict `w13-development-verification` to `development`, require reviewers/CODEOWNERS protection, and provide read-only `VERCEL_TOKEN` plus non-secret `VERCEL_TEAM_ID` and `VERCEL_DEV_ALIAS` (the exact hostname) before the development push check can run.
+- **Live API evidence:** no Vercel token was available in this workspace; the alias and deployment tests use Vercel's published response schemas. Compare one redacted response from each endpoint during owner provisioning.
+- **Neon recovery evidence:** the owner-only T5 rehearsal remains a post-merge production-readiness gate; supply its redacted evidence before T6/T7.
 - **Preview provisioning check (T4):** after merge, owner verifies that Vercel preview environments contain none of the forbidden names in the approved safety-fix spec, including empty values, and records the redacted result before relying on the development push check.
 - **Provider evidence:** no live Vercel, Neon, Firebase, or SoCLaaS credentials were used locally; provider evidence remains a post-merge owner action.
 
@@ -178,3 +177,13 @@ the W1 application runnable on the dev and production tiers.
 - **Decision:** Local uses a non-production Firebase project and the existing W4 Admin SDK settings; `FIREBASE_AUTH_EMULATOR_HOST` remains unset. This clarifies AD-29's earlier local emulator wording rather than changing W4.
 - **Why:** The merged W4 contract and current runtime reject emulator mode because it accepts unsigned tokens; local must therefore use the supported signed-token path.
 - **Rejected:** Re-enabling the emulator for W13, because that would contradict W4 and weaken authentication tests.
+
+## Lessons
+
+### L~1 — Validate external response shapes at the executable boundary
+
+- **Date:** 2026-11-08
+- **Cause:** W13's alias fixtures invented a flat array with `deploymentId`; the workflow copied that shape instead of Vercel's documented `aliases[]` object.
+- **Rule:** For external API checks, use documented or sanitized live response fixtures and execute the actual parser or filter against them before approval.
+- **Scope:** project
+- **Found by:** independent PR reviewer
