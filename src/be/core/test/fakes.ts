@@ -36,13 +36,34 @@ export async function withIntegrationDb(run: (base: PrismaClient, fixtures: Fixt
   try {
     await run(base, fixtures);
   } finally {
-    await base.taskEvent.deleteMany({ where: { projectId: { in: projectIds } } });
-    await base.task.deleteMany({ where: { projectId: { in: projectIds } } });
-    await base.epic.deleteMany({ where: { projectId: { in: projectIds } } });
-    await base.checkpoint.deleteMany({ where: { projectId: { in: projectIds } } });
-    await base.projectMember.deleteMany({ where: { projectId: { in: projectIds } } });
-    await base.project.deleteMany({ where: { id: { in: projectIds } } });
-    await base.user.deleteMany({ where: { id: { in: userIds } } });
-    await base.$disconnect();
+    try {
+      try {
+        await base.taskEvent.deleteMany({ where: { projectId: { in: projectIds } } });
+      } finally {
+        try {
+          await base.task.deleteMany({ where: { projectId: { in: projectIds } } });
+        } finally {
+          try {
+            await base.epic.deleteMany({ where: { projectId: { in: projectIds } } });
+          } finally {
+            try {
+              await base.checkpoint.deleteMany({ where: { projectId: { in: projectIds } } });
+            } finally {
+              try {
+                await base.projectMember.deleteMany({ where: { projectId: { in: projectIds } } });
+              } finally {
+                try {
+                  await base.project.deleteMany({ where: { id: { in: projectIds } } });
+                } finally {
+                  await base.user.deleteMany({ where: { id: { in: userIds } } });
+                }
+              }
+            }
+          }
+        }
+      }
+    } finally {
+      await base.$disconnect();
+    }
   }
 }
