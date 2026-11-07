@@ -1,0 +1,7 @@
+{
+  "task": "T2",
+  "status": "done",
+  "produces": ["@agile/core", "@agile/proposals", "@agile/pm"],
+  "notes": "Each src/index.ts is `export {};`. T4 owns src/be/core/src/index.ts; T5 owns src/be/proposals/src/index.ts first (T6, T7 append); T8 owns src/be/pm/src/index.ts (T9 does not touch, T10 appends). Command used: `npm install` at repo root; it only added 44 lines to package-lock.json (3 workspace entries plus links), no other packages changed. typecheck and lint green.",
+  "deviations": []
+}
