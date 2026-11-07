@@ -5,7 +5,7 @@
 - **Phase:** Pre-implementation. The architecture passed its readiness gate for the first slice on 2026-10-29; the W10 clickable prototype and W1 backend foundation/API skeleton are merged, while feature work remains.
 - **Stack:** TypeScript monorepo, Next.js App Router with a Hono API under `/api`, Prisma, Postgres (Neon), Firebase Auth, Vercel (Hobby), NUS SoCLaaS
 - **Branch:** `INT` = `development`; `main` is the release branch. This file describes `INT` only.
-- **Last updated:** 2026-11-03 by Codex — documented W1 guide checkpoint
+- **Last updated:** 2026-11-07 by Claude Sonnet 5.5 — folded w2-gateway
 - **Last verified against repo:** 2026-11-03
 - **Developer guide:** seeded 2026-11-02 from W10, [guide](../../docs/guide/index.md)
 - **Deadline:** 13 Nov 2026. Feature freeze end of 10 Nov (AD-69), production deploy 11 Nov (AD-70).
@@ -46,6 +46,14 @@ Verification commands are configured in `workflow/config.json`: `npm test`, `npm
 | W9 SELF membership check | Post-merge | ensure removed developers cannot access endpoints 52–54 through owner-only resolution | handed over from w1 | 2026-11-03 |
 | W5 ADDER target-role semantics | Post-merge | resolve target roles and preserve 422/NOT_FOUND behavior for endpoints 10 and 11 | handed over from w1 | 2026-11-03 |
 | W13 Deploy hello-world calling SoCLaaS `GET /v1/models` | Todo | answers G-26, G-32, G-33 with something running | delivery-plan P0 | 2026-10-31 |
+| W15 calls `usageSummary` with a date range (it reads every matching row to compute the means) and gates endpoint 57 by role; `usageSessions`, `usageSummary` and `failureReason` all take `settings.tier`. | Workstream | W2 handover | handed over from `w2-gateway` | 2026-11-07 |
+| the endpoints that call `Sessions.open` check the caller's project membership, and those that call `close` check owner or approver (SD11); `Sessions` does neither. | Todo | W2 handover | handed over from `w2-gateway` | 2026-11-07 |
+| the W2 integration tests skip without `W1_INTEGRATION_DATABASE_URL`, and W12's CI does not set it; the CI owner (Dev Lead, W12) adds a Postgres 16 service to `.github/workflows/ci.yml`, sets the variable, and makes a missing integration database fail the job. A PR #14 reviewer asked for this ("should fix"); the operator chose to hand it to W12 rather than edit CI on this branch (2026-11-06). | Todo | W2 handover | handed over from `w2-gateway` | 2026-11-07 |
+| W15 owns endpoints 56 and 57 and their resolvers; W1's handover listed "session and usage" resolvers under W2 (spec SD3). | Workstream | W2 handover | handed over from `w2-gateway` | 2026-11-07 |
+| W7, W8 and W9 register their mock responses with `registerMockResponse` at import of their module, put their rules in `STATIC` sections (non-static sections can be dropped when the prompt is over budget), and call `assertStaticSectionsFit` in a test. | Todo | W2 handover | handed over from `w2-gateway` | 2026-11-07 |
+| tell the PM and Dev Lead in the W2 PR that `createSessions` adds `regenerate` beside the frozen `Sessions` type (spec SD10), and that `Sessions.close` leaves the owner-or-approver check to their endpoints (SD11). | Todo | W2 handover | handed over from `w2-gateway` | 2026-11-07 |
+| W13 sets `LLM_MODE`, `SOCLAAS_API_KEY` (dev and prod keys differ, AD-58) and, if SoCLaaS is unreachable from Vercel, `AI_ENABLED=false` per tier. | Todo | W2 handover | handed over from `w2-gateway` | 2026-11-07 |
+| since the Prisma 7 merge, `npm test` (its `pretest` runs `prisma generate`) fails without `DATABASE_URL` set; tell the team to export it locally. | Todo | W2 handover | handed over from `w2-gateway` | 2026-11-07 |
 
 ---
 
@@ -54,7 +62,7 @@ Verification commands are configured in `workflow/config.json`: `npm test`, `npm
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
 | W1 | Foundation and API skeleton | Done | [review-repairs spec](../../specs/2026-11-02-w1-review-repairs-design.md); [backend source-root spec](../../specs/2026-11-02-w1-backend-source-root-design.md) | [review-repairs plan](../../plans/2026-11-02-w1-review-repairs-plan.md); [source-root plan](../../plans/2026-11-02-w1-backend-source-root-plan.md) | Merged 2026-11-03; resolver/auth handovers remain; confirmed 2026-11-03 | Documented 2026-11-03 |
-| W2 | Gateway runtime and mock | Not started | — | — | Tier 1 · Big · owner Developer · after W1 signature | — |
+| W2 | Gateway runtime and mock | In review | [spec](../../specs/2026-11-05-w2-gateway-design.md) | [plan](../../plans/2026-11-05-w2-gateway.md) | T1–T7 done; approved at Gate 3; PR #14 open | guide out of date: llm-gateway |
 | W3 | Guards (untrusted-text pipeline) | Not started | — | — | Tier 1 · Big · owner Developer · after W2 | — |
 | W4 | Auth and registration | Not started | — | — | Tier 1 · Big · owner Developer · after W1 | — |
 | W5 | Core planning (projects to tasks) | Not started | — | — | Tier 1 · Big · owner Dev Lead · after W1, W4 | — |
@@ -110,6 +118,9 @@ Status: `Not started` · `Spec'd` · `Planned` · `Building` · `Blocked — nee
 | C24 | Remove the obsolete frontend scaffold | [C24](decisions/C24.md) |
 | C25 | Separate frontend typechecking | [C25](decisions/C25.md) |
 | C26 | Permit the minimal health-route adapter | [C26](decisions/C26.md) |
+| C27 | W2's scope boundaries and starting values | [C27](decisions/C27.md) |
+| C28 | Under the W12 agent policy, the operator runs git and places workflow files | [C28](decisions/C28.md) |
+| C29 | Fix W1's Prisma 7 test on this branch (reverses the D5 choice) | [C29](decisions/C29.md) |
 
 ---
 
@@ -127,5 +138,5 @@ Status: `Not started` · `Spec'd` · `Planned` · `Building` · `Blocked — nee
 
 The Done ledger is **[`ledger/done-ledger.md`](ledger/done-ledger.md)**, newest first.
 
-- **Latest entry:** 2026-11-03
-- **Entries (live file):** 94
+- **Latest entry:** 2026-11-06
+- **Entries (live file):** 112

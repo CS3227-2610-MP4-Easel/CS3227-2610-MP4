@@ -11,6 +11,8 @@
 - **Email verification and disabling users** — Firebase configuration, not our code (AD-57).
 - **Typed SQL is disabled** — do not enable Prisma `typedSql` or add `.sql` files until `$queryRawTyped` is included in the filtered-client raw-query boundary.
 - **Unvalidated relation filters are unsafe** — request-derived `where` clauses must not rely on the filtered client to hide soft-deleted related rows.
+- **A few users can use up the global AI windows** — the per-user windows (6 a minute, 200 a day) limit each user, but four or five active users can exhaust `global:min` (25 a minute) and everyone else gets `AI_BUSY` until the window resets; there is no per-project share. A call refused by the breaker has already counted against the windows.
+- **AI session caps and the spend cap are soft** — `Sessions.open` counts then inserts, so concurrent opens can pass both the open-per-feature and the daily cap (bounded by how many arrive at once); calls admitted together each see the spend sum before the others' reservations (bounded by `global:min`).
 - **Nested writes require explicit authorization** — callers must validate every connected resource inside the mutation transaction.
 
 ## Explicitly Out of Scope
