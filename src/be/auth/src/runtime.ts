@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { createDbClient, incrementRateCounter, type FilteredDbClient } from "@agile/db";
-import { createLookupRegisteredUser, createResolvePrincipal, type RegisteredPrincipal, type TokenPrincipal } from "./principal.js";
+import { createLookupRegisteredUser, createLookupUserByEmail, createLookupUserRole, createResolvePrincipal, type RegisteredPrincipal, type TokenPrincipal, type UserLookup } from "./principal.js";
 import { createHit, type Hit } from "./rate-limit.js";
 import { loadAuthSettings, type AuthSettings } from "./settings.js";
 import { createFirebaseTokenVerifier, type TokenVerifier } from "./token-verifier.js";
@@ -12,6 +12,8 @@ export type AuthRuntime = {
   db: FilteredDbClient;
   resolvePrincipal(authorization: string | undefined): Promise<TokenPrincipal>;
   lookupRegisteredUser(firebaseUid: string): Promise<RegisteredPrincipal>;
+  lookupUserByEmail(email: string): Promise<UserLookup | null>;
+  lookupUserRole(userId: string): Promise<import("@agile/contracts").UserRole | null>;
 };
 
 /** Validates settings (throws on unsafe ones, N4) and builds everything auth needs from one `PrismaClient`, so there is one pool.
@@ -23,10 +25,10 @@ export function createAuthRuntime(env: Record<string, string | undefined>, overr
   const hit = createHit((key, windowSeconds) => incrementRateCounter(base, key, windowSeconds));
   if (!settings.firebaseProjectId) {
     const notConfigured = async (): Promise<never> => { throw new Error("AUTH_NOT_CONFIGURED"); };
-    return { settings, hit, db, resolvePrincipal: notConfigured, lookupRegisteredUser: notConfigured };
+    return { settings, hit, db, resolvePrincipal: notConfigured, lookupRegisteredUser: notConfigured, lookupUserByEmail: notConfigured, lookupUserRole: notConfigured };
   }
   const verifier = overrides.verifier ?? createFirebaseTokenVerifier(settings.firebaseProjectId);
-  return { settings, hit, db, resolvePrincipal: createResolvePrincipal(verifier), lookupRegisteredUser: createLookupRegisteredUser(db) };
+  return { settings, hit, db, resolvePrincipal: createResolvePrincipal(verifier), lookupRegisteredUser: createLookupRegisteredUser(db), lookupUserByEmail: createLookupUserByEmail(db), lookupUserRole: createLookupUserRole(db) };
 }
 
 let cached: AuthRuntime | undefined;
