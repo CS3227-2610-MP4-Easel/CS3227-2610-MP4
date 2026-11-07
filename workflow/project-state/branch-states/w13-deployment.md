@@ -6,9 +6,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w13-deployment (from `INT` at `94ebc77134ffd4ab00e0bda3c3fe9c2ff933ef01`)
 - **Base:** d153509 (updated after merging current `development`)
 - **Owner:** operator / repository owner
-- **Status:** In review
-- **Approved:** operator, 2026-11-07 — Gate 3 branch review approved and push authorized
-- **Last updated:** 2026-11-07 by Codex — close-out complete; Gate 3 review requested; T4 remains post-merge
+- **Status:** Approved
+- **Approved:** operator, 2026-11-07 — Gate 3 branch review approved; merge authorized
+- **Last updated:** 2026-11-07 by Codex — operator approved Gate 3; T4 remains post-merge
 
 ---
 
@@ -52,7 +52,7 @@ the W1 application runnable on the dev and production tiers.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | In review | [spec](../../specs/2026-11-07-w13-deployment-safety-design.md); [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | T1–T3 and close-out done; T4 post-merge owner check; Gate 3 requested | — |
+| W13 | Environments, seed data and deployment | Approved | [spec](../../specs/2026-11-07-w13-deployment-safety-design.md); [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | T1–T3 and close-out done; T4 post-merge owner check; Gate 3 approved | — |
 
 ## 3. Changes
 
@@ -100,6 +100,7 @@ the W1 application runnable on the dev and production tiers.
 | 2026-11-07 | T3 aligned production migration/seed fixtures to the confirmed Neon target, added direct-target regression coverage, and removed the three PR whitespace errors; focused tests (9), Prisma validation, and diff check pass | W13 | T3 |
 | 2026-11-07 | Close-out found the existing test bootstrap claimed `APP_TIER=test` without a database URL; amended T2 to bind that bootstrap to `postgresql://localhost/agile_platform` before rerunning the full suite | W13 | T2 amendment |
 | 2026-11-07 | Close-out passed: 316 tests passed/26 skipped, lint, typecheck, Prisma validation, workflow validation, and diff check passed; branch handed to Gate 3 review | W13 | close-out |
+| 2026-11-07 | Operator approved Gate 3 branch review; merge authorized; no push performed | W13 | Gate 3 |
 
 ## 7. Decisions
 
