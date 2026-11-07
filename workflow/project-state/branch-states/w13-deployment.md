@@ -7,8 +7,8 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Base:** faa1c08 (updated after merging current `development`)
 - **Owner:** operator / repository owner
 - **Status:** In review
-- **Previous Gate 3:** operator, 2026-11-07 — superseded by the 2026-11-08 corrections; re-review required
-- **Last updated:** 2026-11-08 by Codex — preview runtime corrected; Gate 3 re-review passed
+- **Gate 3:** operator, 2026-11-08 — approved current head `d19e28c` for merge
+- **Last updated:** 2026-11-08 by Codex — Gate 3 approval recorded; merge is authorized
 
 ---
 
@@ -35,7 +35,8 @@ the W1 application runnable on the dev and production tiers.
 - [x] Incorporated the plan-review findings: migration manifest, workflow validator/action pins, preview dependency seam, and fixed deployment checks are now listed.
 - [x] Gate 2: operator approved the W13 plan on 2026-11-06; approved-plan lint passes.
 - [x] **Environment provisioning:** owner configured `w13-development-verification` for `development`, with required reviewers, `VERCEL_TOKEN`, `VERCEL_TEAM_ID`, and `VERCEL_DEV_ALIAS`; GitHub API verification completed on 2026-11-08.
-- [ ] **Handover:** complete the Gate 3 re-review and merge W13 into `development`; record merged SHA and dev smoke evidence before starting T5.
+- [x] **Gate 3:** operator approved the current correction head `d19e28c` for merge on 2026-11-08.
+- [ ] **Handover:** merge W13 into `development`; record merged SHA and dev smoke evidence before starting T5.
 - [x] Resolved blocker: Vercel system project ID and actual preview source branch refs now validate; PR #18 CI and Vercel deployment pass at `007ebef`.
 - [x] **Review corrections:** development deployment verification, seed target binding, migration manifest enforcement, production Vercel environment mapping, and the credential-free gateway preview runtime are covered by focused regression tests.
 - [x] **C~4:** Operator approved reversing the approved no-token Vercel gate on 2026-11-07. W13 will use a protected, read-only Vercel metadata token only in the `development` push check; pull requests and application runtime receive no token.
@@ -50,7 +51,7 @@ the W1 application runnable on the dev and production tiers.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | In review | [spec](../../specs/2026-11-07-w13-deployment-safety-design.md); [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | PR #18 corrections ready for Gate 3 re-review; T4 post-merge | — |
+| W13 | Environments, seed data and deployment | In review | [spec](../../specs/2026-11-07-w13-deployment-safety-design.md); [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | Gate 3 approved at `d19e28c`; merge then T4 post-merge | — |
 
 ## 3. Changes
 
@@ -102,6 +103,7 @@ the W1 application runnable on the dev and production tiers.
 | 2026-11-08 | Merged current `development` into W13 and retained W3's gateway secret-output guard while preserving W13 runtime target validation | W13 | PR #18 review correction |
 | 2026-11-08 | Tested migration checksum failure before executor calls; matched Vercel's deployment-scoped `aliases[]` response against a protected hostname and updated sanitized verification | W13 | PR #18 review correction |
 | 2026-11-08 | Made identity-only previews return an unavailable gateway without a Prisma client; focused regression, full suite, lint, typecheck, Prisma and workflow validation pass; fresh Gate 3 re-review found no blockers | W13 | preview-runtime correction |
+| 2026-11-08 | Operator approved Gate 3 for the current W13 correction head `d19e28c`; merge is authorized | W13 | Gate 3 |
 
 ## 7. Decisions
 
@@ -127,7 +129,7 @@ the W1 application runnable on the dev and production tiers.
 
 ## 9. Handover
 
-- **Gate 3 branch review:** the operator's 2026-11-07 approval authorized pushing W13. The 2026-11-08 correction head needs re-review before merge.
+- **Gate 3 branch review:** operator approved `d19e28c` for merge on 2026-11-08.
 - **Environment configuration:** owner must restrict `w13-development-verification` to `development`, require reviewers/CODEOWNERS protection, and provide read-only `VERCEL_TOKEN` plus non-secret `VERCEL_TEAM_ID` and `VERCEL_DEV_ALIAS` (the exact hostname) before the development push check can run.
 - **Live API evidence:** no Vercel token was available in this workspace; the alias and deployment tests use Vercel's published response schemas. Compare one redacted response from each endpoint during owner provisioning.
 - **Neon recovery evidence:** the owner-only T5 rehearsal remains a post-merge production-readiness gate; supply its redacted evidence before T6/T7.
