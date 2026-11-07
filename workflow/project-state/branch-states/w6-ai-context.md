@@ -7,9 +7,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w6-ai-context (from `INT` at `46b33b1`)
 - **Base:** 46b33b1
 - **Owner:** ludannnn (Developer member)
-- **Status:** Approved
-- **Approved:** ludannnn 2026-11-06
-- **Last updated:** 2026-11-06 by Claude Opus 5.5 — Gate 3 approved; PR next
+- **Status:** In review
+- **Approved:** — (Gate 3 of 2026-11-06 lapsed: code changed after PR #16 review)
+- **Last updated:** 2026-11-07 by Claude Opus 5.5 — PR #16 review fixes; Gate 3 again
 
 **Untouched:** Conventions
 
@@ -33,7 +33,10 @@ describes `INT`; read it for context and write here instead of editing it.
 - [ ] The operator is asking W5's owner (Dev Lead) for a delivery estimate; W6's membership check and its core-owned sections depend on W5.
 - [x] Close-out: branch-diff review (Attacker, Tester); findings fixed (C~3 for the scanner).
 - [x] Gate 3: operator approved the branch (ludannnn, 2026-11-06).
-- [ ] GATE: the operator pushes `w6-ai-context` and opens the PR into `development`, asking the PM and the Dev Lead to sign off SD4 / D~1 under AD-11.
+- [x] The operator pushed `w6-ai-context` and opened PR #16 into `development`.
+- [x] PR #16 review: two code findings fixed (cross-project re-check, scanner rule 4 in reached files); the third is the pending SD4 / D~1 sign-off below.
+- [ ] GATE 3 (again): the operator re-approves the branch after the PR #16 fixes, then pushes them.
+- [ ] GATE (merge blocker, raised again in PR #16 review): the PM and the Dev Lead sign off SD4 / D~1 under AD-11 in PR #16. Do not merge without it.
 - [ ] **Handover (PM, Dev Lead):** sign off spec SD4 under AD-11 in the W6 PR: the frozen `assemble` stays, `assembleWith` is added, and `assemble` throws for `DEV_SUMMARY` and `DEV_STANDUP` (D~1). Then a contracts §5.2 follow-up names `assembleWith` as the entry point.
 - [ ] **Handover (W5):** confirm where `requireMember` lives (architecture §4 says `auth`, frozen contracts §5.4 says `Core`; W6 follows §5.4) and that it throws `NotMember` for archived projects. The API composition root calls `registerCore(core)` and registers `core.projectBrief`, `core.checkpoints`, `core.taskEvents`, `core.blockedTasks`; `core` must not import `@agile/ai-context`. Add a boot test there asserting the core and all ten source ids are registered.
 - [ ] **Handover (W7, W8, W9):** register your sources at module load with `registerContextSource` (rules in the W6 spec conventions.md § Rules for source owners: `ownerId` meanings, rows most important first, filtered client, no unsafe raw SQL); call `assembleWith`, not `assemble`; keep gateway-calling files free of database imports (the source scan enforces it); never catch `ContextScopeViolation`. W7: `pm.similarItems` filters by the caller's member projects before searching, titles only, at most 5. W8: `lead.facts` emits only `FACT_KEYS` rows (add keys to `allow-list.ts` by PR, and update `facts`' max chars, which a test pins); test that the overload fact covers only member projects (C-28). W9: `dev.itemSummaries` never returns standup text.
@@ -45,7 +48,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W6 | AI context assembly | In review | [spec](../../specs/2026-11-06-w6-ai-context-design.md) | [plan](../../plans/2026-11-06-w6-ai-context.md) | Approved at Gate 3; PR next; guide out of date: llm-gateway | — |
+| W6 | AI context assembly | In review | [spec](../../specs/2026-11-06-w6-ai-context-design.md) | [plan](../../plans/2026-11-06-w6-ai-context.md) | PR #16 fixes done; Gate 3 again, SD4 sign-off (D~1); guide out of date: llm-gateway | — |
 
 ---
 
@@ -53,6 +56,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-07 | PR #16 review fixes. (1) Step 8 now re-checks membership of every other project a `member`-scoped section draws from (`pm.similarItems`), not only the target, so a PM removed from such a project mid-assembly gets a `membership` violation (new E46; E18 now expects `[P, Q, P, Q]`). (2) Source-scan rule 4 (computed imports) now runs on every file a gateway file reaches through relative imports, not only the gateway file itself (new E30 fixture). Lint clean; ai-context tests all pass; 26 llm-gateway/auth DB tests failed locally only because Postgres on :5433 was down (ECONNREFUSED) | W6 | this commit |
 | 2026-11-06 | Gate 3: operator approved the branch | W6 | this commit |
 | 2026-11-06 | Close-out review of the branch diff (Attacker, Tester). Fixed in code: a source array with a throwing getter, a revoked Proxy or a huge length could leak its own error or spin (rows are now read only up to `maxRows + 1` inside a guard); a rejection whose prototype lookup throws escaped the `NotMember` check (`isNotMember` guard). Fixed in the scanner (spec amended, C~3): concatenated and template-hidden computed imports, unresolved and out-of-`src` relative imports, deep `ai-context` imports, gateway subpaths. Tests strengthened: E28 now covers every error code (input, role, core, missing, failed, timeout, lookalike, both core failures) and asserts each violation's check name, with `console.error` spied; E44 proves the change happened and covers a throwing getter; E36, E25, E34, E18, E45, E39 assert more. 381 tests, 381 pass, none skipped | W6 | a6068c1 |
 | 2026-11-06 | T2: `assemble.ts`: `getAiContext` and `createAiContext` (the `testing` subpath) with the nine steps (input, role, core, membership, missing sources, `allSettled` behind a 10 s deadline with per-source frozen copies, snapshots and check-major row checks in allow-list order, membership re-check, build from snapshots); fresh `NotMember`, fixed codes, no `cause`; `type-checks.ts` proves the frozen `AiContext` type (its negative control was shown live by disarming it); 39 tests (E1-E29, E34-E45); removing the re-check was shown to fail 6 of them; 368 tests, 368 pass, none skipped | W6 | 3107b5a |

@@ -318,11 +318,18 @@ test("E42 F4 checks run check-major: a type fault in row 1 wins over a project f
 
 // --- Cross-project retrieval ---
 
-test("E18 F5 similar items from another member project are checked once per project", async () => {
+test("E18 F5 similar items from another member project are checked once per project, and again at the end", async () => {
   const w = world({ "pm.similarItems": () => [row("EPIC", "e-1"), row("TASK", "t-1", { projectId: Q }), row("TASK", "t-2", { projectId: Q })] });
   const { provenance } = await run(w, "PM_PLAN_OUTLINE");
-  assert.deepEqual(w.core.calls.map((c) => c.projectId), [P, Q, P]);
+  assert.deepEqual(w.core.calls.map((c) => c.projectId), [P, Q, P, Q]);
   assert.deepEqual(provenance.filter((p) => p.section === "similar-items").map((p) => p.projectId), [P, Q, Q]);
+});
+
+test("E46 F5 a member removed from another project during assembly gets nothing from it", async () => {
+  const deny = (p: string, index: number) => (p === Q && index === 3 ? new NotMember() : undefined);
+  const w = world({ "pm.similarItems": () => [row("EPIC", "e-1"), row("TASK", "t-1", { projectId: Q })] }, { deny });
+  await assert.rejects(run(w, "PM_PLAN_OUTLINE"), violation("pm.similarItems", "membership"));
+  assert.deepEqual(w.core.calls.map((c) => c.projectId), [P, Q, P, Q], "it was the final re-check that refused");
 });
 
 test("E43 F5 similar items from the target need no membership call", async () => {

@@ -120,18 +120,21 @@ async function checkSection(spec: SectionSpec, value: unknown, ctx: CheckContext
     const ids = snaps.map((row) => row.id);
     if (ids.some((id) => !ctx.options.itemIds?.includes(id)) || new Set(ids).size !== ids.length) fail("requested");
   }
-  if (spec.scope.includes("member")) {
-    const others = [...new Set(snaps.map((row) => row.projectId))].filter((projectId) => projectId !== ctx.targetProjectId);
-    for (const projectId of others) {
-      try {
-        await ctx.core.requireMember(ctx.caller.userId, projectId);
-      } catch (error) {
-        if (isNotMember(error)) fail("membership");
-        throw new Error("CORE_FAILED");
-      }
+  if (spec.scope.includes("member")) await checkOtherProjects(spec, snaps, ctx);
+  return snaps;
+}
+
+/** Membership of every non-target project a cross-project section draws from, once per project. */
+async function checkOtherProjects(spec: SectionSpec, snaps: Snapshot[], ctx: CheckContext): Promise<void> {
+  const others = [...new Set(snaps.map((row) => row.projectId))].filter((projectId) => projectId !== ctx.targetProjectId);
+  for (const projectId of others) {
+    try {
+      await ctx.core.requireMember(ctx.caller.userId, projectId);
+    } catch (error) {
+      if (isNotMember(error)) violation(spec.sourceId, "membership");
+      throw new Error("CORE_FAILED");
     }
   }
-  return snaps;
 }
 
 function makeContext(getCore: () => MemberCheck | null, getSource: (id: SourceId) => ContextSource | undefined, sourceTimeoutMs: number): AiContextWith {
@@ -165,8 +168,10 @@ function makeContext(getCore: () => MemberCheck | null, getSource: (id: SourceId
       checked.push(await checkSection(spec, result.value, checkContext));
     }
 
-    // 8 membership again, in case it changed while the sources read; 9 build from the snapshots only.
+    // 8 membership again, in case it changed while the sources read or the checks ran: the target and every other
+    // project a section draws from; 9 build from the snapshots only.
     await requireMember(core, validCaller.userId, targetProjectId);
+    for (const [i, spec] of specs.entries()) if (spec.scope.includes("member")) await checkOtherProjects(spec, checked[i], checkContext);
     const sections: ContextSections = [];
     const provenance: Provenance = [];
     for (const [i, spec] of specs.entries()) {

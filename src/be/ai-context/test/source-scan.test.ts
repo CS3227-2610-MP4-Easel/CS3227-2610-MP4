@@ -65,15 +65,15 @@ function scan(files: Map<string, string>): { filesScanned: number; findings: Fin
     }
     if (!ruleOneFile(path) || !imports.some((i) => i.spec === GATEWAY || i.spec.startsWith(`${GATEWAY}/`))) continue;
 
-    for (const line of computedImports(path, content)) add({ file: path, line, rule: 4 });
-    // Rule 1: this file and everything it reaches through relative imports may use only the allowed workspace packages;
-    // a relative import that cannot be resolved fails closed.
+    // Rules 1 and 4: this file and everything it reaches through relative imports may use only the allowed workspace
+    // packages and no computed imports; a relative import that cannot be resolved fails closed.
     const seen = new Set<string>();
     const queue = [path];
     while (queue.length > 0) {
       const current = queue.pop() as string;
       if (seen.has(current)) continue;
       seen.add(current);
+      for (const line of computedImports(current, files.get(current) ?? "")) add({ file: current, line, rule: 4 });
       for (const i of importsOf(files.get(current) ?? "")) {
         if (i.spec.startsWith(".")) {
           const next = resolve(files, current, i.spec);
@@ -115,6 +115,10 @@ const reported: Array<[string, Record<string, string>, Finding]> = [
   ["a dynamic import built by concatenation", { "src/be/dev/src/ai.ts": `${GW}await import("@" + "agile/db");\n` }, { file: "src/be/dev/src/ai.ts", line: 2, rule: 4 }],
   ["a computed import after a template literal containing //", { "src/be/dev/src/ai.ts": GW + "const a = `http://x`; await import(name);\n" }, { file: "src/be/dev/src/ai.ts", line: 2, rule: 4 }],
   ["a computed import between template literals containing comment markers", { "src/be/dev/src/ai.ts": GW + "const a = `/*`;\nawait import(name);\nconst b = `*/`;\n" }, { file: "src/be/dev/src/ai.ts", line: 3, rule: 4 }],
+  ["a computed import in a helper the gateway file reaches", {
+    "src/be/dev/src/ai.ts": `${GW}import { load } from "./data.js";\n`,
+    "src/be/dev/src/data.ts": 'const name = "@agile/db";\nexport const load = () => import(name);\n',
+  }, { file: "src/be/dev/src/data.ts", line: 2, rule: 4 }],
   ["a relative import that cannot be resolved", { "src/be/dev/src/ai.ts": `${GW}import { q } from "./missing.js";\n` }, { file: "src/be/dev/src/ai.ts", line: 2, rule: 1 }],
   ["a query moved outside src", {
     "src/be/dev/src/ai.ts": `${GW}import { q } from "../lib/data.js";\n`,
