@@ -7,11 +7,11 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w7-implement-pm-plan-flow (from `INT` at `7caa23d`)
 - **Base:** faa1c08
 - **Owner:** Xiao-Congchen (PM)
-- **Status:** Draft
+- **Status:** In review
 - **Approved:** —
-- **Last updated:** 2026-11-07 by Claude Sonnet 5.5 — W7 spec drafted, lint clean, one review round folded; awaiting Gate 1
+- **Last updated:** 2026-11-08 by Claude Sonnet 5.5 — W7 built (T1-T11), verified, whole-branch code review reported; awaiting Gate 3
 
-**Untouched:** Architecture, Conventions, Known Gaps, Deviations (the spec lists the entries to write at the fold: a Known Gap for keyword retrieval, a Deviation for archived-project 404, and pm/core architecture Now blocks once code exists)
+**Untouched:** Conventions (Architecture Now blocks for pm, core and proposals are written at the fold; see Close-out)
 
 ---
 
@@ -30,7 +30,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 - [x] W7 spec approved at Gate 1 (2026-11-07).
 - [x] W7 plan approved at Gate 2 (2026-11-07): 11 tasks, 6 waves, all reviewed full.
-- [ ] Build (T1-T11); branch review, Gate 3.
+- [x] Build T1-T11 (plan close-out lint clean).
+- [ ] Gate 3: the operator reviews the branch; then ask whether to push and open the PR (nothing pushed).
 - [ ] **Handover W2 owner (Developer):** spec SD3 changes `Sessions.assertUsable` (a `PM_PLAN_OUTLINE` session also admits `PM_PLAN_EXPAND`) and amends contracts §5.3; their agreement is recorded in T1 (AD-11, as C59); not yet obtained.
 - [ ] **Handover W5 owner (Dev Lead):** W7 creates `src/be/core` with only `applyPlan`, `PlanInputSchema`, `countPlan`; W5 merges its exports; W5 locks the project row (`update` of `updated_at`) before epic inserts, adds `Core.assertWritable`, registers `proposalResolvers`, and its project resolver reads path parameter `id` for endpoint 34.
 - [ ] Ask W5's owner (Dev Lead) for a delivery estimate (already open in STATE.md Upcoming); W7's build and its membership checks need W5's `requireMember`. Before then, build against the frozen contracts and the W6 testing seams.
@@ -42,7 +43,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W7 | PM plan flow (proposals, pm) | Planned | [spec](../../specs/2026-11-07-w7-pm-plan-flow-design.md) | [plan](../../plans/2026-11-07-w7-pm-plan-flow/plan.md) | Waves 1-2 done (T1-T5, T8, T9); T6+T7 next, then T10, T11 | — |
+| W7 | PM plan flow (proposals, pm) | In review | [spec](../../specs/2026-11-07-w7-pm-plan-flow-design.md) | [plan](../../plans/2026-11-07-w7-pm-plan-flow/plan.md) | T1-T11 done; 563 tests, 559 pass, 4 unrelated agent-hook failures | out of date: pm, core, proposals |
 
 ---
 
@@ -101,7 +102,7 @@ pm install removes the generated Prisma client, so 	sc -b fails until `prisma:ge
 
 ## 5. Close-out
 
-**Built.** Endpoints 34, 35, 37, 40, 41 (`@agile/pm` routes and flow, `@agile/proposals` store and resolvers, `@agile/core` `applyPlan`, API routes, W2 session feature map, contract schemas). Verified against a local Postgres 16 in Docker (`w7-pm` container name `w7-pg`, port 5433, variables in untracked `.ws/w7.env`): full suite 563 tests, 559 pass, 4 fail, 0 skipped. The 4 failures are `tests/process-security/agent-hook.test.ts` (F8 shell-write mediation); no file they depend on differs from the base commit, but they were not run on the base branch. One run also showed a gateway test (`run-integration` E25) fail once under parallel load; it passed alone three times and in two later full runs.
+**Built.** Endpoints 34, 35, 37, 40, 41 (`@agile/pm` routes and flow, `@agile/proposals` store and resolvers, `@agile/core` `applyPlan`, API routes, W2 session feature map, contract schemas). Verified against a local Postgres 16 in Docker (`w7-pg`, port 5433, variables in untracked `.ws/w7.env`): full suite 563 tests, 559 pass, 4 fail, 0 skipped. The 4 failures are `tests/process-security/agent-hook.test.ts` (F8 shell-write mediation); no file they depend on differs from the base commit, but they were not run on the base branch. One run also showed a gateway test (`run-integration` E25) fail once under parallel load; it passed alone three times and in two later full runs.
 
 **Not done / not verified.** Nothing pushed. The Developer (W2 owner) has not agreed to the `Sessions` change (AD-11). The PM endpoints cannot be reached in the app until W5 registers the proposal resolvers and a project resolver (the placeholder returns 404). The whole-branch `code-review` reported 10 findings (none blocking, listed in the review output); none has been fixed.
 
