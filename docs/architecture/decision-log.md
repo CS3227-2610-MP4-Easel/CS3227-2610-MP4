@@ -572,9 +572,9 @@ Recommendation: A. Policy choice, the team's. Confidence: medium-high. What woul
 Evidence: none external.
 
 ### AD-28 Similar-item retrieval for the PM prompt — Decided
-**Decision:** Postgres full-text search over the epics and tasks of projects the PM is a member of, top 5, in a section of up to 800 tokens, behind a configuration flag so the plan can be generated with and without it.
+**Decision:** case-insensitive keyword match through the filtered client (Postgres full-text search was rejected for the MVP: no raw SQL) over the epics and tasks of projects the PM is a member of, top 5, in a section of up to 800 tokens, behind a configuration flag so the plan can be generated with and without it.
 **Reason:** accepted AI recommendation (2026-10-28).
-**Consequences:** it uses the membership-scoped context function (AD-25); retrieved text is untrusted and wrapped as data; the Prisma mechanism (raw SQL or a preview feature) and the index are spec choices; demo seed data provides the history; embeddings remain a later option.
+**Consequences:** it uses the membership-scoped context function (AD-25); retrieved text is untrusted and wrapped as data; the Prisma mechanism (raw SQL or a preview feature) and the index are spec choices; demo seed data provides the history; embeddings remain a later option. Amended 2026-11-07 for W7 (spec SD5).
 **Decided by:** team, 2026-10-28 (accepted AI recommendation).
 
 Original brief (kept for the record):
