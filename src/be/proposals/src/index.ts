@@ -3,3 +3,4 @@ export * from "./create.js";
 export * from "./view.js";
 export * from "./resolvers.js";
 export * from "./expand-store.js";
+export * from "./decide.js";

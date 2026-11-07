@@ -1,6 +1,7 @@
 import type { PlanProposal } from "@agile/contracts";
 import type { FilteredDbClient, FilteredTransactionClient } from "@agile/db";
 import { ProposalError } from "./errors.js";
+import { lockEpic, lockProposal } from "./locks.js";
 import { toPlanEpic } from "./view.js";
 
 type PlanEpic = PlanProposal["epics"][number];
@@ -11,28 +12,6 @@ export type ClaimResult =
   | { kind: "DONE"; epic: PlanEpic }
   | { kind: "CLAIMED"; projectId: string; sessionId: string; approach: string; epic: { title: string; description: string; checkpointName: string | null }; claimedVersion: number };
 
-const isMissing = (error: unknown): boolean => (error as { code?: string } | null)?.code === "P2025";
-
-/** Takes the proposal row lock (an update of updatedAt by id) and re-reads the row; null when there is no visible row. */
-async function lockProposal(tx: FilteredTransactionClient, proposalId: string) {
-  try {
-    await tx.aiProposal.update({ where: { id: proposalId }, data: { updatedAt: new Date() }, select: { id: true } });
-  } catch (error) {
-    if (isMissing(error)) return null;
-    throw error;
-  }
-  return tx.aiProposal.findFirst({ where: { id: proposalId } });
-}
-
-async function lockEpic(tx: FilteredTransactionClient, proposalId: string, index: number) {
-  try {
-    await tx.proposalEpic.update({ where: { proposalId_index: { proposalId, index } }, data: { updatedAt: new Date() }, select: { index: true } });
-  } catch (error) {
-    if (isMissing(error)) return null;
-    throw error;
-  }
-  return tx.proposalEpic.findFirst({ where: { proposalId, index } });
-}
 
 export async function claimEpic(db: FilteredDbClient, input: { proposalId: string; index: number; actorId: string; now?: Date }): Promise<ClaimResult> {
   const now = input.now ?? new Date();
