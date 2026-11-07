@@ -5,7 +5,8 @@
     { "path": "src/be/db" },
     { "path": "src/be/auth" },
     { "path": "src/be/api" },
-    { "path": "src/be/llm-gateway" }
+    { "path": "src/be/llm-gateway" },
+    { "path": "src/be/ai-context" }
   ],
   "compilerOptions": {
     "strict": true,
