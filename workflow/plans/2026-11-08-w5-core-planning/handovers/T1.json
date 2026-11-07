@@ -1,0 +1,14 @@
+{
+  "task": "T1",
+  "status": "done",
+  "summary": "Added @agile/core with membership, writability, and resource-resolution seams; 7 core tests pass.",
+  "commit": "pending",
+  "produces": [
+    { "kind": "symbol", "name": "createCore", "where": "src/be/core/src/core.ts", "note": "Creates frozen-Core-compatible membership and writability services." },
+    { "kind": "symbol", "name": "createCoreResourceResolvers", "where": "src/be/core/src/resolvers.ts", "note": "Maps core operation IDs to fail-closed resource resolvers." }
+  ],
+  "next": "T2/T3/T4 add domain services through createCore and its injected filtered-client seam. T5 wires these resolver exports into API composition.",
+  "deviations": [],
+  "edge_cases": ["E1", "E6", "E21", "E23", "E35"],
+  "checks": { "build": "pass", "tests": "457 total: 431 pass, 0 fail, 26 skipped", "lint": "pass" }
+}
