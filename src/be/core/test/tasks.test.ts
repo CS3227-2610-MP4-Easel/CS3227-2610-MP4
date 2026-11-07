@@ -22,7 +22,7 @@ test("E11-E16 status transitions set doneAt, order events, reject stale and leav
   const tasks = createTasks(db as any, access());
   const changed = await tasks.status({ userId, role: "DEVELOPER" }, taskId, { status: "DONE", blocked: true, blockedReason: "Waiting", version: 1 });
   assert.equal(changed.status, "DONE"); assert.ok(changed.doneAt); assert.deepEqual(events, ["STATUS_CHANGED", "BLOCKED"]);
-  await assert.rejects(() => tasks.status({ userId, role: "DEVELOPER" }, taskId, { status: "TODO", blocked: false, blockedReason: null, version: 2 }), /CONFLICT_STALE/);
+  await assert.rejects(() => tasks.status({ userId, role: "DEVELOPER" }, taskId, { status: "TODO", blocked: false, blockedReason: null, version: 2 }), /CONFLICT_VERSION/);
   const noopDb = { $transaction: async (work: (tx: any) => Promise<unknown>) => work({ task: { findFirst: async () => row(), update: async () => { throw new Error("must not update"); } }, taskEvent: { create: async () => { throw new Error("must not event"); } } }) };
   assert.equal((await createTasks(noopDb as any, access()).status({ userId, role: "DEVELOPER" }, taskId, { status: "TODO", blocked: false, blockedReason: null, version: 1 })).version, 1);
 });
@@ -37,4 +37,25 @@ test("E14 E26 and E28 reject closed sprints and roll back if event recording fai
 test("E37 direct calls require the endpoint actor roles", async () => {
   await assert.rejects(() => createTasks({} as any, access()).create({ userId, role: "DEVELOPER" }, projectId, { epicId, title: "Task" }), /FORBIDDEN_ROLE/);
   await assert.rejects(() => createTasks({} as any, access()).status({ userId, role: "PM" }, taskId, { status: "DONE", blocked: false, blockedReason: null, version: 1 }), /FORBIDDEN_ROLE/);
+});
+
+test("task list validates every relation filter is in the requested project", async () => {
+  const foreign = "00000000-0000-4000-8000-000000000005";
+  const db = { epic: { findFirst: async () => null }, sprint: { findFirst: async () => null }, projectMember: { findFirst: async () => null }, task: { findMany: async () => [], count: async () => 0 } };
+  const tasks = createTasks(db as any, access());
+  for (const query of [{ epicId: foreign }, { sprintId: foreign }, { assigneeId: foreign }]) await assert.rejects(() => tasks.list({ userId, role: "DEVELOPER" }, projectId, { page: 0, size: 20, ...query }), /VALIDATION_FAILED/);
+});
+
+test("patch validates the effective post-patch points for a sprint and reports version conflicts", async () => {
+  const sprintId = "00000000-0000-4000-8000-000000000005";
+  const db = { $transaction: async (work: (tx: any) => Promise<unknown>) => work({ task: { findFirst: async () => row({ sprintId, storyPoints: 3 }), update: async () => { throw new Error("must not update"); } }, epic: { findFirst: async () => ({ id: epicId }) }, sprint: { findFirst: async () => ({ id: sprintId, status: "ACTIVE" }) }, projectMember: { findFirst: async () => null } }) };
+  await assert.rejects(() => createTasks(db as any, access()).patch({ userId, role: "PM" }, taskId, { storyPoints: null, version: 1 }), /VALIDATION_FAILED/);
+  const stale = { $transaction: async (work: (tx: any) => Promise<unknown>) => work({ task: { findFirst: async () => row({ version: 2 }) } }) };
+  await assert.rejects(() => createTasks(stale as any, access()).patch({ userId, role: "PM" }, taskId, { version: 1 }), /CONFLICT_VERSION/);
+});
+
+test("status preserves omitted block fields", async () => {
+  const db = { $transaction: async (work: (tx: any) => Promise<unknown>) => work({ task: { findFirst: async () => row({ blocked: true, blockedReason: "Waiting" }), update: async (args: any) => row({ ...args.data, version: 2, blocked: true, blockedReason: "Waiting" }) }, taskEvent: { create: async () => undefined } }) };
+  const result = await createTasks(db as any, access()).status({ userId, role: "DEVELOPER" }, taskId, { status: "IN_PROGRESS", version: 1 });
+  assert.equal(result.blockedReason, "Waiting");
 });

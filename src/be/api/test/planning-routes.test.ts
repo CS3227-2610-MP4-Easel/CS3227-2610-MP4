@@ -15,6 +15,16 @@ test("planning PATCH input rejects status and block fields while status input is
   const patch = routes.find((route) => route.operationId === "TASK_UPDATE")!;
   const status = routes.find((route) => route.operationId === "TASK_STATUS_UPDATE")!;
   assert.throws(() => parseInput(patch.bodySchema as any, { version: 1, status: "DONE" }), /request body is not valid/);
+  assert.deepEqual(parseInput(status.bodySchema as any, { status: "DONE", version: 1 }), { status: "DONE", version: 1 });
   assert.throws(() => parseInput(status.bodySchema as any, { status: "DONE", blocked: true, blockedReason: null, version: 1, extra: true }), /request body is not valid/);
   assert.ok(id);
+});
+
+test("planning list accepts all supported task filters and maps version conflicts", async () => {
+  const routes = createPlanningRoutes(services);
+  const list = routes.find((route) => route.operationId === "TASK_LIST")!;
+  assert.deepEqual(parseInput(list.querySchema as any, { epicId: id, sprintId: id, assigneeId: id, status: "TODO", blocked: "true" }), { page: 0, size: 20, epicId: id, sprintId: id, assigneeId: id, status: "TODO", blocked: true });
+  const patch = routes.find((route) => route.operationId === "TASK_UPDATE")!;
+  const response = await patch.handler({ requestId: "rid", request: { method: "PATCH", path: "/", params: {}, query: new URLSearchParams(), body: undefined }, principal: { firebaseUid: "uid", userId: id, role: "PM" }, input: { params: { id }, query: {}, body: { version: 1 } } });
+  assert.equal(response.status, 200);
 });
