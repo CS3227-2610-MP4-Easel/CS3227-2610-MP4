@@ -3,6 +3,12 @@ import { inMutationTransaction, type MutationTransaction } from "@agile/db";
 
 type Actor = { userId: string; role: UserRole };
 type Row = Record<string, any>;
+export type ProjectAccess = {
+  /** Active-member proof from core's filtered-client membership service. */
+  requireMember(userId: string, projectId: string): Promise<void>;
+  /** Internal seam: only true for a member of an archived project, which the filtered client hides. */
+  archivedMembership(userId: string, projectId: string): Promise<boolean>;
+};
 type ProjectDb = MutationTransaction & {
   project?: { create(args: Row): Promise<Row>; findFirst(args: Row): Promise<Row | null>; findMany(args: Row): Promise<Row[]>; count(args: Row): Promise<number> };
   projectMember?: { create(args: Row): Promise<Row>; findFirst(args: Row): Promise<Row | null>; findMany(args: Row): Promise<Row[]> };
@@ -15,14 +21,19 @@ const detail = (row: Row) => ({ ...project(row), progress: { pointsTotal: 0, poi
 const member = (row: Row) => ({ userId: row.userId, displayName: row.displayName ?? row.user?.displayName, role: row.role ?? row.user?.role, addedAt: iso(row.addedAt) });
 const forbidden = () => { throw new Error("FORBIDDEN_ROLE"); };
 const invalid = () => { throw new Error("VALIDATION_FAILED"); };
-const active = async (tx: any, projectId: string) => {
-  const row = await tx.project.findFirst({ where: { id: projectId }, select: { status: true } });
-  if (!row) throw new Error("NOT_FOUND");
-  if (row.status !== "ACTIVE") throw new Error("CONFLICT_STATE");
+const requireProjectAccess = async (access: ProjectAccess, actor: Actor, projectId: string, write = false) => {
+  try {
+    await access.requireMember(actor.userId, projectId);
+  } catch {
+    if (await access.archivedMembership(actor.userId, projectId)) {
+      if (write) throw new Error("CONFLICT_STATE");
+    }
+    throw new Error("NOT_FOUND");
+  }
 };
 
 /** Project and membership operations; callers provide the filtered request client only. */
-export function createProjects(db: ProjectDb) {
+export function createProjects(db: ProjectDb, access: ProjectAccess) {
   return {
     async create(actor: Actor, input: { name: string; brief?: string | null }) {
       if (!actor.userId || actor.role !== "PM") forbidden();
@@ -43,33 +54,40 @@ export function createProjects(db: ProjectDb) {
     },
     async detail(actor: Actor, projectId: string) {
       if (!actor.userId) forbidden();
+      await requireProjectAccess(access, actor, projectId);
       const row = await db.project!.findFirst({ where: { id: projectId } });
       if (!row) throw new Error("NOT_FOUND");
       return detail(row);
     },
     async members(actor: Actor, projectId: string) {
       if (!actor.userId) forbidden();
+      await requireProjectAccess(access, actor, projectId);
       const rows = await db.projectMember!.findMany({ where: { projectId }, orderBy: [{ addedAt: "asc" }, { userId: "asc" }], include: { user: { select: { displayName: true, role: true } } } });
       return rows.map(member);
     },
     async addMember(actor: Actor, projectId: string, input: { email: string }) {
       if (!actor.userId || (actor.role !== "PM" && actor.role !== "DEV_LEAD")) forbidden();
       const email = input.email.trim().toLowerCase();
-      return inMutationTransaction(db, async () => {}, async (tx: any) => active(tx, projectId), async (tx: any) => {
-        const user = await tx.user.findFirst({ where: { email }, select: { id: true, displayName: true, role: true } });
-        if (!user || (actor.role === "PM" && user.role !== "DEV_LEAD") || (actor.role === "DEV_LEAD" && user.role !== "DEVELOPER")) invalid();
-        const existing = await tx.projectMember.findFirst({ where: { projectId, userId: user.id }, include: { user: { select: { displayName: true, role: true } } } });
-        if (existing) return { member: member(existing), created: false };
-        try {
+      await requireProjectAccess(access, actor, projectId, true);
+      let targetId: string | undefined;
+      try {
+        return await inMutationTransaction(db, async () => {}, async () => requireProjectAccess(access, actor, projectId, true), async (tx: any) => {
+          const user = await tx.user.findFirst({ where: { email }, select: { id: true, displayName: true, role: true } });
+          if (!user || (actor.role === "PM" && user.role !== "DEV_LEAD") || (actor.role === "DEV_LEAD" && user.role !== "DEVELOPER")) invalid();
+          targetId = user.id;
+          const existing = await tx.projectMember.findFirst({ where: { projectId, userId: user.id }, include: { user: { select: { displayName: true, role: true } } } });
+          if (existing) return { member: member(existing), created: false };
           const created = await tx.projectMember.create({ data: { projectId, userId: user.id, addedBy: actor.userId }, include: { user: { select: { displayName: true, role: true } } } });
           return { member: member(created), created: true };
-        } catch (error) {
-          if ((error as { code?: string }).code !== "P2002") throw error;
-          const raced = await tx.projectMember.findFirst({ where: { projectId, userId: user.id }, include: { user: { select: { displayName: true, role: true } } } });
-          if (!raced) throw error;
-          return { member: member(raced), created: false };
-        }
-      });
+        });
+      } catch (error) {
+        if ((error as { code?: string }).code !== "P2002" || !targetId) throw error;
+        // P2002 aborts this RepeatableRead snapshot; only the post-rollback client can observe the winner.
+        await requireProjectAccess(access, actor, projectId, true);
+        const raced = await db.projectMember!.findFirst({ where: { projectId, userId: targetId }, include: { user: { select: { displayName: true, role: true } } } });
+        if (!raced) throw error;
+        return { member: member(raced), created: false };
+      }
     },
   };
 }

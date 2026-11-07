@@ -5,6 +5,10 @@ import { createProjects } from "../src/projects.js";
 const projectId = "00000000-0000-4000-8000-000000000001";
 const userId = "00000000-0000-4000-8000-000000000002";
 const now = new Date("2026-11-08T00:00:00.000Z");
+const access = (member = true, archived = false) => ({
+  requireMember: async () => { if (!member) throw new Error("NOT_FOUND"); },
+  archivedMembership: async () => archived,
+});
 
 test("E2 project creation commits the project and creator membership together", async () => {
   const calls: string[] = [];
@@ -15,7 +19,7 @@ test("E2 project creation commits the project and creator membership together", 
       return work({ project: { create: async () => { calls.push("project"); return { id: projectId, name: "Roadmap", brief: null, status: "ACTIVE", createdBy: userId, createdAt: now, updatedAt: now, version: 1 }; } }, projectMember: { create: async () => { calls.push("member"); } } });
     },
   };
-  const projects = createProjects(db as any);
+  const projects = createProjects(db as any, access());
   const created = await projects.create({ userId, role: "PM" }, { name: "Roadmap", brief: null });
   assert.equal(created.id, projectId);
   assert.deepEqual(calls, ["transaction", "project", "member"]);
@@ -31,24 +35,38 @@ test("E3-E5 add member normalizes email, rejects absent users, and returns an ex
       projectMember: { findFirst: async () => ({ ...existing }), create: async () => { throw new Error("must not create duplicate"); } },
     }),
   };
-  const result = await createProjects(db as any).addMember({ userId, role: "PM" }, projectId, { email: "  LEAD@example.test  " });
+  const result = await createProjects(db as any, access()).addMember({ userId, role: "PM" }, projectId, { email: "  LEAD@example.test  " });
   assert.deepEqual(result, { member: { ...existing, addedAt: now.toISOString() }, created: false });
   assert.deepEqual(lookups, [{ where: { email: "lead@example.test" }, select: { id: true, displayName: true, role: true } }]);
-  await assert.rejects(() => createProjects({ ...db, $transaction: async (work: (tx: any) => Promise<unknown>) => work({ project: { findFirst: async () => ({ status: "ACTIVE" }) }, user: { findFirst: async () => null }, projectMember: {} }) } as any).addMember({ userId, role: "PM" }, projectId, { email: "missing@example.test" }), /VALIDATION_FAILED/);
+  await assert.rejects(() => createProjects({ ...db, $transaction: async (work: (tx: any) => Promise<unknown>) => work({ project: { findFirst: async () => ({ status: "ACTIVE" }) }, user: { findFirst: async () => null }, projectMember: {} }) } as any, access()).addMember({ userId, role: "PM" }, projectId, { email: "missing@example.test" }), /VALIDATION_FAILED/);
 });
 
-test("E27 concurrent add rereads the one membership after a unique race", async () => {
+test("E27 concurrent add rereads the one membership only after the P2002 transaction rolls back", async () => {
   const member = { userId: "00000000-0000-4000-8000-000000000003", displayName: "Dev", role: "DEVELOPER", addedAt: now };
   let reads = 0;
   const db = {
     $transaction: async (work: (tx: any) => Promise<unknown>) => work({
       project: { findFirst: async () => ({ status: "ACTIVE" }) }, user: { findFirst: async () => ({ id: member.userId, displayName: member.displayName, role: member.role }) },
-      projectMember: { findFirst: async () => ++reads === 1 ? null : member, create: async () => { throw Object.assign(new Error("unique"), { code: "P2002" }); } },
+      projectMember: { findFirst: async () => { assert.equal(++reads, 1, "transaction never rereads after P2002"); return null; }, create: async () => { throw Object.assign(new Error("unique"), { code: "P2002" }); } },
     }),
+    projectMember: { findFirst: async () => member },
   };
-  assert.deepEqual(await createProjects(db as any).addMember({ userId, role: "DEV_LEAD" }, projectId, { email: "dev@example.test" }), { member: { ...member, addedAt: now.toISOString() }, created: false });
+  assert.deepEqual(await createProjects(db as any, access()).addMember({ userId, role: "DEV_LEAD" }, projectId, { email: "dev@example.test" }), { member: { ...member, addedAt: now.toISOString() }, created: false });
+});
+
+test("project-scoped services prove caller membership before any project query", async () => {
+  const db = { project: { findMany: async () => { throw new Error("must not query"); }, count: async () => 0, findFirst: async () => { throw new Error("must not query"); } }, projectMember: { findMany: async () => { throw new Error("must not query"); } } };
+  const projects = createProjects(db as any, access(false));
+  await assert.rejects(() => projects.detail({ userId, role: "DEVELOPER" }, projectId), /NOT_FOUND/);
+  await assert.rejects(() => projects.members({ userId, role: "DEVELOPER" }, projectId), /NOT_FOUND/);
+});
+
+test("E7/E34 membership proof determines archived write precedence", async () => {
+  const db = { $transaction: async (work: (tx: any) => Promise<unknown>) => work({}) };
+  await assert.rejects(() => createProjects(db as any, access(false, true)).addMember({ userId, role: "PM" }, projectId, { email: "lead@example.test" }), /CONFLICT_STATE/);
+  await assert.rejects(() => createProjects(db as any, access(false, false)).addMember({ userId, role: "PM" }, projectId, { email: "lead@example.test" }), /NOT_FOUND/);
 });
 
 test("project services reject missing or mismatched actors", async () => {
-  await assert.rejects(() => createProjects({} as any).create({ userId, role: "DEV_LEAD" }, { name: "Roadmap" }), /FORBIDDEN_ROLE/);
+  await assert.rejects(() => createProjects({} as any, access()).create({ userId, role: "DEV_LEAD" }, { name: "Roadmap" }), /FORBIDDEN_ROLE/);
 });
