@@ -574,7 +574,7 @@ Evidence: none external.
 ### AD-28 Similar-item retrieval for the PM prompt — Decided
 **Decision:** case-insensitive keyword match through the filtered client (Postgres full-text search was rejected for the MVP: no raw SQL) over the epics and tasks of projects the PM is a member of, top 5, in a section of up to 800 tokens, behind a configuration flag so the plan can be generated with and without it.
 **Reason:** accepted AI recommendation (2026-10-28).
-**Consequences:** it uses the membership-scoped context function (AD-25); retrieved text is untrusted and wrapped as data; the Prisma mechanism (raw SQL or a preview feature) and the index are spec choices; demo seed data provides the history; embeddings remain a later option. Amended 2026-11-07 for W7 (spec SD5).
+**Consequences:** it uses the membership-scoped context function (AD-25); retrieved text is untrusted and wrapped as data; the Prisma mechanism is a spec choice (W7 chose keyword match through the filtered client; see the Decision above); demo seed data provides the history; embeddings remain a later option. Amended 2026-11-07 for W7 (spec SD5).
 **Decided by:** team, 2026-10-28 (accepted AI recommendation).
 
 Original brief (kept for the record):
@@ -849,7 +849,7 @@ Written in delegation mode: the team asked for valid findings to be integrated a
 | A-05 | Items belong to the uploader; key includes uploader and `repo`; `url` is https only; far-future timestamps rejected | Key on project and external id; trust `author` | Stops one developer overwriting or impersonating another | yes (key) |
 | A-06 | Row-lock claim inside one apply transaction; strict schema; re-checks | A separate APPLYING state | One transaction needs no extra state | no |
 | A-07 | `proposal_epics` rows with leases; requests carry no text or session id; session caps | One JSON payload with a version check | Parallel expansions would conflict or lose updates | yes (schema) |
-| A-08 | Context allow-list per feature; parameterised SQL with member ids; titles only; provenance | Scope retrieval to the target project only | Keeps AD-28's purpose while closing the leaks | no |
+| A-08 | Context allow-list per feature; queries filtered by member project ids; titles only; provenance | Scope retrieval to the target project only | Keeps AD-28's purpose while closing the leaks | no |
 | A-09 | Guard version in the summary key; user and project in the result-cache key; flags recorded; `flagged` stored | Keys on content only | Prevents cross-user leaks and stale summaries after a security fix | no |
 | A-10 | Longer registration codes (at least 13 characters, AD-63); hashed-IP rate limit table. `email_verified` and `disabled_at` were proposed and dropped (AD-57: Firebase configuration) | Open email; no disable path | Brute-forcing a registration code becomes impractical; verification and disabling stay with Firebase | partly |
 | A-11 | Branch-scoped dev secrets; previews in mock mode; production only from protected `main`; approved migration job; startup assertions | Keep AD-29 and AD-32 as written | They contradict each other and previews would read dev secrets | no |
