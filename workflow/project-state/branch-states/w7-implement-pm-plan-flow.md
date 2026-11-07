@@ -25,7 +25,6 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-07 | Claude Sonnet 5.5 | W7 | Active | Spec written and reviewed (Implementer, Tester, Maintainer, Attacker); lint clean | Wave 1 (T1-T3) done and reviewed. Continue `workflow/plans/2026-11-07-w7-pm-plan-flow/plan.md` with wave 2 (T4, T5, T8, T9, one at a time); no test database is set, so integration tests skip (ask the operator for `DATABASE_URL` and `W1_INTEGRATION_DATABASE_URL`) | 2026-11-07 |
 
 **Remaining**
 
@@ -97,3 +96,28 @@ pm install removes the generated Prisma client, so 	sc -b fails until `prisma:ge
 - **Decision:** from T5 the per-task review level is lowered (T5, T6, T7, T10, T11 `light`; T8, T9 `none`). T6+T7 and T8+T9 each go to one implementer. One combined light review runs after T7 and one after T11. The whole-branch `code-review` at close-out stays. T1-T4 keep their `full` reviews.
 - **Why:** the first four tasks' reviews found no blocking problem and cost about five subagent runs each; the real regression (the session rule) was found by running the tests against a real database, not by a reviewer.
 - **Rejected:** keeping `full` on every task as planned; skipping the close-out review.
+
+---
+
+## 5. Close-out
+
+**Built.** Endpoints 34, 35, 37, 40, 41 (`@agile/pm` routes and flow, `@agile/proposals` store and resolvers, `@agile/core` `applyPlan`, API routes, W2 session feature map, contract schemas). Verified against a local Postgres 16 in Docker (`w7-pm` container name `w7-pg`, port 5433, variables in untracked `.ws/w7.env`): full suite 563 tests, 559 pass, 4 fail, 0 skipped. The 4 failures are `tests/process-security/agent-hook.test.ts` (F8 shell-write mediation); no file they depend on differs from the base commit, but they were not run on the base branch. One run also showed a gateway test (`run-integration` E25) fail once under parallel load; it passed alone three times and in two later full runs.
+
+**Not done / not verified.** Nothing pushed. The Developer (W2 owner) has not agreed to the `Sessions` change (AD-11). The PM endpoints cannot be reached in the app until W5 registers the proposal resolvers and a project resolver (the placeholder returns 404). The whole-branch `code-review` reported 10 findings (none blocking, listed in the review output); none has been fixed.
+
+### Known Gaps (new)
+
+- **PM similar-item retrieval is keyword matching, not full-text search** - up to 8 keywords from the idea, `contains` on titles through the filtered client, at most 50 candidates per table in id order before ranking (spec SD5; contracts §5.2 and AD-28 amended in T1).
+
+### Deviations (new)
+
+- **D~1 Archived project answers 404, not 409, on endpoints 35, 37, 40, 41** - the filtered client hides every row of an archived project, so the proposal is not found (spec SD17; architecture §8 says 409).
+- **D~2 The session rule changed after the first database run** - the first formula made a `PM_PLAN_EXPAND` session unusable for its own feature and broke W2's E26 test; fixed and recorded as C~3.
+- **D~3 `plan-flow.ts` mirrors types and recognises `ProposalError` by name** - the W6 source scan forbids workspace imports other than contracts, ai-context and the gateway in a file that calls `run`.
+
+### Handover (for `STATE.md` Upcoming at the fold)
+
+- **W2 owner (Developer):** agree to the `Sessions.assertUsable` change (a session admits its own feature and the one mapped by `SESSION_FEATURE`; contracts §5.3 amended).
+- **W5 owner (Dev Lead):** register `createProposalResolvers(db)` and a project resolver that reads path parameter `id` for endpoint 34; lock the project row (`update` of `updatedAt`) before epic inserts so `position` cannot race `applyPlan`; add `Core.assertWritable`; merge `src/be/core/src/index.ts` exports with W7's `applyPlan`, `PlanInputSchema`, `countPlan`.
+- **W13:** `PM_SIMILAR_ITEMS` (`on`/`off`, default `on`) and the seed data that gives retrieval something to find.
+- **Architecture Now blocks:** write `pm`, `core` and `proposals` area files from the built code at the fold.

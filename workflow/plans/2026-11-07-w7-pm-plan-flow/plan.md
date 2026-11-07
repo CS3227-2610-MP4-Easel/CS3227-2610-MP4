@@ -47,12 +47,12 @@ only your own task's files. Contract tests marked read-only are not edited.
 | T3 Contract schemas for endpoints 34-41 | `tasks/T3.md` | - | T1, T2 | 1 | standard | full | Done |
 | T4 applyPlan in core | `tasks/T4.md` | T2 | T5, T8, T9 | 2 | complex | full | Done |
 | T5 Proposals: create, view, resolvers | `tasks/T5.md` | T2, T3 | T4, T8, T9 | 2 | complex | light | Done |
-| T6 Proposals: expand claim and store | `tasks/T6.md` | T5 | - | 3 | complex | light | In progress |
-| T7 Proposals: approve and reject | `tasks/T7.md` | T4, T5, T6 | - | 4 | complex | light | Not started |
+| T6 Proposals: expand claim and store | `tasks/T6.md` | T5 | - | 3 | complex | light | Done |
+| T7 Proposals: approve and reject | `tasks/T7.md` | T4, T5, T6 | - | 4 | complex | light | Done |
 | T8 pm: similar-items source and settings | `tasks/T8.md` | T2 | T4, T5, T9 | 2 | standard | none | Done |
 | T9 pm: schemas, sections, mocks | `tasks/T9.md` | T2 | T4, T5, T8 | 2 | standard | none | Done |
-| T10 pm: plan flow | `tasks/T10.md` | T1, T5, T6, T7, T8, T9 | - | 5 | complex | light | Not started |
-| T11 API routes, wiring, end to end | `tasks/T11.md` | T3, T10 | - | 6 | complex | light | Not started |
+| T10 pm: plan flow | `tasks/T10.md` | T1, T5, T6, T7, T8, T9 | - | 5 | complex | light | Done |
+| T11 API routes, wiring, end to end | `tasks/T11.md` | T3, T10 | - | 6 | complex | light | Done |
 
 Bundles: T6+T7 and T8+T9 may each share one subagent; T6+T7 get one combined review after T7, T10+T11 one combined review after T11 (operator, 2026-11-07: reviews only for non-trivial work, fewer of them; T1-T4 were reviewed at `full`).
 
