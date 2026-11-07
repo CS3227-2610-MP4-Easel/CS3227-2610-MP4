@@ -1,8 +1,8 @@
 import { applyPlan } from "@agile/core";
 import { createDbClient } from "@agile/db";
 import { getAiContext } from "@agile/ai-context";
-import { getLlmGateway, getSessions } from "@agile/llm-gateway";
 import { approveProposal, claimEpic, createProposal, failEpic, getProposalView, rejectProposal, storeEpic } from "@agile/proposals";
+import { gatewayParts } from "./gateway-binding.js";
 import { createPlanFlow, type PlanFlow } from "./plan-flow.js";
 import { loadPmSettings } from "./settings.js";
 import { registerSimilarItems } from "./similar-items.js";
@@ -13,8 +13,7 @@ let cached: PlanFlow | undefined;
 export function getPmRuntime(): PlanFlow {
   if (cached) return cached;
   const db = createDbClient();
-  const gateway = getLlmGateway();
-  const sessions = getSessions();
+  const { gateway, sessions } = gatewayParts();
   const core = { applyPlan: (tx: unknown, projectId: string, plan: unknown, actorId: string) => applyPlan(tx as never, projectId, plan, actorId) };
   registerSimilarItems({ db, settings: loadPmSettings(process.env) });
   cached = createPlanFlow({
