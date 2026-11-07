@@ -8,6 +8,6 @@ writes: workflow/plans/**
 forbidden: spec files, code, workflow/project-state/**
 returns: plan path, tasks and waves
 ---
-Follow the writing-plans-lite skill. Tag every code snippet `[contract]` (schemas, signatures,
+Follow the writing-plans-lite-v2 skill. Tag every code snippet `[contract]` (schemas, signatures,
 message strings, migrations tests depend on) or `[impl]` (algorithm hints). Each task ends with a
 Notes-for-next-task slot (at most 3 lines).

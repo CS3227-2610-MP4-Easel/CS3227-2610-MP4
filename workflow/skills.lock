@@ -1,9 +1,9 @@
 {
   "project-state": {
-    "checksum": "ddf15ca8df9c8ec8f35b4c62c16730afed5e5fec44526958b054306d619609e2"
+    "checksum": "e019758cd4fd7c145f0dafe4853a781e2c42a8f5fa75b0a2b705236d4358fbe5"
   },
   "branch-state": {
-    "checksum": "00541fa53a6d4d8f4d8d97039474c052c2a04c1d07b4cc3e2cb889c085f86db0"
+    "checksum": "362bb84b91cc42b05e0c450a53a4b1d86bf512280625a53df95b1d90b59bda0d"
   },
   "sync-project-state": {
     "checksum": "94c880654b452b0061d4073098c0d7f481356afd35522eca586ea1e658a1dfd5"
@@ -30,13 +30,13 @@
     "checksum": "0dbdb2bad08695216540ec09b6bfc6c172ac5e6b60ce0aa96a2028f2f3e1142f"
   },
   "slicing-architecture": {
-    "checksum": "800dabd9bfd6c09952b8db9e85726cce9e142827e21366790612ca88be052744"
+    "checksum": "f5146b6eea7117905ce87988affe7403f328191c34fb67edb3344870dc09731a"
   },
   "drafting-interfaces": {
-    "checksum": "5eda6b786ce051f1df8442fb2581a81e3e22c486d73f3830e100c5e5fb340d64"
+    "checksum": "dbf46db6b8ac3271c7f824b431ebea0bce0fcf9b5a70df0047a259a374de8ff7"
   },
   "authoring-tests": {
-    "checksum": "8a487a77ede276c5eb5c58c117f0b4d6ff71cf1588a9f0eab61a83b4b7a17fb3"
+    "checksum": "a8c42d07bb3f41d0652bc6dd73cf3e9fd48ff8136f830bece6359806396cb4e3"
   },
   "architecting-systems": {
     "checksum": "b1d6bdc8f22abb0973a50b837c74f17f3e95058dfd2e5bccd009e6a28b501929"
