@@ -1,9 +1,11 @@
 import { NotMember, type Core } from "@agile/contracts";
+import { createApply, type ApplyDb } from "./apply.js";
+import { createDerived, type DerivedDb } from "./derived.js";
 
 type Row = Record<string, unknown>;
 type FindFirst = (args: Record<string, unknown>) => Promise<Row | null>;
 
-export type CoreDb = {
+export type CoreDb = ApplyDb & DerivedDb & {
   project?: { findFirst: FindFirst };
   projectMember?: { findFirst: FindFirst };
 };
@@ -17,6 +19,8 @@ export type CoreDependencies = {
 const unavailable = async (): Promise<never> => { throw new Error("CORE_OPERATION_UNAVAILABLE"); };
 
 export function createCore({ db, archivedMembership = async () => false }: CoreDependencies): Core {
+  const derived = createDerived(db);
+  const apply = createApply();
   return {
     async requireMember(userId, projectId) {
       const membership = await db.projectMember?.findFirst({ where: { userId, projectId } });
@@ -28,9 +32,9 @@ export function createCore({ db, archivedMembership = async () => false }: CoreD
       if (!project) throw new Error("NOT_FOUND");
       if (project.status !== "ACTIVE") throw new Error("CONFLICT_STATE");
     },
-    progress: unavailable,
-    velocity: unavailable,
-    applyPlan: unavailable,
-    applyReplan: unavailable,
+    progress: derived.progress,
+    velocity: derived.velocity,
+    applyPlan: apply.applyPlan,
+    applyReplan: apply.applyReplan,
   };
 }

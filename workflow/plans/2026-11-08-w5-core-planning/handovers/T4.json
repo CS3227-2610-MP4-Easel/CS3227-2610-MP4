@@ -1,0 +1,17 @@
+{
+  "task": "T4",
+  "status": "done",
+  "summary": "Added snapshot-derived progress/velocity, transaction-only plan/replan application, and four core context-source registrations with focused coverage.",
+  "commit": "pending",
+  "produces": [
+    { "kind": "symbol", "name": "createDerived", "where": "src/be/core/src/derived.ts", "note": "Snapshot-derived progress and bounded velocity." },
+    { "kind": "symbol", "name": "createApply", "where": "src/be/core/src/apply.ts", "note": "Strictly validates and applies plans/replans through the supplied transaction." },
+    { "kind": "symbol", "name": "registerCoreContextSources", "where": "src/be/core/src/context-sources.ts", "note": "Registers core.projectBrief, core.checkpoints, core.taskEvents, and core.blockedTasks without importing ai-context." }
+  ],
+  "next": "T5 should call registerCoreContextSources from its composition root after registerCore.\nT6 can use transaction fakes to demonstrate rollback on a row/event failure.",
+  "deviations": [
+    { "what": "`ws task start T4` and `ws task done` could not run", "why": "The `ws` executable is not available in this checkout", "needs": "orchestrator" }
+  ],
+  "edge_cases": ["E19", "E20", "E22", "E24", "E25", "E31", "E32", "E33", "E36", "E38"],
+  "checks": { "build": "pass", "tests": "495 pass, 0 fail, 27 skipped", "lint": "pass; core has no @agile/ai-context import" }
+}

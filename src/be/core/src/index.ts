@@ -5,3 +5,6 @@ export { createCheckpoints, type CheckpointsService, type CheckpointAccess } fro
 export { createEpics, type EpicsService, type EpicAccess } from "./epics.js";
 export { createTasks, type TasksService, type TaskAccess } from "./tasks.js";
 export { writeTaskEvent, type TaskEventInput } from "./task-events.js";
+export { createDerived, type Derived, type DerivedDb, type Progress } from "./derived.js";
+export { createApply, type Apply, type ApplyDb } from "./apply.js";
+export { createCoreContextSources, registerCoreContextSources, type ContextSourceDb, type CoreContextRegister, type CoreContextRow, type CoreContextSource } from "./context-sources.js";
