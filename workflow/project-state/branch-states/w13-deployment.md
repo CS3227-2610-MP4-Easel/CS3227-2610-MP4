@@ -6,9 +6,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w13-deployment (from `INT` at `94ebc77134ffd4ab00e0bda3c3fe9c2ff933ef01`)
 - **Base:** d153509 (updated after merging current `development`)
 - **Owner:** operator / repository owner
-- **Status:** Approved
+- **Status:** Building
 - **Approved:** operator, 2026-11-07 — Gate 3 branch review approved and push authorized
-- **Last updated:** 2026-11-07 by Codex — Gate 3 approved; pushing branch
+- **Last updated:** 2026-11-07 by Codex — operator approved PR #18 safety-fix plan; T1 implementation starting
 
 ---
 
@@ -27,6 +27,7 @@ the W1 application runnable on the dev and production tiers.
 | S1 | 2026-11-07 | Codex | W13 | Blocked — needs human | T5 Neon recovery rehearsal and evidence | Owner completes the four T5 gate actions and supplies the redacted evidence object | 2026-11-07 |
 | S2 | 2026-11-07 | Codex | W13 | Done | Updated canonical development Neon target from operator-confirmed console values | Owner reviews the correction with the existing W13 Gate 3 diff | 2026-11-07 |
 | S3 | 2026-11-07 | Codex | W13 | Done | Pushed approved branch to origin | Owner creates the PR into `development` and monitors CI/Vercel | 2026-11-07 |
+| S4 | 2026-11-07 | Codex (lead) | W13 | Active | PR #18 safety-fix T1 | Write failing canonical-target and preview-policy tests before implementation | 2026-11-07 |
 
 **Remaining**
 
@@ -43,12 +44,16 @@ the W1 application runnable on the dev and production tiers.
 - [x] **C~4:** Operator approved reversing the approved no-token Vercel gate on 2026-11-07. W13 will use a protected, read-only Vercel metadata token only in the `development` push check; pull requests and application runtime receive no token.
 - [x] Gate 1: operator approved the amended W13 deployment-safety spec on 2026-11-07; approved-spec lint passes.
 - [x] **Review:** amended safety spec and plan now define the protected token boundary, sanitized metadata handoff, canonical loader, complete migration set, executor seam, production mapping, and E21-E25 traceability. Spec lint: 0 errors/0 warnings; plan lint: 0 errors/2 non-blocking Gate-step warnings.
+- [x] **PR #18 safety-fix spec review:** Implementer, Tester/QA, Maintainer, and Attacker lenses completed; exhaustive preview denylist, protected provisioning boundary, direct migration URL seam, local/test semantics, and tier-binding cases incorporated; spec lint 0 errors/0 warnings.
+- [x] **Gate 1 follow-up:** operator approved `workflow/specs/2026-11-07-w13-pr18-safety-fixes-design.md` on 2026-11-07; implementation plan may be written.
+- [x] **Gate 2 follow-up:** operator approved `workflow/plans/2026-11-07-w13-pr18-safety-fixes.md` on 2026-11-07; implementation may begin.
+- [x] **Plan self-review:** all listed existing paths verified, spec lint remains 0 errors/0 warnings, and `git diff --check` passes; the delegated read-only reviewer timed out before returning findings.
 
 ## 2. Workstreams
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | In review | [spec](../../specs/2026-11-07-w13-deployment-safety-design.md) | [plan](../../plans/2026-11-07-w13-deployment-safety.md) | T1 d33b572; T2 6fd84c7; T3 2eb8604; T4 d8ede9c; T5 checks complete; canonical dev Neon target corrected; Gate 3 pending | — |
+| W13 | Environments, seed data and deployment | Building | [spec](../../specs/2026-11-07-w13-deployment-safety-design.md); [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | T1 starting: canonical targets and shared preview policy | — |
 
 ## 3. Changes
 
@@ -84,6 +89,24 @@ the W1 application runnable on the dev and production tiers.
 | 2026-11-07 | T5 closeout checks passed: 331 tests passed/26 skipped, lint, typecheck, workflow validation, agent policy, and diff check passed; full-tree scan remains D~1 | W13 | Gate 3 pending |
 | 2026-11-07 | Bound the development tier to the operator-confirmed Neon project, host, and database; updated aligned manifest and resource-validation fixtures; focused tests and full regression pass | W13 | 75a5b14 |
 | 2026-11-07 | Recorded Gate 3 approval and pushed the approved branch to `origin/w13-deployment` | W13 | 8db2e4a |
+| 2026-11-07 | Drafted and completed four-lens review of the PR #18 safety-fix spec; added exhaustive preview policy, protected provisioning boundary, runtime/direct migration contracts, local/test semantics, tier-binding cases, and passed spec lint | W13 | follow-up spec |
+| 2026-11-07 | Operator approved the PR #18 safety-fix spec at Gate 1; implementation planning authorized | W13 | Gate 1 |
+| 2026-11-07 | Removed stale local-only `codex/pr18-fixes`; it had no unique commits and matched `w13-deployment` at `147b152` | W13 | branch cleanup |
+| 2026-11-07 | Drafted the dependency-ordered PR #18 safety-fix implementation plan with T1–T5, exact files, tests, post-merge provisioning gate, and traceability; Gate 2 pending | W13 | follow-up plan |
+| 2026-11-07 | Self-reviewed the follow-up plan's paths, task dependencies, traceability, and verification commands; no application code changed | W13 | plan review |
+| 2026-11-07 | Operator approved the follow-up implementation plan at Gate 2; T1 implementation authorized | W13 | Gate 2 |
+
+## 7. Decisions
+
+> Legend: `C` = project decision. AD-nn entries are in docs/architecture.
+
+### C~7 — Confirm production target and shared SoCLaaS endpoint
+
+- **Date:** 2026-11-07
+- **Who asked:** Codex, before implementing the PR #18 safety corrections
+- **Decision:** Dev and prod share `https://soclaas-api.comp.nus.edu.sg/v1`; production uses Firebase project `agile-platform-prod`, Neon project `super-sunset-36592949`, host `ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech`, and database `neondb`.
+- **Why:** The operator confirmed the production resource identity and endpoint topology; the PR's placeholder target and tier-specific `.example` URLs cannot safely represent the deployed system.
+- **Rejected:** Keeping the placeholder production target or inventing separate SoCLaaS endpoints without provisioned resources.
 
 ## 8. Deviations
 
