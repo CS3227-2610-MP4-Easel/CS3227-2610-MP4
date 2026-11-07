@@ -21,14 +21,14 @@ architecting-systems      Target architecture (docs/architecture/, AD-nn decisio
         |
 slicing-architecture      Cuts it into workstreams (W1, W2 ...) in STATE.md
         |                 Size each change: Small / Medium / Big (AGENTS.md section 3)
-writing-specs-lite        Spec files, reviewed from several lenses            -- Gate 1: approve spec
+writing-specs-lite-v2        Spec files, reviewed from several lenses            -- Gate 1: approve spec
         |
 drafting-interfaces       (Big) compilable stubs from the spec's contracts
 authoring-tests           (Big) contract tests written blind, from the spec only
         |
-writing-plans-lite        Task list with exact files and a checklist          -- Gate 2: approve plan
+writing-plans-lite-v2        Task list with exact files and a checklist          -- Gate 2: approve plan
         |
-executing-plans-lite      One fresh context per task: test, build, tick, update branch state
+executing-plans-lite-v2      One fresh context per task: test, build, tick, update branch state
         |                                                                      -- Gate 3: branch review
    (merge to development)
         |
@@ -49,10 +49,10 @@ shared structure all of this reads and writes.
 | `sync-project-state` | A branch merged and the owner says fold it |
 | `architecting-systems` | Designing or reviewing the target architecture |
 | `slicing-architecture` | The architecture passed its gate and must become workstreams |
-| `writing-specs-lite` | A Big or Medium change needs a spec |
+| `writing-specs-lite-v2` | A Big or Medium change needs a spec |
 | `drafting-interfaces`, `authoring-tests` | Big or high-risk specs: stubs first, then blind contract tests |
-| `writing-plans-lite` | An approved spec needs a task plan |
-| `executing-plans-lite` | Implementing a plan task by task |
+| `writing-plans-lite-v2` | An approved spec needs a task plan |
+| `executing-plans-lite-v2` | Implementing a plan task by task |
 | `update-documentation` | Keeping the developer guide (`docs/guide/`) current |
 | `refresh-project-state` | Starting a new iteration; archives and condenses the state (owner only) |
 | `logging-agent-interactions`, `reviewed-plan` | Standalone: interaction logs; a second-model reviewed spec and plan |

@@ -1,6 +1,6 @@
 ---
 name: slicing-architecture
-description: Use when an architecture in docs/architecture has passed its readiness gate and must be cut into workstreams, when the architecture gains decisions that change what work exists, or when the operator asks to break the architecture into workstreams, vertical slices, or a build order. Bridges architecting-systems to writing-specs-lite.
+description: Use when an architecture in docs/architecture has passed its readiness gate and must be cut into workstreams, when the architecture gains decisions that change what work exists, or when the operator asks to break the architecture into workstreams, vertical slices, or a build order. Bridges architecting-systems to writing-specs-lite-v2.
 ---
 
 # Slicing Architecture
