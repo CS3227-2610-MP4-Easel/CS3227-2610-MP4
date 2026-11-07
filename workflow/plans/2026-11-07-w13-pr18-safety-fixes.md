@@ -25,7 +25,7 @@
 | Task | Depends on | Can run concurrently with | Wave | Status |
 |---|---|---|---|---|
 | T1 Canonical target and shared preview policy | - | - | 1 | Done |
-| T2 Runtime database enforcement | T1 | - | 2 | Not started |
+| T2 Runtime database enforcement | T1 | - | 2 | Done |
 | T3 Migration boundary, fixtures, and whitespace | T1 | - | 2 | Not started |
 | T4 Protected preview provisioning check | T1 | - | 2 | Post-merge |
 | T5 Close-out | T2, T3 | - | 3 | Not started |
@@ -162,13 +162,13 @@ The implementation must call this before `new PrismaClient(...)`; the test seams
 
 **Checklist**
 
-- [ ] 1. Write failing auth and gateway runtime tests for E3–E5, E12, and E14, including valid dev/prod construction and redacted errors; run the focused runtime command.
-- [ ] 2. Implement `validateRuntimeDatabaseTarget` with exact local/test, dev/prod, and preview semantics.
-- [ ] 3. Place validation before both Prisma client construction paths and retain the no-database preview runtime.
-- [ ] 4. Add the gateway test seam without changing the production caller contract; run focused tests and confirm zero factory calls on invalid inputs.
-- [ ] 5. Run `npm run lint` and `npm run typecheck`.
-- [ ] 6. Update branch state Progress and Changes for T2.
-- [ ] 7. Commit: `fix: bind W13 runtimes to tier databases (W13)`.
+- [x] 1. Write failing auth and gateway runtime tests for E3–E5, E12, and E14, including valid dev/prod construction and redacted errors; run the focused runtime command.
+- [x] 2. Implement `validateRuntimeDatabaseTarget` with exact local/test, dev/prod, and preview semantics.
+- [x] 3. Place validation before both Prisma client construction paths and retain the no-database preview runtime.
+- [x] 4. Add the gateway test seam without changing the production caller contract; run focused tests and confirm zero factory calls on invalid inputs.
+- [x] 5. Run `npm run lint` and `npm run typecheck`.
+- [x] 6. Update branch state Progress and Changes for T2.
+- [x] 7. Commit: `fix: bind W13 runtimes to tier databases (W13)`.
 
 ### T3: Migration boundary, fixtures, and whitespace
 
