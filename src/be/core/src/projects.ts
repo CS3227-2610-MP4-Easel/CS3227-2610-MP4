@@ -1,13 +1,13 @@
-import type { UserRole } from "@agile/contracts";
+import { NotMember, type UserRole } from "@agile/contracts";
 import { inMutationTransaction, type MutationTransaction } from "@agile/db";
 
 type Actor = { userId: string; role: UserRole };
 type Row = Record<string, any>;
 export type ProjectAccess = {
   /** Active-member proof from core's filtered-client membership service. */
-  requireMember(userId: string, projectId: string): Promise<void>;
+  requireMember(userId: string, projectId: string, tx?: unknown): Promise<void>;
   /** Internal seam: only true for a member of an archived project, which the filtered client hides. */
-  archivedMembership(userId: string, projectId: string): Promise<boolean>;
+  archivedMembership(userId: string, projectId: string, tx?: unknown): Promise<boolean>;
 };
 type ProjectDb = MutationTransaction & {
   project?: { create(args: Row): Promise<Row>; findFirst(args: Row): Promise<Row | null>; findMany(args: Row): Promise<Row[]>; count(args: Row): Promise<number> };
@@ -21,11 +21,12 @@ const detail = (row: Row) => ({ ...project(row), progress: { pointsTotal: 0, poi
 const member = (row: Row) => ({ userId: row.userId, displayName: row.displayName ?? row.user?.displayName, role: row.role ?? row.user?.role, addedAt: iso(row.addedAt) });
 const forbidden = () => { throw new Error("FORBIDDEN_ROLE"); };
 const invalid = () => { throw new Error("VALIDATION_FAILED"); };
-const requireProjectAccess = async (access: ProjectAccess, actor: Actor, projectId: string, write = false) => {
+const requireProjectAccess = async (access: ProjectAccess, actor: Actor, projectId: string, write = false, tx?: unknown) => {
   try {
-    await access.requireMember(actor.userId, projectId);
-  } catch {
-    if (await access.archivedMembership(actor.userId, projectId)) {
+    await access.requireMember(actor.userId, projectId, tx);
+  } catch (error) {
+    if (!(error instanceof NotMember)) throw error;
+    if (await access.archivedMembership(actor.userId, projectId, tx)) {
       if (write) throw new Error("CONFLICT_STATE");
     }
     throw new Error("NOT_FOUND");
@@ -71,7 +72,7 @@ export function createProjects(db: ProjectDb, access: ProjectAccess) {
       await requireProjectAccess(access, actor, projectId, true);
       let targetId: string | undefined;
       try {
-        return await inMutationTransaction(db, async () => {}, async () => requireProjectAccess(access, actor, projectId, true), async (tx: any) => {
+        return await inMutationTransaction(db, async () => {}, async (tx) => requireProjectAccess(access, actor, projectId, true, tx), async (tx: any) => {
           const user = await tx.user.findFirst({ where: { email }, select: { id: true, displayName: true, role: true } });
           if (!user || (actor.role === "PM" && user.role !== "DEV_LEAD") || (actor.role === "DEV_LEAD" && user.role !== "DEVELOPER")) invalid();
           targetId = user.id;

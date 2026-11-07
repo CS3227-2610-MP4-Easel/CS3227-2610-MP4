@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { NotMember } from "@agile/contracts";
 import { createProjects } from "../src/projects.js";
 
 const projectId = "00000000-0000-4000-8000-000000000001";
 const userId = "00000000-0000-4000-8000-000000000002";
 const now = new Date("2026-11-08T00:00:00.000Z");
 const access = (member = true, archived = false) => ({
-  requireMember: async () => { if (!member) throw new Error("NOT_FOUND"); },
+  requireMember: async () => { if (!member) throw new NotMember(); },
   archivedMembership: async () => archived,
 });
 
@@ -65,6 +66,25 @@ test("E7/E34 membership proof determines archived write precedence", async () =>
   const db = { $transaction: async (work: (tx: any) => Promise<unknown>) => work({}) };
   await assert.rejects(() => createProjects(db as any, access(false, true)).addMember({ userId, role: "PM" }, projectId, { email: "lead@example.test" }), /CONFLICT_STATE/);
   await assert.rejects(() => createProjects(db as any, access(false, false)).addMember({ userId, role: "PM" }, projectId, { email: "lead@example.test" }), /NOT_FOUND/);
+});
+
+test("add member rechecks membership with its transaction and blocks an archive race", async () => {
+  const tx = { user: { findFirst: async () => { throw new Error("must not resolve target"); } }, projectMember: { findFirst: async () => null, create: async () => { throw new Error("must not write"); } } };
+  const seen: unknown[] = [];
+  let calls = 0;
+  const projects = createProjects({ $transaction: async (work: (transaction: unknown) => Promise<unknown>) => work(tx) } as any, {
+    requireMember: async (_userId, _projectId, transaction) => { seen.push(transaction); if (++calls === 2) throw new NotMember(); },
+    archivedMembership: async () => true,
+  });
+  await assert.rejects(() => projects.addMember({ userId, role: "PM" }, projectId, { email: "lead@example.test" }), /CONFLICT_STATE/);
+  assert.deepEqual(seen, [undefined, tx]);
+});
+
+test("unexpected membership failures escape rather than becoming not found", async () => {
+  let checkedArchive = false;
+  const projects = createProjects({} as any, { requireMember: async () => { throw new Error("db unavailable"); }, archivedMembership: async () => { checkedArchive = true; return false; } });
+  await assert.rejects(() => projects.detail({ userId, role: "DEVELOPER" }, projectId), /db unavailable/);
+  assert.equal(checkedArchive, false);
 });
 
 test("project services reject missing or mismatched actors", async () => {
