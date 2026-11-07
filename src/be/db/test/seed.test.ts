@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { runSeed, seedDemoData, type SeedClient } from "../prisma/seed.js";
+import { getTierTarget, parseDatabaseTarget, validateDatabaseTarget } from "../src/tier-targets.js";
 
 function fakeClient() {
   const calls: unknown[] = [];
@@ -37,7 +38,20 @@ test("E20 repeated seed input is deterministic", async () => {
 });
 
 test("E21/E28 seed rejects unsupported and production tiers before client construction", async () => {
-  await assert.rejects(runSeed({ APP_TIER: "prod", DATABASE_URL: "postgresql://prod.example/db" }), /production|prod/i);
+  await assert.rejects(runSeed({ APP_TIER: "prod", DATABASE_URL: "postgresql://prod.neon.tech/agile_platform", NEON_HOST: "prod.neon.tech", NEON_PROJECT: "agile-platform-prod" }), /production|prod/i);
   await assert.rejects(runSeed({ APP_TIER: "preview" }), /tier/i);
   await assert.rejects(runSeed({ APP_TIER: "staging" }), /tier/i);
+});
+
+test("E5/E6/E15/E16/E23/E28 canonical targets reject every cross-tier database substitution", () => {
+  const dev = { APP_TIER: "dev", DATABASE_URL: "postgresql://dev.neon.tech/agile_platform", NEON_HOST: "dev.neon.tech", NEON_PROJECT: "agile-platform-dev" };
+  assert.deepEqual(getTierTarget("dev"), { tier: "dev", env: "dev", vercelEnv: "preview", branch: "development", neonHost: "dev.neon.tech", neonProject: "agile-platform-dev", databaseName: "agile_platform" });
+  assert.deepEqual(parseDatabaseTarget(dev.DATABASE_URL), { protocol: "postgresql:", host: "dev.neon.tech", databaseName: "agile_platform" });
+  assert.doesNotThrow(() => validateDatabaseTarget(dev, dev.APP_TIER));
+  for (const key of ["DATABASE_URL", "NEON_HOST", "NEON_PROJECT"] as const) {
+    const mismatch = { ...dev, [key]: key === "DATABASE_URL" ? "postgresql://prod.neon.tech/agile_platform" : "prod.neon.tech" };
+    if (key === "NEON_PROJECT") mismatch[key] = "agile-platform-prod";
+    assert.throws(() => validateDatabaseTarget(mismatch, "dev"), /target|observations/i);
+  }
+  assert.throws(() => validateDatabaseTarget({ ...dev, DATABASE_URL: "not-a-url" }, "dev"), /malformed|protocol/i);
 });

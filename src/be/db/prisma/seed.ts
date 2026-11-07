@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { getTierTarget, validateDatabaseTarget } from "../src/tier-targets.js";
 
 export type SeedClient = Pick<PrismaClient, "user" | "project" | "projectMember" | "checkpoint" | "epic" | "sprint" | "task">;
 
@@ -42,12 +43,11 @@ export async function seedDemoData(db: SeedClient): Promise<void> {
   await db.task.upsert({ where: { id: IDS.task2 }, create: { id: IDS.task2, projectId: IDS.project, epicId: IDS.epic, sprintId: IDS.sprint2, assigneeId: IDS.lead, title: "Verify recovery evidence", description: "Document backup and restore checks", acceptanceCriteria: ["Evidence includes RPO and RTO"], status: "DONE", blocked: false, storyPoints: 8, doneAt: day("2026-01-31"), createdBy: IDS.pm, createdAt: CREATED_AT, updatedAt: CREATED_AT }, update: { title: "Verify recovery evidence", status: "DONE", storyPoints: 8, assigneeId: IDS.lead } });
 }
 
-export async function runSeed(env: Record<string, string | undefined> = process.env, suppliedClient?: SeedClient): Promise<void> {
-  const tier = env.APP_TIER;
-  if (tier !== "local" && tier !== "dev" && tier !== "test") throw new Error("Seed is not permitted for production or unsupported tiers");
+export async function runSeed(env: Record<string, string | undefined> = process.env): Promise<void> {
   const databaseUrl = env.DATABASE_URL;
-  if (!suppliedClient && !databaseUrl) throw new Error("DATABASE_URL is required for seed");
-  if (suppliedClient) return seedDemoData(suppliedClient);
+  const target = getTierTarget(env.APP_TIER);
+  if (target.tier !== "local" && target.tier !== "dev" && target.tier !== "test") throw new Error("Seed is not permitted for production or unsupported tiers");
+  validateDatabaseTarget(env, env.APP_TIER, databaseUrl);
   const client = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl! }) });
   try { await seedDemoData(client); } finally { await client.$disconnect(); }
 }

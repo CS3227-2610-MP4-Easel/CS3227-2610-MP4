@@ -24,7 +24,7 @@ the W1 application runnable on the dev and production tiers.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-07 | Codex | W13 | Active | T1 implementation complete; running task-level regression suite | Commit T1, then start T2 canonical target tests | 2026-11-07 |
+| S1 | 2026-11-07 | Codex | W13 | Active | T2 implementation complete; task-level regression passed | Commit T2, then start T3 migration-manifest tests | 2026-11-07 |
 
 **Remaining**
 
@@ -46,7 +46,7 @@ the W1 application runnable on the dev and production tiers.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | Building | [spec](../../specs/2026-11-07-w13-deployment-safety-design.md) | [plan](../../plans/2026-11-07-w13-deployment-safety.md) | T1 complete pending commit; T2 next | — |
+| W13 | Environments, seed data and deployment | Building | [spec](../../specs/2026-11-07-w13-deployment-safety-design.md) | [plan](../../plans/2026-11-07-w13-deployment-safety.md) | T1 d33b572; T2 complete pending commit | — |
 
 ## 3. Changes
 
@@ -71,6 +71,8 @@ the W1 application runnable on the dev and production tiers.
 | 2026-11-07 | Amended the safety plan after read-only review: protected pre-checkout metadata handoff, service-fixture tests, one canonical tier loader, exact migration executor seam, and complete edge-case traceability; spec lint 0/0 and plan lint 0 errors/2 non-blocking warnings | W13 | plan pending Gate 2 |
 | 2026-11-07 | Operator approved Gate 2 for the safety-correction implementation plan; execution starts with T1 baseline | W13 | Gate 2 |
 | 2026-11-07 | T1 implemented protected pre-checkout Vercel metadata correlation, exact deployment verification, sanitized handoff, and workflow/service-fixture tests; focused checks pass | W13 | T1 pending commit |
+| 2026-11-07 | T1 committed after full regression: 326 tests passed/26 skipped, lint/typecheck/workflow validation passed, staged secret scan passed; full-tree scan remains D~1 | W13 | d33b572 |
+| 2026-11-07 | T2 implemented the code-owned tier target loader, manifest `vercelEnv`/`databaseName`, and pre-construction seed target validation; 327 tests passed/26 skipped, lint/typecheck passed | W13 | T2 pending commit |
 
 ## 8. Deviations
 

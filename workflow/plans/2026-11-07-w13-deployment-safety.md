@@ -18,8 +18,8 @@
 
 | Task | Outcome | Depends on | Can run concurrently with | Wave | Status |
 |---|---|---|---|---|---|
-| T1 | Verify the current Vercel deployment from protected metadata | — | T2, T3 | 1 | In progress |
-| T2 | Create the canonical tier target loader and protect seed execution | — | T1, T3 | 1 | Not started |
+| T1 | Verify the current Vercel deployment from protected metadata | — | T2, T3 | 1 | Done |
+| T2 | Create the canonical tier target loader and protect seed execution | — | T1, T3 | 1 | In progress |
 | T3 | Enforce every migration manifest entry and minimize child environments | — | T1, T2 | 1 | Not started |
 | T4 | Separate Vercel environment names and require dev/prod resources | T2 | T1, T3 | 2 | Not started |
 | T5 | Integrate, run the full verification suite, and record evidence | T1, T2, T3, T4 | — | 3 | Not started |
@@ -61,7 +61,7 @@
 - [x] 3. Write failing workflow contract tests for E4, E14, E21-E22 and E27.
 - [x] 4. Implement the fixed pre-checkout lookup with `GITHUB_TOKEN` for the current commit's GitHub check and the protected read-only `VERCEL_TOKEN` for Vercel; poll every 10 seconds for five minutes, write only allowlisted metadata to `$RUNNER_TEMP/w13-vercel-metadata.json`, clear token-bearing variables, and never print response bodies or tokens.
 - [x] 5. Run focused W13 tests and workflow validation; expect green.
-- [ ] 6. Update branch-state Progress and Changes, then commit `fix: verify the current Vercel deployment (W13)` with `Workstream: W13` and `Task: T1`.
+- [x] 6. Update branch-state Progress and Changes, then commit `fix: verify the current Vercel deployment (W13)` with `Workstream: W13` and `Task: T1`.
 
 **Notes for next task:** The Vercel API response is normalized before checkout; deployment timestamps may be numeric milliseconds or ISO text. The workflow validator now permits an environment only for the trusted development push workflow; PR workflows remain prohibited.
 
@@ -81,12 +81,14 @@
 
 **Checklist**
 
-- [ ] 1. Write failing target-loader and seed tests for E5-E7, E15-E16, E23 and E28.
-- [ ] 2. Implement the canonical target loader and manifest schema fields.
-- [ ] 3. Implement pre-construction seed validation and the isolated test seam.
-- [ ] 4. Run focused seed/target tests and Prisma validation; expect green.
-- [ ] 5. Run `npm run lint` and `npm run typecheck`.
+- [x] 1. Write failing target-loader and seed tests for E5-E7, E15-E16, E23 and E28.
+- [x] 2. Implement the canonical target loader and manifest schema fields.
+- [x] 3. Implement pre-construction seed validation and the isolated test seam.
+- [x] 4. Run focused seed/target tests and Prisma validation; expect green.
+- [x] 5. Run `npm run lint` and `npm run typecheck`.
 - [ ] 6. Update branch-state Progress and Changes, then commit `fix: bind seed writes to canonical tier targets (W13)` with `Workstream: W13` and `Task: T2`.
+
+**Notes for next task:** The shared loader owns the runtime tier allowlist and validates URL host/database path plus `NEON_HOST`/`NEON_PROJECT` observations. The seed entry point no longer accepts an injected client, so mismatches fail before Prisma construction.
 
 ### T3: Enforce migration manifest and child-process safety
 
