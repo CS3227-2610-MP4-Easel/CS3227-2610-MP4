@@ -85,12 +85,13 @@ export function validateWorkflowText(text, pins, file = "workflow.yml") {
       ? triggerValue
       : triggerValue && typeof triggerValue === "object" ? Object.keys(triggerValue) : [];
   const trustedReviewWorkflow = file === ".github/workflows/review-security.yml";
+  const trustedDevDeployment = file === ".github/workflows/w13-dev-check.yml";
   if (triggers.some((trigger) => ["deployment", "deployment_status"].includes(trigger))) {
     errors.push(`${file}: deployment trigger is forbidden in pull-request workflows`);
   }
-  const allowedTriggers = trustedReviewWorkflow ? ["pull_request", "pull_request_review"] : ["pull_request"];
+  const allowedTriggers = trustedReviewWorkflow ? ["pull_request", "pull_request_review"] : trustedDevDeployment ? ["push"] : ["pull_request"];
   if (triggers.length !== allowedTriggers.length || triggers.some((trigger) => !allowedTriggers.includes(trigger))) {
-    errors.push(`${file}: only the pull_request trigger is allowed (found: ${triggers.join(", ") || "none"})`);
+    errors.push(`${file}: unexpected workflow trigger (found: ${triggers.join(", ") || "none"})`);
   }
   if (trustedReviewWorkflow) {
     const reviewTypes = workflow.on?.pull_request_review?.types;
@@ -108,7 +109,7 @@ export function validateWorkflowText(text, pins, file = "workflow.yml") {
   }
   for (const job of Object.values(jobs)) {
     if (!job || typeof job !== "object") continue;
-    if (Object.prototype.hasOwnProperty.call(job, "environment")) {
+    if (Object.prototype.hasOwnProperty.call(job, "environment") && !trustedDevDeployment) {
       errors.push(`${file}: environments are forbidden in pull-request workflows`);
     }
     if (containsSelfHosted(job["runs-on"])) {

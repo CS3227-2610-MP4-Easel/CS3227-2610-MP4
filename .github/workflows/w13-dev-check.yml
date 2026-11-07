@@ -1,0 +1,77 @@
+name: W13 development deployment check
+
+on:
+  push:
+    branches: [development]
+
+permissions:
+  contents: read
+  checks: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    environment: w13-development-verification
+    steps:
+      - name: Resolve current Vercel deployment before checkout
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
+          VERCEL_DEV_ALIAS: ${{ vars.VERCEL_DEV_ALIAS }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PUSH_TIMESTAMP: ${{ github.event.head_commit.timestamp }}
+          METADATA_FILE: ${{ runner.temp }}/w13-vercel-metadata.json
+        run: |
+          set -euo pipefail
+          : "${VERCEL_TOKEN:?missing protected Vercel token}"
+          : "${VERCEL_TEAM_ID:?missing Vercel team id}"
+          : "${VERCEL_DEV_ALIAS:?missing development alias hostname}"
+          checks_file="${RUNNER_TEMP}/w13-check-runs.json"
+          deployment_file="${RUNNER_TEMP}/w13-deployment.json"
+          aliases_file="${RUNNER_TEMP}/w13-aliases.json"
+          for attempt in $(seq 1 30); do
+            curl --fail --silent --show-error \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/check-runs" \
+              -o "${checks_file}"
+            deployment_id="$(jq -r '[.check_runs[] | select((.app.slug // "") == "vercel" or (.app.name // "") == "Vercel") | (((.external_id // "") | select(startswith("dpl_"))) // ((.details_url // "") | capture("(?<id>dpl_[A-Za-z0-9]+)").id))] | map(select(. != null and . != "")) | unique | if length == 1 then .[0] else empty end' "${checks_file}" || true)"
+            if [ -n "${deployment_id}" ]; then
+              curl --fail --silent --show-error \
+                -H "Authorization: Bearer ${VERCEL_TOKEN}" \
+                "https://api.vercel.com/v13/deployments/${deployment_id}?teamId=${VERCEL_TEAM_ID}" \
+                -o "${deployment_file}"
+              curl --fail --silent --show-error \
+                -H "Authorization: Bearer ${VERCEL_TOKEN}" \
+                "https://api.vercel.com/v2/deployments/${deployment_id}/aliases?teamId=${VERCEL_TEAM_ID}" \
+                -o "${aliases_file}"
+              if jq -e --arg sha "${GITHUB_SHA}" --arg project "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd" --arg pushed "${PUSH_TIMESTAMP}" --arg id "${deployment_id}" '(.uid // .id) == $id and .projectId == $project and .meta.githubCommitSha == $sha and .readyState == "READY" and ((.createdAt | if type == "number" then . else fromdateiso8601 * 1000 end) > (($pushed | fromdateiso8601) * 1000))' "${deployment_file}" >/dev/null && jq -e --arg alias "${VERCEL_DEV_ALIAS}" '.aliases | if type == "array" then ([.[] | select(.alias == $alias)] | length) == 1 else false end' "${aliases_file}" >/dev/null; then
+                jq -n --arg id "${deployment_id}" --arg sha "${GITHUB_SHA}" --arg project "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd" --arg alias "${VERCEL_DEV_ALIAS}" --arg state "READY" --arg created "$(jq -r '.createdAt | if type == "number" then (. / 1000 | todateiso8601) else . end' "${deployment_file}")" --arg owner "${deployment_id}" '{deploymentId:$id,githubCommitSha:$sha,project:$project,alias:$alias,aliasOwner:$owner,readyState:$state,createdAt:$created}' > "${METADATA_FILE}"
+                exit 0
+              fi
+            fi
+            sleep 10
+          done
+          echo "current Vercel deployment was not ready or unambiguous before timeout" >&2
+          exit 1
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20.19.5
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Verify sanitized deployment metadata
+        run: node --import tsx scripts/w13/verify-dev-deployment.mjs
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_PUSH_TIMESTAMP: ${{ github.event.head_commit.timestamp }}
+          W13_VERCEL_METADATA_FILE: ${{ runner.temp }}/w13-vercel-metadata.json
+          VERCEL_DEV_ALIAS: ${{ vars.VERCEL_DEV_ALIAS }}
+      - run: node --import tsx --test tests/w13/dev-deployment.test.ts
