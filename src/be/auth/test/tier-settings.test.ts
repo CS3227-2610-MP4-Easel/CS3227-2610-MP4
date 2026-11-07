@@ -8,8 +8,8 @@ const base = {
   VERCEL_PROJECT_ID: "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd",
   VERCEL_ENV: "preview",
   VERCEL_GIT_COMMIT_REF: "development",
-  NEON_HOST: "dev.neon.tech",
-  NEON_PROJECT: "agile-platform-dev",
+  NEON_HOST: "ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech",
+  NEON_PROJECT: "super-sunset-36592949",
   SOCLAAS_BASE_URL: "https://dev.soclaas.example",
 };
 

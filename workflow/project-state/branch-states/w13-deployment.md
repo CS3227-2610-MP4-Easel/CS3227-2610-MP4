@@ -24,7 +24,8 @@ the W1 application runnable on the dev and production tiers.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-|---|---|---|---|---|---|---|---|
+| S1 | 2026-11-07 | Codex | W13 | Blocked — needs human | T5 Neon recovery rehearsal and evidence | Owner completes the four T5 gate actions and supplies the redacted evidence object | 2026-11-07 |
+| S2 | 2026-11-07 | Codex | W13 | Done | Updated canonical development Neon target from operator-confirmed console values | Owner reviews the correction with the existing W13 Gate 3 diff | 2026-11-07 |
 
 **Remaining**
 
@@ -46,7 +47,7 @@ the W1 application runnable on the dev and production tiers.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | In review | [spec](../../specs/2026-11-07-w13-deployment-safety-design.md) | [plan](../../plans/2026-11-07-w13-deployment-safety.md) | T1 d33b572; T2 6fd84c7; T3 2eb8604; T4 d8ede9c; T5 checks complete; Gate 3 pending | — |
+| W13 | Environments, seed data and deployment | In review | [spec](../../specs/2026-11-07-w13-deployment-safety-design.md) | [plan](../../plans/2026-11-07-w13-deployment-safety.md) | T1 d33b572; T2 6fd84c7; T3 2eb8604; T4 d8ede9c; T5 checks complete; canonical dev Neon target corrected; Gate 3 pending | — |
 
 ## 3. Changes
 
@@ -80,6 +81,7 @@ the W1 application runnable on the dev and production tiers.
 | 2026-11-07 | T4 committed after full regression: 331 tests passed/26 skipped, lint/typecheck passed, staged secret scan passed | W13 | d8ede9c |
 | 2026-11-07 | Tightened the T2 seed seam after review: the client factory is internal-only and target validation still precedes construction; focused seed tests, lint, and full suite remain green | W13 | T2 follow-up |
 | 2026-11-07 | T5 closeout checks passed: 331 tests passed/26 skipped, lint, typecheck, workflow validation, agent policy, and diff check passed; full-tree scan remains D~1 | W13 | Gate 3 pending |
+| 2026-11-07 | Bound the development tier to the operator-confirmed Neon project, host, and database; updated aligned manifest and resource-validation fixtures; focused tests and full regression pass | W13 | pending commit |
 
 ## 8. Deviations
 
@@ -95,6 +97,24 @@ the W1 application runnable on the dev and production tiers.
 - **Gate 3 branch review:** owner must review the complete W13 diff and approve this branch before any push, PR creation, or merge.
 - **Environment configuration:** owner must restrict `w13-development-verification` to `development`, require reviewers/CODEOWNERS protection, and provide read-only `VERCEL_TOKEN` plus non-secret `VERCEL_TEAM_ID` before the development push check can run.
 - **Provider evidence:** no live Vercel, Neon, Firebase, or SoCLaaS credentials were used locally; provider evidence remains a post-merge owner action.
+
+## 10. Needs a Human
+
+- **Q~1:** The approved plan orders T5 (owner Neon recovery rehearsal/evidence) before T6/T7. May T6/T7 workflow and smoke implementation proceed now with T5 remaining a required post-merge production-readiness gate, or must the owner complete T5 first?
+
+### C~5 — Complete T5 before T6/T7
+
+- **Date:** 2026-11-07
+- **Who asked:** operator, choosing to complete the recovery gate first.
+- **Decision:** Complete the owner-only Neon recovery rehearsal and evidence before implementing the protected production workflow and smoke harness.
+- **Why:** Production deployment must not be designed or enabled before the recovery target and RPO/RTO evidence are confirmed.
+
+### C~6 — Bind development to the operator-confirmed Neon target
+
+- **Date:** 2026-11-07
+- **Who asked:** operator, after updating the Vercel development variables.
+- **Decision:** The canonical development Neon target is project `super-sunset-36592949`, host `ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech`, database `neondb`.
+- **Why:** The repository's prior development values were placeholders and no longer matched the configured Neon project.
 
 ## 7. Decisions
 

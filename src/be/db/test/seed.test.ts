@@ -44,9 +44,9 @@ test("E21/E28 seed rejects unsupported and production tiers before client constr
 });
 
 test("E5/E6/E15/E16/E23/E28 canonical targets reject every cross-tier database substitution", () => {
-  const dev = { APP_TIER: "dev", DATABASE_URL: "postgresql://dev.neon.tech/agile_platform", NEON_HOST: "dev.neon.tech", NEON_PROJECT: "agile-platform-dev" };
-  assert.deepEqual(getTierTarget("dev"), { tier: "dev", env: "dev", vercelEnv: "preview", branch: "development", neonHost: "dev.neon.tech", neonProject: "agile-platform-dev", databaseName: "agile_platform", vercelProject: "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd", vercelAlias: "development", firebaseProjectId: "agile-platform-dev", soclaasBaseUrl: "https://dev.soclaas.example" });
-  assert.deepEqual(parseDatabaseTarget(dev.DATABASE_URL), { protocol: "postgresql:", host: "dev.neon.tech", databaseName: "agile_platform" });
+  const dev = { APP_TIER: "dev", DATABASE_URL: "postgresql://user:placeholder@ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb", NEON_HOST: "ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech", NEON_PROJECT: "super-sunset-36592949" };
+  assert.deepEqual(getTierTarget("dev"), { tier: "dev", env: "dev", vercelEnv: "preview", branch: "development", neonHost: "ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech", neonProject: "super-sunset-36592949", databaseName: "neondb", vercelProject: "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd", vercelAlias: "development", firebaseProjectId: "agile-platform-dev", soclaasBaseUrl: "https://dev.soclaas.example" });
+  assert.deepEqual(parseDatabaseTarget(dev.DATABASE_URL), { protocol: "postgresql:", host: "ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech", databaseName: "neondb" });
   assert.doesNotThrow(() => validateDatabaseTarget(dev, dev.APP_TIER));
   for (const key of ["DATABASE_URL", "NEON_HOST", "NEON_PROJECT"] as const) {
     const mismatch = { ...dev, [key]: key === "DATABASE_URL" ? "postgresql://prod.neon.tech/agile_platform" : "prod.neon.tech" };
