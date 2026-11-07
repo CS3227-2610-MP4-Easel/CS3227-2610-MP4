@@ -7,7 +7,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w6-ai-context (from `INT` at `46b33b1`)
 - **Base:** efa06cd
 - **Owner:** ludannnn (Developer member)
-- **Status:** Approved
+- **Status:** Folded
 - **Approved:** ludannnn 2026-11-07 (re-approved after the PR #16 review fixes)
 - **Last updated:** 2026-11-07 by Claude Opus 5.5 — Gate 3 re-approved; SD4 signed off offline; push next
 
@@ -30,14 +30,14 @@ describes `INT`; read it for context and write here instead of editing it.
 
 - [x] Gate 1: W6 spec approved by ludannnn on 2026-11-06.
 - [x] Gate 2: W6 plan approved by ludannnn on 2026-11-06.
-- [ ] The operator is asking W5's owner (Dev Lead) for a delivery estimate; W6's membership check and its core-owned sections depend on W5.
+- [ ] **Handover:** the operator is asking W5's owner (Dev Lead) for a delivery estimate; W6's membership check and its core-owned sections depend on W5.
 - [x] Close-out: branch-diff review (Attacker, Tester); findings fixed (C~3 for the scanner).
 - [x] Gate 3: operator approved the branch (ludannnn, 2026-11-06).
 - [x] The operator pushed `w6-ai-context` and opened PR #16 into `development`.
 - [x] PR #16 review: two code findings fixed (cross-project re-check, scanner rule 4 in reached files); the third is the pending SD4 / D~1 sign-off below.
 - [x] Gate 3 (again): operator re-approved the branch after the PR #16 fixes (ludannnn, 2026-11-07).
 - [x] SD4 / D~1 sign-off under AD-11: the operator reports the group (PM and Dev Lead included) agreed offline on 2026-11-07 (C~4).
-- [ ] The operator pushes `w6-ai-context` and replies on PR #16: comments 1-2 fixed in 28c5ecb; comment 3 signed off offline (ideally the PM and the Dev Lead also approve the PR, so the sign-off is on record there).
+- [x] The operator pushed `w6-ai-context` and replied on PR #16 (merged 2026-11-07): comments 1-2 fixed in 28c5ecb; comment 3 signed off offline (ideally the PM and the Dev Lead also approve the PR, so the sign-off is on record there).
 - [ ] **Handover:** SD4 is signed off (C~4); a contracts §5.2 follow-up names `assembleWith` as the entry point for every feature, with `assemble` kept but throwing for `DEV_SUMMARY` and `DEV_STANDUP` (D~1).
 - [ ] **Handover (W5):** confirm where `requireMember` lives (architecture §4 says `auth`, frozen contracts §5.4 says `Core`; W6 follows §5.4) and that it throws `NotMember` for archived projects. The API composition root calls `registerCore(core)` and registers `core.projectBrief`, `core.checkpoints`, `core.taskEvents`, `core.blockedTasks`; `core` must not import `@agile/ai-context`. Add a boot test there asserting the core and all ten source ids are registered.
 - [ ] **Handover (W7, W8, W9):** register your sources at module load with `registerContextSource` (rules in the W6 spec conventions.md § Rules for source owners: `ownerId` meanings, rows most important first, filtered client, no unsafe raw SQL); call `assembleWith`, not `assemble`; keep gateway-calling files free of database imports (the source scan enforces it); never catch `ContextScopeViolation`. W7: `pm.similarItems` filters by the caller's member projects before searching, titles only, at most 5. W8: `lead.facts` emits only `FACT_KEYS` rows (add keys to `allow-list.ts` by PR, and update `facts`' max chars, which a test pins); test that the overload fact covers only member projects (C-28). W9: `dev.itemSummaries` never returns standup text.
@@ -141,3 +141,15 @@ New entries:
 ## 8. Deviations
 
 - **D~1 — The frozen `assemble` serves only features without required options (spec SD4):** contracts §5.2 promises `AiContext.assemble` for every feature; `DEV_SUMMARY` and `DEV_STANDUP` need item ids or a window that its frozen signature cannot carry, so for them it throws `INVALID_ASSEMBLE_INPUT` and features call `assembleWith`. The frozen type itself is unchanged. The operator chose to keep it and seek the PM's and Dev Lead's sign-off in the W6 PR (C~2).
+
+
+## Fold record
+Folded 2026-11-07 by ws fold · branch `w6-ai-context`
+
+| Provisional | Permanent |
+|---|---|
+| C~3 | C58 |
+| D~1 | D18 |
+| C~4 | C59 |
+| C~2 | C60 |
+| C~1 | C61 |
