@@ -26,7 +26,7 @@
 |---|---|---|---|---|
 | T1 Canonical target and shared preview policy | - | - | 1 | Done |
 | T2 Runtime database enforcement | T1 | - | 2 | Done |
-| T3 Migration boundary, fixtures, and whitespace | T1 | - | 2 | Not started |
+| T3 Migration boundary, fixtures, and whitespace | T1 | - | 2 | Done |
 | T4 Protected preview provisioning check | T1 | - | 2 | Post-merge |
 | T5 Close-out | T2, T3 | - | 3 | Not started |
 
@@ -185,12 +185,12 @@ The implementation must call this before `new PrismaClient(...)`; the test seams
 
 **Checklist**
 
-- [ ] 1. Update migration and fixture tests with the operator-confirmed production host/database and write the E10/E13 regression cases; run focused migration/seed tests and confirm stale fixtures fail before the implementation.
-- [ ] 2. Keep direct validation before `findMigrationFiles`, `prisma validate`, and `migrate deploy`; preserve child-environment minimization.
-- [ ] 3. Run focused migration/seed tests; confirm valid direct input passes and cross-tier input makes zero executor calls.
-- [ ] 4. Run `npm --workspace @agile/db run prisma:validate` and `git diff --check`.
-- [ ] 5. Update branch state Progress and Changes for T3.
-- [ ] 6. Commit: `fix: align W13 migration targets and fixtures (W13)`.
+- [x] 1. Update migration and fixture tests with the operator-confirmed production host/database and write the E10/E13 regression cases; run focused migration/seed tests and confirm stale fixtures fail before the implementation.
+- [x] 2. Keep direct validation before `findMigrationFiles`, `prisma validate`, and `migrate deploy`; preserve child-environment minimization.
+- [x] 3. Run focused migration/seed tests; confirm valid direct input passes and cross-tier input makes zero executor calls.
+- [x] 4. Run `npm --workspace @agile/db run prisma:validate` and `git diff --check`.
+- [x] 5. Update branch state Progress and Changes for T3.
+- [x] 6. Commit: `fix: align W13 migration targets and fixtures (W13)`.
 
 ### T4: Protected preview provisioning check
 

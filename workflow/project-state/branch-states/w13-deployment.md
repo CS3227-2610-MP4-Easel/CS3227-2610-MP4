@@ -8,7 +8,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Building
 - **Approved:** operator, 2026-11-07 — Gate 3 branch review approved and push authorized
-- **Last updated:** 2026-11-07 by Codex — T2 complete; runtime tests, lint, and typecheck pass; T3 starting
+- **Last updated:** 2026-11-07 by Codex — T3 complete; migration/seed tests, Prisma validation, and diff check pass; close-out starting
 
 ---
 
@@ -27,7 +27,7 @@ the W1 application runnable on the dev and production tiers.
 | S1 | 2026-11-07 | Codex | W13 | Blocked — needs human | T5 Neon recovery rehearsal and evidence | Owner completes the four T5 gate actions and supplies the redacted evidence object | 2026-11-07 |
 | S2 | 2026-11-07 | Codex | W13 | Done | Updated canonical development Neon target from operator-confirmed console values | Owner reviews the correction with the existing W13 Gate 3 diff | 2026-11-07 |
 | S3 | 2026-11-07 | Codex | W13 | Done | Pushed approved branch to origin | Owner creates the PR into `development` and monitors CI/Vercel | 2026-11-07 |
-| S4 | 2026-11-07 | Codex (lead) | W13 | Active | PR #18 safety-fix T3 | Write failing migration-boundary and fixture tests before implementation | 2026-11-07 |
+| S4 | 2026-11-07 | Codex (lead) | W13 | Active | PR #18 safety-fix close-out | Run full verification and prepare Gate 3 review; T4 remains post-merge | 2026-11-07 |
 
 **Remaining**
 
@@ -53,7 +53,7 @@ the W1 application runnable on the dev and production tiers.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | Building | [spec](../../specs/2026-11-07-w13-deployment-safety-design.md); [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | T2 done; T3 starting: migration boundary and fixtures | — |
+| W13 | Environments, seed data and deployment | Building | [spec](../../specs/2026-11-07-w13-deployment-safety-design.md); [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | T3 done; close-out verification starting; T4 post-merge | — |
 
 ## 3. Changes
 
@@ -98,6 +98,7 @@ the W1 application runnable on the dev and production tiers.
 | 2026-11-07 | Amended approved plan T1 to include the existing auth resource fixtures that must change with the canonical dev/prod target values; no requirement or task-order change | W13 | plan amendment |
 | 2026-11-07 | T1 implemented canonical dev/prod targets, shared preview credential policy, verifier delegation, aligned manifest/fixtures, and regression tests; focused tests (33) and lint pass | W13 | T1 |
 | 2026-11-07 | T2 implemented pre-Prisma runtime target validation for auth/gateway, local/test URL semantics, gateway test seam, and regression coverage; focused tests (13), lint, and typecheck pass | W13 | T2 |
+| 2026-11-07 | T3 aligned production migration/seed fixtures to the confirmed Neon target, added direct-target regression coverage, and removed the three PR whitespace errors; focused tests (9), Prisma validation, and diff check pass | W13 | T3 |
 
 ## 7. Decisions
 

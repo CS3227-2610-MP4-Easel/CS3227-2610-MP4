@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
 import { buildMigrationCommand, runProductionMigration, validateMigrationInputs, validateMigrationManifest } from "../../../../scripts/w13/migrate-production.mjs";
 import { validateRecoveryEvidence } from "../../../../scripts/w13/recovery-evidence.mjs";
 
-const env = { APP_TIER: "prod", DIRECT_DATABASE_URL: "postgresql://prod.neon.tech/agile_platform", NEON_HOST: "prod.neon.tech", NEON_PROJECT: "agile-platform-prod", DATABASE_URL: "postgresql://pooled.example/agile_platform", VERCEL_TOKEN: "must-not-pass" };
+const env = { APP_TIER: "prod", DIRECT_DATABASE_URL: "postgresql://user:password@ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech/neondb", NEON_HOST: "ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech", NEON_PROJECT: "super-sunset-36592949", DATABASE_URL: "postgresql://user:password@ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech/neondb", VERCEL_TOKEN: "must-not-pass" };
 
 test("E8/E18/E24 manifest matches every committed migration checksum", async () => {
   const sql = await readFile(new URL("../prisma/migrations/00000000000000_init/migration.sql", import.meta.url));
@@ -20,7 +20,7 @@ test("E8/E18/E24 manifest matches every committed migration checksum", async () 
 test("E17/E28 direct migration inputs require the canonical production target", () => {
   assert.doesNotThrow(() => validateMigrationInputs(env));
   assert.throws(() => validateMigrationInputs({ ...env, APP_TIER: "dev" }), /APP_TIER/);
-  assert.throws(() => validateMigrationInputs({ ...env, DIRECT_DATABASE_URL: "postgresql://dev.neon.tech/agile_platform", NEON_HOST: "dev.neon.tech", NEON_PROJECT: "agile-platform-dev" }), /target|observations/i);
+  assert.throws(() => validateMigrationInputs({ ...env, DIRECT_DATABASE_URL: "postgresql://user:password@ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb", NEON_HOST: "ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech", NEON_PROJECT: "super-sunset-36592949" }), /target|observations/i);
   assert.deepEqual(buildMigrationCommand(), ["npm", "--workspace", "@agile/db", "exec", "prisma", "migrate", "deploy", "--", "--schema", "prisma/schema.prisma"]);
 });
 

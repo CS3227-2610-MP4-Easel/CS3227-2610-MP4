@@ -38,18 +38,18 @@ test("E20 repeated seed input is deterministic", async () => {
 });
 
 test("E21/E28 seed rejects unsupported and production tiers before client construction", async () => {
-  await assert.rejects(runSeed({ APP_TIER: "prod", DATABASE_URL: "postgresql://prod.neon.tech/agile_platform", NEON_HOST: "prod.neon.tech", NEON_PROJECT: "agile-platform-prod" }), /production|prod/i);
+  await assert.rejects(runSeed({ APP_TIER: "prod", DATABASE_URL: "postgresql://user:password@ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech/neondb", NEON_HOST: "ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech", NEON_PROJECT: "super-sunset-36592949" }), /production|prod/i);
   await assert.rejects(runSeed({ APP_TIER: "preview" }), /tier/i);
   await assert.rejects(runSeed({ APP_TIER: "staging" }), /tier/i);
 });
 
 test("E5/E6/E15/E16/E23/E28 canonical targets reject every cross-tier database substitution", () => {
   const dev = { APP_TIER: "dev", DATABASE_URL: "postgresql://user:placeholder@ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb", NEON_HOST: "ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech", NEON_PROJECT: "super-sunset-36592949" };
-  assert.deepEqual(getTierTarget("dev"), { tier: "dev", env: "dev", vercelEnv: "preview", branch: "development", neonHost: "ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech", neonProject: "super-sunset-36592949", databaseName: "neondb", vercelProject: "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd", vercelAlias: "development", firebaseProjectId: "agile-platform-dev", soclaasBaseUrl: "https://dev.soclaas.example" });
+  assert.deepEqual(getTierTarget("dev"), { tier: "dev", env: "dev", vercelEnv: "preview", branch: "development", neonHost: "ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech", neonProject: "super-sunset-36592949", databaseName: "neondb", vercelProject: "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd", vercelAlias: "development", firebaseProjectId: "agile-platform-dev", soclaasBaseUrl: "https://soclaas-api.comp.nus.edu.sg/v1" });
   assert.deepEqual(parseDatabaseTarget(dev.DATABASE_URL), { protocol: "postgresql:", host: "ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech", databaseName: "neondb" });
   assert.doesNotThrow(() => validateDatabaseTarget(dev, dev.APP_TIER));
   for (const key of ["DATABASE_URL", "NEON_HOST", "NEON_PROJECT"] as const) {
-    const mismatch = { ...dev, [key]: key === "DATABASE_URL" ? "postgresql://prod.neon.tech/agile_platform" : "prod.neon.tech" };
+    const mismatch = { ...dev, [key]: key === "DATABASE_URL" ? "postgresql://user:password@ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech/neondb" : "ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech" };
     if (key === "NEON_PROJECT") mismatch[key] = "agile-platform-prod";
     assert.throws(() => validateDatabaseTarget(mismatch, "dev"), /target|observations/i);
   }

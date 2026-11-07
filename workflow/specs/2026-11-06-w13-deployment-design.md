@@ -1,8 +1,8 @@
 # W13 — Environments, seed data and deployment
 
-- **Status:** Approved (operator, 2026-11-06)  
-- **Risk tier:** High — production credentials, authentication configuration, database migrations, recovery, and irreversible deployment effects.  
-**Lenses:** Implementer, Tester, Maintainer, Attacker.  
+- **Status:** Approved (operator, 2026-11-06)
+- **Risk tier:** High — production credentials, authentication configuration, database migrations, recovery, and irreversible deployment effects.
+**Lenses:** Implementer, Tester, Maintainer, Attacker.
 **Approach:** Hybrid deployment: Vercel branch deployment for dev; an approved protected GitHub Environment job for production migration and deployment.
 
 Amended 2026-11-06: AD-53 controls preview mapping and W4 controls local auth; only `development` receives dev credentials, other PR previews are mock-only, and local uses a non-production Firebase project without emulator mode.
