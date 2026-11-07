@@ -19,8 +19,8 @@
 | Task | Outcome | Depends on | Can run concurrently with | Wave | Status |
 |---|---|---|---|---|---|
 | T1 | Verify the current Vercel deployment from protected metadata | — | T2, T3 | 1 | Done |
-| T2 | Create the canonical tier target loader and protect seed execution | — | T1, T3 | 1 | In progress |
-| T3 | Enforce every migration manifest entry and minimize child environments | — | T1, T2 | 1 | Not started |
+| T2 | Create the canonical tier target loader and protect seed execution | — | T1, T3 | 1 | Done |
+| T3 | Enforce every migration manifest entry and minimize child environments | — | T1, T2 | 1 | In progress |
 | T4 | Separate Vercel environment names and require dev/prod resources | T2 | T1, T3 | 2 | Not started |
 | T5 | Integrate, run the full verification suite, and record evidence | T1, T2, T3, T4 | — | 3 | Not started |
 
@@ -86,7 +86,7 @@
 - [x] 3. Implement pre-construction seed validation and the isolated test seam.
 - [x] 4. Run focused seed/target tests and Prisma validation; expect green.
 - [x] 5. Run `npm run lint` and `npm run typecheck`.
-- [ ] 6. Update branch-state Progress and Changes, then commit `fix: bind seed writes to canonical tier targets (W13)` with `Workstream: W13` and `Task: T2`.
+- [x] 6. Update branch-state Progress and Changes, then commit `fix: bind seed writes to canonical tier targets (W13)` with `Workstream: W13` and `Task: T2`.
 
 **Notes for next task:** The shared loader owns the runtime tier allowlist and validates URL host/database path plus `NEON_HOST`/`NEON_PROJECT` observations. The seed entry point no longer accepts an injected client, so mismatches fail before Prisma construction.
 
@@ -104,12 +104,14 @@
 
 **Checklist**
 
-- [ ] 1. Write failing tests for E8-E9, E12, E17-E18, E24-E25 and E29.
-- [ ] 2. Implement exact migration discovery and manifest set equality.
-- [ ] 3. Implement direct-target validation through `getTierTarget('prod')` and the explicit executor signature `(file, args, options) => Promise<{ stdout: string; stderr: string }>`.
-- [ ] 4. Implement the allowlisted child environment and derived `DATABASE_URL`.
-- [ ] 5. Run focused migration tests and Prisma validation; expect green.
+- [x] 1. Write failing tests for E8-E9, E12, E17-E18, E24-E25 and E29.
+- [x] 2. Implement exact migration discovery and manifest set equality.
+- [x] 3. Implement direct-target validation through `getTierTarget('prod')` and the explicit executor signature `(file, args, options) => Promise<{ stdout: string; stderr: string }>`.
+- [x] 4. Implement the allowlisted child environment and derived `DATABASE_URL`.
+- [x] 5. Run focused migration tests and Prisma validation; expect green.
 - [ ] 6. Update branch-state Progress and Changes, then commit `fix: enforce migration evidence before deploy (W13)` with `Workstream: W13` and `Task: T3`.
+
+**Notes for next task:** The runner validates the repository migration-file set and raw-byte checksums before either executor call. The executor receives only a derived `DATABASE_URL` plus a small process allowlist; the production runner is invoked with the repository's TypeScript loader available.
 
 ### T4: Correct production environment validation
 
