@@ -26,7 +26,7 @@ export function createDerived(db: DerivedDb) {
       if (!Number.isInteger(n) || n < 1 || n > 100) throw new RangeError("INVALID_VELOCITY_LIMIT");
       return db.sprint?.findMany({
         where: { projectId, status: "CLOSED", completedPoints: { not: null } },
-        orderBy: [{ endDate: "desc" }, { id: "desc" }], take: n,
+        orderBy: [{ endDate: "desc" }, { id: "asc" }], take: n,
         select: { id: true, name: true, completedPoints: true },
       }) ?? [];
     },

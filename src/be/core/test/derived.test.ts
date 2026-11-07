@@ -17,3 +17,9 @@ test("velocity accepts only a bounded integer limit", async () => {
   await assert.rejects(() => velocity("p", 1.2), { name: "RangeError", message: "INVALID_VELOCITY_LIMIT" });
   assert.equal((await velocity("p", 1)).length, 1);
 });
+
+test("velocity uses ascending sprint ids to break equal end-date ties", async () => {
+  let query: any;
+  await createDerived({ sprint: { findMany: async (args) => { query = args; return []; } } }).velocity("p", 2);
+  assert.deepEqual(query.orderBy, [{ endDate: "desc" }, { id: "asc" }]);
+});

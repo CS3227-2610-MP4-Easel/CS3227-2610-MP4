@@ -40,3 +40,24 @@ test("storage failures have the source-specific core failure code", async () => 
   const sources = createCoreContextSources({ projectMember: { findFirst: async () => { throw new Error("database detail"); } } } as any);
   await assert.rejects(() => sources.projectBrief(args), /CORE_SOURCE_FAILED:core\.projectBrief/);
 });
+
+test("project brief queries only fields in the Project schema", async () => {
+  let query: any;
+  const sources = createCoreContextSources({ projectMember: { findFirst: async () => ({ projectId }) }, project: { findFirst: async (args) => { query = args; return { id: projectId, brief: "brief" }; } } });
+  assert.deepEqual(await sources.projectBrief(args), [{ projectId, ref: { type: "PROJECT", id: projectId }, text: "brief" }]);
+  assert.deepEqual(query.select, { id: true, brief: true });
+});
+
+test("core sources render storage fields and use their fixed sort order", async () => {
+  const queries: any[] = [];
+  const sources = createCoreContextSources({
+    projectMember: { findFirst: async () => ({ projectId }) },
+    checkpoint: { findMany: async (query) => { queries.push(query); return [{ id: "c", projectId, name: "Milestone", targetDate: "2026-12-01" }]; } },
+    taskEvent: { findMany: async (query) => { queries.push(query); return [{ id: 2, projectId, taskId: "t", actorId: userId, type: "STATUS_CHANGED", fromValue: "TODO", toValue: "DONE", at: "2026-12-01T00:00:00.000Z" }]; } },
+    task: { findMany: async (query) => { queries.push(query); return [{ id: "t", projectId, assigneeId: userId, title: "Blocked", blockedReason: "Waiting", description: "Details" }]; } },
+  });
+  assert.equal((await sources.checkpoints(args))[0].text, "name: Milestone\ntarget_date: 2026-12-01");
+  assert.equal((await sources.taskEvents(args))[0].text, "task: t\nevent: STATUS_CHANGED\nfrom: TODO\nto: DONE\nat: 2026-12-01T00:00:00.000Z");
+  assert.equal((await sources.blockedTasks(args))[0].text, "title: Blocked\nreason: Waiting\ndescription: Details");
+  assert.deepEqual(queries.map((query) => query.orderBy), [[{ targetDate: "asc" }, { id: "asc" }], [{ at: "desc" }, { id: "desc" }], [{ updatedAt: "desc" }, { id: "desc" }]]);
+});

@@ -31,9 +31,9 @@ export function createCoreContextSources(db: ContextSourceDb): Readonly<Record<"
   return Object.freeze({
     projectBrief: async ({ caller, projectId }) => source("core.projectBrief", async () => {
       if (!await member(db, caller.userId, projectId)) return [];
-      const row = await db.project?.findFirst({ where: { id: projectId }, select: { id: true, projectId: true, brief: true } });
+      const row = await db.project?.findFirst({ where: { id: projectId }, select: { id: true, brief: true } });
       const rendered = chars(row?.brief, 4300);
-      return row && row.id === projectId && (row.projectId === undefined || row.projectId === projectId) && rendered ? [{ projectId, ref: { type: "PROJECT", id: row.id }, text: rendered }] : [];
+      return row && row.id === projectId && rendered ? [{ projectId, ref: { type: "PROJECT", id: row.id }, text: rendered }] : [];
     }),
     checkpoints: async ({ caller, projectId }) => source("core.checkpoints", async () => {
       if (!await member(db, caller.userId, projectId)) return [];

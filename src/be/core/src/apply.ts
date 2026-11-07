@@ -9,14 +9,15 @@ const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => {
 });
 const storyPoints = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(5), z.literal(8), z.literal(13)]).nullable();
 const task = z.object({ title: z.string().min(1).max(200), description: z.string().max(4000).optional(), acceptanceCriteria: z.array(z.string().max(300)).max(12).optional(), storyPoints, assigneeId: uuid.nullable().optional(), sprintId: uuid.nullable().optional() }).strict();
-const epic = z.object({ title: z.string().min(1).max(200), description: z.string().max(4000).optional(), checkpointName: z.string().max(200).nullable().optional(), tasks: z.array(task).optional(), expansion: z.object({ status: z.string(), tasks: z.array(task).nullable() }).passthrough().optional() }).passthrough();
-const planSchema = z.object({ id: uuid.optional(), projectId: uuid.optional(), version: z.number().int().positive().optional(), checkpoints: z.array(z.object({ name: z.string().min(1).max(200), targetDate: date }).strict()), epics: z.array(epic) }).passthrough();
+const rationale = z.string().min(1).max(300);
+const epic = z.object({ title: z.string().min(1).max(200), description: z.string().max(4000).optional(), checkpointName: z.string().max(200).nullable().optional(), tasks: z.array(task).max(100).optional(), expansion: z.object({ status: z.string(), tasks: z.array(task).max(100).nullable() }).strict().optional() }).strict();
+const planSchema = z.object({ id: uuid.optional(), projectId: uuid.optional(), version: z.number().int().positive().optional(), checkpoints: z.array(z.object({ name: z.string().min(1).max(200), targetDate: date }).strict()).max(50), epics: z.array(epic).max(100) }).strict();
 const suggestion = z.discriminatedUnion("type", [
-  z.object({ id: uuid, type: z.literal("MOVE_CHECKPOINT_DATE"), checkpointId: uuid, newTargetDate: date }).passthrough(),
-  z.object({ id: uuid, type: z.literal("MOVE_EPIC_TO_CHECKPOINT"), epicId: uuid, checkpointId: uuid.nullable() }).passthrough(),
-  z.object({ id: uuid, type: z.literal("REASSIGN_TASK"), taskId: uuid, assigneeId: uuid }).passthrough(),
+  z.object({ id: uuid, type: z.literal("MOVE_CHECKPOINT_DATE"), checkpointId: uuid, newTargetDate: date, rationale }).strict(),
+  z.object({ id: uuid, type: z.literal("MOVE_EPIC_TO_CHECKPOINT"), epicId: uuid, checkpointId: uuid.nullable(), rationale }).strict(),
+  z.object({ id: uuid, type: z.literal("REASSIGN_TASK"), taskId: uuid, assigneeId: uuid, rationale }).strict(),
 ]);
-const replanSchema = z.object({ id: uuid.optional(), projectId: uuid.optional(), version: z.number().int().positive().optional(), suggestions: z.array(suggestion) }).passthrough();
+const replanSchema = z.object({ id: uuid.optional(), projectId: uuid.optional(), version: z.number().int().positive().optional(), suggestions: z.array(suggestion).max(100) }).strict();
 
 export type ApplyDb = {
   user?: { findFirst(args: Row): Promise<Row | null> };
@@ -30,9 +31,9 @@ export type ApplyDb = {
   aiProposal?: { findFirst(args: Row): Promise<Row | null>; update(args: Row): Promise<Row> };
 };
 
-async function actor(tx: ApplyDb, actorId: string) {
+async function actor(tx: ApplyDb, actorId: string, role: "PM" | "DEV_LEAD") {
   const row = await tx.user?.findFirst({ where: { id: actorId }, select: { id: true, role: true } });
-  if (!row || (row.role !== "PM" && row.role !== "DEV_LEAD")) throw new Error("FORBIDDEN_ROLE");
+  if (!row || row.role !== role) throw new Error("FORBIDDEN_ROLE");
 }
 async function projectAccess(tx: ApplyDb, actorId: string, projectId: string) {
   const [project, member] = await Promise.all([
@@ -58,7 +59,7 @@ export function createApply() {
       const parsed = planSchema.safeParse(value);
       if (!parsed.success) throw new Error("VALIDATION_FAILED");
       const tx = transaction as ApplyDb;
-      await actor(tx, actorId); await projectAccess(tx, actorId, projectId); await proposal(tx, parsed.data.id, projectId, "PLAN", parsed.data.version);
+      await actor(tx, actorId, "PM"); await projectAccess(tx, actorId, projectId); await proposal(tx, parsed.data.id, projectId, "PLAN", parsed.data.version);
       const checkpoints = new Map<string, string>();
       for (const input of parsed.data.checkpoints) {
         const row = await tx.checkpoint?.create({ data: { projectId, name: input.name, targetDate: new Date(`${input.targetDate}T00:00:00.000Z`) } });
@@ -86,7 +87,7 @@ export function createApply() {
       const parsed = replanSchema.safeParse(value);
       if (!parsed.success) throw new Error("VALIDATION_FAILED");
       const tx = transaction as ApplyDb;
-      await actor(tx, actorId); await projectAccess(tx, actorId, projectId); await proposal(tx, parsed.data.id, projectId, "REPLAN", parsed.data.version);
+      await actor(tx, actorId, "DEV_LEAD"); await projectAccess(tx, actorId, projectId); await proposal(tx, parsed.data.id, projectId, "REPLAN", parsed.data.version);
       for (const item of parsed.data.suggestions) {
         if (item.type === "MOVE_CHECKPOINT_DATE") {
           if (!await tx.checkpoint?.findFirst({ where: { id: item.checkpointId, projectId } })) throw new Error("VALIDATION_FAILED");

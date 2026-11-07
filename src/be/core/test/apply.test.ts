@@ -35,15 +35,17 @@ test("E24-E25 applyPlan ignores embedded project id, validates assignees, and wr
 
 test("E36 stale and out-of-scope replan targets fail before mutation", async () => {
   const tx = transaction();
+  tx.user.findFirst = async () => ({ id: actorId, role: "DEV_LEAD" });
   tx.task.findFirst = async () => null;
-  await assert.rejects(() => createApply().applyReplan(tx, projectId, { suggestions: [{ id: "00000000-0000-4000-8000-000000000005", type: "REASSIGN_TASK", taskId, assigneeId }] }, actorId), /VALIDATION_FAILED/);
+  await assert.rejects(() => createApply().applyReplan(tx, projectId, { suggestions: [{ id: "00000000-0000-4000-8000-000000000005", type: "REASSIGN_TASK", taskId, assigneeId, rationale: "needed" }] }, actorId), /VALIDATION_FAILED/);
   assert.deepEqual(tx.calls, []);
 });
 
 test("apply rejects impossible calendar dates before any write", async () => {
   const tx = transaction();
   await assert.rejects(() => createApply().applyPlan(tx, projectId, { checkpoints: [{ name: "bad", targetDate: "2026-02-30" }], epics: [] }, actorId), /VALIDATION_FAILED/);
-  await assert.rejects(() => createApply().applyReplan(tx, projectId, { suggestions: [{ id: "00000000-0000-4000-8000-000000000005", type: "MOVE_CHECKPOINT_DATE", checkpointId: taskId, newTargetDate: "2026-02-30" }] }, actorId), /VALIDATION_FAILED/);
+  tx.user.findFirst = async () => ({ id: actorId, role: "DEV_LEAD" });
+  await assert.rejects(() => createApply().applyReplan(tx, projectId, { suggestions: [{ id: "00000000-0000-4000-8000-000000000005", type: "MOVE_CHECKPOINT_DATE", checkpointId: taskId, newTargetDate: "2026-02-30", rationale: "needed" }] }, actorId), /VALIDATION_FAILED/);
   assert.deepEqual(tx.calls, []);
 });
 
@@ -60,4 +62,20 @@ test("applyPlan leaves rollback to its supplied transaction after an event inser
   };
   await assert.rejects(() => suppliedTransaction(() => createApply().applyPlan(tx, projectId, { checkpoints: [{ name: "first", targetDate: "2026-12-01" }], epics: [{ title: "e", tasks: [{ title: "t", storyPoints: 3 }] }] }, actorId)), /event insert failed/);
   assert.deepEqual(state, { checkpoints: 0, epics: 0, tasks: 0, events: 0 });
+});
+
+test("applyPlan is PM-only and applyReplan is Dev Lead-only", async () => {
+  const planTx = transaction();
+  planTx.user.findFirst = async () => ({ id: actorId, role: "DEV_LEAD" });
+  await assert.rejects(() => createApply().applyPlan(planTx, projectId, { checkpoints: [], epics: [] }, actorId), /FORBIDDEN_ROLE/);
+  const replanTx = transaction();
+  await assert.rejects(() => createApply().applyReplan(replanTx, projectId, { suggestions: [] }, actorId), /FORBIDDEN_ROLE/);
+});
+
+test("apply schemas reject unknown fields and require capped rationales", async () => {
+  const tx = transaction();
+  await assert.rejects(() => createApply().applyPlan(tx, projectId, { checkpoints: [], epics: [], unexpected: true }, actorId), /VALIDATION_FAILED/);
+  tx.user.findFirst = async () => ({ id: actorId, role: "DEV_LEAD" });
+  await assert.rejects(() => createApply().applyReplan(tx, projectId, { suggestions: [{ id: "00000000-0000-4000-8000-000000000005", type: "REASSIGN_TASK", taskId, assigneeId }] }, actorId), /VALIDATION_FAILED/);
+  await assert.rejects(() => createApply().applyReplan(tx, projectId, { suggestions: [{ id: "00000000-0000-4000-8000-000000000005", type: "REASSIGN_TASK", taskId, assigneeId, rationale: "x".repeat(301) }] }, actorId), /VALIDATION_FAILED/);
 });
