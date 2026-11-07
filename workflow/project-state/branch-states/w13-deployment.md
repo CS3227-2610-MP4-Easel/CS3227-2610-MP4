@@ -6,9 +6,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w13-deployment (from `INT` at `94ebc77134ffd4ab00e0bda3c3fe9c2ff933ef01`)
 - **Base:** d153509 (updated after merging current `development`)
 - **Owner:** operator / repository owner
-- **Status:** Building
+- **Status:** In review
 - **Approved:** operator, 2026-11-07 — Gate 3 branch review approved and push authorized
-- **Last updated:** 2026-11-07 by Codex — close-out verification in progress; T1–T3 complete and T4 remains post-merge
+- **Last updated:** 2026-11-07 by Codex — close-out complete; Gate 3 review requested; T4 remains post-merge
 
 ---
 
@@ -27,7 +27,6 @@ the W1 application runnable on the dev and production tiers.
 | S1 | 2026-11-07 | Codex | W13 | Blocked — needs human | T5 Neon recovery rehearsal and evidence | Owner completes the four T5 gate actions and supplies the redacted evidence object | 2026-11-07 |
 | S2 | 2026-11-07 | Codex | W13 | Done | Updated canonical development Neon target from operator-confirmed console values | Owner reviews the correction with the existing W13 Gate 3 diff | 2026-11-07 |
 | S3 | 2026-11-07 | Codex | W13 | Done | Pushed approved branch to origin | Owner creates the PR into `development` and monitors CI/Vercel | 2026-11-07 |
-| S4 | 2026-11-07 | Codex (lead) | W13 | Active | PR #18 safety-fix close-out | Run full verification and prepare Gate 3 review; T4 remains post-merge | 2026-11-07 |
 
 **Remaining**
 
@@ -53,7 +52,7 @@ the W1 application runnable on the dev and production tiers.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | Building | [spec](../../specs/2026-11-07-w13-deployment-safety-design.md); [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | T3 done; close-out verification starting; T4 post-merge | — |
+| W13 | Environments, seed data and deployment | In review | [spec](../../specs/2026-11-07-w13-deployment-safety-design.md); [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | T1–T3 and close-out done; T4 post-merge owner check; Gate 3 requested | — |
 
 ## 3. Changes
 
@@ -100,6 +99,7 @@ the W1 application runnable on the dev and production tiers.
 | 2026-11-07 | T2 implemented pre-Prisma runtime target validation for auth/gateway, local/test URL semantics, gateway test seam, and regression coverage; focused tests (13), lint, and typecheck pass | W13 | T2 |
 | 2026-11-07 | T3 aligned production migration/seed fixtures to the confirmed Neon target, added direct-target regression coverage, and removed the three PR whitespace errors; focused tests (9), Prisma validation, and diff check pass | W13 | T3 |
 | 2026-11-07 | Close-out found the existing test bootstrap claimed `APP_TIER=test` without a database URL; amended T2 to bind that bootstrap to `postgresql://localhost/agile_platform` before rerunning the full suite | W13 | T2 amendment |
+| 2026-11-07 | Close-out passed: 316 tests passed/26 skipped, lint, typecheck, Prisma validation, workflow validation, and diff check passed; branch handed to Gate 3 review | W13 | close-out |
 
 ## 7. Decisions
 
@@ -126,6 +126,7 @@ the W1 application runnable on the dev and production tiers.
 
 - **Gate 3 branch review:** approved by the operator on 2026-11-07; push authorized.
 - **Environment configuration:** owner must restrict `w13-development-verification` to `development`, require reviewers/CODEOWNERS protection, and provide read-only `VERCEL_TOKEN` plus non-secret `VERCEL_TEAM_ID` before the development push check can run.
+- **Preview provisioning check (T4):** after merge, owner verifies that Vercel preview environments contain none of the forbidden names in the approved safety-fix spec, including empty values, and records the redacted result before relying on the development push check.
 - **Provider evidence:** no live Vercel, Neon, Firebase, or SoCLaaS credentials were used locally; provider evidence remains a post-merge owner action.
 
 ## 10. Needs a Human

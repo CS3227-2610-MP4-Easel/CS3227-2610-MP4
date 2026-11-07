@@ -28,7 +28,7 @@
 | T2 Runtime database enforcement | T1 | - | 2 | Done |
 | T3 Migration boundary, fixtures, and whitespace | T1 | - | 2 | Done |
 | T4 Protected preview provisioning check | T1 | - | 2 | Post-merge |
-| T5 Close-out | T2, T3 | - | 3 | In progress |
+| T5 Close-out | T2, T3 | - | 3 | Done |
 
 ## Traceability
 
@@ -216,7 +216,7 @@ The implementation must call this before `new PrismaClient(...)`; the test seams
 
 **Checklist**
 
-- [ ] 1. Confirm every Traceability row has passing test evidence or the T4 owner check; run the full verification gates.
-- [ ] 2. Confirm the spec remains approved and this plan's task statuses reflect reality; record amendments in the branch state.
-- [ ] 3. Set W13 to `In review`, clear the active session when the work is handed to review, and add final Changes/Deviation/Handover entries.
-- [ ] 4. Ask the operator to review the branch at Gate 3; do not push, open a PR, or merge before approval.
+- [x] 1. Confirm every code Traceability row has passing test evidence or the T4 owner check is recorded as post-merge; run the full verification gates.
+- [x] 2. Confirm the spec remains approved and this plan's task statuses reflect reality; record amendments in the branch state.
+- [x] 3. Set W13 to `In review`, clear the active session when the work is handed to review, and add final Changes/Deviation/Handover entries.
+- [x] 4. Ask the operator to review the branch at Gate 3; do not push, open a PR, or merge before approval.
