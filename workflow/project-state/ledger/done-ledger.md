@@ -4,6 +4,7 @@ The full chronological record of every change, newest first. One line each: what
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-07 | Developer guide checkpoint documented W2 gateway, W3 guards, W4 auth, W6 AI context and W12 CI: sections 2, 3, 4, 5, 7 and the index | W2, W3, W4, W6, W12 | `docs/guide/` |
 | 2026-11-07 | Folded branch state `w6-ai-context` | — | archive |
 | 2026-11-06 | Branch created from `development` at `46b33b1` (after PR #14 merged) | W6 | this commit |
 | 2026-11-06 | W6 spec drafted (7 F, 5 N, E1-E45, T1-T3) and reviewed in two rounds (Implementer, Tester, Maintainer, Attacker; then Implementer, Attacker): about 16 distinct blocking findings fixed, among them the core → ai-context dependency inversion, the frozen `assemble` narrowing (operator: sign-off at PR, C60), nondeterministic failures, a membership race, free text in the trusted facts section, rows changed after checking, production reset of the registries, and source-scan bypasses; lint clean | W6 | this commit |
