@@ -47,7 +47,7 @@ At the start of every session, and after any compaction:
 
 ## Every Change Is Recorded — Size Decides the Ceremony
 
-See `AGENTS.md` §3. **Big** gets a spec (`writing-specs-lite`), a plan (`writing-plans-lite`), and
+See `AGENTS.md` §3. **Big** gets a spec (`writing-specs-lite-v2`), a plan (`writing-plans-lite-v2`), and
 a Workstream row linking both. **Small** gets a Changes line, nothing else. **Small never means
 unrecorded** — a one-line fix still gets a Changes line, and if it diverges from a plan,
 contradicts a spec, or leaves a trap, it also gets a Deviations entry. Only pure no-ops (a typo in

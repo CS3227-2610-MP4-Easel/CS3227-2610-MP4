@@ -7,7 +7,7 @@ description: Use when a Big spec is approved and tests will be written before im
 
 Stubs give blind tests something to compile against, so a test fails for the right reason.
 
-1. Read only the spec's `api.md`, `data-model.md`, and the conventions for file layout.
+1. Read only the spec's contracts and the conventions for file layout: § 4.2 Data model and § 4.3 Interfaces of a v2 single-file spec (or `api.md` and `data-model.md` of a v1 spec folder).
 2. Create one stub file per component the contract names: signatures, DTO/record types, error
    types, constants. Bodies throw `NotImplemented` (or the stack's equivalent). **No logic.**
 3. Run the build (`ws test` or the project build); it must compile. A stub that does not compile

@@ -3,7 +3,7 @@
 Copy to the project root as `AGENTS.md` (and have `CLAUDE.md` import it only). **Soft target ~3 KB
 — no hard cap, but justify growth.** Procedure lives in the `project-state` and `branch-state`
 skills; this file only routes. Section numbers below are fixed because the `project-state`,
-`branch-state`, `writing-specs-lite`, `writing-plans-lite`, `executing-plans-lite`,
+`branch-state`, `writing-specs-lite-v2`, `writing-plans-lite-v2`, `executing-plans-lite-v2`,
 `sync-project-state`, `refresh-project-state` and `update-documentation` skills cite them by
 number (`AGENTS.md § 4`, etc.) — do not renumber without updating every citing skill.
 
@@ -47,8 +47,8 @@ Full detail, triggers and worked examples: `branch-state` skill.
 | After | Workstream status + Changes line | Same | A Changes line |
 
 Ask first: does it change a contract, a schema, or permissions? No → Medium at most. Still
-ambiguous → Big. Use `writing-specs-lite`, `writing-plans-lite` and
-`executing-plans-lite` unless the operator names `brainstorming`, `writing-plans` or
+ambiguous → Big. Use `writing-specs-lite-v2`, `writing-plans-lite-v2` and
+`executing-plans-lite-v2` unless the operator names `brainstorming`, `writing-plans` or
 `reviewed-plan`.
 
 ## 4. Collision With a Recorded Decision
@@ -89,9 +89,9 @@ a partial yes.
 
 | Gate | Point | Skill |
 |---|---|---|
-| 1 | Spec approval | `writing-specs-lite` |
-| 2 | Plan approval | `writing-plans-lite` |
-| 3 | Branch review (before merge) | `executing-plans-lite` / `branch-state` |
+| 1 | Spec approval | `writing-specs-lite-v2` |
+| 2 | Plan approval | `writing-plans-lite-v2` |
+| 3 | Branch review (before merge) | `executing-plans-lite-v2` / `branch-state` |
 | 4 | Fold a merged branch state | `sync-project-state` |
 | 5 | Fold report + guide question | `sync-project-state` |
 | 6 | Guide confirmation for a `Done` workstream | `update-documentation` |

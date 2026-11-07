@@ -35,9 +35,9 @@ Full detail, triggers and worked examples: `branch-state` skill.
 | After | Workstream status + Changes line | Same | A Changes line |
 
 Ask first: does it change a contract, a schema, or permissions? No → Medium at most. Still
-ambiguous → Big. Use `writing-specs-lite`, `writing-plans-lite` and
-`executing-plans-lite` unless the operator names `brainstorming`, `writing-plans` or
-`reviewed-plan`.
+ambiguous → Big. Use `writing-specs-lite-v2`, `writing-plans-lite-v2` and
+`executing-plans-lite-v2` unless the operator names `brainstorming`, `writing-plans`,
+`reviewed-plan` or the v1 `*-lite` skills (kept for audit).
 
 ## 4. Collision With a Recorded Decision
 
@@ -68,7 +68,9 @@ exactly what your role should read. Otherwise: read `workflow/project-state/STAT
 also its branch state. Pull a cold file (`architecture/<area>.md`, `conventions/<topic>.md`,
 `decisions/C<n>.md`, `deviations/D<n>.md`) only when the task touches it — never the whole
 `architecture/` or `decisions/` folder "to be safe." Never reconstruct project history from the
-source tree; code shows what is, never what was decided or rejected.
+source tree; code shows what is, never what was decided or rejected. Implementer and reviewer
+subagents dispatched by `executing-plans-lite-v2` read only what their brief names; the
+orchestrator reads `STATE.md`, `guardrails.md` and the branch state.
 
 ## 8. Approval Gates
 
@@ -77,9 +79,9 @@ a partial yes.
 
 | Gate | Point | Skill |
 |---|---|---|
-| 1 | Spec approval | `writing-specs-lite` |
-| 2 | Plan approval | `writing-plans-lite` |
-| 3 | Branch review (before merge) | `executing-plans-lite` / `branch-state` |
+| 1 | Spec approval | `writing-specs-lite-v2` |
+| 2 | Plan approval | `writing-plans-lite-v2` |
+| 3 | Branch review (before merge) | `executing-plans-lite-v2` / `branch-state` |
 | 4 | Fold a merged branch state | `sync-project-state` |
 | 5 | Fold report + guide question | `sync-project-state` |
 | 6 | Guide confirmation for a `Done` workstream | `update-documentation` |
