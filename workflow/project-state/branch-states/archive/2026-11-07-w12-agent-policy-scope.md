@@ -7,8 +7,8 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w12-agent-policy-scope (from `INT` at `90e1e9c`)
 - **Base:** 90e1e9c
 - **Owner:** ludannnn (Developer member); W12 owner `@teleifo` reviews
-- **Status:** Draft
-- **Approved:** —
+- **Status:** Folded
+- **Approved:** project owner 2026-11-07 (in chat, at fold; merged as PR #13)
 - **Last updated:** 2026-11-05 by Claude Opus 5.5 — agent policy narrowed
 
 **Untouched:** Architecture, Known Gaps, Deviations
@@ -25,13 +25,12 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-05 | Claude Opus 5.5 | W12 | Active | Narrowing the agent policy | Run `npm test`; commit; operator pushes and opens the PR | 2026-11-05 |
 
 **Remaining**
 
-- [ ] Full suite green with the new hook, policy and tests.
-- [ ] GATE: operator pushes `w12-agent-policy-scope` and opens the PR into `development`. Sensitive paths: the author (`@ludannnn`) is excluded, so `@teleifo` and `@Xiao-Congchen` approve.
-- [ ] After merge: merge `development` into `w2-gateway`.
+- [x] Full suite green with the new hook, policy and tests (merged as PR #13).
+- [x] GATE: operator pushed `w12-agent-policy-scope` and opened the PR into `development` (PR #13, merged 2026-11-05).
+- [x] After merge: merge `development` into `w2-gateway` (done, e568668).
 
 ---
 
@@ -66,3 +65,11 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Supersedes:** the `workflow/**` entry in `workflow/agent-permissions.json` and the blanket shell-write refusal in `workflow/tools/agent-policy.mjs`. Neither is recorded as a W12 decision: spec F8 requires default-deny, denied production access and review for `.github/**`, the policy file, `.githooks/**` and the attack corpus; `bd1c5d2` states the hook should allow "ordinary repository work". This keeps every F8 requirement.
 - **Why:** the project is an agentic workflow; an agent that cannot commit, run the workflow tool or write its own branch state cannot follow AGENTS.md § 2. The process-control files still need review, and CODEOWNERS still gates every `workflow/**` change at merge.
 - **Rejected:** disabling the hook locally (sidesteps the team control); keeping the policy and having the operator run every git and copy step (slow and error-prone; it already caused a broken `~/.zshrc` and repeated copy steps).
+
+
+## Fold record
+Folded 2026-11-07 by ws fold · branch `w12-agent-policy-scope`
+
+| Provisional | Permanent |
+|---|---|
+| C~1 | C55 |

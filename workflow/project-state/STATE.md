@@ -5,7 +5,7 @@
 - **Phase:** Pre-implementation. The architecture passed its readiness gate for the first slice on 2026-10-29; the W10 clickable prototype and W1 backend foundation/API skeleton are merged, while feature work remains.
 - **Stack:** TypeScript monorepo, Next.js App Router with a Hono API under `/api`, Prisma, Postgres (Neon), Firebase Auth, Vercel (Hobby), NUS SoCLaaS
 - **Branch:** `INT` = `development`; `main` is the release branch. This file describes `INT` only.
-- **Last updated:** 2026-11-07 by ws fold — folded w4-auth
+- **Last updated:** 2026-11-07 by ws fold — folded w12-agent-policy-scope
 - **Last verified against repo:** 2026-11-03
 - **Developer guide:** seeded 2026-11-02 from W10, [guide](../../docs/guide/index.md)
 - **Deadline:** 13 Nov 2026. Feature freeze end of 10 Nov (AD-69), production deploy 11 Nov (AD-70).
@@ -79,7 +79,7 @@ Verification commands are configured in `workflow/config.json`: `npm test`, `npm
 | W9 | Developer upload, summaries, standup | Not started | — | — | Tier 1 · Big · owner Developer · after W2, W3, W5, W6 | — |
 | W10 | UI mockups and shell | Done | [spec folder](../../specs/2026-11-01-w10-ui-design/ui.md) ([index](../../specs/2026-11-01-w10-ui-design.md), approved 2026-11-02) | [plan](../../plans/2026-11-02-w10-prototype.md) (approved 2026-11-02) | Tier 1 · Big · owner PM · merged 2026-11-02 (PR #6), confirmed 2026-11-02 | Documented 2026-11-02 |
 | W11 | Security corpus and authorisation tests | Not started | — | — | Tier 1 · Big · owner Dev Lead · after W1, W3 | — |
-| W12 | CI and process security | In review | [spec](../../specs/2026-11-02-w12-ci-process-security-design.md) | [plan](../../plans/2026-11-02-w12-ci-process-security-plan.md) | T7 committed and locally verified; Gate 3 owner review and live trusted-workflow rollout remain | — |
+| W12 | CI and process security | Done | [spec](../../specs/2026-11-02-w12-ci-process-security-design.md) | [plan](../../plans/2026-11-02-w12-ci-process-security-plan.md) | T1–T7 merged (PR #9); agent policy narrowed (PR #13, C55); guide confirmed 2026-11-07 | Pending |
 | W13 | Environments, seed data and deployment | Not started | — | — | Tier 1 · Big · owner repo owner · after W1 | — |
 | W14 | Sprints, velocity and re-plan | Not started | — | — | Tier 2.1 · Big · owner Dev Lead · after W5, W8 | — |
 | W15 | Usage views | Not started | — | — | Tier 2.2 · Medium · owner PM · after W2 | — |
@@ -153,6 +153,7 @@ Status: `Not started` · `Spec'd` · `Planned` · `Building` · `Blocked — nee
 | C46 | T7 (sign-in screen) moves to a follow-up spec and PR | decisions/C46.md |
 | C50 | Tokens are verified with `firebase-admin` | decisions/C50.md |
 | C47 | AD-57 kept despite its Firebase assumption being wrong | decisions/C47.md |
+| C55 | Narrow the agent pre-tool policy to process-control files | decisions/C55.md |
 
 ---
 

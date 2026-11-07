@@ -4,6 +4,8 @@ The full chronological record of every change, newest first. One line each: what
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-07 | Folded branch state `w12-agent-policy-scope` | — | archive |
+| 2026-11-05 | Agent policy narrowed (C55): `workflow/agent-permissions.json` protects only the process-control files under `workflow/` instead of `workflow/**`; `workflow/tools/agent-policy.mjs` no longer refuses every shell write; `scripts/agent-pre-tool-hook.mjs` classifies each part of a compound command, allows repository writes by git, npm, node and file commands, and checks only the paths a command writes against the protected list; still denies `git push`, `npm publish`, `git commit --no-verify`, network tools, inline `node -e`, command substitution, writes outside the repository and commands naming secrets; `tests/process-security/` updated to the new rules | W12 | this commit |
 | 2026-11-07 | Folded branch state `w4-auth` | — | archive |
 | 2026-10-31 | W4 auth spec written, reviewed and approved | W4 | e600d0a |
 | 2026-11-04 | Spec amended to the merged W1 seams: real paths, `resolvePrincipal`/`lookupRegisteredUser`, new T0 for `before`/`identity`, `APP_TIER`, `@agile/auth` package, `hit` statement in `@agile/db`, frontend Firebase settings (SD13 to SD17); operator re-approved it at Gate 1 | W4 | b6ef5d7 |
