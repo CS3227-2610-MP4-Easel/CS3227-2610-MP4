@@ -4,6 +4,23 @@ The full chronological record of every change, newest first. One line each: what
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-07 | Folded branch state `w4-auth` | — | archive |
+| 2026-10-31 | W4 auth spec written, reviewed and approved | W4 | e600d0a |
+| 2026-11-04 | Spec amended to the merged W1 seams: real paths, `resolvePrincipal`/`lookupRegisteredUser`, new T0 for `before`/`identity`, `APP_TIER`, `@agile/auth` package, `hit` statement in `@agile/db`, frontend Firebase settings (SD13 to SD17); operator re-approved it at Gate 1 | W4 | b6ef5d7 |
+| 2026-11-04 | Interface stubs: `@agile/auth` package, `incrementRateCounter` stub in `@agile/db`, optional `before`/`identity` route fields; typecheck green, 99 tests pass | W4 | ddac104 |
+| 2026-11-04 | Dev Lead confirmed the five seam decisions (spec SD13 to SD17) | W4 | 0106813 |
+| 2026-11-04 | T7, F7 and the UI edge cases moved to `follow-up-t7.md` (spec SD18); operator chose the split | W4 | e7fead8 |
+| 2026-11-04 | Plan written, reviewed (Implementer lens: 2 blocking, 8 non-blocking, all fixed) and approved at Gate 2; review moved T4 after T3 in the spec's dependency table | W4 | 4e961c4 |
+| 2026-11-04 | T0: `registerRoute` runs `before` ahead of authorization (adds `X-Request-Id` to its response) and gives TOKEN routes `identity`; 104 tests pass | W4 | 9f59c61 |
+| 2026-11-04 | T1: `loadAuthSettings` validates `APP_TIER`, the emulator ban, codes, secret and preview nulls; 13 tests (E24, E50) | W4 | ed2d8bf |
+| 2026-11-04 | T2: `incrementRateCounter` atomic UTC upsert, `createHit` checks and clamp, `clientIpKey` (/64, mapped IPv4, HMAC); E8/E10/E35 pass on Postgres 16; 126 tests, none skipped | W4 | b000037 |
+| 2026-11-04 | T3: Firebase adapter, `resolvePrincipal`, `lookupRegisteredUser`, auth runtime, `createAppDependencies` with fail-closed W5 placeholders, test env setup; key-fetch failure mapped to 500 (D14); 138 tests, none skipped | W4 | 00ca030 |
+| 2026-11-04 | T4: check-code endpoint with `limitedBefore` (IP limiter, streamed 4 KiB cap), fixed-message body schema, hashed constant-path code check; 152 tests, none skipped | W4 | 7cfedfa |
+| 2026-11-04 | T6: `GET /api/me` returns the stored row mapped to `User`; E31 offline run (network denied by `sandbox-exec`, no database): 151 pass, 4 skipped, 0 fail; with database 155 pass | W4 | a86de44 |
+| 2026-11-04 | T5: register endpoint and `createUser` (P2002 by code to 409); outside the plan: `createApiApp` gains an optional `routes` argument so E25 runs through the real error logging, shared fakes moved to `src/be/api/test/auth-fakes.ts`, and the body-size check no longer awaits `cancel()` on a cloned body (it hung); 170 tests, none skipped | W4 | 8118375 |
+| 2026-11-04 | Close-out: Attacker and Tester lenses, no blocking findings. Fixed: `identity` set only when the token email is a string; tests for register's own bucket and 60 s/20 window, register 401/400/422/500 paths, error codes on E27/E42, no row on check-code, `X-Request-Id` on `me`, multibyte token length, full SHA-256 digests in E30, and `hit` over real Postgres (`hit-integration.test.ts`); 175 tests, none skipped. Accepted, not changed: demo codes valid on dev and preview (AD-63, E24), slow-body requests bounded only by the platform timeout | W4 | b2d987e |
+| 2026-11-04 | PR #10 review: unverified email recorded as deliberate (C47 reconfirmed, Known Gap extended with the member-add impact, comment at the verifier) | W4 | this commit |
+| 2026-11-05 | Merged development 6a6c2ed; retained W4 auth test setup with portable discovery, adapted Prisma 7 clients and Zod imports, and reconciled lockfile and feedback; 224 tests pass, 9 database-dependent tests skip | W4 | merge |
 | 2026-11-07 | Folded branch state `w12` | — | archive |
 | 2026-11-05 | Implemented author-excluding trusted-pair approval mapping for all three trusted authors, updated config/contracts/tests, and passed 159-test verification | W12 | working-tree |
 | 2026-11-05 | Re-reviewed current PR #9 at `6520e04`; found Action-pin bootstrap rejection against the post-PR #11 `development` base, excluding the known approval-only failure | W12 | review |
