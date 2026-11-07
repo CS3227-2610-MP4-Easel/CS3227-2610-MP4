@@ -5,7 +5,7 @@ describes `INT`; read it for context and write here instead of editing it.
 `sync-project-state` folds this file in after the branch merges.
 
 - **Branch:** w6-ai-context (from `INT` at `46b33b1`)
-- **Base:** 46b33b1
+- **Base:** efa06cd
 - **Owner:** ludannnn (Developer member)
 - **Status:** Approved
 - **Approved:** ludannnn 2026-11-07 (re-approved after the PR #16 review fixes)
@@ -57,6 +57,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-07 | Merged `INT` (`efa06cd`, PR #19 W7 experiment framework) in via GitHub's Update branch; no overlap with W6 files; `STATE.md` and `guardrails.md` unchanged since `46b33b1`; Base moved | W6 | 5767c20 |
 | 2026-11-07 | Gate 3 re-approved by the operator; SD4 / D~1 signed off by the group offline (C~4) | W6 | this commit |
 | 2026-11-07 | PR #16 review fixes. (1) Step 8 now re-checks membership of every other project a `member`-scoped section draws from (`pm.similarItems`), not only the target, so a PM removed from such a project mid-assembly gets a `membership` violation (new E46; E18 now expects `[P, Q, P, Q]`). (2) Source-scan rule 4 (computed imports) now runs on every file a gateway file reaches through relative imports, not only the gateway file itself (new E30 fixture). Lint clean; ai-context tests all pass; 26 llm-gateway/auth DB tests failed locally only because Postgres on :5433 was down (ECONNREFUSED) | W6 | this commit |
 | 2026-11-06 | Gate 3: operator approved the branch | W6 | this commit |
