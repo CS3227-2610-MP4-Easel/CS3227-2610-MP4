@@ -1,6 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import type { Sessions } from "@agile/contracts";
+import { applyPlan } from "@agile/core";
+import { createDbClient } from "@agile/db";
+import { approveProposal, claimEpic, createProposal, failEpic, getProposalView, rejectProposal, storeEpic } from "@agile/proposals";
+import type { ProposalsApi } from "../src/plan-flow.js";
 
 export const integrationUrl = process.env.W1_INTEGRATION_DATABASE_URL;
 
@@ -68,4 +73,19 @@ export async function withIntegrationDb(run: (base: PrismaClient, fixtures: Fixt
       await base.$disconnect();
     }
   }
+}
+
+/** The real `@agile/proposals` functions bound to the integration database, core and sessions as a `ProposalsApi`. */
+export function bindProposals(base: PrismaClient, sessions: Pick<Sessions, "close">): ProposalsApi {
+  const db = createDbClient(base);
+  const core = { applyPlan: (tx: unknown, projectId: string, plan: unknown, actorId: string) => applyPlan(tx as never, projectId, plan, actorId) };
+  return {
+    createProposal: (i) => createProposal(db, i),
+    getProposalView: (proposalId, viewerId) => getProposalView(db, proposalId, viewerId),
+    claimEpic: (i) => claimEpic(db, i),
+    storeEpic: (i) => storeEpic(db, i),
+    failEpic: (i) => failEpic(db, i),
+    approveProposal: (i) => approveProposal({ db, core, sessions }, i),
+    rejectProposal: (i) => rejectProposal({ db, sessions }, i),
+  };
 }
