@@ -1,5 +1,5 @@
 import type { UserRole } from "@agile/contracts";
-import { getTierTarget } from "@agile/db";
+import { getTierTarget, validatePreviewEnvironment } from "@agile/db";
 
 export type AppTier = "local" | "dev" | "preview" | "prod" | "test";
 
@@ -36,6 +36,7 @@ export function validateTierResources(env: Record<string, string | undefined>): 
 export function loadAuthSettings(env: Record<string, string | undefined>): AuthSettings {
   const tier = env.APP_TIER;
   if (!TIERS.includes(tier as AppTier)) invalid("APP_TIER");
+  if (tier === "preview") validatePreviewEnvironment(env);
   if (tier === "dev" || tier === "prod" || RESOURCE_FIELDS.some((name) => env[name] !== undefined)) validateTierResources(env);
   // The Admin SDK accepts unsigned tokens when the emulator variable is set, so it is banned on every tier.
   if (env.FIREBASE_AUTH_EMULATOR_HOST !== undefined) invalid("FIREBASE_AUTH_EMULATOR_HOST");

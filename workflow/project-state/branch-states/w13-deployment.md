@@ -8,7 +8,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Building
 - **Approved:** operator, 2026-11-07 — Gate 3 branch review approved and push authorized
-- **Last updated:** 2026-11-07 by Codex — operator approved PR #18 safety-fix plan; T1 implementation starting
+- **Last updated:** 2026-11-07 by Codex — T1 complete; focused tests and lint pass; T2 starting
 
 ---
 
@@ -27,7 +27,7 @@ the W1 application runnable on the dev and production tiers.
 | S1 | 2026-11-07 | Codex | W13 | Blocked — needs human | T5 Neon recovery rehearsal and evidence | Owner completes the four T5 gate actions and supplies the redacted evidence object | 2026-11-07 |
 | S2 | 2026-11-07 | Codex | W13 | Done | Updated canonical development Neon target from operator-confirmed console values | Owner reviews the correction with the existing W13 Gate 3 diff | 2026-11-07 |
 | S3 | 2026-11-07 | Codex | W13 | Done | Pushed approved branch to origin | Owner creates the PR into `development` and monitors CI/Vercel | 2026-11-07 |
-| S4 | 2026-11-07 | Codex (lead) | W13 | Active | PR #18 safety-fix T1 | Write failing canonical-target and preview-policy tests before implementation | 2026-11-07 |
+| S4 | 2026-11-07 | Codex (lead) | W13 | Active | PR #18 safety-fix T2 | Write failing auth/gateway runtime target tests before implementation | 2026-11-07 |
 
 **Remaining**
 
@@ -53,7 +53,7 @@ the W1 application runnable on the dev and production tiers.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | Building | [spec](../../specs/2026-11-07-w13-deployment-safety-design.md); [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | T1 starting: canonical targets and shared preview policy | — |
+| W13 | Environments, seed data and deployment | Building | [spec](../../specs/2026-11-07-w13-deployment-safety-design.md); [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | T1 done; T2 starting: runtime target validation | — |
 
 ## 3. Changes
 
@@ -95,6 +95,8 @@ the W1 application runnable on the dev and production tiers.
 | 2026-11-07 | Drafted the dependency-ordered PR #18 safety-fix implementation plan with T1–T5, exact files, tests, post-merge provisioning gate, and traceability; Gate 2 pending | W13 | follow-up plan |
 | 2026-11-07 | Self-reviewed the follow-up plan's paths, task dependencies, traceability, and verification commands; no application code changed | W13 | plan review |
 | 2026-11-07 | Operator approved the follow-up implementation plan at Gate 2; T1 implementation authorized | W13 | Gate 2 |
+| 2026-11-07 | Amended approved plan T1 to include the existing auth resource fixtures that must change with the canonical dev/prod target values; no requirement or task-order change | W13 | plan amendment |
+| 2026-11-07 | T1 implemented canonical dev/prod targets, shared preview credential policy, verifier delegation, aligned manifest/fixtures, and regression tests; focused tests (33) and lint pass | W13 | T1 |
 
 ## 7. Decisions
 

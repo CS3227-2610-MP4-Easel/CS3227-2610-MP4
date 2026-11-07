@@ -24,7 +24,7 @@
 <!-- Status: Not started / In progress / Done / Blocked / Post-merge (a human step after the merge) -->
 | Task | Depends on | Can run concurrently with | Wave | Status |
 |---|---|---|---|---|
-| T1 Canonical target and shared preview policy | - | - | 1 | Not started |
+| T1 Canonical target and shared preview policy | - | - | 1 | Done |
 | T2 Runtime database enforcement | T1 | - | 2 | Not started |
 | T3 Migration boundary, fixtures, and whitespace | T1 | - | 2 | Not started |
 | T4 Protected preview provisioning check | T1 | - | 2 | Post-merge |
@@ -84,6 +84,8 @@
 | Modify | `workflow/deployment/tier-manifest.json` | Align dev/prod endpoint, Firebase, Neon host/project/database, and environment fields with the code-owned target map. |
 | Create | `src/be/db/test/tier-targets.test.ts` | Test exact target values, shared SoCLaaS parity, every forbidden preview name, empty/whitespace rejection, allowed identity fields, protected ref rejection, malformed URLs, and redacted fixed errors. |
 | Modify | `tests/w13/dev-deployment.test.ts` | Assert the deployment verifier uses the shared validator and parameterize preview-policy coverage across every forbidden name plus identity-only acceptance. |
+| Modify | `src/be/auth/test/settings.test.ts` | Align dev/prod resource fixtures with the confirmed endpoint and production Neon target so the existing settings contract tests remain green. |
+| Modify | `src/be/auth/test/tier-settings.test.ts` | Align dev/prod resource fixtures with the confirmed endpoint and production Neon target so the existing tier-identity tests remain green. |
 
 **Implementation shape**
 
@@ -108,13 +110,13 @@ export function validatePreviewEnvironment(env: Record<string, string | undefine
 
 **Checklist**
 
-- [ ] 1. Write failing target/policy tests for E1, E2, E6–E9, and E11; run the T1 focused command and confirm failures identify the stale target map or duplicate policy.
-- [ ] 2. Implement the canonical target values and shared preview validator; keep errors limited to setting names or fixed reasons.
-- [ ] 3. Replace verifier duplication and call the shared policy from auth and gateway settings.
-- [ ] 4. Update the deployment manifest and run the focused T1 command; confirm PASS for all T1 cases.
-- [ ] 5. Run `npm run lint`.
-- [ ] 6. Update branch state Progress and Changes for T1.
-- [ ] 7. Commit: `fix: centralize W13 targets and preview policy (W13)`.
+- [x] 1. Write failing target/policy tests for E1, E2, E6–E9, and E11; run the T1 focused command and confirm failures identify the stale target map or duplicate policy.
+- [x] 2. Implement the canonical target values and shared preview validator; keep errors limited to setting names or fixed reasons.
+- [x] 3. Replace verifier duplication and call the shared policy from auth and gateway settings.
+- [x] 4. Update the deployment manifest and run the focused T1 command; confirm PASS for all T1 cases.
+- [x] 5. Run `npm run lint`.
+- [x] 6. Update branch state Progress and Changes for T1.
+- [x] 7. Commit: `fix: centralize W13 targets and preview policy (W13)`.
 
 ### T2: Runtime database enforcement
 
@@ -170,7 +172,7 @@ The implementation must call this before `new PrismaClient(...)`; the test seams
 
 ### T3: Migration boundary, fixtures, and whitespace
 
-**Delivers:** Production direct migration validation uses the confirmed production target, all fixtures agree with the target map, and the PR's whitespace defect is removed | **Satisfies:** F1, F2, F5, E2, E10, E13, N1, N3 | **Depends on:** T1 | **Wave:** 2
+**Delivers:** Production direct migration validation uses the confirmed production target, migration/seed fixtures agree with the target map, and the PR's whitespace defect is removed | **Satisfies:** F1, F2, F5, E2, E10, E13, N1, N3 | **Depends on:** T1 | **Wave:** 2
 
 **Files**
 
@@ -179,8 +181,6 @@ The implementation must call this before `new PrismaClient(...)`; the test seams
 | Modify | `scripts/w13/migrate-production.mjs` (`validateMigrationInputs`, `runProductionMigration`) | Keep `DIRECT_DATABASE_URL` as the caller-facing input; validate it as the prod target before manifest reads, Prisma validation, executor invocation, or child-process creation; pass only the validated direct URL as child `DATABASE_URL`. |
 | Modify | `src/be/db/test/w13-migration.test.ts` | Replace placeholder prod host/database fixtures; add valid pooled-plus-direct target coverage, cross-tier direct URL failure before executor calls, and direct URL redaction assertions. |
 | Modify | `src/be/db/test/seed.test.ts` | Replace stale production target fixture and assert the canonical prod target remains rejected for demo seeding. |
-| Modify | `src/be/auth/test/settings.test.ts` | Replace stale prod resource fixture and assert the confirmed Firebase/Neon/SoCLaaS values. |
-| Modify | `src/be/auth/test/tier-settings.test.ts` | Replace stale prod resource fixture and retain Vercel production identity mismatch coverage. |
 | Modify | `workflow/specs/2026-11-06-w13-deployment-design.md` | Remove the three trailing-whitespace errors identified in PR #18; do not alter the specification's meaning. |
 
 **Checklist**

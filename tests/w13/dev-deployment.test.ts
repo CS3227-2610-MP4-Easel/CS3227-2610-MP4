@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { validatePreviewEnvironment as sharedValidatePreviewEnvironment } from "../../src/be/db/src/tier-targets.ts";
 import { classifyDevAiProbe, validatePreviewEnvironment, verifyDevDeployment } from "../../scripts/w13/verify-dev-deployment.mjs";
 
 const sha = "0123456789abcdef0123456789abcdef01234567";
@@ -38,10 +39,16 @@ test("E1/E3/E13/N1/N2 rejects incomplete or stale deployment metadata", () => {
   assert.equal(JSON.stringify(result).includes("secret"), false);
 });
 
-test("E2 preview environment rejects every data credential", () => {
+test("E2/E9/E11 preview verifier delegates to the shared policy", () => {
+  assert.equal(validatePreviewEnvironment, sharedValidatePreviewEnvironment);
   assert.doesNotThrow(() => validatePreviewEnvironment({ APP_TIER: "preview" }));
-  assert.throws(() => validatePreviewEnvironment({ APP_TIER: "preview", DATABASE_URL: "redacted" }), /DATABASE_URL/);
-  assert.throws(() => validatePreviewEnvironment({ APP_TIER: "preview", SOCLAAS_API_KEY: "redacted" }), /SOCLAAS_API_KEY/);
+  for (const name of [
+    "DATABASE_URL", "DIRECT_DATABASE_URL", "FIREBASE_PROJECT_ID", "REGISTRATION_CODE_PM",
+    "REGISTRATION_CODE_DEV_LEAD", "REGISTRATION_CODE_DEVELOPER", "RATE_KEY_SECRET", "NEON_HOST",
+    "NEON_PROJECT", "SOCLAAS_BASE_URL", "SOCLAAS_API_KEY", "VERCEL_TOKEN", "VERCEL_TEAM_ID",
+  ]) {
+    assert.throws(() => validatePreviewEnvironment({ APP_TIER: "preview", [name]: "" }), new RegExp(name));
+  }
 });
 
 test("E41/E42 dev AI failure is degraded and disables AI", () => {

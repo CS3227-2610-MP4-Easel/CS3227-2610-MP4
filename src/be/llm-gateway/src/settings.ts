@@ -1,4 +1,5 @@
 import type { Feature } from "@agile/contracts";
+import { validatePreviewEnvironment } from "@agile/db";
 import { FEATURES, MODELS, SOCLAAS_BASE_URL } from "./config.js";
 
 export type AppTier = "local" | "dev" | "preview" | "prod" | "test";
@@ -18,6 +19,7 @@ export type GatewaySettings = {
 export function loadGatewaySettings(env: Record<string, string | undefined>): GatewaySettings {
   const tier = env.APP_TIER;
   if (!TIERS.includes(tier as AppTier)) invalid("APP_TIER");
+  if (tier === "preview") validatePreviewEnvironment(env);
 
   const mode = env.LLM_MODE;
   if (mode !== undefined && mode !== "mock" && mode !== "live") invalid("LLM_MODE");

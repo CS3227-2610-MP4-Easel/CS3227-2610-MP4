@@ -10,7 +10,7 @@ const base = {
   VERCEL_GIT_COMMIT_REF: "development",
   NEON_HOST: "ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech",
   NEON_PROJECT: "super-sunset-36592949",
-  SOCLAAS_BASE_URL: "https://dev.soclaas.example",
+  SOCLAAS_BASE_URL: "https://soclaas-api.comp.nus.edu.sg/v1",
 };
 
 test("E3 matching tier resources are accepted", () => {
@@ -23,7 +23,7 @@ test("E3 cross-tier resource identity fails closed", () => {
 });
 
 test("E10/E11 production maps to Vercel production, not preview", () => {
-  const production = { ...base, APP_TIER: "prod", FIREBASE_PROJECT_ID: "agile-platform-prod", VERCEL_ENV: "production", VERCEL_GIT_COMMIT_REF: "main", NEON_HOST: "prod.neon.tech", NEON_PROJECT: "agile-platform-prod", SOCLAAS_BASE_URL: "https://prod.soclaas.example" };
+  const production = { ...base, APP_TIER: "prod", FIREBASE_PROJECT_ID: "agile-platform-prod", VERCEL_ENV: "production", VERCEL_GIT_COMMIT_REF: "main", NEON_HOST: "ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech", NEON_PROJECT: "super-sunset-36592949", SOCLAAS_BASE_URL: "https://soclaas-api.comp.nus.edu.sg/v1" };
   assert.doesNotThrow(() => validateTierResources(production));
   assert.throws(() => validateTierResources({ ...production, VERCEL_ENV: "preview" }), /VERCEL_ENV/);
 });

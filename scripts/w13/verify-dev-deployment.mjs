@@ -1,7 +1,9 @@
 import { readFileSync } from "node:fs";
+import { validatePreviewEnvironment } from "../../src/be/db/src/tier-targets.ts";
 
 const DEV = { tier: "dev", project: "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd", alias: "development" };
-const PREVIEW_SECRET_NAMES = ["DATABASE_URL", "DIRECT_DATABASE_URL", "FIREBASE_PROJECT_ID", "REGISTRATION_CODE_PM", "REGISTRATION_CODE_DEV_LEAD", "REGISTRATION_CODE_DEVELOPER", "RATE_KEY_SECRET", "SOCLAAS_BASE_URL", "SOCLAAS_API_KEY"];
+
+export { validatePreviewEnvironment };
 
 export function verifyDevDeployment({ metadata, mergedSha, pushTimestamp }) {
   if (!metadata || typeof metadata !== "object") throw new Error("deployment metadata is missing");
@@ -15,13 +17,6 @@ export function verifyDevDeployment({ metadata, mergedSha, pushTimestamp }) {
   const pushedAt = Date.parse(pushTimestamp);
   if (!Number.isFinite(createdAt) || !Number.isFinite(pushedAt) || createdAt <= pushedAt) throw new Error("deployment createdAt is stale or invalid");
   return { tier: "dev", deploymentId: metadata.deploymentId, commit: mergedSha, project: DEV.project, alias: DEV.alias, state: "READY" };
-}
-
-export function validatePreviewEnvironment(env) {
-  if (env.APP_TIER !== "preview") throw new Error("APP_TIER must be preview");
-  const supplied = PREVIEW_SECRET_NAMES.find((name) => env[name] !== undefined);
-  if (supplied) throw new Error(`preview must not receive ${supplied}`);
-  return true;
 }
 
 export function classifyDevAiProbe(ok) {
