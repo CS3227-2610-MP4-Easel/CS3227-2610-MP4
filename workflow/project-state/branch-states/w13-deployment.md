@@ -26,7 +26,7 @@ the W1 application runnable on the dev and production tiers.
 |---|---|---|---|---|---|---|---|
 | S1 | 2026-11-07 | Codex | W13 | Blocked — needs human | T5 Neon recovery rehearsal and evidence | Owner completes the four T5 gate actions and supplies the redacted evidence object | 2026-11-07 |
 | S2 | 2026-11-07 | Codex | W13 | Done | Updated canonical development Neon target from operator-confirmed console values | Owner reviews the correction with the existing W13 Gate 3 diff | 2026-11-07 |
-| S3 | 2026-11-07 | Codex | W13 | Active | Push approved branch to origin | Confirm remote branch update, then hand off PR creation | 2026-11-07 |
+| S3 | 2026-11-07 | Codex | W13 | Done | Pushed approved branch to origin | Owner creates the PR into `development` and monitors CI/Vercel | 2026-11-07 |
 
 **Remaining**
 
@@ -83,6 +83,7 @@ the W1 application runnable on the dev and production tiers.
 | 2026-11-07 | Tightened the T2 seed seam after review: the client factory is internal-only and target validation still precedes construction; focused seed tests, lint, and full suite remain green | W13 | T2 follow-up |
 | 2026-11-07 | T5 closeout checks passed: 331 tests passed/26 skipped, lint, typecheck, workflow validation, agent policy, and diff check passed; full-tree scan remains D~1 | W13 | Gate 3 pending |
 | 2026-11-07 | Bound the development tier to the operator-confirmed Neon project, host, and database; updated aligned manifest and resource-validation fixtures; focused tests and full regression pass | W13 | 75a5b14 |
+| 2026-11-07 | Recorded Gate 3 approval and pushed the approved branch to `origin/w13-deployment` | W13 | 8db2e4a |
 
 ## 8. Deviations
 
