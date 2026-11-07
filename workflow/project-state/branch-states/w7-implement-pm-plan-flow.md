@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-07 | Claude Sonnet 5.5 | W7 | Active | Spec written and reviewed (Implementer, Tester, Maintainer, Attacker); lint clean | Plan approved (Gate 2, 2026-11-07). Execute `workflow/plans/2026-11-07-w7-pm-plan-flow/plan.md` with `executing-plans-lite-v2`, starting with wave 1 (T1, T2, T3); T1 has a `GATE:` step for the Developer's agreement to the `Sessions` change | 2026-11-07 |
+| S1 | 2026-11-07 | Claude Sonnet 5.5 | W7 | Active | Spec written and reviewed (Implementer, Tester, Maintainer, Attacker); lint clean | Wave 1 (T1-T3) done and reviewed. Continue `workflow/plans/2026-11-07-w7-pm-plan-flow/plan.md` with wave 2 (T4, T5, T8, T9, one at a time); no test database is set, so integration tests skip (ask the operator for `DATABASE_URL` and `W1_INTEGRATION_DATABASE_URL`) | 2026-11-07 |
 
 **Remaining**
 
@@ -43,7 +43,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W7 | PM plan flow (proposals, pm) | Planned | [spec](../../specs/2026-11-07-w7-pm-plan-flow-design.md) | [plan](../../plans/2026-11-07-w7-pm-plan-flow/plan.md) | Plan approved; T1-T3 (wave 1) next | — |
+| W7 | PM plan flow (proposals, pm) | Planned | [spec](../../specs/2026-11-07-w7-pm-plan-flow-design.md) | [plan](../../plans/2026-11-07-w7-pm-plan-flow/plan.md) | Wave 1 done (T1-T3); wave 2 next: T4, T5, T8, T9 | — |
 
 ---
 
@@ -55,6 +55,8 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-07 | Fast-forwarded to `INT` `faa1c08` (PR #21 folded W2, W3, W4, W6, W12 into `STATE.md`); no overlap, Base moved; dependency status recorded (W5 still Not started) | W7 | this commit |
 | 2026-11-07 | W7 spec written (Big, High tier; 56 edge cases, 12 threats) and reviewed by Implementer, Tester, Maintainer and Attacker lenses; findings folded; lint clean | W7 | this commit |
 | 2026-11-07 | W7 spec approved by the operator at Gate 1; `lint.mjs spec --approved` passes | W7 | this commit |
+| 2026-11-07 | Wave 1 built and reviewed (full, three lenses each): T2 scaffolded the core, proposals and pm workspaces; T3 added strict plan body schemas and made the approve response three counts; T1 added the session feature map, contract and AD-28 text. Fix rounds: tighter T3 tests, version and idea bounds; T1 closed/idle/foreign session tests and an own-keys-only map lookup. Rejected: lone-surrogate and control-character rules on the idea (the spec does not ask; the gateway sanitiser handles them); an EXPAND-session self-map test (it correctly fails). Learned: 
+pm install removes the generated Prisma client, so 	sc -b fails until `prisma:generate` runs (now in the plan's Shared context) | W7 | this commit |
 | 2026-11-07 | W7 plan written (11 tasks, 6 waves), reviewed by an Implementer-lens reviewer, approved at Gate 2; `lint.mjs plan --approved` passes | W7 | this commit |
 
 ---

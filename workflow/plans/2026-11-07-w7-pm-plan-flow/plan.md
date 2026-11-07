@@ -20,6 +20,7 @@
 **Commands**
 - Build: `npm run typecheck` and `npm run lint` (`tsc -b`); schema `npm --workspace @agile/db run prisma:validate`.
 - Test one file: `node --import tsx --import ./tests/setup-auth-env.ts --test <path>`. All: `npm test`.
+- After any `npm install`, run `npm --workspace @agile/db run prisma:generate` (install removes the generated client and `tsc -b` then fails).
 - Integration tests need `DATABASE_URL` and `W1_INTEGRATION_DATABASE_URL` exported; they skip without the second (pattern: `{ skip: !integrationUrl }`).
 
 **Rules for every task** (ID - rule)
@@ -41,9 +42,9 @@ only your own task's files. Contract tests marked read-only are not edited.
 ## Task order
 | Task | File | Depends on | Concurrent with | Wave | Weight | Review | Status |
 |---|---|---|---|---|---|---|---|
-| T1 Session feature map and contract text | `tasks/T1.md` | - | T2, T3 | 1 | standard | full | Not started |
-| T2 Scaffold core, proposals, pm workspaces | `tasks/T2.md` | - | T1, T3 | 1 | trivial | full | Not started |
-| T3 Contract schemas for endpoints 34-41 | `tasks/T3.md` | - | T1, T2 | 1 | standard | full | Not started |
+| T1 Session feature map and contract text | `tasks/T1.md` | - | T2, T3 | 1 | standard | full | Done |
+| T2 Scaffold core, proposals, pm workspaces | `tasks/T2.md` | - | T1, T3 | 1 | trivial | full | Done |
+| T3 Contract schemas for endpoints 34-41 | `tasks/T3.md` | - | T1, T2 | 1 | standard | full | Done |
 | T4 applyPlan in core | `tasks/T4.md` | T2 | T5, T8, T9 | 2 | complex | full | Not started |
 | T5 Proposals: create, view, resolvers | `tasks/T5.md` | T2, T3 | T4, T8, T9 | 2 | complex | full | Not started |
 | T6 Proposals: expand claim and store | `tasks/T6.md` | T5 | - | 3 | complex | full | Not started |

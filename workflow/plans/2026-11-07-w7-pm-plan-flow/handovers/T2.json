@@ -1,7 +1,15 @@
 {
   "task": "T2",
   "status": "done",
-  "produces": ["@agile/core", "@agile/proposals", "@agile/pm"],
-  "notes": "Each src/index.ts is `export {};`. T4 owns src/be/core/src/index.ts; T5 owns src/be/proposals/src/index.ts first (T6, T7 append); T8 owns src/be/pm/src/index.ts (T9 does not touch, T10 appends). Command used: `npm install` at repo root; it only added 44 lines to package-lock.json (3 workspace entries plus links), no other packages changed. typecheck and lint green.",
-  "deviations": []
+  "summary": "Created the @agile/core, @agile/proposals and @agile/pm workspaces with empty src/index.ts, root tsconfig references and npm install; typecheck and lint pass.",
+  "commit": "5efb2b0",
+  "produces": [
+    { "kind": "other", "name": "@agile/core", "where": "src/be/core", "note": "src/index.ts is `export {};`; T4 replaces it" },
+    { "kind": "other", "name": "@agile/proposals", "where": "src/be/proposals", "note": "src/index.ts is `export {};`; T5 replaces it, T6 and T7 append; depends on @agile/core" },
+    { "kind": "other", "name": "@agile/pm", "where": "src/be/pm", "note": "src/index.ts is `export {};`; T8 replaces it, T9 does not touch it, T10 and T11 append" }
+  ],
+  "next": "T4 owns core/src/index.ts; T5 owns proposals/src/index.ts first (T6, T7 append); T8 owns pm/src/index.ts (T10 and T11 append). `npm install` at the repo root added 44 lines to package-lock.json and changed no other package.",
+  "deviations": [],
+  "edge_cases": [],
+  "checks": { "build": "pass", "tests": "n/a (scaffold)", "lint": "pass" }
 }
