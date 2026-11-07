@@ -1,11 +1,25 @@
 import { NotMember, type LlmGateway, type LlmResult, type PlanApproval, type PlanProposal } from "@agile/contracts";
 import { sanitiseInput, SessionCapReached, type GatewaySessions } from "@agile/llm-gateway";
 import type { AiContextWith } from "@agile/ai-context";
-import { ProposalError, type ClaimResult, type CreateProposalInput, type EpicTask } from "@agile/proposals";
 import { expandOutputSchema, outlineOutputSchema } from "./schemas.js";
 import { buildExpandSections, buildOutlineSections, inputHash } from "./sections.js";
 
 type PlanEpic = PlanProposal["epics"][number];
+
+// Mirrors of the `@agile/proposals` types: the W6 source scan forbids any workspace import except contracts, ai-context and the gateway in a file that calls `gateway.run`.
+export type EpicTask = { title: string; description: string; acceptanceCriteria: string[]; storyPoints: 1 | 2 | 3 | 5 | 8 | 13 };
+export type ClaimResult =
+  | { kind: "DONE"; epic: PlanEpic }
+  | { kind: "CLAIMED"; projectId: string; sessionId: string; approach: string; epic: { title: string; description: string; checkpointName: string | null }; claimedVersion: number };
+export type CreateProposalInput = {
+  projectId: string; creatorId: string; sessionId: string; flagged: boolean; approach: string;
+  checkpoints: { name: string; targetDate: string }[];
+  retrieved: { source: "EPIC" | "TASK"; projectId: string; id: string }[];
+  epics: { title: string; description: string; checkpointName: string | null }[];
+};
+/** `ProposalError` from `@agile/proposals`, recognised by name so this file imports nothing from it. */
+type ProposalErrorLike = Error & { code: "NOT_FOUND" | "CONFLICT_STATE" | "CONFLICT_VERSION" | "FORBIDDEN_ROLE" | "INVALID_PLAN" };
+const isProposalError = (e: unknown): e is ProposalErrorLike => e instanceof Error && e.name === "ProposalError" && typeof (e as { code?: unknown }).code === "string";
 
 export class PlanFlowError extends Error {
   constructor(readonly code: string, readonly status: number, message: string, readonly retryAfterSeconds?: number, readonly details?: { reason: string }) {
@@ -53,12 +67,12 @@ function mapThrown(e: unknown): { error: Error; code: string } {
   if (e instanceof PlanFlowError) return { error: e, code: "INTERNAL" };
   if (e instanceof NotMember) return { error: notFound(), code: "INTERNAL" };
   if (e instanceof Error && e.message === "NOT_FOUND") return { error: notFound(), code: "INTERNAL" };
-  if (e instanceof Error && e.message === "CONFLICT_STATE" && !(e instanceof ProposalError)) return { error: new PlanFlowError("CONFLICT_STATE", 409, SESSION_EXPIRED_MESSAGE), code: "SESSION_EXPIRED" };
+  if (e instanceof Error && e.message === "CONFLICT_STATE" && !isProposalError(e)) return { error: new PlanFlowError("CONFLICT_STATE", 409, SESSION_EXPIRED_MESSAGE), code: "SESSION_EXPIRED" };
   return { error: e instanceof Error ? e : new Error("UNKNOWN"), code: "INTERNAL" };
 }
 
 function mapProposalError(e: unknown): never {
-  if (e instanceof ProposalError) {
+  if (isProposalError(e)) {
     switch (e.code) {
       case "NOT_FOUND": throw notFound();
       case "FORBIDDEN_ROLE": throw new PlanFlowError("FORBIDDEN_ROLE", 403, "Not allowed.");
@@ -114,7 +128,7 @@ export function createPlanFlow(deps: PlanFlowDeps) {
           approach: value.approach, checkpoints: value.checkpoints, retrieved, epics: value.epics,
         });
       } catch (e) {
-        if (e instanceof ProposalError && e.code === "CONFLICT_STATE") throw new PlanFlowError("CONFLICT_STATE", 409, "The project is no longer available.");
+        if (isProposalError(e) && e.code === "CONFLICT_STATE") throw new PlanFlowError("CONFLICT_STATE", 409, "The project is no longer available.");
         throw e;
       }
       const view = await proposals.getProposalView(proposalId, caller.userId);
@@ -163,7 +177,7 @@ export function createPlanFlow(deps: PlanFlowDeps) {
       const tasks = (result.value as { tasks: EpicTask[] }).tasks;
       return await proposals.storeEpic({ proposalId, index, claimedVersion: claim.claimedVersion, tasks, flagged: result.flagged });
     } catch (e) {
-      if (e instanceof ProposalError && e.code === "CONFLICT_STATE") throw new PlanFlowError("CONFLICT_STATE", 409, "The proposal changed while the epic was being expanded.");
+      if (isProposalError(e) && e.code === "CONFLICT_STATE") throw new PlanFlowError("CONFLICT_STATE", 409, "The proposal changed while the epic was being expanded.");
       throw e;
     }
   }
