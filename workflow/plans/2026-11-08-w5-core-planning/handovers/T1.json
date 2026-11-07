@@ -1,14 +1,14 @@
 {
   "task": "T1",
   "status": "done",
-  "summary": "Corrected writable-state precedence and completed the fail-closed core resolver registry; 8 core tests pass.",
+  "summary": "Corrected add-member and active-project list resolution; 9 core tests pass.",
   "commit": "pending",
   "produces": [
     { "kind": "symbol", "name": "createCore", "where": "src/be/core/src/core.ts", "note": "Creates frozen-Core-compatible membership and writability services." },
-    { "kind": "symbol", "name": "createCoreResourceResolvers", "where": "src/be/core/src/resolvers.ts", "note": "Maps core operation IDs to fail-closed resource resolvers, including PROJECT_LIST." }
+    { "kind": "symbol", "name": "createCoreResourceResolvers", "where": "src/be/core/src/resolvers.ts", "note": "Maps core operation IDs to fail-closed resource resolvers, including active-member PROJECT_LIST." }
   ],
   "next": "T2/T3/T4 add domain services through createCore and its injected filtered-client seam. T5 wires these resolver exports into API composition.",
   "deviations": [],
   "edge_cases": ["E1", "E6", "E21", "E23", "E35"],
-  "checks": { "build": "pass", "tests": "458 total: 432 pass, 0 fail, 26 skipped", "lint": "pass" }
+  "checks": { "build": "pass", "tests": "459 total: 433 pass, 0 fail, 26 skipped", "lint": "pass" }
 }

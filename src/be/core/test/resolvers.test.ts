@@ -16,7 +16,7 @@ test("the registry maps every T1 operation to its frozen resource kind", async (
     task: { findFirst: async () => ({ projectId, project: { status: "ACTIVE" } }) },
   });
   const expected: Array<[string, "PROJECT" | "TASK" | "MEMBERSHIP"]> = [
-    ["PROJECT_READ", "PROJECT"], ["PM_PROJECT_UPDATE", "PROJECT"], ["PROJECT_MEMBER_LIST", "PROJECT"], ["PROJECT_MEMBER_ADD", "PROJECT"], ["PROJECT_MEMBER_REMOVE", "MEMBERSHIP"],
+    ["PROJECT_READ", "PROJECT"], ["PM_PROJECT_UPDATE", "PROJECT"], ["PROJECT_MEMBER_LIST", "PROJECT"], ["PROJECT_MEMBER_ADD", "MEMBERSHIP"], ["PROJECT_MEMBER_REMOVE", "MEMBERSHIP"],
     ["CHECKPOINT_LIST", "PROJECT"], ["CHECKPOINT_CREATE", "PROJECT"], ["CHECKPOINT_UPDATE", "PROJECT"], ["CHECKPOINT_DELETE", "PROJECT"],
     ["EPIC_LIST", "PROJECT"], ["EPIC_CREATE", "PROJECT"], ["EPIC_UPDATE", "PROJECT"], ["EPIC_DELETE", "PROJECT"],
     ["TASK_LIST", "PROJECT"], ["TASK_CREATE", "PROJECT"], ["TASK_READ", "TASK"], ["TASK_UPDATE", "TASK"], ["TASK_STATUS_UPDATE", "TASK"], ["TASK_DELETE", "TASK"], ["TASK_EVENT_LIST", "TASK"],
@@ -39,7 +39,20 @@ test("archived reads resolve absent while archived writes retain their state", a
   assert.deepEqual(await resolvers.TASK_UPDATE({ params: { id: taskId } }), { kind: "TASK", projectId, state: "ARCHIVED" });
 });
 
-test("add-member resolves only its project and cannot trust a client role", async () => {
+test("add-member resolves pre-parse project scope without trusting a client role", async () => {
   const resolvers = createCoreResourceResolvers({ project: { findFirst: async () => ({ id: projectId, status: "ACTIVE" }) } });
-  assert.deepEqual(await resolvers.PROJECT_MEMBER_ADD({ params: { projectId }, body: { email: "member@example.test", role: "DEV_LEAD" } }), { kind: "PROJECT", projectId, state: "ACTIVE" });
+  assert.deepEqual(await resolvers.PROJECT_MEMBER_ADD({ params: { projectId }, body: { email: "member@example.test", role: "DEV_LEAD" } }), { kind: "MEMBERSHIP", projectId, state: "ACTIVE" });
+});
+
+test("project list queries only memberships linked to active projects", async () => {
+  const resolvers = createCoreResourceResolvers({
+    projectMember: {
+      findFirst: async () => null,
+      findMany: async (args) => {
+        assert.deepEqual(args.where, { userId, project: { status: "ACTIVE" } });
+        return [{ projectId }];
+      },
+    },
+  });
+  assert.deepEqual(await resolvers.PROJECT_LIST({ userId }), { kind: "PROJECT_SET", projectIds: [projectId] });
 });

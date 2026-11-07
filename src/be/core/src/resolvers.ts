@@ -20,7 +20,7 @@ const id = (request: Request, ...names: string[]) => {
 const projectState = (row: Row): "ACTIVE" | "ARCHIVED" => row.status === "ARCHIVED" || (row.project as Row | undefined)?.status === "ARCHIVED" ? "ARCHIVED" : "ACTIVE";
 const resource = (kind: Exclude<ResolvedResource["kind"], "PROJECT_SET">, row: Row, projectId: string, extra: Partial<ResolvedResource> = {}): ResolvedResource => ({ kind, projectId, state: projectState(row), ...extra } as ResolvedResource);
 
-const PROJECT_OPERATIONS = ["PROJECT_READ", "PM_PROJECT_UPDATE", "PROJECT_MEMBER_LIST", "PROJECT_MEMBER_ADD", "CHECKPOINT_LIST", "CHECKPOINT_CREATE", "EPIC_LIST", "EPIC_CREATE", "TASK_LIST", "TASK_CREATE", "SPRINT_LIST", "SPRINT_CREATE", "PROJECT_PROGRESS_READ", "PM_PLAN_CREATE"];
+const PROJECT_OPERATIONS = ["PROJECT_READ", "PM_PROJECT_UPDATE", "PROJECT_MEMBER_LIST", "CHECKPOINT_LIST", "CHECKPOINT_CREATE", "EPIC_LIST", "EPIC_CREATE", "TASK_LIST", "TASK_CREATE", "SPRINT_LIST", "SPRINT_CREATE", "PROJECT_PROGRESS_READ", "PM_PLAN_CREATE"];
 const CHECKPOINT_OPERATIONS = ["CHECKPOINT_UPDATE", "CHECKPOINT_DELETE"];
 const EPIC_OPERATIONS = ["EPIC_UPDATE", "EPIC_DELETE"];
 const TASK_OPERATIONS = ["TASK_READ", "TASK_UPDATE", "TASK_STATUS_UPDATE", "TASK_DELETE", "TASK_EVENT_LIST"];
@@ -54,14 +54,21 @@ export function createCoreResourceResolvers(db: ResolverDb): CoreResourceResolve
     }
     return null;
   };
+  const addMembership = async (request: Request): Promise<ResolvedResource | null> => {
+    const projectId = id(request, "projectId", "id");
+    if (!projectId) return null;
+    const row = await db.project?.findFirst({ where: { id: projectId }, select: { id: true, status: true } });
+    return row ? resource("MEMBERSHIP", row, projectId) : null;
+  };
   const projectList = async (request: Request): Promise<ResolvedResource | null> => {
     if (!request.userId || !UUID.test(request.userId)) return null;
-    const memberships = await db.projectMember?.findMany({ where: { userId: request.userId }, select: { projectId: true } });
+    const memberships = await db.projectMember?.findMany({ where: { userId: request.userId, project: { status: "ACTIVE" } }, select: { projectId: true } });
     return memberships ? { kind: "PROJECT_SET", projectIds: memberships.map((membership) => membership.projectId).filter((projectId): projectId is string => typeof projectId === "string") } : null;
   };
   const registry: Record<string, (request: Request) => Promise<ResolvedResource | null>> = {};
   registry.PROJECT_LIST = projectList;
   for (const operation of PROJECT_OPERATIONS) registry[operation] = project(operation);
+  registry.PROJECT_MEMBER_ADD = addMembership;
   for (const operation of CHECKPOINT_OPERATIONS) registry[operation] = child(operation, "PROJECT", db.checkpoint);
   for (const operation of EPIC_OPERATIONS) registry[operation] = child(operation, "PROJECT", db.epic);
   for (const operation of TASK_OPERATIONS) registry[operation] = task(operation);
