@@ -53,3 +53,11 @@ test("E6/E7 preview credentials are rejected before the gateway client factory",
   assert.throws(() => createLlmGatewayRuntime({ APP_TIER: "preview", LLM_MODE: "mock", DATABASE_URL: "postgresql://localhost/agile_platform" }, { createClient: () => { calls += 1; return fakeDb; }, hit }), /DATABASE_URL/);
   assert.equal(calls, 0);
 });
+
+test("E8 identity-only previews return AI_DISABLED without a database client", async () => {
+  let calls = 0;
+  const runtime = createLlmGatewayRuntime({ APP_TIER: "preview", LLM_MODE: "mock", VERCEL_PROJECT_ID: "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd", VERCEL_ENV: "preview", VERCEL_GIT_COMMIT_REF: "feature/preview" }, { createClient: () => { calls += 1; return fakeDb; }, hit });
+  assert.equal(calls, 0);
+  assert.deepEqual(await runtime.gateway.run(undefined as never), { ok: false, code: "AI_DISABLED" });
+  await assert.rejects(runtime.sessions.open(undefined as never), /AI_NOT_CONFIGURED/);
+});

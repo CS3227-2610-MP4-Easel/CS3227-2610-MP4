@@ -15,10 +15,19 @@ export type GatewayRuntimeOverrides = {
   hit?: Hit;
 };
 
+function unavailablePreviewRuntime(): { gateway: LlmGateway; sessions: GatewaySessions } {
+  const unavailable = async (): Promise<never> => { throw new Error("AI_NOT_CONFIGURED"); };
+  return {
+    gateway: { run: async () => ({ ok: false, code: "AI_DISABLED" }) },
+    sessions: new Proxy({} as GatewaySessions, { get() { return unavailable; } }),
+  };
+}
+
 /** Built once from `process.env`: settings validated, one client for the gateway's tables, auth's limiter, the provider per `LLM_MODE`. */
 export function createLlmGatewayRuntime(env: Record<string, string | undefined>, overrides: GatewayRuntimeOverrides = {}) {
   const settings = loadGatewaySettings(env);
   validateRuntimeDatabaseTarget(env);
+  if (settings.tier === "preview") return unavailablePreviewRuntime();
   const connectionString = env.DATABASE_URL;
   if (!connectionString) throw new Error("DATABASE_URL is required to create the gateway client");
   const db = overrides.createClient?.(connectionString) ?? new PrismaClient({ adapter: new PrismaPg({ connectionString }) });

@@ -8,7 +8,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** In review
 - **Previous Gate 3:** operator, 2026-11-07 — superseded by the 2026-11-08 corrections; re-review required
-- **Last updated:** 2026-11-08 by Codex — PR #18 review corrections complete; Gate 3 re-review needed
+- **Last updated:** 2026-11-08 by Codex — preview runtime corrected; Gate 3 re-review passed
 
 ---
 
@@ -34,9 +34,10 @@ the W1 application runnable on the dev and production tiers.
 - [x] Read-only Implementer/plan review completed; plan lint has 0 errors and 1 path warning, but blocking/high findings remain in dependencies, workflow-validator compatibility, preview runtime seam, migration manifest path, and smoke-harness executability.
 - [x] Incorporated the plan-review findings: migration manifest, workflow validator/action pins, preview dependency seam, and fixed deployment checks are now listed.
 - [x] Gate 2: operator approved the W13 plan on 2026-11-06; approved-plan lint passes.
-- [ ] **Handover:** owner configures the canonical Vercel development project and variables, then reviews/merges W13 into `development`; record merged SHA and dev smoke evidence before starting T5.
+- [x] **Environment provisioning:** owner configured `w13-development-verification` for `development`, with required reviewers, `VERCEL_TOKEN`, `VERCEL_TEAM_ID`, and `VERCEL_DEV_ALIAS`; GitHub API verification completed on 2026-11-08.
+- [ ] **Handover:** complete the Gate 3 re-review and merge W13 into `development`; record merged SHA and dev smoke evidence before starting T5.
 - [x] Resolved blocker: Vercel system project ID and actual preview source branch refs now validate; PR #18 CI and Vercel deployment pass at `007ebef`.
-- [ ] **New review findings:** development deployment verification, seed target binding, migration manifest enforcement, and production Vercel environment mapping require a focused high-risk correction before Gate 3.
+- [x] **Review corrections:** development deployment verification, seed target binding, migration manifest enforcement, production Vercel environment mapping, and the credential-free gateway preview runtime are covered by focused regression tests.
 - [x] **C~4:** Operator approved reversing the approved no-token Vercel gate on 2026-11-07. W13 will use a protected, read-only Vercel metadata token only in the `development` push check; pull requests and application runtime receive no token.
 - [x] Gate 1: operator approved the amended W13 deployment-safety spec on 2026-11-07; approved-spec lint passes.
 - [x] **Review:** amended safety spec and plan now define the protected token boundary, sanitized metadata handoff, canonical loader, complete migration set, executor seam, production mapping, and E21-E25 traceability. Spec lint: 0 errors/0 warnings; plan lint: 0 errors/2 non-blocking Gate-step warnings.
@@ -100,6 +101,7 @@ the W1 application runnable on the dev and production tiers.
 | 2026-11-07 | Operator approved Gate 3 branch review; merge authorized; no push performed | W13 | Gate 3 |
 | 2026-11-08 | Merged current `development` into W13 and retained W3's gateway secret-output guard while preserving W13 runtime target validation | W13 | PR #18 review correction |
 | 2026-11-08 | Tested migration checksum failure before executor calls; matched Vercel's deployment-scoped `aliases[]` response against a protected hostname and updated sanitized verification | W13 | PR #18 review correction |
+| 2026-11-08 | Made identity-only previews return an unavailable gateway without a Prisma client; focused regression, full suite, lint, typecheck, Prisma and workflow validation pass; fresh Gate 3 re-review found no blockers | W13 | preview-runtime correction |
 
 ## 7. Decisions
 
