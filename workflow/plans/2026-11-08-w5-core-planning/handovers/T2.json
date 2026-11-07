@@ -1,0 +1,16 @@
+{
+  "task": "T2",
+  "status": "done",
+  "summary": "Added filtered-client project, membership, and checkpoint services plus injected HTTP route factories; 8 focused tests pass.",
+  "commit": "pending",
+  "produces": [
+    { "kind": "symbol", "name": "createProjects", "where": "src/be/core/src/projects.ts", "note": "Project creation, listing, detail, members, and race-safe add-member operations." },
+    { "kind": "symbol", "name": "createCheckpoints", "where": "src/be/core/src/checkpoints.ts", "note": "Project-scoped checkpoint list and active-project creation operations." },
+    { "kind": "symbol", "name": "createProjectsRoutes", "where": "src/be/api/src/routes/projects.ts", "note": "Injected endpoint 5-7 and 9-10 route factory." },
+    { "kind": "symbol", "name": "createCheckpointsRoutes", "where": "src/be/api/src/routes/checkpoints.ts", "note": "Injected endpoint 12-13 route factory." }
+  ],
+  "next": "T3 should reuse the project-scoped services and mutation helpers.\nT5 should compose the two route arrays after core dependencies are wired.",
+  "deviations": [],
+  "edge_cases": ["E2", "E3", "E4", "E5", "E7", "E18", "E27", "E34"],
+  "checks": { "build": "pass", "tests": "467 total: 441 pass, 0 fail, 26 skipped", "lint": "pass", "schema": "pass" }
+}
