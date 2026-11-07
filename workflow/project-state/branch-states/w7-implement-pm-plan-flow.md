@@ -25,13 +25,14 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-07 | Claude Sonnet 5.5 | W7 | Active | Spec written and reviewed (Implementer, Tester, Maintainer, Attacker); lint clean | Spec approved (Gate 1). Write the plan with `writing-plans-lite-v2` from `workflow/specs/2026-11-07-w7-pm-plan-flow-design.md`; task 1 amends contracts §5.3 and the W2 spec; Developer sign-off on the `Sessions` change is needed before Gate 2 | 2026-11-07 |
+| S1 | 2026-11-07 | Claude Sonnet 5.5 | W7 | Active | Spec written and reviewed (Implementer, Tester, Maintainer, Attacker); lint clean | Plan approved (Gate 2, 2026-11-07). Execute `workflow/plans/2026-11-07-w7-pm-plan-flow/plan.md` with `executing-plans-lite-v2`, starting with wave 1 (T1, T2, T3); T1 has a `GATE:` step for the Developer's agreement to the `Sessions` change | 2026-11-07 |
 
 **Remaining**
 
 - [x] W7 spec approved at Gate 1 (2026-11-07).
-- [ ] Plan, Gate 2; build; branch review, Gate 3.
-- [ ] **Handover W2 owner (Developer):** spec SD3 changes `Sessions.assertUsable` (a `PM_PLAN_OUTLINE` session also admits `PM_PLAN_EXPAND`) and amends contracts §5.3; sign-off needed before Gate 2 (AD-11, as C59).
+- [x] W7 plan approved at Gate 2 (2026-11-07): 11 tasks, 6 waves, all reviewed full.
+- [ ] Build (T1-T11); branch review, Gate 3.
+- [ ] **Handover W2 owner (Developer):** spec SD3 changes `Sessions.assertUsable` (a `PM_PLAN_OUTLINE` session also admits `PM_PLAN_EXPAND`) and amends contracts §5.3; their agreement is recorded in T1 (AD-11, as C59); not yet obtained.
 - [ ] **Handover W5 owner (Dev Lead):** W7 creates `src/be/core` with only `applyPlan`, `PlanInputSchema`, `countPlan`; W5 merges its exports; W5 locks the project row (`update` of `updated_at`) before epic inserts, adds `Core.assertWritable`, registers `proposalResolvers`, and its project resolver reads path parameter `id` for endpoint 34.
 - [ ] Ask W5's owner (Dev Lead) for a delivery estimate (already open in STATE.md Upcoming); W7's build and its membership checks need W5's `requireMember`. Before then, build against the frozen contracts and the W6 testing seams.
 - [ ] Carry STATE.md Upcoming items addressed to W7 into the spec: W6 sources and `assembleWith` (`pm.similarItems`, titles only, at most 5, filtered by member projects); W3 section rules, blocked-input handling (`BLOCKED_INPUT` to 422 `VALIDATION_FAILED`, `REQUEST_REFUSED` to 422) and output schemas without URLs or angle brackets; W2 mock responses, static sections and `assertStaticSectionsFit`; W7 proposal resolvers.
@@ -42,7 +43,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W7 | PM plan flow (proposals, pm) | Spec'd (approved at Gate 1, 2026-11-07) | [spec](../../specs/2026-11-07-w7-pm-plan-flow-design.md) | — | Spec approved; plan next (`writing-plans-lite-v2`) | — |
+| W7 | PM plan flow (proposals, pm) | Planned | [spec](../../specs/2026-11-07-w7-pm-plan-flow-design.md) | [plan](../../plans/2026-11-07-w7-pm-plan-flow/plan.md) | Plan approved; T1-T3 (wave 1) next | — |
 
 ---
 
@@ -54,6 +55,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-07 | Fast-forwarded to `INT` `faa1c08` (PR #21 folded W2, W3, W4, W6, W12 into `STATE.md`); no overlap, Base moved; dependency status recorded (W5 still Not started) | W7 | this commit |
 | 2026-11-07 | W7 spec written (Big, High tier; 56 edge cases, 12 threats) and reviewed by Implementer, Tester, Maintainer and Attacker lenses; findings folded; lint clean | W7 | this commit |
 | 2026-11-07 | W7 spec approved by the operator at Gate 1; `lint.mjs spec --approved` passes | W7 | this commit |
+| 2026-11-07 | W7 plan written (11 tasks, 6 waves), reviewed by an Implementer-lens reviewer, approved at Gate 2; `lint.mjs plan --approved` passes | W7 | this commit |
 
 ---
 
