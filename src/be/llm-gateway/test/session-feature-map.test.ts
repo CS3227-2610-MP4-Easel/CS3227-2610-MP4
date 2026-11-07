@@ -37,6 +37,7 @@ test("E2 every other feature mismatch is still NOT_FOUND (unit)", async () => {
   await assert.rejects(outline.assertUsable(id, owner, "DEV_STANDUP"), { message: "NOT_FOUND" });
   const { sessions: expand } = fakeSessions("PM_PLAN_EXPAND", owner, id);
   await assert.rejects(expand.assertUsable(id, owner, "PM_PLAN_OUTLINE"), { message: "NOT_FOUND" });
+  await assert.doesNotReject(expand.assertUsable(id, owner, "PM_PLAN_EXPAND"));
 });
 
 test("inherited object keys never select a mapping (unit)", async () => {
@@ -86,4 +87,5 @@ test("E1 E2 against the database: outline session admits expand only", { skip: !
   await assert.rejects(sessions.assertUsable(id, owner, "LEAD_DIGEST"), { message: "NOT_FOUND" });
   const expandId = await sessions.open({ feature: "PM_PLAN_EXPAND", userId: owner, projectId: null });
   await assert.rejects(sessions.assertUsable(expandId, owner, "PM_PLAN_OUTLINE"), { message: "NOT_FOUND" });
+  await assert.doesNotReject(sessions.assertUsable(expandId, owner, "PM_PLAN_EXPAND"));
 }));
