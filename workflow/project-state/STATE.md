@@ -5,7 +5,7 @@
 - **Phase:** Pre-implementation. The architecture passed its readiness gate for the first slice on 2026-10-29; the W10 clickable prototype and W1 backend foundation/API skeleton are merged, while feature work remains.
 - **Stack:** TypeScript monorepo, Next.js App Router with a Hono API under `/api`, Prisma, Postgres (Neon), Firebase Auth, Vercel (Hobby), NUS SoCLaaS
 - **Branch:** `INT` = `development`; `main` is the release branch. This file describes `INT` only.
-- **Last updated:** 2026-11-07 by Claude Sonnet 5.5 — folded w2-gateway
+- **Last updated:** 2026-11-07 by ws fold — folded w12
 - **Last verified against repo:** 2026-11-03
 - **Developer guide:** seeded 2026-11-02 from W10, [guide](../../docs/guide/index.md)
 - **Deadline:** 13 Nov 2026. Feature freeze end of 10 Nov (AD-69), production deploy 11 Nov (AD-70).
@@ -72,7 +72,7 @@ Verification commands are configured in `workflow/config.json`: `npm test`, `npm
 | W9 | Developer upload, summaries, standup | Not started | — | — | Tier 1 · Big · owner Developer · after W2, W3, W5, W6 | — |
 | W10 | UI mockups and shell | Done | [spec folder](../../specs/2026-11-01-w10-ui-design/ui.md) ([index](../../specs/2026-11-01-w10-ui-design.md), approved 2026-11-02) | [plan](../../plans/2026-11-02-w10-prototype.md) (approved 2026-11-02) | Tier 1 · Big · owner PM · merged 2026-11-02 (PR #6), confirmed 2026-11-02 | Documented 2026-11-02 |
 | W11 | Security corpus and authorisation tests | Not started | — | — | Tier 1 · Big · owner Dev Lead · after W1, W3 | — |
-| W12 | CI and process security | Not started | — | — | Tier 1 · Medium · owner Dev Lead · after W1 | — |
+| W12 | CI and process security | In review | [spec](../../specs/2026-11-02-w12-ci-process-security-design.md) | [plan](../../plans/2026-11-02-w12-ci-process-security-plan.md) | T7 committed and locally verified; Gate 3 owner review and live trusted-workflow rollout remain | — |
 | W13 | Environments, seed data and deployment | Not started | — | — | Tier 1 · Big · owner repo owner · after W1 | — |
 | W14 | Sprints, velocity and re-plan | Not started | — | — | Tier 2.1 · Big · owner Dev Lead · after W5, W8 | — |
 | W15 | Usage views | Not started | — | — | Tier 2.2 · Medium · owner PM · after W2 | — |
@@ -121,6 +121,20 @@ Status: `Not started` · `Spec'd` · `Planned` · `Building` · `Blocked — nee
 | C27 | W2's scope boundaries and starting values | [C27](decisions/C27.md) |
 | C28 | Under the W12 agent policy, the operator runs git and places workflow files | [C28](decisions/C28.md) |
 | C29 | Fix W1's Prisma 7 test on this branch (reverses the D5 choice) | [C29](decisions/C29.md) |
+| C30 | One CODEOWNER approval per PR | decisions/C30.md |
+| C35 | W12 uses the thin enforceable baseline | decisions/C35.md |
+| C36 | GitHub ownership and independent review handles | decisions/C36.md |
+| C37 | W12 follows the merged W1 source-root layout | decisions/C37.md |
+| C38 | Remediate audited dependencies before T3 completion | decisions/C38.md |
+| C31 | Use Xiao-Congchen as the independent approver for Dev Lead PRs | decisions/C31.md |
+| C34 | Permit an alternate security reviewer when `@ludannnn` authors a sensitive PR | decisions/C34.md |
+| C32 | Use GitHub reviews as the sensitive-path approval source | decisions/C32.md |
+| C39 | Use a fixed bootstrap list for the first manifest rollout | decisions/C39.md |
+| C40 | Bound the bootstrap to the current development rollout | decisions/C40.md |
+| C41 | Approve the bounded bootstrap amendment | decisions/C41.md |
+| C33 | Use GitHub approvals without a committed artifact | decisions/C33.md |
+| C42 | Re-evaluate review approvals in a separate trusted workflow | decisions/C42.md |
+| C43 | Make the trusted workflow the authoritative security status | decisions/C43.md |
 
 ---
 

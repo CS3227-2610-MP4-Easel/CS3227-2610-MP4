@@ -4,6 +4,72 @@ The full chronological record of every change, newest first. One line each: what
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-07 | Folded branch state `w12` | — | archive |
+| 2026-11-05 | Implemented author-excluding trusted-pair approval mapping for all three trusted authors, updated config/contracts/tests, and passed 159-test verification | W12 | working-tree |
+| 2026-11-05 | Re-reviewed current PR #9 at `6520e04`; found Action-pin bootstrap rejection against the post-PR #11 `development` base, excluding the known approval-only failure | W12 | review |
+| 2026-11-05 | Rebound the one-time Action-pin bootstrap from the superseded base to current `development` SHA `68d639a067ce514085a8074b9f18fa0c3ab3ed06`; updated code, tests, spec, and plan; full verification passes | W12 | working-tree |
+| 2026-11-05 | Fixed unusual Git pathname handling with NUL-delimited `git diff` records, newline-safe glob matching, and an E26 regression test; full verification passes with 157 tests and 1 expected skip | W12 | working-tree |
+| 2026-11-05 | Reviewed PR #9 at `4046d97`; found one approval-gate bypass for quoted unusual Git pathnames, excluding the known approval-only failure | W12 | review |
+| 2026-11-05 | Merged rollout PR #11 into `development`; updated PR #9 onto the new trusted base, and the trusted check now fails closed only for its missing exact-head approvals | W12 | PR #11 / PR #9 |
+| 2026-11-05 | Implemented T7 test-first: trusted workflow is the sole `workflow-security` publisher, CLI base arguments bind correctly, rename paths are classified with `--no-renames`, and npm test discovery is shell-independent; full local verification passes | W12 | 63df36b |
+| 2026-11-05 | Dev Lead confirmed the separate trusted review-event design and approved the amended T7 spec and plan at Gates 1 and 2 | W12 | approved |
+| 2026-11-05 | Validated the five reported PR #9 findings against the cited head, local implementation, focused tests, and GitHub/Git documentation; all five are valid, with finding 4 clarified as configuration-sensitive but applicable under Git's default rename detection | W12 | review |
+| 2026-11-04 | Updated PR #9 with the canonical sensitive-path list, dual exact-head approval rules, author-dependent approver mapping, stale-review behavior, and the non-sensitive PR distinction | W12 | PR #9 |
+| 2026-11-04 | Closed the re-review blockers and follow-up classifier bypasses: apply-patch paths, control-plane paths, mutation flags, workflow shell forms, absolute/traversal Bash read paths, and unapproved npm workspace scripts now fail closed or require review; focused process-security suite passes 34 tests | W12 | d41d3ca |
+| 2026-11-04 | Re-reviewed the committed fixes and found four remaining blockers: permissive arbitrary Bash classification, outside-repository and traversal path handling, self-modifiable hook controls, and incomplete local/remote shell workflow detection | W12 | working-tree |
+| 2026-11-04 | Fixed the remote-bootstrap shell bypass and enforced agent mediation through Codex/Claude PreToolUse hooks; added regression coverage, regenerated adapters, and passed 140 tests (1 expected skip), typecheck, lint, Prisma validation, workflow/policy checks, dependency audit, and diff checks | W12 | working-tree |
+| 2026-11-04 | Re-review found a remaining `/bin/bash` remote-bootstrap bypass and confirmed adapter mediation is advisory text without a runtime/tool hook; live PR #9 remains at the pre-fix head with six passing checks and approval-only workflow-security failure | W12 | pending |
+| 2026-11-04 | Resolved the four PR #9 code findings: structural YAML workflow parsing and CI-topology enforcement, immutable policy-value validation, executable agent-policy mediation wired into adapters, and patched YAML dependency; full verification passes | W12 | pending |
+| 2026-11-04 | Reviewed the live PR after push; excluded the two expected GitHub-approval failures and found three code-level process-security gaps, including a YAML-regex bypass; recorded lesson L2 | W12 | pending |
+| 2026-11-04 | Hardened PR #9 workflow checks: only pull_request triggers are accepted, deployment triggers fail closed, and Action pins come from the trusted base or bounded bootstrap pins | W12 | pending |
+| 2026-11-04 | Fixed PR #9 review findings: reject write-all/inline write permissions, privileged workflow triggers/runners/environments, and malformed review records; added regression coverage | W12 | pending |
+| 2026-11-04 | Dev Lead approved the artifact-removal change at Gate 3; branch is ready to push | W12 | pending |
+| 2026-11-04 | Removed the committed security-review artifact requirement; two current exact-head GitHub approvals are now sufficient; 124-test suite and all checks pass | W12 | pending |
+| 2026-11-04 | Dev Lead approved the artifact-removal W12 implementation plan at Gate 2; T6 implementation may continue | W12 | pending |
+| 2026-11-04 | Dev Lead approved the artifact-removal W12 specification at Gate 1; amended plan approval remains pending | W12 | pending |
+| 2026-11-04 | Dev Lead requested removal of the committed security-review artifact; spec and plan amendment is in review and prior approvals are superseded | W12 | pending |
+| 2026-11-04 | Dev Lead approved the W12 branch at Gate 3; updated PR #9 with bootstrap, verification, and review requirements | W12 | pending |
+| 2026-11-04 | Verified 124 tests (123 passed, 1 expected skip), typecheck, lint, Prisma validation, security tests, workflow validation, approved spec/plan lint, and diff checks; T6 awaits GitHub rollout evidence | W12 | pending |
+| 2026-11-04 | Added bootstrap identity guards, duplicate-key-aware manifest validation, head-manifest checks, workflow inputs, and regression tests; full local verification passes | W12 | pending |
+| 2026-11-04 | Dev Lead approved the amended W12 implementation plan at Gate 2; T6 bootstrap implementation may begin | W12 | pending |
+| 2026-11-04 | Dev Lead approved the amended W12 specification at Gate 1; implementation remains paused pending amended plan approval at Gate 2 | W12 | pending |
+| 2026-11-04 | Bootstrap review fixes bind the fallback to `development` at base SHA `7bd65440023a0123ac92445e5b6e58ec838ee57c`, define the exact ordered list, validate head-manifest changes, and record post-merge bootstrap retirement | W12 | pending |
+| 2026-11-04 | Dev Lead selected Option 2: amend T6 with a fixed first-rollout bootstrap list so W12 can merge once without directly seeding `development`; spec and plan amendment is in review | W12 | pending |
+| 2026-11-04 | Implemented T6 dual exact-head GitHub review verification, paginated review retrieval, author-dependent approver mapping, generated adapters, and a non-backtracking workflow-permission validator; focused process-security checks pass | W12 | pending |
+| 2026-11-04 | Added the canonical sensitive-path manifest, aligned CODEOWNERS with all three required owners, and passed the manifest/CODEOWNERS coverage test; T5 is complete and T6 starts | W12 | pending |
+| 2026-11-04 | Dev Lead approved `@ludannnn` as the security reviewer and `@Xiao-Congchen` as the independent human approver for PRs authored by `@teleifo`; W12 spec amendment is in review | W12 | pending |
+| 2026-11-04 | Dev Lead approved the amended W12 plan at Gate 2; T5 implementation starts | W12 | pending |
+| 2026-11-04 | Amended the W12 implementation plan for the base-branch sensitive manifest, CODEOWNERS expansion, paginated GitHub review fetch, current-state algorithm, and E16–E20 tests; plan lint is clean | W12 | pending |
+| 2026-11-04 | Amended the sensitive-path review contract to require current exact-head GitHub approvals from `@ludannnn` and the author-dependent human approver; canonical sensitive paths are now specified | W12 | pending |
+| 2026-11-04 | Added head-bound security-review validation and wired it into the existing `workflow-security` check; tests cover missing, stale, self-authored, non-independent, valid, and non-sensitive cases | W12 | pending |
+| 2026-11-04 | Implemented T6 head-bound security-review validation and passed the 118-test suite, typecheck, lint, schema, contract, workflow, policy, exact Gitleaks, dependency audit, and spec checks; plan lint exposed the recorded Create-row flow issue | W12 | edc5e6e |
+| 2026-11-04 | Dev Lead applied GitHub protection; verified the seven required checks, strict status enforcement, code-owner review, stale/last-push review rules, admin enforcement, and disabled force pushes/deletions on both `development` and `main` | W12 | 7725177 |
+| 2026-11-04 | Pushed the CI repairs; PR #9 run 41687413113 passed workspace, typecheck, lint, contract, dependency-audit, secret-scan, and workflow-security | W12 | fc1a2b6 |
+| 2026-11-04 | Repaired the remaining PR-only failures: replaced the historical secret-like test canary with a safe fixture, added an exact fingerprint ignore for that reviewed historical false positive, and made `npm test` discover files on Node 20; protected the ignore file with CODEOWNERS | W12 | a93656e |
+| 2026-11-04 | Repaired PR CI clean-install prerequisites: placeholder `DATABASE_URL`, explicit Prisma generation, and checksum-pinned Gitleaks installation; local checks pass and the PR is ready to rerun | W12 | 0de6312 |
+| 2026-11-04 | Added CODEOWNERS coverage for all W12 protected paths and independent security review paths; T5 now awaits GitHub settings confirmation | W12 | 634279d |
+| 2026-11-04 | Added default-deny agent policy, fail-closed mediation validator, security-review contract, process-security config, and regenerated Claude/Codex reviewer adapters; T4 checks pass | W12 | 86108d3 |
+| 2026-11-04 | Started T4 agent policy and protected control paths; next step is failing policy tests before implementation | W12 | 86108d3 |
+| 2026-11-04 | Remediated audited Next.js, Zod, and Prisma chains; added Prisma 7 config/adapter compatibility and passed 108 tests, typecheck, lint, contracts, schema validation, audit, workflow validation, and diff checks | W12 | 1832d22 |
+| 2026-11-04 | Dev Lead approved smallest compatible dependency upgrades first, with a Prisma major upgrade allowed only if required to clear the audit | W12 | 1832d22 |
+| 2026-11-03 | Added immutable Action manifest/validator and exact dependency-audit command; audit found 7 high/critical vulnerabilities | W12 | 3ce9c01 |
+| 2026-11-03 | Added Gitleaks configuration, staged pre-commit scanning, redacted range scanning, and hook setup | W12 | 4d8025d |
+| 2026-11-03 | T1 verification passed: 102 tests, typecheck, lint, Prisma validation, contract tests, and repeated workflow-shape checks on one commit | W12 | 761d4b7 |
+| 2026-11-03 | Added the isolated seven-job pull-request workflow, contract command, and workflow-shape tests | W12 | 761d4b7 |
+| 2026-11-03 | Repaired clean-install Prisma generation and verified the full W1 baseline | W12 | 7edeca0 |
+| 2026-11-03 | Gate 2 approved; baseline verification stopped before T1 because typecheck/lint and Prisma validation were not green | W12 | 25a5b21 |
+| 2026-11-03 | Reconciled W12 protected paths and contract-test locations with W1's `src/be` source root; plan lint is clean with one expected future-test warning | W12 | 43232af |
+| 2026-11-03 | Merged the current INT tip containing W1 into w12; package and source-root paths are now available for plan validation | W12 | 5019109 |
+| 2026-11-02 | W12 implementation plan drafted; validation is blocked until W1 supplies `package.json` | W12 | 83c0c48 |
+| 2026-11-02 | Dev Lead approved the W12 spec at Gate 1 | W12 | fd0bf26 |
+| 2026-11-02 | Dev Lead assigned `@teleifo` as repository/CODEOWNERS owner and `@ludannnn` as independent security reviewer | W12 | 6fa8493 |
+| 2026-11-02 | High-risk spec drafted, linted, and reviewed twice | W12 | a4ba0db |
+| 2026-11-02 | Dev Lead selected Option 1: a thin enforceable CI and process-security baseline | W12 | a38afa6 |
+| 2026-11-02 | Started W12 from the current INT base; classified repository permissions and CI security as Big/high-risk work | W12 | a38afa6 |
+| 2026-11-05 | Dev Lead requested one review per PR; removed dual-review status requirement on development and main, and removed obsolete CI enforcement locally | W12 | working-tree |
+| 2026-11-05 | Dev Lead accepted review-gate bypass risk for the small team and directed direct implementation without a plan; fixed Windows workflow-checker entry point | W12 | working-tree |
+| 2026-11-05 | Dev Lead requested trusted-gate amendment; drafted security requirements and identified publisher provenance and review-event trust gaps | W12 | working-tree |
+| 2026-11-05 | Rebound Action-pin bootstrap to current development base 637d09f; focused test and workflow validation passed | W12 | working-tree |
 | 2026-11-07 | Folded branch state `w2-gateway` | — | archive |
 | 2026-11-05 | W2 spec drafted (7 F, 5 N, T1 to T7) and reviewed by four lenses: 5 blocking findings fixed (row written before its columns exist, fit failures leaving rows, static-section rule conflict, no clock seam, breaker race unstated); the spend cap reworked to keep AD-64's decaying budget block; the key restricted to the SoCLaaS host; 47 edge cases; lint clean | W2 | a40f7f8 |
 | 2026-11-05 | Spec approved at Gate 1 by the operator | W2 | efdb802 |
