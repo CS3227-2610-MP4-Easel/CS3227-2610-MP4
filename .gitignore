@@ -46,3 +46,6 @@ src/be/db/prisma/generated/
 src/be/db/generated/
 *.db
 *.db-journal
+
+# Experiment framework: raw transcripts, bank and queue stay local (AD-32)
+workflow/experiments/local/

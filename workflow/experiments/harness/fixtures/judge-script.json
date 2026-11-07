@@ -1,0 +1,40 @@
+{
+  "steps": [
+    {
+      "text": "{\"completeness\":4,\"testability\":4,\"unambiguity\":3,\"consistency\":4,\"traceability\":3}",
+      "usage": {
+        "output": 30
+      }
+    },
+    {
+      "text": "{\"completeness\":4,\"testability\":3,\"unambiguity\":3,\"consistency\":4,\"traceability\":3}",
+      "usage": {
+        "output": 30
+      }
+    },
+    {
+      "text": "{\"completeness\":2,\"testability\":1,\"unambiguity\":2,\"consistency\":3,\"traceability\":2}",
+      "usage": {
+        "output": 30
+      }
+    },
+    {
+      "text": "{\"completeness\":2,\"testability\":2,\"unambiguity\":1,\"consistency\":3,\"traceability\":2}",
+      "usage": {
+        "output": 30
+      }
+    },
+    {
+      "text": "{\"completeness\":0,\"testability\":0,\"unambiguity\":0,\"consistency\":1,\"traceability\":1}",
+      "usage": {
+        "output": 30
+      }
+    },
+    {
+      "text": "{\"completeness\":1,\"testability\":0,\"unambiguity\":0,\"consistency\":1,\"traceability\":1}",
+      "usage": {
+        "output": 30
+      }
+    }
+  ]
+}

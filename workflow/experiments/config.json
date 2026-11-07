@@ -1,0 +1,6 @@
+{
+  "worktrees_root": "../exp-runs",
+  "claude_bin": "claude",
+  "auth_mode": "login",
+  "isolation_ignore": []
+}

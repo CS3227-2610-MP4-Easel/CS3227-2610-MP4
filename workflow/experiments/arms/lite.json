@@ -1,0 +1,21 @@
+{
+  "id": "lite",
+  "stage": "specplan",
+  "prompt": "Follow this repository's AGENTS.md. Use the writing-specs-lite skill to write the spec, have the reviewer agent review it through the Implementer lens once, then use the writing-plans-lite skill to write the plan, yourself. Task id: {{task_id}}.\n\n{{brief}}",
+  "plugins": [],
+  "skills": ["writing-specs-lite", "writing-plans-lite"],
+  "agents": ["reviewer"],
+  "mcp": [],
+  "allowed_tools": ["Read", "Write", "Edit", "Bash", "Glob", "Grep", "Skill", "Task", "Agent"],
+  "disallowed_tools": ["WebFetch", "WebSearch"],
+  "permission_mode": "acceptEdits",
+  "model": { "main": "claude-sonnet-5-5", "reviewer": "claude-sonnet-5-5" },
+  "instruction_files": ["AGENTS.md", "CLAUDE.md"],
+  "artifact_globs": {
+    "spec": ["workflow/specs/**/*.md"],
+    "plan": ["workflow/plans/**/*.md"]
+  },
+  "lint": true,
+  "review": { "lenses": ["Implementer"], "agent_types": ["reviewer"], "max_rounds": 1 },
+  "phase_map": { "writing-specs-lite": "spec", "writing-plans-lite": "plan", "reviewer": "review" }
+}
