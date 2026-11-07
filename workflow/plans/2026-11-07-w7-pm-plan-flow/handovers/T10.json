@@ -1,0 +1,19 @@
+{
+  "task": "T10",
+  "status": "done",
+  "summary": "createPlanFlow with createPlan, getProposal, expandEpic, approve, reject over a ProposalsApi facade; 19 database tests cover every assigned E row.",
+  "commit": "1d330ab",
+  "produces": [
+    { "kind": "symbol", "name": "createPlanFlow, PlanFlowError, PlanFlowDeps, ProposalsApi, PlanFlow, Caller", "where": "src/be/pm/src/plan-flow.ts", "note": "exported from @agile/pm; importing it registers the mock responses" },
+    { "kind": "symbol", "name": "bindProposals(base, sessions)", "where": "src/be/pm/test/fakes.ts", "note": "binds real @agile/proposals and applyPlan to the integration database as a ProposalsApi (test only)" },
+    { "kind": "file", "name": "plan-flow.test.ts", "where": "src/be/pm/test/plan-flow.test.ts", "note": "real sessions and database; real gateway pipeline in mock mode for E8, E28, E29" }
+  ],
+  "next": "T11: build ProposalsApi from createDbClient() with applyPlan and getSessions(); aiContext = getAiContext() (it has assembleWith); map PlanFlowError to HttpError plus Retry-After from retryAfterSeconds.",
+  "deviations": [
+    { "what": "plan-flow.ts does not import @agile/proposals at all; it mirrors EpicTask, ClaimResult, CreateProposalInput and recognises ProposalError by name and code", "why": "the W6 source scan (source-scan.test.ts E31) rejects any workspace import other than contracts, ai-context and llm-gateway in a file that calls gateway.run, type-only imports included; the task file allowed types and ProposalError", "needs": "none" },
+    { "what": "approve on a proposal sets its status to APPROVED (not ACCEPTED); the session outcome is ACCEPTED", "why": "that is what T7 does; the E49 test asserts APPROVED", "needs": "none" },
+    { "what": "four F8 pre-tool mediation tests fail in the full run", "why": "unrelated to this task (shell mediation tests, agent policy environment); everything else passes", "needs": "orchestrator" }
+  ],
+  "edge_cases": ["E4", "E6", "E8", "E9", "E10", "E17", "E22", "E23", "E24", "E25", "E26", "E28", "E29", "E49", "E50", "E52"],
+  "checks": { "build": "pass", "tests": "plan-flow.test.ts 19 pass, 0 fail, 0 skipped with the database; source-scan pass; full run 538 pass, 4 fail (F8 mediation, unrelated), 0 skipped", "lint": "pass" }
+}
