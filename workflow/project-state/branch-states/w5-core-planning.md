@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w5-core-planning/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-07 17:07 | Codex | W5 | Active | Wave 2 ready: T2 projects, membership, and checkpoints | Claim and dispatch T2 with T1 handover | 2026-11-08 |
+| S1 | 2026-11-07 17:07 | Codex | W5 | Active | T2/6: projects, membership, and checkpoints in flight | Validate T2 handover and full review, then claim T3 | 2026-11-08 |
 
 **Remaining**
 
@@ -43,7 +43,7 @@ cd /Users/trevortan/.codex/worktrees/w5-core-planning/CS3227-2610-MP4
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W5 | Core planning (projects to tasks) | In progress | [spec](../../specs/2026-11-07-w5-core-planning-design.md) | [plan](../../plans/2026-11-08-w5-core-planning/plan.md) | T1/6 done; T2/6 ready | — |
+| W5 | Core planning (projects to tasks) | In progress | [spec](../../specs/2026-11-07-w5-core-planning-design.md) | [plan](../../plans/2026-11-08-w5-core-planning/plan.md) | T2/6 in flight: projects and membership | — |
 
 ---
 

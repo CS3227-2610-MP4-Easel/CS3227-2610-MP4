@@ -1,0 +1,26 @@
+import { z } from "zod/v3";
+import { PageQuerySchema, TaskStatusSchema, policyForRoute, type RouteDefinition } from "@agile/contracts";
+import { HttpError } from "../errors.js";
+
+type Actor = { userId: string; role: "PM" | "DEV_LEAD" | "DEVELOPER" };
+export type PlanningRouteServices = { epics: { list(actor: Actor, projectId: string): Promise<unknown>; create(actor: Actor, projectId: string, input: { title: string; description?: string | null; checkpointId?: string | null }): Promise<unknown> }; tasks: { list(actor: Actor, projectId: string, query: { page: number; size: number }): Promise<unknown>; read(actor: Actor, taskId: string): Promise<unknown>; create(actor: Actor, projectId: string, input: Record<string, unknown>): Promise<unknown>; patch(actor: Actor, taskId: string, input: Record<string, unknown>): Promise<unknown>; status(actor: Actor, taskId: string, input: Record<string, unknown>): Promise<unknown> } };
+const Id = z.object({ id: z.string().uuid() }).strict();
+const Points = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(5), z.literal(8), z.literal(13)]).nullable();
+const EpicInput = z.object({ title: z.string().min(1).max(200), description: z.string().max(4000).nullable().optional(), checkpointId: z.string().uuid().nullable().optional() }).strict();
+const Create = z.object({ epicId: z.string().uuid(), title: z.string().min(1).max(200), description: z.string().max(4000).nullable().optional(), acceptanceCriteria: z.array(z.string().max(300)).max(12).optional(), storyPoints: Points.optional(), assigneeId: z.string().uuid().nullable().optional() }).strict();
+const Patch = z.object({ title: z.string().min(1).max(200).optional(), description: z.string().max(4000).nullable().optional(), acceptanceCriteria: z.array(z.string().max(300)).max(12).optional(), storyPoints: Points.optional(), epicId: z.string().uuid().optional(), assigneeId: z.string().uuid().nullable().optional(), sprintId: z.string().uuid().nullable().optional(), version: z.number().int().positive() }).strict();
+const Status = z.object({ status: TaskStatusSchema, blocked: z.boolean(), blockedReason: z.string().min(1).max(500).nullable(), version: z.number().int().positive() }).strict();
+const route = (key: string) => { const policy = policyForRoute(key); return { operationId: policy.operationId, method: policy.method, path: policy.path, policyKey: key }; };
+const actor = (value: Actor | undefined) => { if (!value) throw new HttpError("FORBIDDEN_ROLE", 403, "The user's role cannot access this operation."); return value; };
+const invoke = async (work: () => Promise<unknown>) => { try { return await work(); } catch (error) { if (error instanceof Error && error.message === "FORBIDDEN_ROLE") throw new HttpError("FORBIDDEN_ROLE", 403, "The user's role cannot access this operation."); if (error instanceof Error && error.message === "VALIDATION_FAILED") throw new HttpError("VALIDATION_FAILED", 422, "The request body is not valid."); if (error instanceof Error && error.message === "CONFLICT_STALE") throw new HttpError("CONFLICT_STALE", 409, "The resource was modified by another request."); throw error; } };
+
+/** Endpoints 16-17 and 20-24; all persistence behavior remains in narrow injected core services. */
+export function createPlanningRoutes(services: PlanningRouteServices): RouteDefinition[] { return [
+  { ...route("endpoint-16"), paramsSchema: Id, responseSchema: {}, handler: async ({ principal, input }) => Response.json(await invoke(() => services.epics.list(actor(principal), (input.params as { id: string }).id))) },
+  { ...route("endpoint-17"), paramsSchema: Id, bodySchema: EpicInput, responseSchema: {}, handler: async ({ principal, input }) => Response.json(await invoke(() => services.epics.create(actor(principal), (input.params as { id: string }).id, input.body as any)), { status: 201 }) },
+  { ...route("endpoint-20"), paramsSchema: Id, querySchema: PageQuerySchema, responseSchema: {}, handler: async ({ principal, input }) => Response.json(await invoke(() => services.tasks.list(actor(principal), (input.params as { id: string }).id, input.query as any))) },
+  { ...route("endpoint-21"), paramsSchema: Id, bodySchema: Create, responseSchema: {}, handler: async ({ principal, input }) => Response.json(await invoke(() => services.tasks.create(actor(principal), (input.params as { id: string }).id, input.body as any)), { status: 201 }) },
+  { ...route("endpoint-22"), paramsSchema: Id, responseSchema: {}, handler: async ({ principal, input }) => Response.json(await invoke(() => services.tasks.read(actor(principal), (input.params as { id: string }).id))) },
+  { ...route("endpoint-23"), paramsSchema: Id, bodySchema: Patch, responseSchema: {}, handler: async ({ principal, input }) => Response.json(await invoke(() => services.tasks.patch(actor(principal), (input.params as { id: string }).id, input.body as any))) },
+  { ...route("endpoint-24"), paramsSchema: Id, bodySchema: Status, responseSchema: {}, handler: async ({ principal, input }) => Response.json(await invoke(() => services.tasks.status(actor(principal), (input.params as { id: string }).id, input.body as any))) },
+]; }
