@@ -8,7 +8,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** In review
 - **Approved:** —
-- **Last updated:** 2026-11-06 by Codex — merged current `development`; owner deployment gate pending
+- **Last updated:** 2026-11-07 by Codex — canonical development Neon target correction committed; owner deployment gate pending
 
 ---
 
@@ -81,7 +81,7 @@ the W1 application runnable on the dev and production tiers.
 | 2026-11-07 | T4 committed after full regression: 331 tests passed/26 skipped, lint/typecheck passed, staged secret scan passed | W13 | d8ede9c |
 | 2026-11-07 | Tightened the T2 seed seam after review: the client factory is internal-only and target validation still precedes construction; focused seed tests, lint, and full suite remain green | W13 | T2 follow-up |
 | 2026-11-07 | T5 closeout checks passed: 331 tests passed/26 skipped, lint, typecheck, workflow validation, agent policy, and diff check passed; full-tree scan remains D~1 | W13 | Gate 3 pending |
-| 2026-11-07 | Bound the development tier to the operator-confirmed Neon project, host, and database; updated aligned manifest and resource-validation fixtures; focused tests and full regression pass | W13 | pending commit |
+| 2026-11-07 | Bound the development tier to the operator-confirmed Neon project, host, and database; updated aligned manifest and resource-validation fixtures; focused tests and full regression pass | W13 | 75a5b14 |
 
 ## 8. Deviations
 
