@@ -21,6 +21,9 @@
 - **Guard false positives** — an 8-digit number split by a space (`8901 2345`) and some UUID segments are redacted as phones; "system prompt" in prose is flagged; four-part version numbers (`10.0.0.1`) and `<a ` in prose fail the output guard.
 - **`llm_calls.prompt_version` does not cover the security suffix** — `prompt_version` and `prefix_hash` hash the system message only (spec SD3, so the prefix stays stable), so a change to the suffix template leaves them unchanged; `GUARD_VERSION` changes but is not stored on `llm_calls`. W17 should record `GUARD_VERSION` in `experiment` (or add it to the version) before comparing prompt or guard variants.
 - **A poisoned item can make the model refuse** — text that steers the model to `{"refusal":true}` fails that call with `REQUEST_REFUSED`; refusals do not trip the breaker and the item's flag is shown to the reader.
+- **AI context checks rows, not sources** — `assembleWith` catches inconsistent rows (wrong project, owner, type, size, unrequested items, free text in facts), not a source that lies about a row's `projectId` or `ownerId`; each source owner's tests must prove their rows (W5, W7-W9).
+- **The source scan cannot see data passed between unrelated files** — a route can query in one module and pass plain values into a gateway-calling file it does not import; review and the runtime checks cover it.
+- **The gap between `assembleWith` and the model call** — membership is checked before and after the reads, not at `run` time.
 - **Nested writes require explicit authorization** — callers must validate every connected resource inside the mutation transaction.
 
 ## Explicitly Out of Scope
