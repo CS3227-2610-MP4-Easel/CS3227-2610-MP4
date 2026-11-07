@@ -62,7 +62,7 @@ Verification commands are configured in `workflow/config.json`: `npm test`, `npm
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
 | W1 | Foundation and API skeleton | Done | [review-repairs spec](../../specs/2026-11-02-w1-review-repairs-design.md); [backend source-root spec](../../specs/2026-11-02-w1-backend-source-root-design.md) | [review-repairs plan](../../plans/2026-11-02-w1-review-repairs-plan.md); [source-root plan](../../plans/2026-11-02-w1-backend-source-root-plan.md) | Merged 2026-11-03; resolver/auth handovers remain; confirmed 2026-11-03 | Documented 2026-11-03 |
-| W2 | Gateway runtime and mock | In review | [spec](../../specs/2026-11-05-w2-gateway-design.md) | [plan](../../plans/2026-11-05-w2-gateway.md) | T1–T7 done; approved at Gate 3; PR #14 open | guide out of date: llm-gateway |
+| W2 | Gateway runtime and mock | In review | [spec](../../specs/2026-11-05-w2-gateway-design.md) | [plan](../../plans/2026-11-05-w2-gateway.md) | T1–T7 done; approved at Gate 3; PR #14 open | Pending |
 | W3 | Guards (untrusted-text pipeline) | Not started | — | — | Tier 1 · Big · owner Developer · after W2 | — |
 | W4 | Auth and registration | Not started | — | — | Tier 1 · Big · owner Developer · after W1 | — |
 | W5 | Core planning (projects to tasks) | Not started | — | — | Tier 1 · Big · owner Dev Lead · after W1, W4 | — |
