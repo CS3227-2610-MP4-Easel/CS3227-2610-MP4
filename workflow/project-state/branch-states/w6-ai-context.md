@@ -7,9 +7,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w6-ai-context (from `INT` at `46b33b1`)
 - **Base:** 46b33b1
 - **Owner:** ludannnn (Developer member)
-- **Status:** In review
-- **Approved:** — (Gate 3 of 2026-11-06 lapsed: code changed after PR #16 review)
-- **Last updated:** 2026-11-07 by Claude Opus 5.5 — PR #16 review fixes; Gate 3 again
+- **Status:** Approved
+- **Approved:** ludannnn 2026-11-07 (re-approved after the PR #16 review fixes)
+- **Last updated:** 2026-11-07 by Claude Opus 5.5 — Gate 3 re-approved; SD4 signed off offline; push next
 
 **Untouched:** Conventions
 
@@ -35,9 +35,10 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] Gate 3: operator approved the branch (ludannnn, 2026-11-06).
 - [x] The operator pushed `w6-ai-context` and opened PR #16 into `development`.
 - [x] PR #16 review: two code findings fixed (cross-project re-check, scanner rule 4 in reached files); the third is the pending SD4 / D~1 sign-off below.
-- [ ] GATE 3 (again): the operator re-approves the branch after the PR #16 fixes, then pushes them.
-- [ ] GATE (merge blocker, raised again in PR #16 review): the PM and the Dev Lead sign off SD4 / D~1 under AD-11 in PR #16. Do not merge without it.
-- [ ] **Handover (PM, Dev Lead):** sign off spec SD4 under AD-11 in the W6 PR: the frozen `assemble` stays, `assembleWith` is added, and `assemble` throws for `DEV_SUMMARY` and `DEV_STANDUP` (D~1). Then a contracts §5.2 follow-up names `assembleWith` as the entry point.
+- [x] Gate 3 (again): operator re-approved the branch after the PR #16 fixes (ludannnn, 2026-11-07).
+- [x] SD4 / D~1 sign-off under AD-11: the operator reports the group (PM and Dev Lead included) agreed offline on 2026-11-07 (C~4).
+- [ ] The operator pushes `w6-ai-context` and replies on PR #16: comments 1-2 fixed in 28c5ecb; comment 3 signed off offline (ideally the PM and the Dev Lead also approve the PR, so the sign-off is on record there).
+- [ ] **Handover:** SD4 is signed off (C~4); a contracts §5.2 follow-up names `assembleWith` as the entry point for every feature, with `assemble` kept but throwing for `DEV_SUMMARY` and `DEV_STANDUP` (D~1).
 - [ ] **Handover (W5):** confirm where `requireMember` lives (architecture §4 says `auth`, frozen contracts §5.4 says `Core`; W6 follows §5.4) and that it throws `NotMember` for archived projects. The API composition root calls `registerCore(core)` and registers `core.projectBrief`, `core.checkpoints`, `core.taskEvents`, `core.blockedTasks`; `core` must not import `@agile/ai-context`. Add a boot test there asserting the core and all ten source ids are registered.
 - [ ] **Handover (W7, W8, W9):** register your sources at module load with `registerContextSource` (rules in the W6 spec conventions.md § Rules for source owners: `ownerId` meanings, rows most important first, filtered client, no unsafe raw SQL); call `assembleWith`, not `assemble`; keep gateway-calling files free of database imports (the source scan enforces it); never catch `ContextScopeViolation`. W7: `pm.similarItems` filters by the caller's member projects before searching, titles only, at most 5. W8: `lead.facts` emits only `FACT_KEYS` rows (add keys to `allow-list.ts` by PR, and update `facts`' max chars, which a test pins); test that the overload fact covers only member projects (C-28). W9: `dev.itemSummaries` never returns standup text.
 - [ ] **Handover (slicing):** `workflow/specs/slicing.md` lists W8's dependencies as W2, W3, W5; it also depends on W6.
@@ -48,7 +49,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W6 | AI context assembly | In review | [spec](../../specs/2026-11-06-w6-ai-context-design.md) | [plan](../../plans/2026-11-06-w6-ai-context.md) | PR #16 fixes done; Gate 3 again, SD4 sign-off (D~1); guide out of date: llm-gateway | — |
+| W6 | AI context assembly | In review | [spec](../../specs/2026-11-06-w6-ai-context-design.md) | [plan](../../plans/2026-11-06-w6-ai-context.md) | PR #16 fixed, re-approved, SD4 signed off (C~4); push next; guide out of date: llm-gateway | — |
 
 ---
 
@@ -56,6 +57,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-07 | Gate 3 re-approved by the operator; SD4 / D~1 signed off by the group offline (C~4) | W6 | this commit |
 | 2026-11-07 | PR #16 review fixes. (1) Step 8 now re-checks membership of every other project a `member`-scoped section draws from (`pm.similarItems`), not only the target, so a PM removed from such a project mid-assembly gets a `membership` violation (new E46; E18 now expects `[P, Q, P, Q]`). (2) Source-scan rule 4 (computed imports) now runs on every file a gateway file reaches through relative imports, not only the gateway file itself (new E30 fixture). Lint clean; ai-context tests all pass; 26 llm-gateway/auth DB tests failed locally only because Postgres on :5433 was down (ECONNREFUSED) | W6 | this commit |
 | 2026-11-06 | Gate 3: operator approved the branch | W6 | this commit |
 | 2026-11-06 | Close-out review of the branch diff (Attacker, Tester). Fixed in code: a source array with a throwing getter, a revoked Proxy or a huge length could leak its own error or spin (rows are now read only up to `maxRows + 1` inside a guard); a rejection whose prototype lookup throws escaped the `NotMember` check (`isNotMember` guard). Fixed in the scanner (spec amended, C~3): concatenated and template-hidden computed imports, unresolved and out-of-`src` relative imports, deep `ai-context` imports, gateway subpaths. Tests strengthened: E28 now covers every error code (input, role, core, missing, failed, timeout, lookalike, both core failures) and asserts each violation's check name, with `console.error` spied; E44 proves the change happened and covers a throwing getter; E36, E25, E34, E18, E45, E39 assert more. 381 tests, 381 pass, none skipped | W6 | a6068c1 |
@@ -118,6 +120,14 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Decision:** rule 1 also triggers on gateway subpaths, follows relative imports into `test` directories and outside `src`, and fails closed on an unresolved relative import; rule 3 covers every `@agile/ai-context/` subpath and relative paths into the package (except the package itself and the API composition root); rule 4 is found by parsing with TypeScript rather than by regex.
 - **Why:** each was a working bypass: `import("@" + "agile/db")`, a template literal containing `//` hiding a computed import, a query moved to `../lib` or `./test`, and deep imports reaching `resetContextRegistries` or the raw registries.
 - **Rejected:** keeping the spec's narrower wording (the bypasses defeat N2).
+
+### C~4 — SD4 / D~1 signed off under AD-11
+
+- **Date:** 2026-11-07
+- **Who asked:** operator (ludannnn), after PR #16 review comment 3 asked for the owners' agreement before merge; the operator reports the group, the PM and the Dev Lead among them, agreed offline
+- **Decision:** C~2 stands with the required sign-off: the frozen `assemble` is unchanged, `assembleWith` is the entry point every feature calls, and `assemble` throws `INVALID_ASSEMBLE_INPUT` for `DEV_SUMMARY` and `DEV_STANDUP`. Contracts §5.2 gets a follow-up naming `assembleWith`.
+- **Why:** AD-11 needs all owners of a frozen interface to agree to a change; the developer features need options the frozen signature cannot carry.
+- **Rejected:** changing the frozen `assemble` signature.
 
 ## 6. Known Gaps
 
