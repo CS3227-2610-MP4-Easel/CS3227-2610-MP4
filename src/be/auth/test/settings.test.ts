@@ -7,7 +7,9 @@ const LEAD = "lead-code-0123456789";
 const DEV = "dev-code-0123456789";
 const SECRET = "s".repeat(32);
 const valid = (tier: AppTier = "test"): Record<string, string | undefined> => ({
-  APP_TIER: tier, FIREBASE_PROJECT_ID: "w4-test", REGISTRATION_CODE_PM: PM, REGISTRATION_CODE_DEV_LEAD: LEAD, REGISTRATION_CODE_DEVELOPER: DEV, RATE_KEY_SECRET: SECRET,
+  APP_TIER: tier, FIREBASE_PROJECT_ID: tier === "dev" ? "agile-platform-dev" : tier === "prod" ? "agile-platform-prod" : "w4-test", REGISTRATION_CODE_PM: PM, REGISTRATION_CODE_DEV_LEAD: LEAD, REGISTRATION_CODE_DEVELOPER: DEV, RATE_KEY_SECRET: SECRET,
+  ...(tier === "dev" ? { VERCEL_PROJECT_ID: "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd", VERCEL_ENV: "preview", VERCEL_GIT_COMMIT_REF: "development", NEON_HOST: "dev.neon.tech", NEON_PROJECT: "agile-platform-dev", SOCLAAS_BASE_URL: "https://dev.soclaas.example" } : {}),
+  ...(tier === "prod" ? { VERCEL_PROJECT_ID: "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd", VERCEL_ENV: "production", VERCEL_GIT_COMMIT_REF: "main", NEON_HOST: "prod.neon.tech", NEON_PROJECT: "agile-platform-prod", SOCLAAS_BASE_URL: "https://prod.soclaas.example" } : {}),
 });
 const fails = (env: Record<string, string | undefined>, name: string, value?: string) => {
   assert.throws(() => loadAuthSettings(env), (error: unknown) => {
@@ -41,3 +43,9 @@ test("E50 preview without data settings loads with nulls", () => {
   assert.deepEqual(loadAuthSettings({ APP_TIER: "preview" }), { tier: "preview", firebaseProjectId: null, registrationCodes: null, rateKeySecret: null });
 });
 test("E50 preview with some data settings applies the full rules", () => fails({ APP_TIER: "preview", FIREBASE_PROJECT_ID: "w4-test" }, "REGISTRATION_CODE_PM"));
+test("E10/E19/E20 production startup requires complete production identity", () => {
+  assert.doesNotThrow(() => loadAuthSettings(valid("prod")));
+  fails({ ...valid("prod"), VERCEL_ENV: "preview" }, "VERCEL_ENV", "preview");
+  fails({ ...valid("prod"), VERCEL_GIT_COMMIT_REF: "development" }, "VERCEL_GIT_COMMIT_REF", "development");
+  fails({ ...valid("prod"), NEON_PROJECT: undefined }, "NEON_PROJECT");
+});

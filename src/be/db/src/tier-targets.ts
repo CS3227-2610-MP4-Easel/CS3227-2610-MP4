@@ -8,14 +8,19 @@ export type TierTarget = {
   neonHost: string | null;
   neonProject: string | null;
   databaseName: string | null;
+  vercelProject: string;
+  vercelAlias: string;
+  firebaseProjectId: string | null;
+  soclaasBaseUrl: string | null;
 };
 
+const VERCEL_PROJECT = "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd";
 const TARGETS: Record<AppTier, TierTarget> = {
-  local: { tier: "local", env: "local", vercelEnv: "local", branch: "local", neonHost: "localhost", neonProject: "local", databaseName: "agile_platform" },
-  dev: { tier: "dev", env: "dev", vercelEnv: "preview", branch: "development", neonHost: "dev.neon.tech", neonProject: "agile-platform-dev", databaseName: "agile_platform" },
-  preview: { tier: "preview", env: "preview", vercelEnv: "preview", branch: "any", neonHost: null, neonProject: null, databaseName: null },
-  prod: { tier: "prod", env: "prod", vercelEnv: "production", branch: "main", neonHost: "prod.neon.tech", neonProject: "agile-platform-prod", databaseName: "agile_platform" },
-  test: { tier: "test", env: "test", vercelEnv: "test", branch: "test", neonHost: "localhost", neonProject: "test", databaseName: "agile_platform" },
+  local: { tier: "local", env: "local", vercelEnv: "local", branch: "local", neonHost: "localhost", neonProject: "local", databaseName: "agile_platform", vercelProject: VERCEL_PROJECT, vercelAlias: "local", firebaseProjectId: "agile-platform-local", soclaasBaseUrl: "mock://soclaas" },
+  dev: { tier: "dev", env: "dev", vercelEnv: "preview", branch: "development", neonHost: "dev.neon.tech", neonProject: "agile-platform-dev", databaseName: "agile_platform", vercelProject: VERCEL_PROJECT, vercelAlias: "development", firebaseProjectId: "agile-platform-dev", soclaasBaseUrl: "https://dev.soclaas.example" },
+  preview: { tier: "preview", env: "preview", vercelEnv: "preview", branch: "any", neonHost: null, neonProject: null, databaseName: null, vercelProject: VERCEL_PROJECT, vercelAlias: "preview", firebaseProjectId: null, soclaasBaseUrl: null },
+  prod: { tier: "prod", env: "prod", vercelEnv: "production", branch: "main", neonHost: "prod.neon.tech", neonProject: "agile-platform-prod", databaseName: "agile_platform", vercelProject: VERCEL_PROJECT, vercelAlias: "production", firebaseProjectId: "agile-platform-prod", soclaasBaseUrl: "https://prod.soclaas.example" },
+  test: { tier: "test", env: "test", vercelEnv: "test", branch: "test", neonHost: "localhost", neonProject: "test", databaseName: "agile_platform", vercelProject: VERCEL_PROJECT, vercelAlias: "test", firebaseProjectId: "agile-platform-test", soclaasBaseUrl: "mock://soclaas" },
 };
 
 export function getTierTarget(tier: string | undefined): TierTarget {

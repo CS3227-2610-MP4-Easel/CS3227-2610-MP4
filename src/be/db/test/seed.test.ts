@@ -45,7 +45,7 @@ test("E21/E28 seed rejects unsupported and production tiers before client constr
 
 test("E5/E6/E15/E16/E23/E28 canonical targets reject every cross-tier database substitution", () => {
   const dev = { APP_TIER: "dev", DATABASE_URL: "postgresql://dev.neon.tech/agile_platform", NEON_HOST: "dev.neon.tech", NEON_PROJECT: "agile-platform-dev" };
-  assert.deepEqual(getTierTarget("dev"), { tier: "dev", env: "dev", vercelEnv: "preview", branch: "development", neonHost: "dev.neon.tech", neonProject: "agile-platform-dev", databaseName: "agile_platform" });
+  assert.deepEqual(getTierTarget("dev"), { tier: "dev", env: "dev", vercelEnv: "preview", branch: "development", neonHost: "dev.neon.tech", neonProject: "agile-platform-dev", databaseName: "agile_platform", vercelProject: "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd", vercelAlias: "development", firebaseProjectId: "agile-platform-dev", soclaasBaseUrl: "https://dev.soclaas.example" });
   assert.deepEqual(parseDatabaseTarget(dev.DATABASE_URL), { protocol: "postgresql:", host: "dev.neon.tech", databaseName: "agile_platform" });
   assert.doesNotThrow(() => validateDatabaseTarget(dev, dev.APP_TIER));
   for (const key of ["DATABASE_URL", "NEON_HOST", "NEON_PROJECT"] as const) {

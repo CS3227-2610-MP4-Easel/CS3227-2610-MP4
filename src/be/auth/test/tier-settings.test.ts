@@ -22,6 +22,12 @@ test("E3 cross-tier resource identity fails closed", () => {
   assert.throws(() => validateTierResources({ ...base, VERCEL_GIT_COMMIT_REF: "feature/wrong-tier" }), /VERCEL_GIT_COMMIT_REF/);
 });
 
+test("E10/E11 production maps to Vercel production, not preview", () => {
+  const production = { ...base, APP_TIER: "prod", FIREBASE_PROJECT_ID: "agile-platform-prod", VERCEL_ENV: "production", VERCEL_GIT_COMMIT_REF: "main", NEON_HOST: "prod.neon.tech", NEON_PROJECT: "agile-platform-prod", SOCLAAS_BASE_URL: "https://prod.soclaas.example" };
+  assert.doesNotThrow(() => validateTierResources(production));
+  assert.throws(() => validateTierResources({ ...production, VERCEL_ENV: "preview" }), /VERCEL_ENV/);
+});
+
 test("E1 preview runtime does not require or construct a database client", () => {
   const runtime = createAuthRuntime({ APP_TIER: "preview" });
   assert.equal(runtime.settings.firebaseProjectId, null);

@@ -1,4 +1,5 @@
 import type { UserRole } from "@agile/contracts";
+import { getTierTarget } from "@agile/db";
 
 export type AppTier = "local" | "dev" | "preview" | "prod" | "test";
 
@@ -10,27 +11,18 @@ export type AuthSettings = {
   rateKeySecret: string | null;
 };
 
-type TierResource = { tier: AppTier; branch: string; vercelProject: string; vercelAlias: string; firebaseProjectId: string | null; neonHost: string | null; neonProject: string | null; soclaasBaseUrl: string | null; env: string };
-const VERCEL_PROJECT_ID = "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd";
-const RESOURCES: readonly TierResource[] = [
-  { tier: "local", branch: "local", vercelProject: VERCEL_PROJECT_ID, vercelAlias: "local", firebaseProjectId: "agile-platform-local", neonHost: "localhost", neonProject: "local", soclaasBaseUrl: "mock://soclaas", env: "local" },
-  { tier: "dev", branch: "development", vercelProject: VERCEL_PROJECT_ID, vercelAlias: "development", firebaseProjectId: "agile-platform-dev", neonHost: "dev.neon.tech", neonProject: "agile-platform-dev", soclaasBaseUrl: "https://dev.soclaas.example", env: "dev" },
-  { tier: "preview", branch: "pull-request", vercelProject: VERCEL_PROJECT_ID, vercelAlias: "preview", firebaseProjectId: null, neonHost: null, neonProject: null, soclaasBaseUrl: null, env: "preview" },
-  { tier: "prod", branch: "main", vercelProject: VERCEL_PROJECT_ID, vercelAlias: "production", firebaseProjectId: "agile-platform-prod", neonHost: "prod.neon.tech", neonProject: "agile-platform-prod", soclaasBaseUrl: "https://prod.soclaas.example", env: "prod" },
-  { tier: "test", branch: "test", vercelProject: VERCEL_PROJECT_ID, vercelAlias: "test", firebaseProjectId: "agile-platform-test", neonHost: "localhost", neonProject: "test", soclaasBaseUrl: "mock://soclaas", env: "test" },
-];
-
 /** Checks only non-secret deployment identity fields; values are never included in failures. */
 export function validateTierResources(env: Record<string, string | undefined>): void {
-  const tier = env.APP_TIER as AppTier | undefined;
-  const expected = RESOURCES.find((resource) => resource.tier === tier);
-  if (!expected) invalid("APP_TIER");
+  const expected = getTierTarget(env.APP_TIER);
   const fields: Array<[string, string | null | undefined]> = [
     ["FIREBASE_PROJECT_ID", expected.firebaseProjectId], ["VERCEL_PROJECT_ID", expected.vercelProject],
-    ["VERCEL_ENV", expected.env === "dev" || expected.env === "prod" ? "preview" : expected.env],
+    ["VERCEL_ENV", expected.vercelEnv],
     ["VERCEL_GIT_COMMIT_REF", expected.branch], ["NEON_HOST", expected.neonHost],
     ["NEON_PROJECT", expected.neonProject], ["SOCLAAS_BASE_URL", expected.soclaasBaseUrl],
   ];
+  if (expected.tier === "preview") {
+    for (const [name] of fields) if (name !== "VERCEL_PROJECT_ID" && name !== "VERCEL_ENV" && name !== "VERCEL_GIT_COMMIT_REF" && env[name] !== undefined) invalid(name);
+  }
   for (const [name, value] of fields) {
     if (name === "VERCEL_GIT_COMMIT_REF" && expected.tier === "preview") {
       if (env[name] === "development" || env[name] === "main") invalid(name);
@@ -44,7 +36,7 @@ export function validateTierResources(env: Record<string, string | undefined>): 
 export function loadAuthSettings(env: Record<string, string | undefined>): AuthSettings {
   const tier = env.APP_TIER;
   if (!TIERS.includes(tier as AppTier)) invalid("APP_TIER");
-  if (RESOURCE_FIELDS.some((name) => env[name] !== undefined)) validateTierResources(env);
+  if (tier === "dev" || tier === "prod" || RESOURCE_FIELDS.some((name) => env[name] !== undefined)) validateTierResources(env);
   // The Admin SDK accepts unsigned tokens when the emulator variable is set, so it is banned on every tier.
   if (env.FIREBASE_AUTH_EMULATOR_HOST !== undefined) invalid("FIREBASE_AUTH_EMULATOR_HOST");
   if (tier === "preview" && DATA_SETTINGS.every((name) => env[name] === undefined)) return { tier, firebaseProjectId: null, registrationCodes: null, rateKeySecret: null };
