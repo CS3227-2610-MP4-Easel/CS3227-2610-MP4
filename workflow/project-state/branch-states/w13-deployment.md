@@ -24,7 +24,7 @@ the W1 application runnable on the dev and production tiers.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-06 | Codex | W13 | Active | PR #18 CI and Vercel deployment are green at `007ebef` | Owner performs Gate 3 branch review; retain code-owner review and merge as handover | 2026-11-06 |
+| S1 | 2026-11-07 | Codex | W13 | Active | Gate 2 approved; starting T1 baseline and implementation | Run baseline checks, then implement T1 | 2026-11-07 |
 
 **Remaining**
 
@@ -37,12 +37,16 @@ the W1 application runnable on the dev and production tiers.
 - [x] Gate 2: operator approved the W13 plan on 2026-11-06; approved-plan lint passes.
 - [ ] **Handover:** owner configures the canonical Vercel development project and variables, then reviews/merges W13 into `development`; record merged SHA and dev smoke evidence before starting T5.
 - [x] Resolved blocker: Vercel system project ID and actual preview source branch refs now validate; PR #18 CI and Vercel deployment pass at `007ebef`.
+- [ ] **New review findings:** development deployment verification, seed target binding, migration manifest enforcement, and production Vercel environment mapping require a focused high-risk correction before Gate 3.
+- [x] **C~4:** Operator approved reversing the approved no-token Vercel gate on 2026-11-07. W13 will use a protected, read-only Vercel metadata token only in the `development` push check; pull requests and application runtime receive no token.
+- [x] Gate 1: operator approved the amended W13 deployment-safety spec on 2026-11-07; approved-spec lint passes.
+- [x] **Review:** amended safety spec and plan now define the protected token boundary, sanitized metadata handoff, canonical loader, complete migration set, executor seam, production mapping, and E21-E25 traceability. Spec lint: 0 errors/0 warnings; plan lint: 0 errors/2 non-blocking Gate-step warnings.
 
 ## 2. Workstreams
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | Building | [spec](../../specs/2026-11-06-w13-deployment-design.md) | [plan](../../plans/2026-11-06-w13-deployment.md) | T4 implementation complete; owner deployment gate pending before T5 | — |
+| W13 | Environments, seed data and deployment | Building | [spec](../../specs/2026-11-07-w13-deployment-safety-design.md) | [plan](../../plans/2026-11-07-w13-deployment-safety.md) | T1 baseline and implementation starting after Gate 2 approval | — |
 
 ## 3. Changes
 
@@ -63,6 +67,9 @@ the W1 application runnable on the dev and production tiers.
 | 2026-11-06 | Confirmed Vercel injects project ID `prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd`; aligned tier resource validation, deployment verification, manifest fixtures, and tests with that canonical system identity | W13 | current fix |
 | 2026-11-06 | Corrected preview resource validation to accept actual non-protected PR branch refs while retaining exact development and production identity checks | W13 | current fix |
 | 2026-11-06 | Pushed `007ebef`; PR #18 workspace, typecheck, lint, contract, dependency, secret, workflow-security, Vercel, and preview-comment checks all pass | W13 | PR #18 |
+| 2026-11-07 | Operator approved the focused safety correction and reversed the plan's no-token Vercel gate in favor of a protected read-only metadata lookup; implementation remains gated on the amended spec | W13 | C~4 |
+| 2026-11-07 | Amended the safety plan after read-only review: protected pre-checkout metadata handoff, service-fixture tests, one canonical tier loader, exact migration executor seam, and complete edge-case traceability; spec lint 0/0 and plan lint 0 errors/2 non-blocking warnings | W13 | plan pending Gate 2 |
+| 2026-11-07 | Operator approved Gate 2 for the safety-correction implementation plan; execution starts with T1 baseline | W13 | Gate 2 |
 
 ## 7. Decisions
 

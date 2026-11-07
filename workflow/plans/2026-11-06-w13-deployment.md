@@ -2,6 +2,8 @@
 
 - **Status:** Approved (operator, 2026-11-06)
 
+> Amended 2026-11-07 under branch-state C~4: T4 now uses a protected, read-only Vercel metadata token for authoritative deployment verification; the former no-token external-gate wording is superseded for this check. The implementation keeps the token in the pre-checkout lookup step only.
+
 > **For agents:** tick each checklist item as it is completed. Keep the branch-state Progress cell current. Spec: [W13 design](../specs/2026-11-06-w13-deployment-design.md).
 
 ## Scope
@@ -137,7 +139,7 @@
 
 | Action | Path | What changes |
 |---|---|---|
-| Modify | `.github/workflows/w13-dev-check.yml` | Verify the owner-merged `development` SHA and tier manifest; do not receive production credentials; record dev smoke result with `degraded` AI fallback. The owner’s Vercel Git integration deploy remains an external `GATE:` action, not a CI token path. |
+| Modify | `.github/workflows/w13-dev-check.yml` | Before checkout, use the protected `w13-development-verification` environment's read-only Vercel token to fetch and poll exact deployment metadata; pass only sanitized project/alias/state/commit evidence to the checked-out verifier; do not receive production credentials. |
 | Modify | `scripts/w13/verify-dev-deployment.mjs` | Compare Vercel deployment metadata SHA/project/alias to the merged commit and manifest. |
 | Modify | `tests/w13/dev-deployment.test.ts` | Cover E2, E26, E41-E42 and preview variable isolation. |
 | Modify | `scripts/check-workflows.mjs` | Allow only the fixed owner-merge dev check workflow to use its protected `push` trigger; retain pull-request restrictions elsewhere. |
