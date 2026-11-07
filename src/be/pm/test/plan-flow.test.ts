@@ -7,6 +7,7 @@ import { ContextScopeViolation, type AiContextWith, type AssembleResult } from "
 import { isInTransaction } from "@agile/db";
 import { createLlmGateway, createMockProvider, createSessions, loadGatewaySettings, mockRegistry, type MockRespond } from "@agile/llm-gateway";
 import { addDaysIso, createPlanFlow, PlanFlowError } from "../src/index.js";
+import { ProposalError } from "@agile/proposals";
 import { bindProposals, integrationUrl, withIntegrationDb, type Fixtures } from "./fakes.js";
 
 const opts = { skip: !integrationUrl };
@@ -423,6 +424,41 @@ test("E50 a second member PM cannot expand (404, no claim) but can approve, whic
   for (const index of [0, 1, 2]) await h.flow.expandEpic({ caller: a.caller, proposalId: plan.id, index });
   await h.flow.approve({ caller, proposalId: plan.id, version: plan.version });
   assert.deepEqual(await sessionOutcomes(h, a), ["ACCEPTED"]);
+}));
+
+test("fix: every storeEpic ProposalError is mapped; non-conflict errors fail the epic, CONFLICT_STATE leaves the row", opts, withHarness({}, async (h) => {
+  const a = await h.actor();
+  const plan = await create(h, a);
+  h.proposals.storeEpic = async () => { throw new ProposalError("NOT_FOUND"); };
+  const nf = await flowError(h.flow.expandEpic({ caller: a.caller, proposalId: plan.id, index: 0 }));
+  assert.deepEqual([nf.status, nf.code], [404, "NOT_FOUND"]);
+  assert.equal((await epicRow(h, plan.id, 0)).expansionStatus, "FAILED");
+  h.proposals.storeEpic = async () => { throw new ProposalError("CONFLICT_STATE"); };
+  const cs = await flowError(h.flow.expandEpic({ caller: a.caller, proposalId: plan.id, index: 1 }));
+  assert.deepEqual([cs.status, cs.code], [409, "CONFLICT_STATE"]);
+  assert.equal((await epicRow(h, plan.id, 1)).expansionStatus, "IN_PROGRESS");
+}));
+
+test("fix: a failEpic that throws does not replace the mapped error", opts, withHarness({}, async (h) => {
+  const a = await h.actor();
+  const plan = await create(h, a);
+  h.state.script = () => fail("AI_UNAVAILABLE");
+  h.proposals.failEpic = async () => { throw new Error("db down"); };
+  const e = await flowError(h.flow.expandEpic({ caller: a.caller, proposalId: plan.id, index: 0 }));
+  assert.deepEqual([e.status, e.code], [503, "AI_UNAVAILABLE"]);
+}));
+
+test("fix: a failure after createProposal keeps the stored proposal's session OPEN", opts, withHarness({}, async (h) => {
+  const a = await h.actor();
+  h.proposals.getProposalView = async () => null;
+  const e = await flowError(create(h, a));
+  assert.deepEqual([e.status, e.code], [500, "INTERNAL"]);
+  assert.equal(await proposalCount(h, a), 1);
+  assert.deepEqual(await sessionOutcomes(h, a), ["OPEN"]);
+  h.proposals.getProposalView = async () => { throw new Error("boom"); };
+  const e2 = await flowError(create(h, a));
+  assert.deepEqual([e2.status, e2.code], [500, "INTERNAL"]);
+  assert.deepEqual(await sessionOutcomes(h, a), ["OPEN", "OPEN"]);
 }));
 
 test("approve and reject map version conflicts and close the session REJECTED", opts, withHarness({}, async (h) => {

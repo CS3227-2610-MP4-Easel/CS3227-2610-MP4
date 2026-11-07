@@ -8,6 +8,14 @@ import { loadPmSettings } from "./settings.js";
 import { registerSimilarItems } from "./similar-items.js";
 
 let cached: PlanFlow | undefined;
+let registered = false;
+
+/** Runs `register` at most once successfully: the flag is set only after it returns, so a failed build can be retried without a duplicate registration. */
+export function registerOnce(register: () => void, state: { done: boolean } = { get done() { return registered; }, set done(v) { registered = v; } }): void {
+  if (state.done) return;
+  register();
+  state.done = true;
+}
 
 /** Built on first use and memoised: the filtered client, the gateway, sessions and context, the bound proposals functions; registers the similar-items source once. This file never calls `run`. */
 export function getPmRuntime(): PlanFlow {
@@ -15,8 +23,8 @@ export function getPmRuntime(): PlanFlow {
   const db = createDbClient();
   const { gateway, sessions } = gatewayParts();
   const core = { applyPlan: (tx: unknown, projectId: string, plan: unknown, actorId: string) => applyPlan(tx as never, projectId, plan, actorId) };
-  registerSimilarItems({ db, settings: loadPmSettings(process.env) });
-  cached = createPlanFlow({
+  const settings = loadPmSettings(process.env);
+  const flow = createPlanFlow({
     gateway, sessions, aiContext: getAiContext(),
     proposals: {
       createProposal: (i) => createProposal(db, i),
@@ -28,5 +36,7 @@ export function getPmRuntime(): PlanFlow {
       rejectProposal: (i) => rejectProposal({ db, sessions }, i),
     },
   });
+  registerOnce(() => registerSimilarItems({ db, settings }));
+  cached = flow;
   return cached;
 }

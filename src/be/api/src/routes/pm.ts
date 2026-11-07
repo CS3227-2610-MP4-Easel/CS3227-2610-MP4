@@ -29,6 +29,7 @@ async function bodyTooLarge(request: Request, max: number): Promise<boolean> {
   }
 }
 
+// The size check intentionally runs before authorisation (a `before` hook): it reads at most `max` bytes, so it is bounded, and it matches the W4 endpoints.
 const bodyLimit = (max: number): NonNullable<RouteDefinition["before"]> => async ({ requestId, request }) => {
   if (await bodyTooLarge(request, max)) return errorResponse(new HttpError("PAYLOAD_TOO_LARGE", 413, "The request body is too large."), requestId);
 };

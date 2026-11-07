@@ -55,6 +55,7 @@ function mapFailure(result: Extract<LlmResult, { ok: false }>): { error: PlanFlo
   switch (result.code) {
     case "BLOCKED_INPUT": return { error: new PlanFlowError("VALIDATION_FAILED", 422, "The request could not be used."), code: "BLOCKED_INPUT" };
     case "REQUEST_REFUSED": return { error: new PlanFlowError("REQUEST_REFUSED", 422, "The AI declined this request."), code: "REQUEST_REFUSED" };
+    // The gateway result carries no reason field, so LOCAL_LIMIT is always reported.
     case "AI_BUSY": return { error: new PlanFlowError("AI_BUSY", 429, "The AI is busy; try again shortly.", result.retryAfterSeconds ?? 60, { reason: "LOCAL_LIMIT" }), code: "AI_BUSY" };
     case "AI_UNAVAILABLE": return { error: new PlanFlowError("AI_UNAVAILABLE", 503, "The AI is unavailable."), code: "AI_UNAVAILABLE" };
     case "AI_DISABLED": return { error: new PlanFlowError("AI_DISABLED", 503, "The AI is disabled."), code: "AI_DISABLED" };
@@ -111,6 +112,7 @@ export function createPlanFlow(deps: PlanFlowDeps) {
       if (e instanceof SessionCapReached) throw new PlanFlowError("RATE_LIMITED", 429, "Too many AI sessions.", e.retryAfterSeconds);
       throw e;
     }
+    let stored = false;
     try {
       const today = singaporeToday(clock.now());
       const assembled = await aiContext.assembleWith(caller, "PM_PLAN_OUTLINE", projectId, { query: idea });
@@ -131,10 +133,15 @@ export function createPlanFlow(deps: PlanFlowDeps) {
         if (isProposalError(e) && e.code === "CONFLICT_STATE") throw new PlanFlowError("CONFLICT_STATE", 409, "The project is no longer available.");
         throw e;
       }
-      const view = await proposals.getProposalView(proposalId, caller.userId);
-      if (!view) throw notFound();
-      return view;
+      // The proposal is stored: from here the session must stay OPEN, so failures do not reach the ABANDONED close below.
+      stored = true;
+      try {
+        const view = await proposals.getProposalView(proposalId, caller.userId);
+        if (view) return view;
+      } catch { /* reported as INTERNAL below */ }
+      throw new PlanFlowError("INTERNAL", 500, "Internal error.");
     } catch (e) {
+      if (stored) throw e;
       try { await sessions.close(sessionId, "ABANDONED", caller.userId); } catch { /* the original failure matters more */ }
       throw e instanceof PlanFlowError ? e : classify(e).error;
     }
@@ -170,15 +177,18 @@ export function createPlanFlow(deps: PlanFlowDeps) {
       });
     } catch (e) {
       const { error, code } = classify(e);
-      await proposals.failEpic({ proposalId, index, claimedVersion: claim.claimedVersion, error: code });
+      try { await proposals.failEpic({ proposalId, index, claimedVersion: claim.claimedVersion, error: code }); } catch { /* the mapped error matters more */ }
       throw error;
     }
     try {
       const tasks = (result.value as { tasks: EpicTask[] }).tasks;
       return await proposals.storeEpic({ proposalId, index, claimedVersion: claim.claimedVersion, tasks, flagged: result.flagged });
     } catch (e) {
-      if (isProposalError(e) && e.code === "CONFLICT_STATE") throw new PlanFlowError("CONFLICT_STATE", 409, "The proposal changed while the epic was being expanded.");
-      throw e;
+      // CONFLICT_STATE: the result was discarded because the proposal is no longer PENDING; leave the row as it is.
+      if (!(isProposalError(e) && e.code === "CONFLICT_STATE")) {
+        try { await proposals.failEpic({ proposalId, index, claimedVersion: claim.claimedVersion, error: "INTERNAL" }); } catch { /* best effort */ }
+      }
+      return mapProposalError(e);
     }
   }
 

@@ -159,6 +159,22 @@ test("small-body endpoints (37, 40, 41) answer 413 over 1 KiB by Content-Length 
   assert.equal(calls.length, 3);
 });
 
+test("the size check runs before authorisation: oversized bodies get 413 with no token or a DEVELOPER token; a normal body with no token is 401", async () => {
+  const { flow, calls } = fakeFlow();
+  const app = appFor(flow);
+  for (const e of ENDPOINTS.filter((x) => x.method === "POST")) {
+    const limit = e.key === "34" ? 32 * 1024 : 1024;
+    for (const token of [undefined, "Bearer dev"]) {
+      const response = await send(app, "POST", e.path(OWN), { ...(token ? { token } : {}), body: "x".repeat(limit + 1) });
+      assert.equal(response.status, 413, `${e.key} ${token ?? "none"}`);
+      assert.equal(await code(response), "PAYLOAD_TOO_LARGE");
+    }
+    const anonymous = await callEndpoint(app, e, OWN);
+    assert.equal(anonymous.status, 401, e.key);
+  }
+  assert.equal(calls.length, 0);
+});
+
 test("E47 bodies with extra keys are 422 VALIDATION_FAILED", async () => {
   const { flow, calls } = fakeFlow();
   const app = appFor(flow);
