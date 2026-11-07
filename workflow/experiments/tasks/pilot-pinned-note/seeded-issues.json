@@ -1,0 +1,9 @@
+[
+  { "id": "collision", "category": "collision", "text": "A free-text note on an epic overlaps the comments feature that the architecture puts out of scope (AD-09).", "anchor": "free-text note", "blocking": true },
+  { "id": "contradiction", "category": "contradiction", "text": "'Only the PM can edit a note' contradicts 'every project member can edit notes they can see'.", "anchor": "every project member can edit", "blocking": true },
+  { "id": "missing_limit", "category": "missing_limit", "text": "'A short note' gives no length limit.", "anchor": "a short note", "blocking": false },
+  { "id": "vague_term", "category": "vague_term", "text": "'Recent notes' is not defined (how many, how recent, ordered by what).", "anchor": "recent notes", "blocking": false },
+  { "id": "wrong_path", "category": "wrong_path", "text": "The screen belongs under src/fe and the endpoint under src/be (C8), not apps/web and apps/api.", "anchor": "apps/web", "blocking": true },
+  { "id": "missing_error", "category": "missing_error", "text": "Nothing says what happens to a pinned note when its epic is closed or deleted.", "anchor": "pinned note", "blocking": false },
+  { "id": "tenancy", "category": "tenancy", "text": "Visibility to a member of any project breaks the project boundary (AD-55 policy map, NotMember).", "anchor": "any project", "blocking": true }
+]

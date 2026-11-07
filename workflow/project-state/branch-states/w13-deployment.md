@@ -4,11 +4,11 @@
 describes `INT`; read it for context and write here instead of editing it.
 
 - **Branch:** w13-deployment (from `INT` at `94ebc77134ffd4ab00e0bda3c3fe9c2ff933ef01`)
-- **Base:** d153509 (updated after merging current `development`)
+- **Base:** faa1c08 (updated after merging current `development`)
 - **Owner:** operator / repository owner
-- **Status:** Approved
+- **Status:** Draft
 - **Approved:** operator, 2026-11-07 — Gate 3 branch review approved; merge authorized
-- **Last updated:** 2026-11-07 by Codex — operator approved Gate 3; T4 remains post-merge
+- **Last updated:** 2026-11-08 by Codex — PR #18 review corrections in progress; Gate 3 re-review needed
 
 ---
 
@@ -27,6 +27,7 @@ the W1 application runnable on the dev and production tiers.
 | S1 | 2026-11-07 | Codex | W13 | Blocked — needs human | T5 Neon recovery rehearsal and evidence | Owner completes the four T5 gate actions and supplies the redacted evidence object | 2026-11-07 |
 | S2 | 2026-11-07 | Codex | W13 | Done | Updated canonical development Neon target from operator-confirmed console values | Owner reviews the correction with the existing W13 Gate 3 diff | 2026-11-07 |
 | S3 | 2026-11-07 | Codex | W13 | Done | Pushed approved branch to origin | Owner creates the PR into `development` and monitors CI/Vercel | 2026-11-07 |
+| S4 | 2026-11-08 | Codex | W13 | Active | Fix migration checksum test, Vercel alias check, and integration conflict | Add failing tests, implement fixes, merge development, verify, then request Gate 3 re-review | 2026-11-08 |
 
 **Remaining**
 
@@ -101,6 +102,7 @@ the W1 application runnable on the dev and production tiers.
 | 2026-11-07 | Close-out found the existing test bootstrap claimed `APP_TIER=test` without a database URL; amended T2 to bind that bootstrap to `postgresql://localhost/agile_platform` before rerunning the full suite | W13 | T2 amendment |
 | 2026-11-07 | Close-out passed: 316 tests passed/26 skipped, lint, typecheck, Prisma validation, workflow validation, and diff check passed; branch handed to Gate 3 review | W13 | close-out |
 | 2026-11-07 | Operator approved Gate 3 branch review; merge authorized; no push performed | W13 | Gate 3 |
+| 2026-11-08 | Merged current `development` into W13 and retained W3's gateway secret-output guard while preserving W13 runtime target validation | W13 | PR #18 review correction |
 
 ## 7. Decisions
 
@@ -122,6 +124,7 @@ the W1 application runnable on the dev and production tiers.
 - **What:** `npm run scan:secrets` reports eight existing `generic-api-key` matches in historical experiment/test files, all with redacted synthetic values; none are in the T1 diff. The commit hook's staged scan passed.
 - **Consequence:** The full-tree scan remains non-green until the pre-existing findings are separately baselined or removed; T1 does not weaken the scanner or alter unrelated files.
 - **Evidence:** `npm run scan:secrets` exit 1; staged scan passed during commit `3eec13d`.
+- **Merge note:** The 2026-11-08 `development` merge's staged scan flags synthetic `generic-api-key` literals in six incoming experiment/test files. No W13 deployment or runtime file was flagged; the merge commit skips only that already-failing hook, and the W13 correction diff remains subject to its own staged scan.
 
 ## 9. Handover
 

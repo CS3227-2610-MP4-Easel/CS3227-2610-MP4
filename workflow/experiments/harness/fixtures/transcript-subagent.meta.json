@@ -1,0 +1,11 @@
+{
+  "agentType": "reviewer",
+  "isBuiltIn": false,
+  "launchedWithDefaults": true,
+  "description": "Review spec (Implementer lens)",
+  "toolUseId": "toolu_017sW8ASXbxZKPGvueenBryy",
+  "spawnDepth": 1,
+  "requestShape": "background",
+  "requestNonInteractive": true,
+  "finished": true
+}

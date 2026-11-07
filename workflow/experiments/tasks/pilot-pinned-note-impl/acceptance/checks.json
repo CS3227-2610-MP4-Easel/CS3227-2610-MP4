@@ -1,0 +1,43 @@
+[
+  {
+    "id": "CHK1",
+    "required": true,
+    "requirement": "The PM creates a note on an existing epic and the epic's note list then contains it with the exact text sent.",
+    "_canary": "f5e57190b6213c10583d34d0ca951067"
+  },
+  {
+    "id": "CHK2",
+    "required": true,
+    "requirement": "After the PM creates notes A then B on one epic, the list returns B before A (newest first)."
+  },
+  {
+    "id": "CHK3",
+    "required": true,
+    "requirement": "The PM pins note A; the epic's note view then returns A first even though B is newer."
+  },
+  {
+    "id": "CHK4",
+    "required": true,
+    "requirement": "After the PM pins A and then pins B, at most one note of the epic is pinned."
+  },
+  {
+    "id": "CHK5",
+    "required": false,
+    "requirement": "A Developer who is a member of the project cannot create or edit a note (the request is rejected, not accepted)."
+  },
+  {
+    "id": "CHK6",
+    "required": true,
+    "requirement": "A note text containing a script tag and a newline is returned unchanged as text."
+  },
+  {
+    "id": "CHK7",
+    "required": false,
+    "requirement": "Creating a note on an epic id that does not exist is rejected with a not-found result, not a server error."
+  },
+  {
+    "id": "CHK8",
+    "required": false,
+    "requirement": "Creating a note with empty text is rejected."
+  }
+]

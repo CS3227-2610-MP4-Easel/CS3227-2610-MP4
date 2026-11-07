@@ -14,7 +14,7 @@ spec marks `critical`; recommended for Medium with a contract; skipped for Small
 
 1. Starts after spec approval and stub review, in parallel with plan review (tests derive from the
    spec and stubs, not the plan, so a reworked plan wastes nothing).
-2. One `test-author` subagent per task or wave. It sees: spec components, stubs, edge-case rows,
+2. One `test-author` subagent per task or wave. It sees: the spec's § 4.2-4.3 contracts and § 5 edge-case rows (v1: spec components), the stubs,
    the test conventions pack, `[contract]`-tagged plan snippets. It never sees `[impl]` snippets or
    implementation.
 3. Each test cites an `E` or `F` ID. Tests live apart (`tests/contract/` or a `*.contract.test`

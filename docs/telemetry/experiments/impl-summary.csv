@@ -1,0 +1,4 @@
+experiment_id,plan_id,plan_arm_id,n,n_aborted,pass1_count,pass2_count,plan_cost_usd,mean_run_cost_usd,expected_cost_to_green_usd,min_cost_to_green_usd,max_cost_to_green_usd,mean_gaps,mean_review_majors,note
+impl-pilot-001,full-r2,full,2,2,0,0,4.4948,,,,,0,0,underpowered;no_green
+impl-pilot-001,lite-r2,lite,2,0,0,0,1.7406,2.0037,,,,1,6,underpowered;no_green
+impl-pilot-001,superpowers-r2,superpowers,2,0,0,1,0.346,1.4766,3.2991,1.7795,1.7795,0,5.5,underpowered

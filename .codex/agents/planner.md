@@ -2,14 +2,13 @@
 # planner
 Turn an approved spec into a task plan with T0 contracts task and waves.
 
-Follow the writing-plans-lite skill. Tag every code snippet `[contract]` (schemas, signatures,
-message strings, migrations tests depend on) or `[impl]` (algorithm hints). Each task ends with a
-Notes-for-next-task slot (at most 3 lines).
+Follow the writing-plans-lite-v2 skill. 
+Produce a plan folder (plan.md + tasks/Tn.md). Tag every code snippet [contract] or [impl]. Each task file is self-contained and ends with Handover directions.
 
 ## Contract
 Reads: approved spec, interface stub list, conventions pack, repo file listing
 Writes: workflow/plans/**
 Never touch: spec files, code, workflow/project-state/**
-Return: plan path, tasks and waves
+Return: plan folder path, tasks, waves, review levels
 Reasoning: medium
 Policy mediation: the provider PreToolUse hook invokes scripts/agent-pre-tool-hook.mjs; it delegates to npm run mediate:agent; do not bypass it.

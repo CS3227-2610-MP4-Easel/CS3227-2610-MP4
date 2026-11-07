@@ -1,2 +1,12 @@
 # Reviewed non-secret canary from the original W12 scanner test commit.
 4d8025da73a3a7c18919a7b44b8fa804409262b4:tests/process-security/secret-scan.test.ts:generic-api-key:24
+# Reviewed non-secret fake SoCLaaS key in W3 gateway tests ("soclaas-key-" plus digits); replaced by a runtime-built value in c7f5f3b.
+cc32b131378d9a19e7809188ef8c2e33ead7f1be:src/be/llm-gateway/test/run.test.ts:generic-api-key:513
+f9d32cf5fd7186544073e3a769f9fbc9febd876c:src/be/llm-gateway/test/run.test.ts:generic-api-key:499
+# Reviewed non-secret fixtures in the experiment framework tests: fake keys assembled from pieces at runtime so the scanners can be tested (the RFC 6455 sample nonce in the vendored superpowers test is public).
+39ff6d9a0f8148df236b1746b1526adc7cbb7590:workflow/experiments/harness/report.test.mjs:generic-api-key:123
+d9cc3df87beb029c3896e153754e0a4fa1d7b282:workflow/experiments/harness/grade.test.mjs:generic-api-key:111
+d15f181c93913d2c2eb4e9e71fab6747a8f633d8:workflow/experiments/harness/sanitize.test.mjs:generic-api-key:29
+d167e538af4fb8a9869838b1a0146a22794ca0af:workflow/experiments/plugins/superpowers/tests/brainstorm-server/ws-protocol.test.js:generic-api-key:53
+c4caa2a2ed5c96bd347535ee1f6f547e5a5a8677:workflow/experiments/harness/check.test.mjs:generic-api-key:190
+c4caa2a2ed5c96bd347535ee1f6f547e5a5a8677:workflow/experiments/harness/secrets.test.mjs:generic-api-key:7

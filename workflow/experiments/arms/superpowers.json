@@ -1,0 +1,21 @@
+{
+  "id": "superpowers",
+  "stage": "specplan",
+  "prompt": "Use the superpowers brainstorming skill, then the superpowers writing-plans skill, to produce a design spec and an implementation plan for the request below. Write the spec under docs/specs/ and the plan under docs/plans/ in this repository. Task id: {{task_id}}.\n\n{{brief}}",
+  "plugins": ["superpowers"],
+  "skills": [],
+  "agents": [],
+  "mcp": [],
+  "allowed_tools": ["Read", "Write", "Edit", "Bash", "Glob", "Grep", "Skill", "Task", "Agent"],
+  "disallowed_tools": ["WebFetch", "WebSearch"],
+  "permission_mode": "acceptEdits",
+  "model": { "main": "claude-sonnet-5-5" },
+  "instruction_files": ["AGENTS.md", "CLAUDE.md"],
+  "artifact_globs": {
+    "spec": ["docs/specs/**/*.md", "docs/superpowers/specs/**/*.md"],
+    "plan": ["docs/plans/**/*.md", "docs/superpowers/plans/**/*.md"]
+  },
+  "lint": false,
+  "review": { "lenses": [], "agent_types": [], "max_rounds": 0 },
+  "phase_map": { "superpowers:brainstorming": "spec", "superpowers:writing-plans": "plan" }
+}

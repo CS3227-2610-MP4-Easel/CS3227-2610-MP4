@@ -6,7 +6,7 @@ import { validateRuntimeDatabaseTarget } from "@agile/db";
 import { createLlmGateway } from "./gateway.js";
 import { createMockProvider, createSoclaasProvider } from "./providers.js";
 import { createSessions, type GatewaySessions } from "./sessions.js";
-import { loadGatewaySettings } from "./settings.js";
+import { gatewaySecrets, loadGatewaySettings } from "./settings.js";
 
 let cached: { gateway: LlmGateway; sessions: GatewaySessions } | undefined;
 
@@ -25,7 +25,9 @@ export function createLlmGatewayRuntime(env: Record<string, string | undefined>,
   const sessions = createSessions({ db, settings: { tier: settings.tier } });
   const provider = settings.llmMode === "live" ? createSoclaasProvider({ baseUrl: settings.baseUrl, apiKey: settings.apiKey as string }) : createMockProvider();
   // Only the SoCLaaS provider holds the key; the gateway's copy of the settings does not, so it cannot be logged by accident.
-  return { sessions, gateway: createLlmGateway({ settings: { ...settings, apiKey: null }, db, hit: overrides.hit ?? getAuthRuntime().hit, sessions, provider }) };
+  // The output guard gets it separately, to reject an answer that echoes it.
+  const secrets = gatewaySecrets(settings);
+  return { sessions, gateway: createLlmGateway({ settings: { ...settings, apiKey: null }, db, hit: overrides.hit ?? getAuthRuntime().hit, sessions, provider, secrets }) };
 }
 
 function runtime() {
