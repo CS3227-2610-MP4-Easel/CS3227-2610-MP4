@@ -80,3 +80,11 @@ pm install removes the generated Prisma client, so 	sc -b fails until `prisma:ge
 - **Decision (spec SD5):** keyword match (A) rather than Postgres full-text through a new `@agile/db` function (B). The filtered client has no raw SQL and typed SQL is disabled. Contracts §5.3 and AD-28's wording would be amended, and a Known Gap recorded at the fold.
 - **Why:** no new SQL surface or migration before the 10 Nov freeze. Rejected: B; Prisma `fullTextSearch` preview.
 - **Status:** confirmed at Gate 1.
+
+### C~3 — The session rule also admits a call of the session's own feature (spec SD3 amended)
+
+- **Date:** 2026-11-07.
+- **Who asked:** found while running W2's integration tests on a local Postgres (Docker, port 5433): sessions-integration.test.ts E26 opens a `PM_PLAN_EXPAND` session and regenerates it; the first rule from SD3 (`row.feature === (SESSION_FEATURE[feature] ?? feature)`) made that session unusable for its own feature. The operator asked for the local database; the AI amended the rule.
+- **Decision:** `assertUsable` passes when `row.feature === feature` or `row.feature === SESSION_FEATURE[feature]` (own keys only). An outline session admits expand calls; an expand session still rejects outline calls (E2).
+- **Why:** keeps every existing W2 behaviour and adds only the new case. Rejected: changing W2's E26 test to open an outline session (hides the regression). The earlier Tester-lens suggestion to cover the self case was wrongly rejected on 2026-11-07 and is now accepted.
+- **Follow-up:** the spec hash in the plan is restamped (`112dc7d0a8c1`); T1 gets a second fix round.

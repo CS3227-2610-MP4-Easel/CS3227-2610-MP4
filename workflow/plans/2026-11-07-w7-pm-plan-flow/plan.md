@@ -2,7 +2,7 @@
 
 - **Status:** Approved (Xiao-Congchen, 2026-11-07)
 - **Format:** v2
-- **Spec:** [W7 PM plan flow design](../../specs/2026-11-07-w7-pm-plan-flow-design.md) | **Spec hash:** dbc96810e885
+- **Spec:** [W7 PM plan flow design](../../specs/2026-11-07-w7-pm-plan-flow-design.md) | **Spec hash:** 112dc7d0a8c1
 - **Workstream:** W7
 
 > **For the orchestrator:** this file is your router. Do not open task files yourself except to
@@ -19,9 +19,9 @@
 ## Shared context
 **Commands**
 - Build: `npm run typecheck` and `npm run lint` (`tsc -b`); schema `npm --workspace @agile/db run prisma:validate`.
-- Test one file: `node --import tsx --import ./tests/setup-auth-env.ts --test <path>`. All: `npm test`.
+- Test one file (a local Postgres runs in Docker, migrated; the file `.ws/w7.env` holds the two variables): `node --env-file .ws/w7.env --import tsx --import ./tests/setup-auth-env.ts --test <path>`. All: the same with `scripts/discover-tests.mjs`-style `npm test` after exporting the variables. Integration tests must RUN, not skip: report pass/fail/skipped counts.
 - After any `npm install`, run `npm --workspace @agile/db run prisma:generate` (install removes the generated client and `tsc -b` then fails).
-- Integration tests need `DATABASE_URL` and `W1_INTEGRATION_DATABASE_URL` exported; they skip without the second (pattern: `{ skip: !integrationUrl }`).
+- Integration tests need `DATABASE_URL` and `W1_INTEGRATION_DATABASE_URL`; they skip without the second (pattern: `{ skip: !integrationUrl }`). If `.ws/w7.env` or the database is missing, stop and report `blocked`.
 
 **Rules for every task** (ID - rule)
 - C8 - all source lives under `src/`; new backend packages are `src/be/<name>` workspaces named `@agile/<name>` (C51), `exports: { ".": "./src/index.ts" }`.
