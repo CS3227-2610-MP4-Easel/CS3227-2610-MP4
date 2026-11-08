@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** In review
 - **Approved:** —
-- **Last updated:** 2026-11-09 by Codex — corrected Neon project identity by tier; validation passed; awaiting branch review
+- **Last updated:** 2026-11-09 by Codex — owner configured dev/prod Firebase variables; redeploy and runtime verification remain
 
 **Untouched:** Architecture, Conventions, Known Gaps
 
@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-09 00:00 | Codex | W13 | In review | Immutable tier map now requires dev project `falling-rice-06970921` plus the confirmed dev host; prod remains `super-sunset-36592949` | Owner reviews the commit; update Vercel development `NEON_PROJECT` and redeploy before runtime verification | 2026-11-09 03:20 |
+| S1 | 2026-11-09 00:00 | Codex | W13 | In review | Immutable tier map and Firebase tier configuration are recorded; dev/prod Firebase variables were added by the owner | Redeploy `development`, verify dev health/auth/tier checks, then repeat the Firebase identity check on production when released | 2026-11-09 03:30 |
 
 **Remaining**
 
@@ -80,6 +80,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-09 | Operator reversed T6 under C~9: removed the protected production workflow, identity script, tests, and Deploy Hook requirement; production migration/deployment is now a manual owner handover. | W13 | this commit |
 | 2026-11-09 | Operator corrected the canonical Neon project mapping: development uses `falling-rice-06970921`; production remains `super-sunset-36592949`. | W13 | this commit |
 | 2026-11-09 | Applied the corrected Neon mapping to the immutable manifest, runtime target map, and regression fixtures; development requires the confirmed pooled host and `falling-rice-06970921`, while production remains `super-sunset-36592949`. Focused tests, full suite, typecheck, lint, contract, Prisma, workflow, policy, secret-scan, and diff checks pass. | W13 | this commit |
+| 2026-11-09 | Owner added the dev and prod Firebase variables in Vercel; Firebase configuration handover is complete, pending redeploy and runtime verification. | W13 | this commit |
 | 2026-11-08 | Owner added the protected GitHub `production` Environment secret `DIRECT_DATABASE_URL`; Vercel Git integration confirmation remains before T6 can proceed. | W13 | this commit |
 | 2026-11-08 | Owner verified Vercel Git integration is connected to `CS3227-2610-MP4-Easel/CS3227-2610-MP4`; Production Branch is `main`, and Vercel reports every commit pushed to `main` creates a Production Deployment. | W13 | this commit |
 | 2026-11-08 | T6 close-out passed: 488 tests (462 passed, 26 skipped), typecheck, lint, contract, Prisma validation, workflow validation, agent-policy, secret scan, and diff check; branch is ready for owner review. | W13 | this commit |
