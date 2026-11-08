@@ -1,0 +1,22 @@
+{
+  "task": "T6",
+  "status": "done",
+  "summary": "Added final cross-layer authorization, transaction, registration, source-scope, and frozen-interface regression evidence for W5.",
+  "produces": [
+    { "kind": "integration-test", "name": "W5 full-app authorization regressions", "where": "src/be/api/test/w5-integration.test.ts", "note": "Authentic app assembly proves authentication-before-parsing, existing-project outsider membership denial, and archived-member 409 precedence." },
+    { "kind": "concurrency-test", "name": "W5 stale-write and event-failure regressions", "where": "src/be/core/test/w5-concurrency.test.ts", "note": "Uses the established integrationUrl availability/skip helper for the real task/event rollback test; stale-write and snapshot cases remain unit coverage." },
+    { "kind": "static-contract-test", "name": "W5 boot and frozen Core contracts", "where": "src/be/api/test/import-rules.test.ts", "note": "Composition must register Core and every Core context source; consumers retain the frozen Core surface." }
+  ],
+  "checks": {
+    "build": "pass",
+    "tests": "pass: focused T6 authorization/concurrency suite (4 pass); real rollback test skipped because W1_INTEGRATION_DATABASE_URL is unavailable",
+    "typecheck": "pass: npm run typecheck",
+    "lint": "pass: npm run lint",
+    "prisma": "pass: npm --workspace @agile/db run prisma:validate",
+    "diff": "pass: git diff --check"
+  },
+  "next": [],
+  "deviations": [],
+  "commit": "ab57772",
+  "notes": ["BLOCKER (W12 CI follow-up): W1_INTEGRATION_DATABASE_URL is unavailable in this run, so the real rollback test is skipped. This is not Gate 3 evidence."]
+}

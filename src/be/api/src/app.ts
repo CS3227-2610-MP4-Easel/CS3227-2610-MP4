@@ -4,13 +4,29 @@ import { errorResponse, HttpError } from "./errors.js";
 import { requestIdMiddleware } from "./middleware/request-id.js";
 import { getAuthRuntime } from "@agile/auth";
 import { createAppDependencies } from "./deps.js";
+import { getCoreComposition } from "./core-composition.js";
 import type { AuthDependencies } from "./middleware/auth.js";
 import { ROUTES } from "./routes/index.js";
 import { registerRoute, type ApiEnv } from "./routes/register.js";
 
 /** With no `deps`, wires the process-wide auth runtime, which validates auth settings and fails startup on unsafe ones.
  * `routes` defaults to `ROUTES`; tests pass a subset wired to a fake runtime. */
-export function createApiApp(deps: AuthDependencies = createAppDependencies(getAuthRuntime()), routes: readonly RouteDefinition[] = ROUTES) {
+export function createApiApp(deps?: AuthDependencies, routes?: readonly RouteDefinition[]) {
+  if (!deps) {
+    const auth = getAuthRuntime();
+    // Configuration-free previews deliberately have no Firebase or database client.  They still
+    // build the public API shell, while protected W5 routes remain fail-closed until a configured
+    // tier constructs the database-backed composition.
+    if (auth.settings.firebaseProjectId === null) {
+      deps = createAppDependencies(auth);
+      routes ??= ROUTES;
+    } else {
+      const composition = getCoreComposition(auth);
+      deps = createAppDependencies(auth, composition);
+      routes ??= [...ROUTES, ...composition.routes];
+    }
+  }
+  routes ??= ROUTES;
   const app = new Hono<ApiEnv>();
   app.use("*", requestIdMiddleware);
   app.onError((error, c) => {

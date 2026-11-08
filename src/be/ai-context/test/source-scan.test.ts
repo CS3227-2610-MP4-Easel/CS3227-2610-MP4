@@ -170,3 +170,11 @@ test("E31 N2 the repository passes the source scan", async () => {
   assert.ok(result.filesScanned > 0, "the scan read real files");
   assert.deepEqual(result.findings, []);
 });
+
+test("E19 core context source registration remains fixed and complete", async () => {
+  const source = await readFile(join(ROOT, "src/be/core/src/context-sources.ts"), "utf8");
+  assert.match(source, /register\("core\.projectBrief", sources\.projectBrief\)/);
+  assert.match(source, /register\("core\.checkpoints", sources\.checkpoints\)/);
+  assert.match(source, /register\("core\.taskEvents", sources\.taskEvents\)/);
+  assert.match(source, /register\("core\.blockedTasks", sources\.blockedTasks\)/);
+});
