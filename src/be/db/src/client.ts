@@ -95,6 +95,7 @@ function hideRawSql<T extends object>(client: T): Omit<T, RawSqlMethodName> {
 /** Callers must authorize all nested writes and relation connections in the mutation transaction;
  * visibility filters protect top-level targets and returned relations, not nested mutation inputs. */
 function createDefaultPrismaClient(): PrismaClient {
+  if (process.env.APP_TIER === "preview" && !process.env.DATABASE_URL) throw new Error("DATABASE_URL is required to create the database client");
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) throw new Error("DATABASE_URL is required to create the database client");
   return new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
