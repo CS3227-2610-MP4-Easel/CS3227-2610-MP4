@@ -1,7 +1,7 @@
 # W7b PM Plan Editing Design
 
 - **Status:** Approved (Xiao-Congchen, 2026-11-09)
-- **Proposed amendment:** Pending owner approval (D~5): prevent stale claims from matching a different shifted epic.
+- **Amended 2026-11-09:** Approved by Xiao-Congchen; see branch state C~7 (D~5): prevent stale claims from matching a different shifted epic.
 - **Format:** v2
 - **Risk tier:** Medium - new service API on stored proposals, new state transitions and new persisted fields; the contract list grows from 57 to 60 endpoints. Attacker lens added: proposal ownership, untrusted text that is later written to domain rows, index shifts under in-flight model calls, and a race with approve.
 - **Workstream:** W7b (the PM part of W16: endpoints 36, 38, 39, plus three new endpoints) | **Plan:** not written yet
