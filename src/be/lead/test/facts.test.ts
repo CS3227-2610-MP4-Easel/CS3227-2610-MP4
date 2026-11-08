@@ -41,9 +41,9 @@ test("E3-E5 uses the newest three closed sprints, half-days upward, and reports 
   let sprintQuery: unknown;
   const facts = await createFacts(db({
     sprint: { findMany: async (query) => { sprintQuery = query; return [
-      { id: id(12), name: "S3", completedPoints: 8, startDate: day("2026-11-01"), endDate: day("2026-11-04") },
-      { id: id(11), name: "S2", completedPoints: 4, startDate: day("2026-10-27"), endDate: day("2026-10-28") },
-      { id: id(10), name: "S1", completedPoints: 3, startDate: day("2026-10-20"), endDate: day("2026-10-21") },
+      { id: id(12), projectId: target, name: "S3", completedPoints: 8, startDate: day("2026-11-01"), endDate: day("2026-11-04") },
+      { id: id(11), projectId: target, name: "S2", completedPoints: 4, startDate: day("2026-10-27"), endDate: day("2026-10-28") },
+      { id: id(10), projectId: target, name: "S1", completedPoints: 3, startDate: day("2026-10-20"), endDate: day("2026-10-21") },
     ] } },
     task: { findMany: async () => [{ projectId: target, storyPoints: 15, status: "TODO" }] },
     checkpoint: { findMany: async () => [
@@ -51,9 +51,9 @@ test("E3-E5 uses the newest three closed sprints, half-days upward, and reports 
       { id: id(21), projectId: target, name: "Late", targetDate: day("2026-11-12"), epics: [{ projectId: target, tasks: [{ projectId: target, storyPoints: 15, status: "TODO" }] }] },
     ] },
   }), { now: () => new Date("2026-11-09T10:00:00.000Z") }).target(target);
-  assert.deepEqual((sprintQuery as { orderBy: unknown }).orderBy, [{ projectId: "asc" }, { endDate: "desc" }, { id: "asc" }]);
-  assert.equal((sprintQuery as { skip?: number }).skip, 0);
-  assert.equal((sprintQuery as { take?: number }).take, 100);
+  assert.deepEqual((sprintQuery as { orderBy: unknown }).orderBy, [{ endDate: "desc" }, { id: "asc" }]);
+  assert.equal((sprintQuery as { skip?: number }).skip, undefined);
+  assert.equal((sprintQuery as { take?: number }).take, 3);
   assert.equal(facts.avgVelocity, 5);
   assert.equal(facts.projectedCompletionDate, "2026-11-18");
   assert.deepEqual(facts.checkpoints, [
@@ -62,30 +62,33 @@ test("E3-E5 uses the newest three closed sprints, half-days upward, and reports 
   ]);
 });
 
-test("paginates complete closed-sprint history while forecasting from the newest nonzero sprints", async () => {
-  const sprints = Array.from({ length: 101 }, (_, index) => ({
-    id: id(100 + index),
-    projectId: target,
-    name: `S${index + 1}`,
-    completedPoints: index < 3 ? [9, 6, 3][index] : 1,
-    startDate: new Date(Date.UTC(2026, 10, 7 - index * 3)),
-    endDate: new Date(Date.UTC(2026, 10, 8 - index * 3)),
-  }));
-  const queries: Array<{ skip?: number; take?: number }> = [];
+test("queries each caller project for only its newest three closed sprints", async () => {
+  const beforeTarget = id(0);
+  const member = id(100);
+  const targetSprints = [
+    { id: id(101), projectId: target, name: "Newest", completedPoints: 9, startDate: day("2026-11-07"), endDate: day("2026-11-08") },
+    { id: id(102), projectId: target, name: "Middle", completedPoints: 6, startDate: day("2026-11-04"), endDate: day("2026-11-05") },
+    { id: id(103), projectId: target, name: "Oldest", completedPoints: 3, startDate: day("2026-11-01"), endDate: day("2026-11-02") },
+  ];
+  const queries: any[] = [];
   const facts = await createFacts(db({
     task: { findMany: async () => [{ projectId: target, storyPoints: 12, status: "TODO" }] },
+    projectMember: { findMany: async (query: any) => query.where.userId ? [
+      { projectId: beforeTarget, userId: caller },
+      { projectId: target, userId: caller },
+    ] : [{ projectId: target, userId: member, project: { id: target, name: "Target", status: "ACTIVE" }, user: { id: member, displayName: "Member" }, assignedTasks: [] }] },
     sprint: { findMany: async (query: any) => {
       queries.push(query);
-      const skip = query.skip ?? 0;
-      return sprints.slice(skip, skip + query.take);
+      return query.where.projectId === beforeTarget
+        ? Array.from({ length: 100 }, (_, index) => ({ id: id(200 + index), projectId: beforeTarget, name: `Other ${index}`, completedPoints: 1, startDate: day("2026-01-01"), endDate: day("2026-01-02") }))
+        : targetSprints;
     } },
-  }), { now: () => new Date("2026-11-09T10:00:00.000Z") }).target(target);
-  assert.deepEqual(queries.map(({ skip, take }) => ({ skip, take })), [{ skip: 0, take: 100 }, { skip: 100, take: 100 }]);
-  assert.deepEqual(facts.velocity, [
-    { sprintId: id(100), name: "S1", completedPoints: 9 },
-    { sprintId: id(101), name: "S2", completedPoints: 6 },
-    { sprintId: id(102), name: "S3", completedPoints: 3 },
+  }), { now: () => new Date("2026-11-09T10:00:00.000Z") }).caller(caller, target);
+  assert.deepEqual(queries.map((query) => ({ projectId: query.where.projectId, orderBy: query.orderBy, take: query.take, skip: query.skip })), [
+    { projectId: beforeTarget, orderBy: [{ endDate: "desc" }, { id: "asc" }], take: 3, skip: undefined },
+    { projectId: target, orderBy: [{ endDate: "desc" }, { id: "asc" }], take: 3, skip: undefined },
   ]);
+  assert.deepEqual(facts.velocity, targetSprints.map(({ id: sprintId, name, completedPoints }) => ({ sprintId, name, completedPoints })));
   assert.equal(facts.avgVelocity, 6);
   assert.equal(facts.projectedCompletionDate, "2026-11-13");
 });
@@ -103,6 +106,17 @@ test("uses two closed nonzero sprints newest-first for velocity and projection",
     { sprintId: id(111), name: "Older", completedPoints: 4 },
   ]);
   assert.equal(facts.avgVelocity, 6);
+  assert.equal(facts.projectedCompletionDate, "2026-11-13");
+});
+
+test("uses one nonzero closed sprint for newest-first velocity, average, and projection", async () => {
+  const sprint = { id: id(113), projectId: target, name: "Only", completedPoints: 4, startDate: day("2026-11-01"), endDate: day("2026-11-02") };
+  const facts = await createFacts(db({
+    task: { findMany: async () => [{ projectId: target, storyPoints: 5, status: "TODO" }] },
+    sprint: { findMany: async () => [sprint] },
+  }), { now: () => new Date("2026-11-09T10:00:00.000Z") }).target(target);
+  assert.deepEqual(facts.velocity, [{ sprintId: sprint.id, name: "Only", completedPoints: 4 }]);
+  assert.equal(facts.avgVelocity, 4);
   assert.equal(facts.projectedCompletionDate, "2026-11-13");
 });
 
