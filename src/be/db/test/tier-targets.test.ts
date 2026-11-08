@@ -68,13 +68,13 @@ test("W13 recovery seed accepts only the explicitly approved isolated branch", (
   const rehearsal = {
     APP_TIER: "dev",
     W13_RECOVERY_REHEARSAL: "1",
-    NEON_BRANCH: "w13-recovery-rehearsal",
+    NEON_BRANCH: "w13-recovery-baseline",
     DATABASE_URL: "postgresql://user:password@ep-w13-recovery-123456-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb",
     NEON_HOST: "ep-w13-recovery-123456-pooler.c-2.ap-southeast-1.aws.neon.tech",
     NEON_PROJECT: "super-sunset-36592949",
   };
   assert.doesNotThrow(() => validateDatabaseTarget(rehearsal, "dev"));
   assert.throws(() => validateDatabaseTarget({ ...rehearsal, W13_RECOVERY_REHEARSAL: undefined }, "dev"), /target|rehearsal/i);
-  assert.throws(() => validateDatabaseTarget({ ...rehearsal, NEON_BRANCH: "development" }, "dev"), /target|rehearsal/i);
+  assert.throws(() => validateDatabaseTarget({ ...rehearsal, NEON_BRANCH: "w13-recovery-rehearsal" }, "dev"), /target|rehearsal/i);
   assert.throws(() => validateDatabaseTarget({ ...rehearsal, DATABASE_URL: "postgresql://user:password@ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech/neondb", NEON_HOST: "ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech" }, "dev"), /target|observations/i);
 });

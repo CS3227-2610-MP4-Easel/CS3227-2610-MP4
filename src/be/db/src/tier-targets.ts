@@ -44,7 +44,7 @@ const PREVIEW_FORBIDDEN_NAMES = [
   "SOCLAAS_API_KEY", "VERCEL_TOKEN", "VERCEL_TEAM_ID",
 ] as const;
 
-const W13_RECOVERY_BRANCH = "w13-recovery-rehearsal";
+const W13_RECOVERY_BRANCH = "w13-recovery-baseline";
 
 function isApprovedW13RecoveryTarget(env: Record<string, string | undefined>, target: TierTarget, parsed: { host: string; databaseName: string }): boolean {
   return target.tier === "dev"
