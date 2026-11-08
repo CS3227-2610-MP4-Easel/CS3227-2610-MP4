@@ -1,0 +1,22 @@
+{
+  "task": "T1",
+  "status": "done",
+  "summary": "Vitest + jsdom run in src/fe; @firebase/app 0.16.2 and @firebase/auth 1.13.6 installed; root npm test runs 487 backend tests then the fe suite, all green.",
+  "commit": "878bfbb",
+  "produces": [
+    {"kind": "file", "name": "vitest.config.ts", "where": "src/fe/vitest.config.ts", "note": "jsdom, test/**/*.test.{ts,tsx}, restoreMocks/unstubGlobals/unstubEnvs; setupFiles test/setup.ts; harmless Vite CJS/ESM warning"},
+    {"kind": "other", "name": "test scripts", "where": "src/fe/package.json, package.json", "note": "fe: vitest run; root: discover-tests then npm --workspace easel-fe run test"},
+    {"kind": "other", "name": "@firebase/app 0.16.2, @firebase/auth 1.13.6", "where": "src/fe/package.json", "note": "modular API; import from @firebase/app and @firebase/auth"},
+    {"kind": "file", "name": "setup.ts and jsx.test.tsx", "where": "src/fe/test/", "note": "afterEach cleanup; JSX compile proof"},
+    {"kind": "file", "name": "runner.test.ts", "where": "src/fe/test/runner.test.ts", "note": "E82 baseline; run one file with npm --workspace easel-fe run test -- test/<file>"},
+    {"kind": "file", "name": "ci-workflow.test.ts line 46", "where": "tests/process-security/ci-workflow.test.ts", "note": "expects the new root test string (C~7)"}
+  ],
+  "next": "Tests go in src/fe/test/; JSX in .tsx compiles with no config change (jsx.test.tsx); setup.ts runs testing-library cleanup after each test. Firebase imports: @firebase/app, @firebase/auth.",
+  "deviations": [
+    {"what": "Pins moved from 0.16.5/1.13.9 to 0.16.2/1.13.6", "why": "13.x declares node >=24.12.0; CI is Node 20.19.5 (operator decision C~6)", "needs": "none"},
+    {"what": "E82 negative run seen only as exit code 1 (output truncated)", "why": "the policy hook denied redirecting output to a file", "needs": "none"},
+    {"what": "Build not run by the implementer; run by the orchestrator: pass", "why": "the implementer brief said to skip it (env -u was denied earlier)", "needs": "none"}
+  ],
+  "edge_cases": ["E82"],
+  "checks": {"build": "pass", "tests": "root npm test: 487/487 backend, fe 2 files, 2/2", "lint": "typecheck fe and root green; audit no high (8 moderate pre-existing); scan:secrets clean"}
+}

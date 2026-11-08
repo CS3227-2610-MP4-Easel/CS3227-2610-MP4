@@ -1,6 +1,7 @@
 'use client';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+import { useAuthMode } from '../lib/auth/mode-context';
 
 const ROLES: [string, string][] = [['pm', 'Project Manager'], ['lead', 'Dev Lead'], ['dev', 'Developer']];
 
@@ -9,6 +10,8 @@ function Bar() {
   const sp = useSearchParams();
   const qs = sp.toString();
   const here = path + (qs ? '?' + qs : '');
+  const mode = useAuthMode();
+  if (mode !== 'prototype') return null;
   if (path === '/sign-in' || path === '/register' || path === '/styleguide' || path === '/states') return null;
   return (
     <div role="group" aria-label="Prototype role" style={{ position: 'fixed', right: 16, bottom: 16, zIndex: 50, display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px 6px 12px', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10, boxShadow: 'var(--sh)' }}>
