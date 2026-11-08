@@ -31,7 +31,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 **Remaining**
 
-- [ ] Operator's manual check with `src/fe/.env.local`: register a PM with `PROJ_MANAGER_DEMO`, sign out, sign in, reach `/projects`.
+- [x] Operator's manual check on 2026-11-08 with `src/fe/.env.local` against `agile-platform-dev`: registered an account, signed out and signed in again; flows worked.
+- [ ] **Handover:** to the PM (W10): the canvas screens, including the live sign-in and register screens that reuse their markup, are fixed-size (`.app { min-height: 1000px }` in `src/fe/app/canvas.css`, fixed flex bases such as `1 1 420px`), so they do not adapt to short or very wide windows (seen by the operator on an ultrawide monitor).
 - [ ] Gate 3: the owner approves the branch; then ask separately before pushing and opening the PR (call out C~7, the W12 test change, for the Dev Lead).
 
 - [x] T7 spec, Gate 1: approved by ludannnn on 2026-11-08 (one review round, four lenses).
