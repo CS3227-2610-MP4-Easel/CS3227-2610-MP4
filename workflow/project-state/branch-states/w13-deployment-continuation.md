@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-08 by Codex — amended T4 plan approved at Gate 2
+- **Last updated:** 2026-11-08 by Codex — T4 needs non-secret value confirmation
 
 **Untouched:** Architecture, Conventions, Known Gaps
 
@@ -25,11 +25,12 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 00:00 | Codex | W13 | Active | T4 owner-gated scope and source audit | Record redacted Vercel and GitHub audit evidence; stop if any scope or protection check fails | 2026-11-08 00:00 |
+| S1 | 2026-11-08 00:00 | Codex | W13 | Blocked — needs human | T4 scope and source audit complete: Q~2 | Confirm whether to reveal only generic Preview's non-secret `APP_TIER` value or accept scope-only evidence | 2026-11-08 00:00 |
 
 **Remaining**
 
-- [ ] **Handover:** Complete T4's redacted Vercel/GitHub audit under the approved task contract; any failed scope or protection condition remains a blocker and requires no provider mutation.
+- [ ] Q~2: T4 requires `APP_TIER=preview`, but the plan prohibits revealing any values. Decide whether the owner may reveal only that non-secret value, or accepts scope-only evidence.
+- [ ] **Handover:** Complete T4's redacted Vercel/GitHub audit after Q~2; any failed scope or protection condition remains a blocker and requires no provider mutation.
 - [ ] **Handover:** After the amended approvals, record the redacted T4 audit result distinguishing generic PR previews from the protected `development` branch.
 
 ---
@@ -38,7 +39,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | Building | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | F6/T4 amendments approved; owner audit in flight | — |
+| W13 | Environments, seed data and deployment | Blocked — needs human | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | T4 scopes pass; `APP_TIER` value needs Q~2 | — |
 
 ---
 
@@ -55,6 +56,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Amended the sole outstanding legacy T4 audit for AD-53's protected development exception; retained the historical plan instead of creating a partial v2 plan that cannot truthfully trace already-merged requirements. | W13 | this commit |
 | 2026-11-08 | Plan review corrected an obsolete completion reference to the removed development verification workflow; the T4 audit now completes on its own redacted evidence. | W13 | this commit |
 | 2026-11-08 | Operator approved the amended W13 T4 audit plan at Gate 2. | W13 | this commit |
+| 2026-11-08 | T4 read-only audit confirmed exact development scoping, no generic forbidden variable names, expected Vercel repository link, and AD-32 branch protection; the generic `APP_TIER` value remains intentionally unobserved. | W13 | this commit |
 
 ## 7. Decisions
 
@@ -78,6 +80,13 @@ describes `INT`; read it for context and write here instead of editing it.
 - **What:** The Vercel configuration scopes development-tier variables to the protected `development` branch under Vercel's Preview environment. AD-53 permits that branch to receive dev credentials and permits only other PR previews to remain mock-only. F6 instead prohibits the same variables in every Preview environment.
 - **Consequence:** T4 cannot be completed without resolving whether the protected `development` branch remains the AD-53 exception or the safety specification reverses AD-53.
 - **Evidence:** Environment-variable names and scopes were inspected without revealing values; generic Preview has only `APP_TIER`, while the protected `development` scope contains dev-tier configuration.
+
+### D~2 — T4 cannot prove `APP_TIER=preview` without revealing a value
+
+- **Found:** 2026-11-08 during the approved read-only T4 audit.
+- **What:** Vercel presents the generic Preview `APP_TIER` value as masked. The approved task requires `APP_TIER=preview` but also says not to reveal values.
+- **Consequence:** Names, scopes, repository linkage, and branch protections pass, but the exact generic `APP_TIER` value is unverified pending Q~2.
+- **Evidence:** The Vercel project lists only generic Preview `APP_TIER`; all dev-tier variable names are Preview plus exact `development`; no value was revealed or recorded.
 
 ## Lessons
 
