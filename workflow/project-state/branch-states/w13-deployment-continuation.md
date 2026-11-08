@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 00:00 | Codex | W13 | In progress — owner action | Manual T4 gate is partial: health passes and unauthenticated `/api/me` returns the expected 401; authenticated identity, foreign-token rejection, and deployment metadata remain to be recorded | Owner confirms the merged-SHA deployment metadata and reruns the health/auth/tier checks; W9 standup/AI evidence is tracked separately | 2026-11-08 00:00 |
+| S1 | 2026-11-08 00:00 | Codex | W13 | In progress — owner action | Reduced manual T4 gate is approved and verified; authenticated identity, foreign-token rejection, and deployment metadata remain to be recorded | Owner confirms the merged-SHA deployment metadata and reruns the health/auth/tier checks; W9 standup/AI evidence is tracked separately | 2026-11-08 00:00 |
 
 **Remaining**
 
@@ -70,6 +70,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Owner reported partial manual T4 evidence: `GET /api/health` passes, unauthenticated `GET /api/me` returns the expected 401, and no seeded development data exists yet; T4 remains incomplete. | W13 | this commit |
 | 2026-11-08 | Route audit found only endpoints 1–4 registered; the required endpoint 51 belongs to W9's unimplemented Developer slice, so W13 T4 is blocked on W9 before owner smoke evidence can pass. | W13 | this commit |
 | 2026-11-08 | Operator reversed C~5's standup/AI prerequisite: T4 now requires only deployment metadata plus health/auth/foreign-token/tier evidence; W9 remains separate. | W13 | this commit |
+| 2026-11-08 | Operator verified the reduced T4 gate and authorized continuation; remaining work is owner-recorded deployment metadata plus health/auth/tier evidence. | W13 | this commit |
 
 ## 7. Decisions
 
