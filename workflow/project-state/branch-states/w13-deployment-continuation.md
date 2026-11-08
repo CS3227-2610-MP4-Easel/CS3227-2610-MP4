@@ -7,7 +7,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w13-deployment-continuation (from `INT` at `dc3447f`)
 - **Base:** dc3447f
 - **Owner:** operator / repository owner
-- **Status:** In review
+- **Status:** Blocked — needs human
 - **Approved:** —
 - **Last updated:** 2026-11-08 by Codex — T6 complete; awaiting branch review
 
@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 00:00 | Codex | W13 | In review | T6 implementation and close-out verification are complete | Owner reviews the branch diff and approves or requests changes; no production deployment is triggered from this feature branch | 2026-11-08 00:00 |
+| S1 | 2026-11-08 00:00 | Codex | W13 | Blocked — needs human | Final review found a production sequencing race: Vercel auto-deploys `main` while the migration workflow runs independently | Owner chooses a tokenless sequencing mechanism: disable automatic production deploy and trigger a post-migration deploy hook, or explicitly accept the race and amend the safety plan | 2026-11-08 00:00 |
 
 **Remaining**
 
@@ -79,12 +79,19 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Owner added the protected GitHub `production` Environment secret `DIRECT_DATABASE_URL`; Vercel Git integration confirmation remains before T6 can proceed. | W13 | this commit |
 | 2026-11-08 | Owner verified Vercel Git integration is connected to `CS3227-2610-MP4-Easel/CS3227-2610-MP4`; Production Branch is `main`, and Vercel reports every commit pushed to `main` creates a Production Deployment. | W13 | this commit |
 | 2026-11-08 | T6 close-out passed: 488 tests (462 passed, 26 skipped), typecheck, lint, contract, Prisma validation, workflow validation, agent-policy, secret scan, and diff check; branch is ready for owner review. | W13 | this commit |
+| 2026-11-08 | Final review found a sequencing race: Vercel's automatic `main` deployment can start before the protected migration workflow completes; T6 is blocked until tokenless sequencing is chosen. | W13 | this commit |
 
 ### Handover — post-merge production execution
 
 - **Owner:** repository owner.
 - **When:** after this branch is approved and merged to `development`, then promoted to `main` through the normal release PR.
 - **Steps:** confirm the protected GitHub production Environment approval, observe the tokenless migration/build workflow, and record the resulting production deployment/migration evidence. No Vercel token is used.
+
+### D~5 — Tokenless production sequencing race
+
+- **Found:** 2026-11-08 during final T6 review.
+- **What:** Vercel is configured to auto-deploy every commit pushed to `main`, while the GitHub workflow runs the production migration concurrently.
+- **Consequence:** A production deployment could become live before its migration completes; Gate 3 is paused until sequencing is fixed or explicitly accepted by the owner.
 
 ### T4 redacted evidence
 
