@@ -9,11 +9,22 @@ permissions: {}
 env:
   NODE_VERSION: 20.19.5
   NPM_VERSION: 10.8.2
-  DATABASE_URL: postgresql://localhost:5432/agile_platform
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/agile_platform
 
 jobs:
   workspace:
     runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16@sha256:933463a6c8eba2b9f5cd414138738cd8d5519cd2c471214c222652f547a66a32
+        env:
+          POSTGRES_DB: agile_platform
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -27,7 +38,14 @@ jobs:
       - run: npm install --global npm@${NPM_VERSION}
       - run: npm ci --ignore-scripts
       - run: npm --workspace @agile/db run prisma:generate
-      - run: npm test
+      - name: Apply database migrations
+        run: npm --workspace @agile/db exec prisma migrate deploy -- --schema prisma/schema.prisma
+      - name: Run workspace tests, including database regressions
+        env:
+          W1_INTEGRATION_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/agile_platform?connection_limit=25
+        run: |
+          test -n "$W1_INTEGRATION_DATABASE_URL"
+          npm test
 
   typecheck:
     runs-on: ubuntu-24.04

@@ -11,7 +11,6 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-24.04
-    environment: w13-development-verification
     steps:
       - name: Resolve current Vercel deployment before checkout
         shell: bash

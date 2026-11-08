@@ -5,11 +5,11 @@ import { test } from "node:test";
 
 const workflow = readFileSync(new URL("../../.github/workflows/w13-dev-check.yml", import.meta.url), "utf8");
 
-test("E14/E27 protected metadata lookup precedes checkout and never exposes its token later", () => {
+test("E14/E27 metadata lookup precedes checkout and never exposes its token later", () => {
   const lookup = workflow.indexOf("Resolve current Vercel deployment before checkout");
   const checkout = workflow.indexOf("actions/checkout@");
   assert.ok(lookup >= 0 && lookup < checkout);
-  assert.match(workflow, /environment: w13-development-verification/);
+  assert.doesNotMatch(workflow, /environment:/);
   assert.match(workflow, /VERCEL_TOKEN: \$\{\{ secrets\.VERCEL_TOKEN \}\}/);
   assert.match(workflow, /METADATA_FILE: \$\{\{ runner\.temp \}\}\/w13-vercel-metadata\.json/);
   assert.match(workflow, /GITHUB_SHA: \$\{\{ github\.sha \}\}/);
