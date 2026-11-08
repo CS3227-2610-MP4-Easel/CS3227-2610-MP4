@@ -8,7 +8,7 @@
 - **Owner:** repo owner
 - **Status:** In review
 - **Approved:** —
-- **Last updated:** 2026-11-08 by Codex — PR target confirmed
+- **Last updated:** 2026-11-08 by Codex — PR #22 opened
 
 **Untouched:** Architecture, Conventions, Known Gaps, Decisions, Deviations
 
@@ -24,7 +24,7 @@
 
 **Remaining**
 
-- [ ] Open the reviewed follow-up PR against `development`, as the owner requested because W5 is local-only.
+- [ ] Gate 3: obtain the required independent GitHub review for [PR #22](https://github.com/CS3227-2610-MP4-Easel/CS3227-2610-MP4/pull/22) before merge.
 
 ---
 
@@ -44,6 +44,7 @@
 | 2026-11-08 | Added a pinned Postgres 16 CI service, migrated it before tests, and made the W1 integration database required. | W12 | this commit |
 | 2026-11-08 | Removed the W13 protected Environment binding so development verification runs automatically. | W13 | this commit |
 | 2026-11-08 | Removed the W13 development verification workflow and its workflow-only test; workflow policy now rejects replacement push workflows. | W13 | this commit |
+| 2026-11-08 | Opened [PR #22](https://github.com/CS3227-2610-MP4-Easel/CS3227-2610-MP4/pull/22) against `development`. | W12 / W13 | `4271566` |
 
 ## 7. Decisions
 
