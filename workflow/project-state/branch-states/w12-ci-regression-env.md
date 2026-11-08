@@ -8,7 +8,7 @@
 - **Owner:** repo owner
 - **Status:** In review
 - **Approved:** —
-- **Last updated:** 2026-11-08 by Codex — Vercel check removed
+- **Last updated:** 2026-11-08 by Codex — PR target confirmed
 
 **Untouched:** Architecture, Conventions, Known Gaps, Decisions, Deviations
 
@@ -24,7 +24,7 @@
 
 **Remaining**
 
-- [ ] **Handover:** Merge this branch into W5 before continuing that workstream.
+- [ ] Open the reviewed follow-up PR against `development`, as the owner requested because W5 is local-only.
 
 ---
 
@@ -44,3 +44,11 @@
 | 2026-11-08 | Added a pinned Postgres 16 CI service, migrated it before tests, and made the W1 integration database required. | W12 | this commit |
 | 2026-11-08 | Removed the W13 protected Environment binding so development verification runs automatically. | W13 | this commit |
 | 2026-11-08 | Removed the W13 development verification workflow and its workflow-only test; workflow policy now rejects replacement push workflows. | W13 | this commit |
+
+## 7. Decisions
+
+> Legend: `C` = project decision. AD-nn entries are in docs/architecture.
+
+| ID | Date | Decision | Why / who asked | Source |
+|---|---|---|---|---|
+| C~1 | 2026-11-08 | Target this follow-up PR at `development`, not W5. | Owner selected `development` because the W5 branch is local-only and cannot be a GitHub PR base. | chat |
