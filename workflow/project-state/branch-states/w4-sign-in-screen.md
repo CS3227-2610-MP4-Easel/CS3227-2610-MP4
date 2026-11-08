@@ -27,11 +27,11 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 | Claude Opus 5.5 (lead) + 4 `reviewer` agents (Implementer, Tester, Maintainer, Attacker) | W4 | Blocked — needs human | T7 spec reviewed (1 round, findings fixed); Gate 1 asked | On the operator's yes: set the spec's Status to Approved, run `lint.mjs spec --approved`, commit, then `writing-plans-lite-v2` | 2026-11-08 |
+| S1 | 2026-11-08 | Claude Opus 5.5 (lead) | W4 | Active | T7 spec approved (Gate 1); writing the plan | Write the plan folder with `writing-plans-lite-v2` from [the spec](../../specs/2026-11-08-w4-sign-in-screen-design.md), lint it, then ask Gate 2 | 2026-11-08 |
 
 **Remaining**
 
-- [ ] T7 spec, Gate 1.
+- [x] T7 spec, Gate 1: approved by ludannnn on 2026-11-08 (one review round, four lenses).
 - [ ] T7 plan, Gate 2; build; Gate 3.
 - [x] Local setup verified 2026-11-08: Firebase project `agile-platform-dev` created by ludannnn (Email/Password on, web app registered), local Postgres migrated, endpoint 2 returns `{"valid":true}` and endpoint 4 returns 401 without a token.
 - [ ] **Handover:** to the repo owner (W13): `agile-platform-dev` exists (owner ludannnn; add the repo owner as Owner); create `agile-platform-prod` with that exact ID (`src/be/db/src/tier-targets.ts`) and add the Vercel domains to Authorized domains on both projects; set the four `NEXT_PUBLIC_FIREBASE_*` values per tier.
@@ -43,7 +43,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W4 | Auth and registration | Building | [spec](../../specs/2026-10-31-w4-auth-design.md), [T7 spec](../../specs/2026-11-08-w4-sign-in-screen-design.md) (draft) | — | T7 spec reviewed; awaiting Gate 1 | — |
+| W4 | Auth and registration | Building | [spec](../../specs/2026-10-31-w4-auth-design.md), [T7 spec](../../specs/2026-11-08-w4-sign-in-screen-design.md) (approved 2026-11-08) | — | T7 spec approved; plan next | — |
 
 ---
 
@@ -53,7 +53,8 @@ describes `INT`; read it for context and write here instead of editing it.
 |---|---|---|---|
 | 2026-11-08 | Branch state created for the T7 sign-in screen follow-up | W4 | `4a3cfd9` |
 | 2026-11-08 | T7 spec written and reviewed (four lenses, one round) | W4 | `f8d4eb6` |
-| 2026-11-08 | `npm --prefix src/fe run dev` failed on Next.js 16 (Turbopack default with a `webpack` config); `dev` now passes `--webpack`, matching `build` | W4 | this commit |
+| 2026-11-08 | `npm --prefix src/fe run dev` failed on Next.js 16 (Turbopack default with a `webpack` config); `dev` now passes `--webpack`, matching `build` | W4 | `38e5768` |
+| 2026-11-08 | T7 spec approved at Gate 1 | W4 | this commit |
 
 ---
 

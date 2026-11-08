@@ -1,6 +1,6 @@
 # W4 Sign-in Screen Design
 
-- **Status:** Draft
+- **Status:** Approved (ludannnn, 2026-11-08)
 - **Format:** v2
 - **Risk tier:** High - it replaces the prototype's sign-in with real authentication in the browser, handles registration codes and decides which tiers may skip sign-in.
 - **Workstream:** W4 (T7 follow-up, C46) | **Plan:** pending (`writing-plans-lite-v2` after Gate 1)
