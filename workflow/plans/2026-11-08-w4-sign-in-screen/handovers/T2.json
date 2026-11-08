@@ -2,7 +2,7 @@
   "task": "T2",
   "status": "done",
   "summary": "authMode(env) added and /api/as now 404s outside prototype mode and redirects only to same-origin paths.",
-  "commit": "21585e4",
+  "commit": "adb72b1",
   "produces": [
     {"kind": "symbol", "name": "authMode, AuthMode, FIREBASE_KEYS", "where": "src/fe/lib/auth/mode.ts", "note": "server-only; never import from a 'use client' file (import type only)"},
     {"kind": "route", "name": "/api/as", "where": "src/fe/app/api/as/route.ts", "note": "404 unless prototype mode; to is same-origin checked"}
@@ -16,5 +16,5 @@
     {"what": "Build run by the orchestrator, not the implementer: pass", "why": "not run in the task", "needs": "none"}
   ],
   "edge_cases": ["E56", "E57", "E58", "E84", "E85", "E59", "E86", "E87"],
-  "checks": {"build": "pass", "tests": "pass (fe 4 files, 15 tests)", "lint": "pass"}
+  "checks": {"build": "pass", "tests": "pass (fe 6 files, 43 tests)", "lint": "pass"}
 }
