@@ -32,6 +32,7 @@ cd /Users/trevortan/.codex/worktrees/w5-core-planning/CS3227-2610-MP4
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
 | 2026-11-08 blocker repair | 2026-11-08 | Codex | W5 | Done | Closed-sprint PATCH and archive-race mutation paths fixed and verified | Owner review of updated PR | 2026-11-08 |
+| 2026-11-08 review follow-up | 2026-11-08 | Codex | W5 | Active | Committing review fixes in logical sections | Commit apply fixes and verification record | 2026-11-08 |
 
 **Remaining**
 
@@ -51,6 +52,7 @@ cd /Users/trevortan/.codex/worktrees/w5-core-planning/CS3227-2610-MP4
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-08 | Prevented task moves from closed sprints and added a regression test | W5 | review follow-up |
 | 2026-11-08 | Completed focused branch-review repairs: conditional task version writes, live epic/project points, and exact core-source rendering, ordering and standup windows; added regression coverage | W5 | T6 |
 | 2026-11-08 | Started five approved W5 fixes: live-sprint task PATCH validation, applyPlan task eligibility, active-membership guards, transaction-scoped mutation authorization/archive checks, and locked max-position allocation | W5 | review follow-up |
 | 2026-11-08 | Completed the five approved W5 fixes with focused regressions; repository tests, typecheck, lint, and Prisma validation pass | W5 | this commit |
