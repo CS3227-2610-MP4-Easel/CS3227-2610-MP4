@@ -2,7 +2,7 @@
   "task": "T1",
   "status": "done",
   "summary": "Facts reads complete closed-sprint history through deterministic 100-row pages; focused regression coverage protects newest-first velocity and projections.",
-  "commit": "ab2fab7",
+  "commit": "968fad3",
   "produces": [
     { "kind": "symbol", "name": "createFacts", "where": "src/be/lead/src/facts.ts", "note": "Builds complete target and active-caller-member facts with deterministic complete sprint paging." },
     { "kind": "symbol", "name": "hashFacts", "where": "src/be/lead/src/hash.ts", "note": "Canonical SHA-256 excludes asOf." },
