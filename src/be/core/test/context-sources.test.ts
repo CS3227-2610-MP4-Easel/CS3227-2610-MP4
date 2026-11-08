@@ -5,6 +5,8 @@ import { createCoreContextSources, registerCoreContextSources } from "../src/ind
 const projectId = "00000000-0000-4000-8000-000000000001";
 const userId = "00000000-0000-4000-8000-000000000002";
 const args = { caller: { userId, role: "DEVELOPER" as const }, projectId, options: {} };
+const window = { from: new Date("2026-12-01T00:00:00.000Z"), to: new Date("2026-12-02T00:00:00.000Z") };
+const standupArgs = { ...args, options: { window } };
 
 test("E19 registration adapter registers exactly four W5 core source ids", () => {
   const ids: string[] = [];
@@ -56,8 +58,10 @@ test("core sources render storage fields and use their fixed sort order", async 
     taskEvent: { findMany: async (query) => { queries.push(query); return [{ id: 2, projectId, taskId: "t", actorId: userId, type: "STATUS_CHANGED", fromValue: "TODO", toValue: "DONE", at: "2026-12-01T00:00:00.000Z" }]; } },
     task: { findMany: async (query) => { queries.push(query); return [{ id: "t", projectId, assigneeId: userId, title: "Blocked", blockedReason: "Waiting", description: "Details" }]; } },
   });
-  assert.equal((await sources.checkpoints(args))[0].text, "name: Milestone\ntarget_date: 2026-12-01");
-  assert.equal((await sources.taskEvents(args))[0].text, "task: t\nevent: STATUS_CHANGED\nfrom: TODO\nto: DONE\nat: 2026-12-01T00:00:00.000Z");
-  assert.equal((await sources.blockedTasks(args))[0].text, "title: Blocked\nreason: Waiting\ndescription: Details");
-  assert.deepEqual(queries.map((query) => query.orderBy), [[{ targetDate: "asc" }, { id: "asc" }], [{ at: "desc" }, { id: "desc" }], [{ updatedAt: "desc" }, { id: "desc" }]]);
+  assert.equal((await sources.checkpoints(args))[0].text, "2026-12-01: Milestone");
+  assert.equal((await sources.taskEvents(standupArgs))[0].text, "2026-12-01T00:00:00.000Z STATUS_CHANGED TODO -> DONE");
+  assert.equal((await sources.blockedTasks(standupArgs))[0].text, "Blocked: Waiting");
+  assert.deepEqual(queries.map((query) => query.orderBy), [[{ targetDate: "asc" }, { id: "asc" }], [{ at: "desc" }, { id: "desc" }], [{ createdAt: "desc" }, { id: "desc" }]]);
+  assert.deepEqual(queries[1].where.at, { gte: window.from, lt: window.to });
+  assert.deepEqual(queries[2].where.createdAt, { gte: window.from, lt: window.to });
 });

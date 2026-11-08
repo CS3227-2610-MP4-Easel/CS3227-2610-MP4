@@ -18,7 +18,7 @@ test("E15 E27 E28 stale task writes and event faults leave the transaction with 
   const db = {
     $transaction: async (work: (tx: unknown) => Promise<unknown>) => {
       const before = writes;
-      try { return await work({ task: { findFirst: async () => row, update: async () => { writes++; return row; } }, epic: { findFirst: async () => ({ id: epicId }) }, taskEvent: { create: async () => { throw new Error("event failed"); } } }); }
+      try { return await work({ task: { findFirst: async () => row, updateMany: async () => { writes++; return { count: 1 }; } }, epic: { findFirst: async () => ({ id: epicId }) }, taskEvent: { create: async () => { throw new Error("event failed"); } } }); }
       catch (error) { writes = before; throw error; }
     },
   };

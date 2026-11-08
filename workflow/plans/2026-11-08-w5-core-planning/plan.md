@@ -37,7 +37,7 @@
 | T3 Epics and task lifecycle | `tasks/T3.md` | T1, T2 | - | 3 | complex | full | Done |
 | T4 Derived functions, apply seams, and context sources | `tasks/T4.md` | T1, T3 | - | 4 | complex | full | Done |
 | T5 API composition and Tier 1 route registration | `tasks/T5.md` | T2, T3, T4 | - | 5 | complex | full | Done |
-| T6 End-to-end authorization and transaction regression suite | `tasks/T6.md` | T5 | - | 6 | complex | full | In progress (S1) |
+| T6 End-to-end authorization and transaction regression suite | `tasks/T6.md` | T5 | - | 6 | complex | full | Done |
 
 Bundles: none.
 

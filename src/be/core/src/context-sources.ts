@@ -16,10 +16,6 @@ export type ContextSourceDb = {
 };
 
 const chars = (value: unknown, max: number): string | null => typeof value === "string" && [...value].length <= max ? value : null;
-const text = (parts: Array<[string, unknown]>, max: number) => {
-  const rendered = parts.filter(([, value]) => value !== null && value !== undefined && value !== "").map(([key, value]) => `${key}: ${String(value)}`).join("\n");
-  return chars(rendered, max);
-};
 const source = async <T>(id: string, work: () => Promise<T>): Promise<T> => {
   try { return await work(); } catch { throw new Error(`CORE_SOURCE_FAILED:${id}`); }
 };
@@ -39,21 +35,25 @@ export function createCoreContextSources(db: ContextSourceDb): Readonly<Record<"
       if (!await member(db, caller.userId, projectId)) return [];
       const rows = await db.checkpoint?.findMany({ where: { projectId }, orderBy: [{ targetDate: "asc" }, { id: "asc" }], take: 50, select: { id: true, projectId: true, name: true, targetDate: true } }) ?? [];
       return rows.filter((row) => row.projectId === projectId).flatMap((row) => {
-        const rendered = text([["name", row.name], ["target_date", row.targetDate instanceof Date ? row.targetDate.toISOString().slice(0, 10) : row.targetDate]], 300);
+        const targetDate = row.targetDate instanceof Date ? row.targetDate.toISOString().slice(0, 10) : row.targetDate;
+        const rendered = chars(`${targetDate}: ${row.name}`, 300);
         return rendered ? [{ projectId, ref: { type: "CHECKPOINT" as const, id: row.id }, text: rendered }] : [];
       });
     }),
-    taskEvents: async ({ caller, projectId }) => source("core.taskEvents", async () => {
-      const rows = await db.taskEvent?.findMany({ where: { projectId, actorId: caller.userId }, orderBy: [{ at: "desc" }, { id: "desc" }], take: 200, select: { id: true, projectId: true, taskId: true, actorId: true, type: true, fromValue: true, toValue: true, at: true } }) ?? [];
+    taskEvents: async ({ caller, projectId, options }) => source("core.taskEvents", async () => {
+      const window = options.window ? { at: { gte: options.window.from, lt: options.window.to } } : {};
+      const rows = await db.taskEvent?.findMany({ where: { projectId, actorId: caller.userId, ...window }, orderBy: [{ at: "desc" }, { id: "desc" }], take: 200, select: { id: true, projectId: true, taskId: true, actorId: true, type: true, fromValue: true, toValue: true, at: true } }) ?? [];
       return rows.filter((row) => row.projectId === projectId && row.actorId === caller.userId).flatMap((row) => {
-        const rendered = text([["task", row.taskId], ["event", row.type], ["from", row.fromValue], ["to", row.toValue], ["at", row.at instanceof Date ? row.at.toISOString() : row.at]], 400);
+        const at = row.at instanceof Date ? row.at.toISOString() : row.at;
+        const rendered = chars(`${at} ${row.type} ${row.fromValue ?? ""} -> ${row.toValue ?? ""}`, 400);
         return rendered ? [{ projectId, ref: { type: "TASK_EVENT" as const, id: String(row.id) }, ownerId: row.actorId, text: rendered }] : [];
       });
     }),
-    blockedTasks: async ({ caller, projectId }) => source("core.blockedTasks", async () => {
-      const rows = await db.task?.findMany({ where: { projectId, assigneeId: caller.userId, blocked: true }, orderBy: [{ updatedAt: "desc" }, { id: "desc" }], take: 50, select: { id: true, projectId: true, assigneeId: true, title: true, description: true, blockedReason: true } }) ?? [];
+    blockedTasks: async ({ caller, projectId, options }) => source("core.blockedTasks", async () => {
+      const window = options.window ? { createdAt: { gte: options.window.from, lt: options.window.to } } : {};
+      const rows = await db.task?.findMany({ where: { projectId, assigneeId: caller.userId, blocked: true, ...window }, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 50, select: { id: true, projectId: true, assigneeId: true, title: true, blockedReason: true, createdAt: true } }) ?? [];
       return rows.filter((row) => row.projectId === projectId && row.assigneeId === caller.userId).flatMap((row) => {
-        const rendered = text([["title", row.title], ["reason", row.blockedReason], ["description", row.description]], 800);
+        const rendered = chars(`${row.title}: ${row.blockedReason ?? ""}`, 800);
         return rendered ? [{ projectId, ref: { type: "TASK" as const, id: row.id }, ownerId: row.assigneeId, text: rendered }] : [];
       });
     }),

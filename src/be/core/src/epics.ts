@@ -6,7 +6,7 @@ type Row = Record<string, any>;
 export type EpicAccess = { requireMember(userId: string, projectId: string, tx?: unknown): Promise<void>; archivedMembership(userId: string, projectId: string, tx?: unknown): Promise<boolean> };
 type EpicDb = MutationTransaction & { project?: { update(args: Row): Promise<Row> }; checkpoint?: { findFirst(args: Row): Promise<Row | null> }; epic?: { findMany(args: Row): Promise<Row[]>; count(args: Row): Promise<number>; create(args: Row): Promise<Row> } };
 const iso = (value: Date | string) => value instanceof Date ? value.toISOString() : value;
-const output = (row: Row) => ({ id: row.id, projectId: row.projectId, checkpointId: row.checkpointId ?? null, title: row.title, description: row.description ?? null, position: row.position, taskCount: row._count?.tasks ?? row.taskCount ?? 0, pointsTotal: row._sum?.tasks?.storyPoints ?? row.pointsTotal ?? 0, createdAt: iso(row.createdAt), updatedAt: iso(row.updatedAt), version: row.version });
+const output = (row: Row) => ({ id: row.id, projectId: row.projectId, checkpointId: row.checkpointId ?? null, title: row.title, description: row.description ?? null, position: row.position, taskCount: row._count?.tasks ?? row.taskCount ?? 0, pointsTotal: row.tasks?.reduce((total: number, task: Row) => total + (task.storyPoints ?? 0), 0) ?? row.pointsTotal ?? 0, createdAt: iso(row.createdAt), updatedAt: iso(row.updatedAt), version: row.version });
 const access = async (gate: EpicAccess, actor: Actor, projectId: string, write = false, tx?: unknown) => {
   try { await gate.requireMember(actor.userId, projectId, tx); } catch (error) {
     if (!(error instanceof NotMember)) throw error;
@@ -26,7 +26,7 @@ export function createEpics(db: EpicDb, gate: EpicAccess) {
       if (!actor.userId) throw new Error("FORBIDDEN_ROLE");
       await access(gate, actor, projectId);
       const where = { projectId };
-      const [items, total] = await Promise.all([db.epic!.findMany({ where, orderBy: [{ position: "asc" }, { id: "asc" }], skip: query.page * query.size, take: query.size, include: { _count: { select: { tasks: true } }, _sum: { tasks: { select: { storyPoints: true } } } } }), db.epic!.count({ where })]);
+      const [items, total] = await Promise.all([db.epic!.findMany({ where, orderBy: [{ position: "asc" }, { id: "asc" }], skip: query.page * query.size, take: query.size, include: { _count: { select: { tasks: true } }, tasks: { select: { storyPoints: true } } } }), db.epic!.count({ where })]);
       return { items: items.map(output), page: query.page, size: query.size, total };
     },
     async create(actor: Actor, projectId: string, input: { title: string; description?: string | null; checkpointId?: string | null }) {

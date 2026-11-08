@@ -22,12 +22,12 @@ test("E8 and E37 epic creation uses the supported project lock helper and reject
   assert.deepEqual(calls, ["lock"]);
 });
 
-test("epic creation serializes the next position and paginates live aggregates", async () => {
-  const epic = { count: async () => 4, create: async (args: any) => ({ id: "00000000-0000-4000-8000-000000000004", projectId, checkpointId: null, title: args.data.title, description: null, position: args.data.position, createdAt: now, updatedAt: now, version: 1 }), findMany: async (args: any) => { assert.equal(args.skip, 20); assert.equal(args.take, 20); return [{ id: "00000000-0000-4000-8000-000000000004", projectId, checkpointId: null, title: "E", description: null, position: 5, createdAt: now, updatedAt: now, version: 1, _count: { tasks: 2 }, _sum: { tasks: { storyPoints: 8 } } }]; } };
+test("epic creation serializes the next position and computes points from live task rows", async () => {
+  const epic = { count: async () => 4, create: async (args: any) => ({ id: "00000000-0000-4000-8000-000000000004", projectId, checkpointId: null, title: args.data.title, description: null, position: args.data.position, createdAt: now, updatedAt: now, version: 1 }), findMany: async (args: any) => { assert.equal(args.skip, 20); assert.equal(args.take, 20); assert.deepEqual(args.include, { _count: { select: { tasks: true } }, tasks: { select: { storyPoints: true } } }); return [{ id: "00000000-0000-4000-8000-000000000004", projectId, checkpointId: null, title: "E", description: null, position: 5, createdAt: now, updatedAt: now, version: 1, _count: { tasks: 2 }, tasks: [{ storyPoints: 5 }, { storyPoints: null }] }]; } };
   const db = { $transaction: async (work: (tx: any) => Promise<unknown>) => work({ project: { update: async () => ({ id: projectId }) }, epic }), epic: { ...epic, count: async () => 21 } };
   const epics = createEpics(db as any, access());
   assert.equal((await epics.create({ userId, role: "DEV_LEAD" }, projectId, { title: "E" })).position, 5);
-  assert.deepEqual(await epics.list({ userId, role: "DEVELOPER" }, projectId, { page: 1, size: 20 }), { items: [{ id: "00000000-0000-4000-8000-000000000004", projectId, checkpointId: null, title: "E", description: null, position: 5, taskCount: 2, pointsTotal: 8, createdAt: now.toISOString(), updatedAt: now.toISOString(), version: 1 }], page: 1, size: 20, total: 21 });
+  assert.deepEqual(await epics.list({ userId, role: "DEVELOPER" }, projectId, { page: 1, size: 20 }), { items: [{ id: "00000000-0000-4000-8000-000000000004", projectId, checkpointId: null, title: "E", description: null, position: 5, taskCount: 2, pointsTotal: 5, createdAt: now.toISOString(), updatedAt: now.toISOString(), version: 1 }], page: 1, size: 20, total: 21 });
 });
 
 test("project-position lock helper runs against a real Prisma client", { skip: !process.env.W1_INTEGRATION_DATABASE_URL }, async () => {

@@ -18,12 +18,13 @@ test("E8-E10 task create rejects foreign relations and a sprint without points",
 
 test("E11-E16 status transitions set doneAt, order events, reject stale and leave no-op unchanged", async () => {
   const events: string[] = [];
-  const db = { $transaction: async (work: (tx: any) => Promise<unknown>, options: unknown) => { assert.deepEqual(options, { isolationLevel: "RepeatableRead" }); return work({ task: { findFirst: async () => row(), update: async (args: any) => row({ ...args.data, version: 2 }) }, taskEvent: { create: async (args: any) => { events.push(args.data.type); } } }); } };
+  let reads = 0;
+  const db = { $transaction: async (work: (tx: any) => Promise<unknown>, options: unknown) => { assert.deepEqual(options, { isolationLevel: "RepeatableRead" }); return work({ task: { findFirst: async () => ++reads % 2 ? row() : row({ status: "DONE", blocked: true, blockedReason: "Waiting", doneAt: now, version: 2 }), updateMany: async () => ({ count: 1 }) }, taskEvent: { create: async (args: any) => { events.push(args.data.type); } } }); } };
   const tasks = createTasks(db as any, access());
   const changed = await tasks.status({ userId, role: "DEVELOPER" }, taskId, { status: "DONE", blocked: true, blockedReason: "Waiting", version: 1 });
   assert.equal(changed.status, "DONE"); assert.ok(changed.doneAt); assert.deepEqual(events, ["STATUS_CHANGED", "BLOCKED"]);
   await assert.rejects(() => tasks.status({ userId, role: "DEVELOPER" }, taskId, { status: "TODO", blocked: false, blockedReason: null, version: 2 }), /CONFLICT_VERSION/);
-  const noopDb = { $transaction: async (work: (tx: any) => Promise<unknown>) => work({ task: { findFirst: async () => row(), update: async () => { throw new Error("must not update"); } }, taskEvent: { create: async () => { throw new Error("must not event"); } } }) };
+  const noopDb = { $transaction: async (work: (tx: any) => Promise<unknown>) => work({ task: { findFirst: async () => row(), updateMany: async () => { throw new Error("must not update"); } }, taskEvent: { create: async () => { throw new Error("must not event"); } } }) };
   assert.equal((await createTasks(noopDb as any, access()).status({ userId, role: "DEVELOPER" }, taskId, { status: "TODO", blocked: false, blockedReason: null, version: 1 })).version, 1);
 });
 
@@ -55,7 +56,25 @@ test("patch validates the effective post-patch points for a sprint and reports v
 });
 
 test("status preserves omitted block fields", async () => {
-  const db = { $transaction: async (work: (tx: any) => Promise<unknown>) => work({ task: { findFirst: async () => row({ blocked: true, blockedReason: "Waiting" }), update: async (args: any) => row({ ...args.data, version: 2, blocked: true, blockedReason: "Waiting" }) }, taskEvent: { create: async () => undefined } }) };
+  let reads = 0;
+  const db = { $transaction: async (work: (tx: any) => Promise<unknown>) => work({ task: { findFirst: async () => ++reads === 1 ? row({ blocked: true, blockedReason: "Waiting" }) : row({ status: "IN_PROGRESS", blocked: true, blockedReason: "Waiting", version: 2 }), updateMany: async () => ({ count: 1 }) }, taskEvent: { create: async () => undefined } }) };
   const result = await createTasks(db as any, access()).status({ userId, role: "DEVELOPER" }, taskId, { status: "IN_PROGRESS", version: 1 });
   assert.equal(result.blockedReason, "Waiting");
+});
+
+test("task patch atomically compares the version with updateMany before reading the committed row", async () => {
+  const writes: any[] = [];
+  let reads = 0;
+  const db = { $transaction: async (work: (tx: any) => Promise<unknown>) => work({
+    task: {
+      findFirst: async () => ++reads === 1 ? row() : row({ title: "Changed", version: 2 }),
+      updateMany: async (args: any) => { writes.push(args); return { count: 1 }; },
+    },
+    epic: { findFirst: async () => ({ id: epicId }) },
+    taskEvent: { create: async () => undefined },
+  }) };
+  const result = await createTasks(db as any, access()).patch({ userId, role: "PM" }, taskId, { title: "Changed", version: 1 });
+  assert.equal(result.version, 2);
+  assert.deepEqual(writes, [{ where: { id: taskId, version: 1 }, data: { title: "Changed", version: { increment: 1 } } }]);
+  assert.equal(reads, 2);
 });

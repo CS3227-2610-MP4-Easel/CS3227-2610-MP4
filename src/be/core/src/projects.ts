@@ -17,7 +17,7 @@ type ProjectDb = MutationTransaction & {
 
 const iso = (value: Date | string) => value instanceof Date ? value.toISOString() : value;
 const project = (row: Row) => ({ id: row.id, name: row.name, brief: row.brief, status: row.status, createdBy: row.createdBy, createdAt: iso(row.createdAt), updatedAt: iso(row.updatedAt), version: row.version });
-const detail = (row: Row) => ({ ...project(row), progress: { pointsTotal: 0, pointsDone: 0, percent: 0, unestimatedTasks: 0 } });
+const detail = (row: Row) => { let pointsTotal = 0; let pointsDone = 0; let unestimatedTasks = 0; for (const task of row.tasks ?? []) { if (task.storyPoints == null) { unestimatedTasks++; continue; } pointsTotal += task.storyPoints; if (task.status === "DONE") pointsDone += task.storyPoints; } return { ...project(row), progress: { pointsTotal, pointsDone, percent: pointsTotal === 0 ? 0 : (pointsDone / pointsTotal) * 100, unestimatedTasks } }; };
 const member = (row: Row) => ({ userId: row.userId, displayName: row.displayName ?? row.user?.displayName, role: row.role ?? row.user?.role, addedAt: iso(row.addedAt) });
 const forbidden = () => { throw new Error("FORBIDDEN_ROLE"); };
 const invalid = () => { throw new Error("VALIDATION_FAILED"); };
@@ -48,7 +48,7 @@ export function createProjects(db: ProjectDb, access: ProjectAccess) {
       if (!actor.userId) forbidden();
       const where = { members: { some: { userId: actor.userId } } };
       const [items, total] = await Promise.all([
-        db.project!.findMany({ where, orderBy: [{ createdAt: "desc" }, { id: "desc" }], skip: query.page * query.size, take: query.size }),
+        db.project!.findMany({ where, orderBy: [{ createdAt: "desc" }, { id: "desc" }], skip: query.page * query.size, take: query.size, include: { tasks: { select: { storyPoints: true, status: true } } } }),
         db.project!.count({ where }),
       ]);
       return { items: items.map(detail), page: query.page, size: query.size, total };
@@ -56,7 +56,7 @@ export function createProjects(db: ProjectDb, access: ProjectAccess) {
     async detail(actor: Actor, projectId: string) {
       if (!actor.userId) forbidden();
       await requireProjectAccess(access, actor, projectId);
-      const row = await db.project!.findFirst({ where: { id: projectId } });
+      const row = await db.project!.findFirst({ where: { id: projectId }, include: { tasks: { select: { storyPoints: true, status: true } } } });
       if (!row) throw new Error("NOT_FOUND");
       return detail(row);
     },

@@ -90,3 +90,18 @@ test("unexpected membership failures escape rather than becoming not found", asy
 test("project services reject missing or mismatched actors", async () => {
   await assert.rejects(() => createProjects({} as any, access()).create({ userId, role: "DEV_LEAD" }, { name: "Roadmap" }), /FORBIDDEN_ROLE/);
 });
+
+test("project list and detail compute progress from each project's live task rows", async () => {
+  const project = { id: projectId, name: "Roadmap", brief: null, status: "ACTIVE", createdBy: userId, createdAt: now, updatedAt: now, version: 1, tasks: [{ storyPoints: 5, status: "DONE" }, { storyPoints: 3, status: "TODO" }, { storyPoints: null, status: "TODO" }] };
+  const queries: any[] = [];
+  const db = { project: {
+    findMany: async (query: any) => { queries.push(query); return [project]; },
+    count: async () => 1,
+    findFirst: async (query: any) => { queries.push(query); return project; },
+  } };
+  const projects = createProjects(db as any, access());
+  const expected = { pointsTotal: 8, pointsDone: 5, percent: 62.5, unestimatedTasks: 1 };
+  assert.deepEqual((await projects.list({ userId, role: "DEVELOPER" }, { page: 0, size: 20 })).items[0].progress, expected);
+  assert.deepEqual((await projects.detail({ userId, role: "DEVELOPER" }, projectId)).progress, expected);
+  assert.deepEqual(queries.map((query) => query.include), [{ tasks: { select: { storyPoints: true, status: true } } }, { tasks: { select: { storyPoints: true, status: true } } }]);
+});
