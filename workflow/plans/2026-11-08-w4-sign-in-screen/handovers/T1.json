@@ -1,0 +1,27 @@
+{
+  "task": "T1",
+  "status": "done",
+  "summary": "Vitest 4.1.12 with jsdom 27.4.0 runs in src/fe; @firebase/app 0.16.5, @firebase/auth 1.13.9 and the testing libraries are installed at exact versions; root test chains the fe suite; src/fe/.env.example added.",
+  "produces": [
+    "src/fe/vitest.config.ts (jsdom, test/**/*.test.{ts,tsx}, no JSX config change was needed yet)",
+    "src/fe/package.json test script 'vitest run'",
+    "root package.json test chain",
+    "src/fe/test/runner.test.ts",
+    "src/fe/.env.example"
+  ],
+  "for_T2": "Tests go in src/fe/test/; run one with npm --workspace easel-fe run test -- test/<file>. No Vitest config change was needed (runner test uses no JSX; .tsx not yet exercised).",
+  "for_T3": "@firebase/app 0.16.5 and @firebase/auth 1.13.9 installed (modular API). Same test command.",
+  "next": "npm 11.6.0 on Node v24.10.0. Needs an operator decision before merge: @firebase/app and @firebase/auth declare engines node >=24.12.0 (EBADENGINE warning here on 24.10.0, and CI runs Node 20.19.5; engine-strict is not set so install works, but runtime support on Node 20 is untested). Also the root-test string change breaks tests/process-security/ci-workflow.test.ts (see deviations).",
+  "deviations": [
+    "tests/process-security/ci-workflow.test.ts line 46 asserts root scripts.test equals exactly 'node --import tsx scripts/discover-tests.mjs'. The Contract's new root test script makes that test fail, so root npm test exits non-zero (486/487 backend pass). I did not edit it (outside my write scope: src/** and handovers). Fix needed: update that assertion to the new string 'node --import tsx scripts/discover-tests.mjs && npm --workspace easel-fe run test'. Consequently the E82 root npm test pass was not demonstrated end to end; the fe suite alone passes.",
+    "src/fe/vitest.config.ts prints a Vite warning about ESM syntax in a CJS-loaded config (configLoader native); harmless, could be silenced with an .mts name or type module."
+  ],
+  "report": {
+    "audit": "8 moderate severity vulnerabilities (uuid via firebase-admin, pre-existing); no high finding",
+    "npm_ci_ignore_scripts": "succeeded",
+    "fe_suite_duration": "475ms (1 file, 1 test passed)",
+    "peer_warnings": "none; EBADENGINE warnings for the two @firebase packages (node >=24.12.0)",
+    "scan_secrets": "no leaks found",
+    "typecheck": "fe and root green"
+  }
+}
