@@ -27,7 +27,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 | Claude Opus 5.5 (orchestrator) + `implementer` | W4 | Active | Wave 2: T2 and T3 in flight (worktrees) | On each handover: validate, full review (Implementer, Tester, Attacker), merge worktree branches in task order (T2 then T3), run typecheck + `npm test` after each merge | 2026-11-08 |
+| S1 | 2026-11-08 | Claude Opus 5.5 (orchestrator) + `implementer` | W4 | Active | Wave 2: T2 in flight (main checkout), then T3 | On T2's handover: validate, full review (Implementer, Tester, Attacker), then dispatch T3 in the main checkout; worktrees are built from the remote, and this branch is unpushed | 2026-11-08 |
 
 **Remaining**
 
@@ -64,6 +64,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | T1 audit stopped on `@grpc/grpc-js` (via `firebase` → Firestore); switched to `@firebase/app` + `@firebase/auth` (C~5), amendment reviewed (Maintainer, Attacker; T3 lazy-init and T7 rule 1 hardened) | W4 | `cb8666d` |
 | 2026-11-08 | T1 first pass committed (Vitest, test chain); fix-up pending: Firebase 12.19 versions (C~6), W12 test assertion (C~7); `.env.example` committed by the operator (policy blocks env files) | W4 | `1b4d7e8` |
 | 2026-11-08 | T1 done: Vitest + jsdom in `src/fe` (cleanup setup, JSX smoke test), `@firebase/app` 0.16.2 and `@firebase/auth` 1.13.6, root `npm test` chains the fe suite, W12 pin updated, `.env.example`. Full review (Implementer, Tester, Attacker): Tester's two fixes applied; Attacker nit (guard the fe `test` script) handed to the Dev Lead | W4 | `878bfbb` |
+| 2026-11-08 | Wave 2 worktree dispatch failed (worktrees came from the remote base, which lacks this unpushed branch); T2 and T3 run one after another in the main checkout instead (skill fallback) | W4 | — |
 
 ---
 

@@ -2,7 +2,7 @@
   "task": "T2",
   "status": "done",
   "summary": "authMode(env) added and /api/as now 404s outside prototype mode and redirects only to same-origin paths.",
-  "commit": "PENDING",
+  "commit": "21585e4",
   "produces": [
     {"kind": "symbol", "name": "authMode, AuthMode, FIREBASE_KEYS", "where": "src/fe/lib/auth/mode.ts", "note": "server-only; never import from a 'use client' file (import type only)"},
     {"kind": "route", "name": "/api/as", "where": "src/fe/app/api/as/route.ts", "note": "404 unless prototype mode; to is same-origin checked"}
