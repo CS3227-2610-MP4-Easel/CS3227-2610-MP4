@@ -8,13 +8,13 @@
 - **Owner:** repo owner
 - **Status:** In review
 - **Approved:** —
-- **Last updated:** 2026-11-08 by Codex — completed CI follow-up
+- **Last updated:** 2026-11-08 by Codex — Vercel check removed
 
 **Untouched:** Architecture, Conventions, Known Gaps, Decisions, Deviations
 
 ---
 
-**Scope.** Make the W5 real-database regression mandatory in CI and remove the W13 protected-environment deployment approval, as requested by the owner.
+**Scope.** Make the W5 real-database regression mandatory in CI and remove the W13 development Vercel verification check, as requested by the owner.
 
 ---
 
@@ -24,7 +24,7 @@
 
 **Remaining**
 
-- [ ] **Handover:** Merge this branch into W5 before continuing that workstream. Move `VERCEL_TOKEN` from the deleted Environment to repository Actions secrets so the automatic development verification can authenticate.
+- [ ] **Handover:** Merge this branch into W5 before continuing that workstream.
 
 ---
 
@@ -33,7 +33,7 @@
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
 | W12 | CI and process security | In review | — | — | CI Postgres regression follow-up complete | — |
-| W13 | Environments, seed data and deployment | In review | — | — | Protected development approval removed | — |
+| W13 | Environments, seed data and deployment | In review | — | — | Development verification workflow removed | — |
 
 ---
 
@@ -43,3 +43,4 @@
 |---|---|---|---|
 | 2026-11-08 | Added a pinned Postgres 16 CI service, migrated it before tests, and made the W1 integration database required. | W12 | this commit |
 | 2026-11-08 | Removed the W13 protected Environment binding so development verification runs automatically. | W13 | this commit |
+| 2026-11-08 | Removed the W13 development verification workflow and its workflow-only test; workflow policy now rejects replacement push workflows. | W13 | this commit |
