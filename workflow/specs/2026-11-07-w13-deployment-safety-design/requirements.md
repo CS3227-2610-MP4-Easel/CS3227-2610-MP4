@@ -8,6 +8,7 @@
 - F4. Production resource validation requires `VERCEL_ENV=production`; development remains `preview`.
 - F5. Development evidence is collected by the owner through read-only Vercel inspection and fixed smoke requests; repository workflows and application runtime receive no Vercel deployment token.
 - F6. Production migration child processes receive only the allowlisted migration environment and temporary `DATABASE_URL`, never `DIRECT_DATABASE_URL`.
+- F9. Production deployment is triggered only by the protected workflow after migration/build validation through the owner-created production Vercel Deploy Hook; Git auto-deploy for production is disabled.
 
 ## Non-functional
 

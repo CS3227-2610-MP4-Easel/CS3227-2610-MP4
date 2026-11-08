@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 00:00 | Codex | W13 | Blocked — needs human | Final review found a production sequencing race: Vercel auto-deploys `main` while the migration workflow runs independently | Owner chooses a tokenless sequencing mechanism: disable automatic production deploy and trigger a post-migration deploy hook, or explicitly accept the race and amend the safety plan | 2026-11-08 00:00 |
+| S1 | 2026-11-09 00:00 | Codex | W13 | Blocked — needs human | T6 amended to use a post-validation Vercel Deploy Hook; owner configuration remains | Owner disables Vercel production Git auto-deploy, creates a production Deploy Hook for `main`, and stores its URL as `VERCEL_DEPLOY_HOOK_URL` in GitHub Environment `production` | 2026-11-09 00:00 |
 
 **Remaining**
 
@@ -76,6 +76,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | T6 implementation is complete through validation: protected `main` workflow, detached SHA/artifact identity checks, production migration invocation, and candidate deployment verification are covered; owner production configuration is now the required gate. | W13 | this commit |
 | 2026-11-08 | Deviation found before configuration: the T6 draft references `VERCEL_TOKEN`/`VERCEL_TEAM_ID`, conflicting with approved C~5's no-token repository-workflow boundary; no production secrets should be added until resolved. | W13 | this commit |
 | 2026-11-08 | Operator kept C~5; removed token-based Vercel link/deploy/inspect steps from T6 and replaced them with a protected, tokenless Vercel Git integration handoff. | W13 | this commit |
+| 2026-11-09 | Operator approved amendment C~8: replace the unsafe tokenless Git auto-deploy handoff with a post-validation Vercel Deploy Hook, while keeping C~5's no-token boundary. | W13 | this commit |
 | 2026-11-08 | Owner added the protected GitHub `production` Environment secret `DIRECT_DATABASE_URL`; Vercel Git integration confirmation remains before T6 can proceed. | W13 | this commit |
 | 2026-11-08 | Owner verified Vercel Git integration is connected to `CS3227-2610-MP4-Easel/CS3227-2610-MP4`; Production Branch is `main`, and Vercel reports every commit pushed to `main` creates a Production Deployment. | W13 | this commit |
 | 2026-11-08 | T6 close-out passed: 488 tests (462 passed, 26 skipped), typecheck, lint, contract, Prisma validation, workflow validation, agent-policy, secret scan, and diff check; branch is ready for owner review. | W13 | this commit |
@@ -92,6 +93,12 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Found:** 2026-11-08 during final T6 review.
 - **What:** Vercel is configured to auto-deploy every commit pushed to `main`, while the GitHub workflow runs the production migration concurrently.
 - **Consequence:** A production deployment could become live before its migration completes; Gate 3 is paused until sequencing is fixed or explicitly accepted by the owner.
+
+### C~8 — Sequence production through a Deploy Hook
+
+- **Date:** 2026-11-09
+- **Who asked:** operator.
+- **Decision:** Disable Vercel production Git auto-deploy and invoke an owner-created production Deploy Hook only after the protected migration/build workflow succeeds. Store only the hook URL in the protected GitHub Environment; no Vercel token is used.
 
 ### T4 redacted evidence
 

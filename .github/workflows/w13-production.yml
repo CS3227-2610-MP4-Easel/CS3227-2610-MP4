@@ -52,6 +52,10 @@ jobs:
           DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
         run: node scripts/w13/migrate-production.mjs
       - name: Deploy immutable production candidate
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
         run: |
           test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
-          printf 'Vercel Git integration must deploy this exact main SHA: %s\n' "$GITHUB_SHA"
+          test -n "$VERCEL_DEPLOY_HOOK_URL"
+          curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 -X POST "$VERCEL_DEPLOY_HOOK_URL" >/dev/null
+          printf 'Vercel production Deploy Hook triggered for validated SHA: %s\n' "$GITHUB_SHA"
