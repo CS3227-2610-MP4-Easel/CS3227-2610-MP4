@@ -1,0 +1,19 @@
+{
+  "task": "T4",
+  "status": "done",
+  "summary": "Session provider, auth gate, AuthRoot, session-aware top bar and role bar, layout/page wiring, placeholder sign-in and register screens.",
+  "commit": "246f547",
+  "produces": [
+    { "kind": "symbol", "name": "SessionProvider, useSession, toRole, ROLE_LABEL, initialsOf, Session, SessionStatus", "where": "src/fe/lib/auth/session.tsx", "note": "401 from me_4 changes nothing; setUser bumps generation; holdForRegistration returns a release" },
+    { "kind": "symbol", "name": "AuthRoot, useAuthMode", "where": "src/fe/lib/auth/mode-context.tsx", "note": "unconfigured or unconfigured firebase renders one line; prototype passes children through" },
+    { "kind": "symbol", "name": "AuthGate", "where": "src/fe/components/auth-gate.tsx", "note": "owns replace('/projects') after sign-in and registration" },
+    { "kind": "file", "name": "SignIn, Register placeholders", "where": "src/fe/components/live/sign-in.tsx, register.tsx", "note": "default exports with no props; T5 and T6 replace them" }
+  ],
+  "next": [
+    "T5: replace sign-in.tsx wholesale; useSession() is non-null under the gate; do nothing after signIn.",
+    "T6: replace register.tsx; call holdForRegistration() before signUp, release after setUser or on error."
+  ],
+  "deviations": [],
+  "edge_cases": ["E39", "E51", "E54", "E66", "E67", "E68", "E69", "E70", "E77", "E78", "E79", "E81", "E94", "E95", "E96", "E97", "E98", "E99", "E100", "E105"],
+  "checks": { "build": "pass", "tests": "pass", "lint": "pass" }
+}
