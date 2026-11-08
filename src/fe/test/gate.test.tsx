@@ -169,7 +169,7 @@ describe('gate', () => {
     replace.mockReset();
     mount('/sign-in');
     await act(async () => fbCb!(null));
-    expect(screen.getByText('Sign in')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Sign in' })).toBeTruthy();
     expect(replace).not.toHaveBeenCalled();
   });
 
