@@ -1,7 +1,7 @@
 # W4 Sign-in Screen Design
 
 - **Status:** Approved (ludannnn, 2026-11-08)
-- Amended 2026-11-08: see branch state C~5 (`@firebase/app` and `@firebase/auth` instead of `firebase`)
+- Amended 2026-11-08: see branch state C~5 (`@firebase/app` and `@firebase/auth` instead of `firebase`), C~6 (Node 20-compatible versions) and C~7 (W12 test assertion for the root `test` script)
 - **Format:** v2
 - **Risk tier:** High - it replaces the prototype's sign-in with real authentication in the browser, handles registration codes and decides which tiers may skip sign-in.
 - **Workstream:** W4 (T7 follow-up, C46) | **Plan:** pending (`writing-plans-lite-v2` after Gate 1)
@@ -111,9 +111,9 @@ All user text (display names, emails, Firebase messages) is rendered as React te
 ### 4.5 Conventions
 - `lib/auth/firebase.ts` is the only importer of any `firebase` or `@firebase/*` module; `lib/api/http.ts` is the only `fetch` caller outside `app/api/`; `lib/auth/navigate.ts` is the only `location.assign` caller; no file uses `dangerouslySetInnerHTML`; browser modules (`'use client'` files and `lib/auth/firebase.ts`) read `process.env` only as the four literal `NEXT_PUBLIC_FIREBASE_*` names. Rule six: no `'use client'` file imports `lib/auth/mode.ts`. A Vitest source-scan test (`src/fe/test/source-rules.test.ts`, `// @vitest-environment node`, reads files with `node:fs`) enforces all six rules.
 - Screens keep calling `lib/api` functions (`check-data-layer.mjs`); the live auth screens may also call `lib/auth`.
-- Dependencies pinned exactly (versions checked on npm 2026-11-08): `@firebase/app` 0.16.5 and `@firebase/auth` 1.13.9 (the versions inside `firebase` 13.2.0; the umbrella package is not installed, SD15); dev: `vitest` 4.1.12, `jsdom` 27.4.0, `@testing-library/react` 16.3.3, `@testing-library/dom` 10.4.2, `@testing-library/user-event` 14.6.8.
+- Dependencies pinned exactly (versions checked on npm 2026-11-08): `@firebase/app` 0.16.2 and `@firebase/auth` 1.13.6 (the versions inside `firebase` 12.19.0, engines `node >=20.0.0`; the 13.x line needs Node 24.12+; the umbrella package is not installed, SD15); dev: `vitest` 4.1.12, `jsdom` 27.4.0, `@testing-library/react` 16.3.3, `@testing-library/dom` 10.4.2, `@testing-library/user-event` 14.6.8.
 - Tests live in `src/fe/test/**/*.test.ts(x)` (the root runner walks only `tests/` and `src/be/`), with `environment: 'jsdom'` from `src/fe/vitest.config.ts`. UI tests mock `lib/auth/firebase`, `lib/auth/navigate` and `next/navigation` (`useRouter` -> `{ replace: vi.fn() }`) and stub `globalThis.fetch`; "reaches X" means `replace('X')` called once. Unit tests pass explicit env objects; route tests use `vi.stubEnv`. Fake timers use `userEvent.setup({ advanceTimers: vi.advanceTimersByTime })`. Firebase error mocks reject with `{ code, message }` set by the test.
-- `src/fe/package.json` gains `"test": "vitest run"`; root `test` becomes `node --import tsx scripts/discover-tests.mjs && npm --workspace easel-fe run test`.
+- `src/fe/package.json` gains `"test": "vitest run"`; root `test` becomes `node --import tsx scripts/discover-tests.mjs && npm --workspace easel-fe run test`. W12's `tests/process-security/ci-workflow.test.ts` pins that script exactly, so its assertion is updated to the new string in the same change (C~7); the PR flags it for the Dev Lead (W12 owner).
 - `src/fe/scripts/smoke.mjs` and `linkcheck.mjs` send a `role` cookie and so run only with `APP_TIER=preview` and no Firebase values (`prototype`); a comment at the top of each says so.
 
 ### 4.6 Sequencing constraints
@@ -252,7 +252,7 @@ All user text (display names, emails, Firebase messages) is rendered as React te
 | SD11 | Retry after `signUp` succeeded repeats only `register_3`; the code is kept on non-409 errors | A second `signUp` fails with `email-already-in-use`. Rejected: clearing the code on any settle | AI, Tester lens |
 | SD12 | `/api/as` keeps working in `prototype` but gets a same-origin `to` check | It is an open redirect on every preview today. Rejected: leaving W10's check | AI, Attacker lens |
 | SD13 | The six source rules are a Vitest source-scan test | `check-data-layer.mjs` is not run in CI and `ci.yml` is not edited. Rejected: extending that script | AI, Maintainer lens |
-| SD15 | Depend on `@firebase/app` 0.16.5 and `@firebase/auth` 1.13.9, not the `firebase` umbrella | `firebase` 13.2.0 pulls `@firebase/firestore` with `@grpc/grpc-js` 1.9.16 (high: GHSA-m9gg-hp2v-232j, GHSA-f596-whhp-79r4), which fails CI's audit; auth needs neither. Rejected: an npm `overrides` pin of `@grpc/grpc-js` (forces Firestore onto an untested gRPC); accepting the risk (CI fails on high) | operator (ludannnn), C~5 |
+| SD15 | Depend on `@firebase/app` 0.16.2 and `@firebase/auth` 1.13.6, not the `firebase` umbrella (0.16.5 / 1.13.9 from `firebase` 13.2.0 declare `node >=24.12.0`; CI is Node 20.19.5) | `firebase` 13.2.0 pulls `@firebase/firestore` with `@grpc/grpc-js` 1.9.16 (high: GHSA-m9gg-hp2v-232j, GHSA-f596-whhp-79r4), which fails CI's audit; auth needs neither. Rejected: an npm `overrides` pin of `@grpc/grpc-js` (forces Firestore onto an untested gRPC); accepting the risk (CI fails on high) | operator (ludannnn), C~5 |
 | SD14 | No bounce guard for a 401 right after sign-in | Each bounce needs the user to submit again, so it cannot loop on its own. Rejected: a counter in browser storage | AI, Attacker nit |
 
 ## 9. Review record

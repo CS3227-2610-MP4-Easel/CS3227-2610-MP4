@@ -2,7 +2,7 @@
 
 - **Status:** Approved (ludannnn, 2026-11-08)
 - **Format:** v2
-- **Spec:** [W4 sign-in screen design](../../specs/2026-11-08-w4-sign-in-screen-design.md) | **Spec hash:** c94edfe7bf13
+- **Spec:** [W4 sign-in screen design](../../specs/2026-11-08-w4-sign-in-screen-design.md) | **Spec hash:** 3cdecab29621
 - **Workstream:** W4
 
 > **For the orchestrator:** this file is your router. Do not open task files yourself except to

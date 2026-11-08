@@ -59,7 +59,9 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | T7 plan written, reviewed and approved at Gate 2 | W4 | `e7d9f6e` |
 | 2026-11-08 | Committed the files `next dev` (Next.js 16) regenerates on every run: `src/fe/tsconfig.json` (`jsx: react-jsx`, `.next/dev/types`) and `src/fe/AGENTS.md` (pointer to Next's bundled docs), so the tree stays clean | W4 | `cf52e09` |
 | 2026-11-08 | Baseline before T1: `npm run typecheck` green, `npm test` 487/487 (integration tests against a local `agile-pg-test` container on 5433; `DATABASE_URL` for agent commands comes from the operator's `.claude/settings.local.json`) | W4 | `12e31bf` |
-| 2026-11-08 | T1 blocked on its Node check (local Node 24); check relaxed in `tasks/T1.md`, D~1 recorded, T1 redispatched | W4 | this commit |
+| 2026-11-08 | T1 blocked on its Node check (local Node 24); check relaxed in `tasks/T1.md`, D~1 recorded, T1 redispatched | W4 | `cb8666d` |
+| 2026-11-08 | T1 audit stopped on `@grpc/grpc-js` (via `firebase` → Firestore); switched to `@firebase/app` + `@firebase/auth` (C~5), amendment reviewed (Maintainer, Attacker; T3 lazy-init and T7 rule 1 hardened) | W4 | `cb8666d` |
+| 2026-11-08 | T1 first pass committed (Vitest, test chain); fix-up pending: Firebase 12.19 versions (C~6), W12 test assertion (C~7); `.env.example` committed by the operator (policy blocks env files) | W4 | `1b4d7e8` |
 
 ---
 
@@ -82,6 +84,18 @@ describes `INT`; read it for context and write here instead of editing it.
 ## 7. Decisions
 
 > Legend: `C` = project decision. AD-nn entries are in docs/architecture.
+
+### C~6 Use the Firebase 12.19 versions of app and auth
+- **Date:** 2026-11-08 · **Asked by:** ludannnn (operator), after T1 reported `EBADENGINE`
+- **Decision:** `@firebase/app` 0.16.2 and `@firebase/auth` 1.13.6 (inside `firebase` 12.19.0, engines `node >=20.0.0`) replace 0.16.5 / 1.13.9 (C~5).
+- **Why:** the 13.x packages declare `node >=24.12.0`; CI runs Node 20.19.5 and the operator runs 24.10.
+- **Rejected:** keeping 13.x and ignoring the engine warning; raising CI's Node (W12).
+
+### C~7 Update W12's pinned root `test` script assertion
+- **Date:** 2026-11-08 · **Asked by:** ludannnn (operator)
+- **Decision:** `tests/process-security/ci-workflow.test.ts` line 46 asserts the new root `test` string (backend runner, then the fe suite); the PR calls it out for the Dev Lead (W12 owner) to review.
+- **Why:** the assertion stops CI's test command from being weakened; the new command only adds the fe suite, so the guard keeps its purpose. Without it CI would never run the fe tests (SD6).
+- **Rejected:** leaving the root script unchanged and asking the Dev Lead to add an fe step to `ci.yml`.
 
 ### C~5 Use `@firebase/app` and `@firebase/auth`, not the `firebase` package
 - **Date:** 2026-11-08 · **Asked by:** ludannnn (operator), after T1's audit stopped on a high finding
