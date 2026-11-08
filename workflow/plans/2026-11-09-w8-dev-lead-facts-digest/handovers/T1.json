@@ -1,8 +1,19 @@
 {
   "task": "T1",
-  "status": "completed",
-  "exports": ["createFacts", "hashFacts", "Facts", "FactsDb", "Clock", "systemClock"],
-  "modes": { "target": "createFacts(db, clock).target(projectId)", "caller": "createFacts(db, clock).caller(callerId, projectId)" },
-  "verification": ["node --import tsx --test src/be/lead/test/facts.test.ts", "npm test", "npm run typecheck", "npm run lint"],
-  "for": { "T2": "Use target(projectId) and hashFacts for digest persistence.", "T3": "Use caller(callerId, projectId) for endpoint 42." }
+  "status": "done",
+  "summary": "Added deterministic lead facts, forecasts, canonical hashing, and target/caller modes.",
+  "commit": "83605da",
+  "produces": [
+    { "kind": "symbol", "name": "createFacts", "where": "src/be/lead/src/facts.ts", "note": "Builds target-only and caller-member facts." },
+    { "kind": "symbol", "name": "hashFacts", "where": "src/be/lead/src/hash.ts", "note": "Canonical SHA-256 excludes asOf." },
+    { "kind": "file", "name": "@agile/lead", "where": "src/be/lead", "note": "Exports facts and clock types." }
+  ],
+  "next": "T2: use target(projectId) with hashFacts for digest persistence.\nT3: use caller(callerId, projectId) for endpoint 42.",
+  "deviations": [],
+  "edge_cases": ["E1", "E2", "E3", "E4", "E5", "E6", "E25"],
+  "checks": {
+    "build": "pass",
+    "tests": "5 focused pass; npm test: 539 pass, 0 fail, 28 skipped",
+    "lint": "pass"
+  }
 }
