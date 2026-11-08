@@ -2,7 +2,7 @@
   "task": "T1",
   "status": "done",
   "summary": "Vitest + jsdom run in src/fe; @firebase/app 0.16.2 and @firebase/auth 1.13.6 installed; root npm test runs 487 backend tests then the fe suite, all green.",
-  "commit": "b87152a",
+  "commit": "878bfbb",
   "produces": [
     {"kind": "file", "name": "vitest.config.ts", "where": "src/fe/vitest.config.ts", "note": "jsdom, test/**/*.test.{ts,tsx}, restoreMocks/unstubGlobals/unstubEnvs; setupFiles test/setup.ts; harmless Vite CJS/ESM warning"},
     {"kind": "other", "name": "test scripts", "where": "src/fe/package.json, package.json", "note": "fe: vitest run; root: discover-tests then npm --workspace easel-fe run test"},

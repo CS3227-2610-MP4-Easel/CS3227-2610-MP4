@@ -27,7 +27,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 | Claude Opus 5.5 (orchestrator) + `implementer` | W4 | Active | Wave 1: T1 in flight | On T1's handover: validate it, run the full review (Implementer, Tester, Attacker), then dispatch T2 and T3 in worktrees | 2026-11-08 |
+| S1 | 2026-11-08 | Claude Opus 5.5 (orchestrator) + `implementer` | W4 | Active | Wave 2: T2 and T3 in flight (worktrees) | On each handover: validate, full review (Implementer, Tester, Attacker), merge worktree branches in task order (T2 then T3), run typecheck + `npm test` after each merge | 2026-11-08 |
 
 **Remaining**
 
@@ -36,6 +36,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - [ ] Build T1-T7; close-out; Gate 3.
 - [x] Local setup verified 2026-11-08: Firebase project `agile-platform-dev` created by ludannnn (Email/Password on, web app registered), local Postgres migrated, endpoint 2 returns `{"valid":true}` and endpoint 4 returns 401 without a token.
 - [ ] **Handover:** to the repo owner (W13): `agile-platform-dev` exists (owner ludannnn; add the repo owner as Owner); create `agile-platform-prod` with that exact ID (`src/be/db/src/tier-targets.ts`) and add the Vercel domains to Authorized domains on both projects; set the four `NEXT_PUBLIC_FIREBASE_*` values per tier.
+- [ ] **Handover:** to the Dev Lead (W12): `tests/process-security/ci-workflow.test.ts` now pins the chained root `test` script (C~7) but not `src/fe/package.json` `scripts.test` (`vitest run`) or `src/fe/vitest.config.ts`; consider asserting the fe script too (T1 Attacker review nit).
 - [ ] **Handover:** close STATE Upcoming "Ask the PM about the W10 sign-in page": the merged W10 code answers it (design only: `components/canvas/Main.tsx` is static and signs in through the `/api/as?role=` cookie stand-in).
 
 ---
@@ -44,7 +45,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W4 | Auth and registration | Building | [spec](../../specs/2026-10-31-w4-auth-design.md), [T7 spec](../../specs/2026-11-08-w4-sign-in-screen-design.md) (approved 2026-11-08) | [plan](../../plans/2026-11-08-w4-sign-in-screen/plan.md) (approved 2026-11-08) | T7 follow-up: task 0/7, T1 next | — |
+| W4 | Auth and registration | Building | [spec](../../specs/2026-10-31-w4-auth-design.md), [T7 spec](../../specs/2026-11-08-w4-sign-in-screen-design.md) (approved 2026-11-08) | [plan](../../plans/2026-11-08-w4-sign-in-screen/plan.md) (approved 2026-11-08) | T7 follow-up: task 1/7 done; wave 2 (T2, T3) next | — |
 
 ---
 
@@ -62,6 +63,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | T1 blocked on its Node check (local Node 24); check relaxed in `tasks/T1.md`, D~1 recorded, T1 redispatched | W4 | `cb8666d` |
 | 2026-11-08 | T1 audit stopped on `@grpc/grpc-js` (via `firebase` → Firestore); switched to `@firebase/app` + `@firebase/auth` (C~5), amendment reviewed (Maintainer, Attacker; T3 lazy-init and T7 rule 1 hardened) | W4 | `cb8666d` |
 | 2026-11-08 | T1 first pass committed (Vitest, test chain); fix-up pending: Firebase 12.19 versions (C~6), W12 test assertion (C~7); `.env.example` committed by the operator (policy blocks env files) | W4 | `1b4d7e8` |
+| 2026-11-08 | T1 done: Vitest + jsdom in `src/fe` (cleanup setup, JSX smoke test), `@firebase/app` 0.16.2 and `@firebase/auth` 1.13.6, root `npm test` chains the fe suite, W12 pin updated, `.env.example`. Full review (Implementer, Tester, Attacker): Tester's two fixes applied; Attacker nit (guard the fe `test` script) handed to the Dev Lead | W4 | `878bfbb` |
 
 ---
 
