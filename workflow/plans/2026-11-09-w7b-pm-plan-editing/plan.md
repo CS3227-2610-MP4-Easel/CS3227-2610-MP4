@@ -39,10 +39,10 @@ only your own task's files. Contract tests marked read-only are not edited.
 ## Task order
 | Task | File | Depends on | Concurrent with | Wave | Weight | Review | Status |
 |---|---|---|---|---|---|---|---|
-| T1 Contracts: policy 58-60, schemas, openapi, docs | `tasks/T1.md` | - | T2, T5, T6 | 1 | standard | full | Not started |
-| T2 Proposals: edit store (epic, checkpoints) | `tasks/T2.md` | - | T1, T5, T6 | 1 | complex | full | Not started |
-| T5 Proposals: approve closes EDITED or ACCEPTED | `tasks/T5.md` | - | T1, T2, T6 | 1 | standard | light | Not started |
-| T6 Proposals: list store | `tasks/T6.md` | - | T1, T2, T5 | 1 | standard | light | Not started |
+| T1 Contracts: policy 58-60, schemas, openapi, docs | `tasks/T1.md` | - | T2, T5, T6 | 1 | standard | full | Done |
+| T2 Proposals: edit store (epic, checkpoints) | `tasks/T2.md` | - | T1, T5, T6 | 1 | complex | full | Done |
+| T5 Proposals: approve closes EDITED or ACCEPTED | `tasks/T5.md` | - | T1, T2, T6 | 1 | standard | light | Done |
+| T6 Proposals: list store | `tasks/T6.md` | - | T1, T2, T5 | 1 | standard | light | Done |
 | T3 Proposals: add and delete epic | `tasks/T3.md` | T2 | T4 | 2 | complex | full | Not started |
 | T4 Proposals: regenerate claim, store flag, pre-check | `tasks/T4.md` | T2 | T3 | 2 | complex | full | Not started |
 | T7 pm: plan flow additions and runtime binding | `tasks/T7.md` | T2, T3, T4, T5, T6 | - | 3 | complex | full | Not started |
