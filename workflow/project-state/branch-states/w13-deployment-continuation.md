@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 00:00 | Codex | W13 | Blocked — needs human | GitHub `production` Environment now has `DIRECT_DATABASE_URL`; tokenless Vercel Git integration confirmation remains | Owner confirms Vercel Git integration is linked to protected `main` with production auto-deploy enabled | 2026-11-08 00:00 |
+| S1 | 2026-11-08 00:00 | Codex | W13 | In progress — owner action | T6 configuration gate is satisfied: GitHub production migration secret is present and Vercel Git integration is connected to `main` production tracking | Complete T6 review/close-out; no production deployment is triggered from this feature branch | 2026-11-08 00:00 |
 
 **Remaining**
 
@@ -77,6 +77,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Deviation found before configuration: the T6 draft references `VERCEL_TOKEN`/`VERCEL_TEAM_ID`, conflicting with approved C~5's no-token repository-workflow boundary; no production secrets should be added until resolved. | W13 | this commit |
 | 2026-11-08 | Operator kept C~5; removed token-based Vercel link/deploy/inspect steps from T6 and replaced them with a protected, tokenless Vercel Git integration handoff. | W13 | this commit |
 | 2026-11-08 | Owner added the protected GitHub `production` Environment secret `DIRECT_DATABASE_URL`; Vercel Git integration confirmation remains before T6 can proceed. | W13 | this commit |
+| 2026-11-08 | Owner verified Vercel Git integration is connected to `CS3227-2610-MP4-Easel/CS3227-2610-MP4`; Production Branch is `main`, and Vercel reports every commit pushed to `main` creates a Production Deployment. | W13 | this commit |
 
 ### T4 redacted evidence
 
