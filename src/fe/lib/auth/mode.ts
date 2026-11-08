@@ -13,7 +13,11 @@ const present = (v: string | undefined) => (v ?? '').trim() !== '';
 export function authMode(env: Record<string, string | undefined>): AuthMode {
   const count = FIREBASE_KEYS.filter((k) => present(env[k])).length;
   if (count === FIREBASE_KEYS.length) return 'firebase';
-  if (count === 0 && env.APP_TIER === 'preview' && (env.VERCEL_ENV ?? '').trim() !== 'production') {
+  if (
+    count === 0 &&
+    (env.APP_TIER ?? '').trim() === 'preview' &&
+    (env.VERCEL_ENV ?? '').trim().toLowerCase() !== 'production'
+  ) {
     return 'prototype';
   }
   return 'unconfigured';

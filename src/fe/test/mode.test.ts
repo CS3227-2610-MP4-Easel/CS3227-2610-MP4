@@ -33,6 +33,15 @@ describe('authMode', () => {
     expect(authMode({ APP_TIER: 'prod', ...blanks })).toBe('unconfigured');
   });
 
+  it('E84 trimmed tier, blank VERCEL_ENV, production variants, partial whitespace', () => {
+    expect(authMode({ APP_TIER: ' preview ' })).toBe('prototype');
+    expect(authMode({ APP_TIER: 'preview', VERCEL_ENV: '  ' })).toBe('prototype');
+    expect(authMode({ APP_TIER: 'preview', VERCEL_ENV: ' production ' })).toBe('unconfigured');
+    expect(authMode({ APP_TIER: 'preview', VERCEL_ENV: 'Production' })).toBe('unconfigured');
+    const three = Object.fromEntries(FIREBASE_KEYS.slice(0, 3).map((k) => [k, 'x']));
+    expect(authMode({ APP_TIER: 'prod', ...three, [FIREBASE_KEYS[3]]: '  ' })).toBe('unconfigured');
+  });
+
   it('E85 tier is case-sensitive and production VERCEL_ENV blocks prototype', () => {
     expect(authMode({ APP_TIER: 'PREVIEW' })).toBe('unconfigured');
     expect(authMode({ APP_TIER: 'preview', VERCEL_ENV: 'production' })).toBe('unconfigured');

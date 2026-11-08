@@ -10,10 +10,15 @@ export function GET(req: NextRequest) {
   const to = req.nextUrl.searchParams.get('to') || '/projects';
   const u = new URL(to, req.url);
   const sameSite =
-    to.startsWith('/') && !to.includes('\\') && !/%5c/i.test(to) && u.origin === new URL(req.url).origin;
-  const target = sameSite ? u.pathname + u.search + u.hash : '/projects';
-  const res = NextResponse.redirect(new URL(target, req.url));
-  if (ROLES.includes(role)) res.cookies.set('role', role, { path: '/' });
+    to.startsWith('/') &&
+    !to.includes('\\') &&
+    !/%5c/i.test(to) &&
+    u.origin === new URL(req.url).origin &&
+    !u.pathname.startsWith('//');
+  // Redirect to the checked URL itself: re-parsing a normalised '//host' path would go off-site.
+  const res = NextResponse.redirect(sameSite ? u : new URL('/projects', req.url));
+  const cookie = { path: '/', sameSite: 'lax', httpOnly: true, secure: req.nextUrl.protocol === 'https:' } as const;
+  if (ROLES.includes(role)) res.cookies.set('role', role, cookie);
   else if (role === 'out') res.cookies.delete('role');
   return res;
 }

@@ -35,18 +35,60 @@ describe('/api/as', () => {
     prototypeEnv();
     const res = await call('role=lead&to=/lead/overview');
     expect(res.status).toBe(307);
-    expect(new URL(res.headers.get('location')!).pathname).toBe('/lead/overview');
-    expect(res.headers.get('set-cookie')).toContain('role=lead');
+    const u = new URL(res.headers.get('location')!);
+    expect(u.origin).toBe('http://localhost:3100');
+    expect(u.pathname).toBe('/lead/overview');
+    const cookie = res.headers.get('set-cookie')!;
+    expect(cookie).toContain('role=lead');
+    expect(cookie).toMatch(/httponly/i);
+    expect(cookie).toMatch(/samesite=lax/i);
   });
 
-  it.each(['/\\evil.com', '/%5Cevil.com', '/%5cevil.com', '//evil.com', 'https://evil.com'])(
-    'E87 %s redirects to same-origin /projects',
-    async (to) => {
-      prototypeEnv();
-      const res = await call(`role=pm&to=${encodeURIComponent(to)}`);
-      const u = new URL(res.headers.get('location')!);
-      expect(u.origin).toBe('http://localhost:3100');
-      expect(u.pathname).toBe('/projects');
-    },
-  );
+  it('E86 same-site target keeps its query and hash', async () => {
+    prototypeEnv();
+    const res = await call(`role=pm&to=${encodeURIComponent('/lead/overview?a=1#h')}`);
+    const u = new URL(res.headers.get('location')!);
+    expect(u.pathname).toBe('/lead/overview');
+    expect(u.search).toBe('?a=1');
+    expect(u.hash).toBe('#h');
+  });
+
+  it('E86 role=out deletes the cookie', async () => {
+    prototypeEnv();
+    const res = await call('role=out');
+    expect(res.headers.get('set-cookie')).toMatch(/role=;/);
+  });
+
+  it('E86 unknown role sets no cookie', async () => {
+    prototypeEnv();
+    const res = await call('role=admin');
+    expect(res.headers.get('set-cookie')).toBeNull();
+  });
+
+  it('E59 404 with no cookie for role=out outside prototype', async () => {
+    vi.stubEnv('APP_TIER', 'dev');
+    for (const k of FIREBASE_KEYS) vi.stubEnv(k, '');
+    const res = await call('role=out');
+    expect(res.status).toBe(404);
+    expect(res.headers.get('set-cookie')).toBeNull();
+  });
+
+  it.each([
+    '/\\evil.com',
+    '/%5Cevil.com',
+    '/%5cevil.com',
+    '//evil.com',
+    'https://evil.com',
+    '/.//evil.com',
+    '/a/..//evil.com',
+    '/..//evil.com',
+  ])('E87 %s redirects to same-origin /projects', async (to) => {
+    prototypeEnv();
+    const res = await call(`role=pm&to=${encodeURIComponent(to)}`);
+    expect(res.status).toBe(307);
+    const u = new URL(res.headers.get('location')!);
+    expect(u.origin).toBe('http://localhost:3100');
+    expect(u.pathname).toBe('/projects');
+    expect(u.search + u.hash).toBe('');
+  });
 });
