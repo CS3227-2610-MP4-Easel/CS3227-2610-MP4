@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 00:00 | Codex | W13 | In progress — owner action | Original W13 T5 recovery rehearsal: past branch restored and verified | Owner records timestamps, runs migration/seed verification on recovered branch, and records redacted RPO/RTO evidence | 2026-11-08 00:00 |
+| S1 | 2026-11-08 00:00 | Codex | W13 | In progress — owner action | Original W13 T5 complete; preparing T6 handoff | Review T5 evidence summary and begin the protected production migration/deployment plan | 2026-11-08 00:00 |
 
 **Remaining**
 
@@ -38,7 +38,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | In progress — owner action | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | Safety T4 done; recovered past branch verified against pre-change state; evidence fields pending | — |
+| W13 | Environments, seed data and deployment | In progress — owner action | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | Safety T4 and original W13 T5 done; T6 protected production migration/deployment is next | — |
 
 ---
 
@@ -63,6 +63,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Added a narrowly scoped tier-validator exception for the exact approved W13 rehearsal branch; regression and full-suite tests pass. | W13 | this commit |
 | 2026-11-08 | Operator amended the recovery target: seed `w13-recovery-baseline` and create `w13-recovery-past` from its pre-change point; the validator now accepts only the baseline name. | W13 | this commit |
 | 2026-11-08 | Owner confirmed `w13-recovery-past` contains the state from before the controlled changes to `w13-recovery-baseline`; restore verification passed, with timing and post-restore seed evidence still pending. | W13 | this commit |
+| 2026-11-08 | Owner `teleifo` verified the recovered branch and seed data; redacted T5 evidence records 20-second RPO/RTO (0.0056 hours each) and a passing outcome. | W13 | this commit |
 
 ## 7. Decisions
 

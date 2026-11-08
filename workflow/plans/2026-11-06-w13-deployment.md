@@ -167,10 +167,10 @@
 
 **Checklist**
 
-- [ ] 1. `GATE:` repository owner confirms the active Neon plan and approved restricted rehearsal target.
-- [ ] 2. `GATE:` repository owner manually performs the Neon backup/restore rehearsal using the W13 runbook.
-- [ ] 3. `GATE:` repository owner reapplies the non-production seed and records all required evidence fields.
-- [ ] 4. Attach the redacted evidence and mark T5 complete only if RPO ≤24 hours and RTO ≤4 hours.
+- [x] 1. `GATE:` repository owner confirms the active Neon plan and approved restricted rehearsal target.
+- [x] 2. `GATE:` repository owner manually performs the Neon backup/restore rehearsal using the W13 runbook.
+- [x] 3. `GATE:` repository owner reapplies/verifies the non-production seed and records all required evidence fields.
+- [x] 4. Attach the redacted evidence and mark T5 complete only if RPO ≤24 hours and RTO ≤4 hours. **Done 2026-11-08:** owner `teleifo` verified the recovered `w13-recovery-past` state; measured RPO/RTO are 20 seconds each (0.0056 hours), seed result passed, outcome passed.
 
 ### T6: Protected production migration and deployment
 
