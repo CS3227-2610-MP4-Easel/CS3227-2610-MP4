@@ -50,7 +50,8 @@ describes `INT`; read it for context and write here instead of editing it.
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
 | 2026-11-08 | Branch state created for the T7 sign-in screen follow-up | W4 | `4a3cfd9` |
-| 2026-11-08 | T7 spec written and reviewed (four lenses, one round) | W4 | this commit |
+| 2026-11-08 | T7 spec written and reviewed (four lenses, one round) | W4 | `f8d4eb6` |
+| 2026-11-08 | `npm --prefix src/fe run dev` failed on Next.js 16 (Turbopack default with a `webpack` config); `dev` now passes `--webpack`, matching `build` | W4 | this commit |
 
 ---
 
