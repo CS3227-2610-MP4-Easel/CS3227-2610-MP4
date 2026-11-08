@@ -56,7 +56,8 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | T7 spec written and reviewed (four lenses, one round) | W4 | `f8d4eb6` |
 | 2026-11-08 | `npm --prefix src/fe run dev` failed on Next.js 16 (Turbopack default with a `webpack` config); `dev` now passes `--webpack`, matching `build` | W4 | `38e5768` |
 | 2026-11-08 | T7 spec approved at Gate 1 | W4 | `a5915ab` |
-| 2026-11-08 | T7 plan written, reviewed and approved at Gate 2 | W4 | this commit |
+| 2026-11-08 | T7 plan written, reviewed and approved at Gate 2 | W4 | `e7d9f6e` |
+| 2026-11-08 | Committed the files `next dev` (Next.js 16) regenerates on every run: `src/fe/tsconfig.json` (`jsx: react-jsx`, `.next/dev/types`) and `src/fe/AGENTS.md` (pointer to Next's bundled docs), so the tree stays clean | W4 | this commit |
 
 ---
 
