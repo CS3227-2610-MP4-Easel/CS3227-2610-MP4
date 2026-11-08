@@ -52,13 +52,58 @@ test("E3-E5 uses the newest three closed sprints, half-days upward, and reports 
     ] },
   }), { now: () => new Date("2026-11-09T10:00:00.000Z") }).target(target);
   assert.deepEqual((sprintQuery as { orderBy: unknown }).orderBy, [{ projectId: "asc" }, { endDate: "desc" }, { id: "asc" }]);
-  assert.equal((sprintQuery as { take?: number }).take, undefined);
+  assert.equal((sprintQuery as { skip?: number }).skip, 0);
+  assert.equal((sprintQuery as { take?: number }).take, 100);
   assert.equal(facts.avgVelocity, 5);
   assert.equal(facts.projectedCompletionDate, "2026-11-18");
   assert.deepEqual(facts.checkpoints, [
     { id: id(20), name: "Empty", targetDate: "2026-11-10", remainingPoints: 0, projectedDate: "2026-11-09", risk: "ON_TRACK" },
     { id: id(21), name: "Late", targetDate: "2026-11-12", remainingPoints: 15, projectedDate: "2026-11-18", risk: "AT_RISK" },
   ]);
+});
+
+test("paginates complete closed-sprint history while forecasting from the newest nonzero sprints", async () => {
+  const sprints = Array.from({ length: 101 }, (_, index) => ({
+    id: id(100 + index),
+    projectId: target,
+    name: `S${index + 1}`,
+    completedPoints: index < 3 ? [9, 6, 3][index] : 1,
+    startDate: new Date(Date.UTC(2026, 10, 7 - index * 3)),
+    endDate: new Date(Date.UTC(2026, 10, 8 - index * 3)),
+  }));
+  const queries: Array<{ skip?: number; take?: number }> = [];
+  const facts = await createFacts(db({
+    task: { findMany: async () => [{ projectId: target, storyPoints: 12, status: "TODO" }] },
+    sprint: { findMany: async (query: any) => {
+      queries.push(query);
+      const skip = query.skip ?? 0;
+      return sprints.slice(skip, skip + query.take);
+    } },
+  }), { now: () => new Date("2026-11-09T10:00:00.000Z") }).target(target);
+  assert.deepEqual(queries.map(({ skip, take }) => ({ skip, take })), [{ skip: 0, take: 100 }, { skip: 100, take: 100 }]);
+  assert.deepEqual(facts.velocity, [
+    { sprintId: id(100), name: "S1", completedPoints: 9 },
+    { sprintId: id(101), name: "S2", completedPoints: 6 },
+    { sprintId: id(102), name: "S3", completedPoints: 3 },
+  ]);
+  assert.equal(facts.avgVelocity, 6);
+  assert.equal(facts.projectedCompletionDate, "2026-11-13");
+});
+
+test("uses two closed nonzero sprints newest-first for velocity and projection", async () => {
+  const facts = await createFacts(db({
+    task: { findMany: async () => [{ projectId: target, storyPoints: 12, status: "TODO" }] },
+    sprint: { findMany: async () => [
+      { id: id(111), projectId: target, name: "Older", completedPoints: 4, startDate: day("2026-11-01"), endDate: day("2026-11-02") },
+      { id: id(112), projectId: target, name: "Newest", completedPoints: 8, startDate: day("2026-11-05"), endDate: day("2026-11-06") },
+    ] },
+  }), { now: () => new Date("2026-11-09T10:00:00.000Z") }).target(target);
+  assert.deepEqual(facts.velocity, [
+    { sprintId: id(112), name: "Newest", completedPoints: 8 },
+    { sprintId: id(111), name: "Older", completedPoints: 4 },
+  ]);
+  assert.equal(facts.avgVelocity, 6);
+  assert.equal(facts.projectedCompletionDate, "2026-11-13");
 });
 
 test("short, absent, and zero sprint history leaves projections null and risks UNKNOWN", async () => {
