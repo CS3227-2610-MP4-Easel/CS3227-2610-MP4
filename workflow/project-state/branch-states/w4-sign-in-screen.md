@@ -27,7 +27,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 | Claude Opus 5.5 (orchestrator) + `implementer` | W4 | Active | Wave 2: T2 in flight (main checkout), then T3 | On T2's handover: validate, full review (Implementer, Tester, Attacker), then dispatch T3 in the main checkout; worktrees are built from the remote, and this branch is unpushed | 2026-11-08 |
+| S1 | 2026-11-08 | Claude Opus 5.5 (orchestrator) + `implementer` | W4 | Active | Wave 3: T4 in flight (main checkout) | On T4's handover: validate, full review (Implementer, Tester, Attacker), then wave 4 (T5, T6) one after another in the main checkout | 2026-11-08 |
 
 **Remaining**
 
@@ -45,7 +45,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W4 | Auth and registration | Building | [spec](../../specs/2026-10-31-w4-auth-design.md), [T7 spec](../../specs/2026-11-08-w4-sign-in-screen-design.md) (approved 2026-11-08) | [plan](../../plans/2026-11-08-w4-sign-in-screen/plan.md) (approved 2026-11-08) | T7 follow-up: task 1/7 done; wave 2 (T2, T3) next | — |
+| W4 | Auth and registration | Building | [spec](../../specs/2026-10-31-w4-auth-design.md), [T7 spec](../../specs/2026-11-08-w4-sign-in-screen-design.md) (approved 2026-11-08) | [plan](../../plans/2026-11-08-w4-sign-in-screen/plan.md) (approved 2026-11-08) | T7 follow-up: task 3/7 done; T4 (session, gate) in flight | — |
 
 ---
 
@@ -65,7 +65,9 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | T1 first pass committed (Vitest, test chain); fix-up pending: Firebase 12.19 versions (C~6), W12 test assertion (C~7); `.env.example` committed by the operator (policy blocks env files) | W4 | `1b4d7e8` |
 | 2026-11-08 | T1 done: Vitest + jsdom in `src/fe` (cleanup setup, JSX smoke test), `@firebase/app` 0.16.2 and `@firebase/auth` 1.13.6, root `npm test` chains the fe suite, W12 pin updated, `.env.example`. Full review (Implementer, Tester, Attacker): Tester's two fixes applied; Attacker nit (guard the fe `test` script) handed to the Dev Lead | W4 | `878bfbb` |
 | 2026-11-08 | Wave 2 worktree dispatch failed (worktrees came from the remote base, which lacks this unpushed branch); T2 and T3 run one after another in the main checkout instead (skill fallback) | W4 | — |
-| 2026-11-08 | T3 task file corrected: its E60 note said `/api/%2e%2e/x` passes unchanged; URL parsing resolves it outside `/api/`, so encoded and trailing dot segments must be rejected (T3 Attacker review) | W4 | this commit |
+| 2026-11-08 | T3 task file corrected: its E60 note said `/api/%2e%2e/x` passes unchanged; URL parsing resolves it outside `/api/`, so encoded and trailing dot segments must be rejected (T3 Attacker review) | W4 | `9a170e9` |
+| 2026-11-08 | T2 done: `authMode` (fail-closed modes, `VERCEL_ENV` checked case-insensitively), `/api/as` 404 outside prototype, redirect only to the checked same-origin URL (round 1 found a dot-segment bypass, fixed and re-reviewed), role cookie `sameSite=lax`, `httpOnly`, `secure` on https. Rejected nits: tests for the `secure` flag and `%2e`/tab `to` values (covered by the origin check) | W4 | `adb72b1` |
+| 2026-11-08 | T3 done: `lib/auth/firebase.ts` (lazy, null when unconfigured), `hardNavigate`, `apiFetch` confined to `/api/` (round 1 found encoded and trailing dot segments escaping; fixed and re-reviewed), bounded server error fields, `ApiError` in `errors.ts`, endpoints 2-4. Rejected nit: clear SDK mocks between firebase-config tests (no assertion depends on order today). Wave 2 check: typecheck, `npm test` 487/487 + fe 51/51, build green | W4 | `12b4864` |
 
 ---
 
