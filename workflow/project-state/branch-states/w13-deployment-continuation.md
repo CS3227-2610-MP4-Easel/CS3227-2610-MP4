@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** In review
 - **Approved:** —
-- **Last updated:** 2026-11-08 by Codex — T6 complete; awaiting branch review
+- **Last updated:** 2026-11-09 by Codex — corrected Neon project identity by tier; validation passed; awaiting branch review
 
 **Untouched:** Architecture, Conventions, Known Gaps
 
@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-09 00:00 | Codex | W13 | In review | Operator reversed T6; protected production workflow and Deploy Hook are removed, with manual production handover documented | Owner reviews the reversal and confirms the branch is ready for integration; no production deployment is triggered from this feature branch | 2026-11-09 00:00 |
+| S1 | 2026-11-09 00:00 | Codex | W13 | In review | Immutable tier map now requires dev project `falling-rice-06970921` plus the confirmed dev host; prod remains `super-sunset-36592949` | Owner reviews the commit; update Vercel development `NEON_PROJECT` and redeploy before runtime verification | 2026-11-09 03:20 |
 
 **Remaining**
 
@@ -78,6 +78,8 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Operator kept C~5; removed token-based Vercel link/deploy/inspect steps from T6 and replaced them with a protected, tokenless Vercel Git integration handoff. | W13 | this commit |
 | 2026-11-09 | Operator approved amendment C~8: replace the unsafe tokenless Git auto-deploy handoff with a post-validation Vercel Deploy Hook, while keeping C~5's no-token boundary. | W13 | this commit |
 | 2026-11-09 | Operator reversed T6 under C~9: removed the protected production workflow, identity script, tests, and Deploy Hook requirement; production migration/deployment is now a manual owner handover. | W13 | this commit |
+| 2026-11-09 | Operator corrected the canonical Neon project mapping: development uses `falling-rice-06970921`; production remains `super-sunset-36592949`. | W13 | this commit |
+| 2026-11-09 | Applied the corrected Neon mapping to the immutable manifest, runtime target map, and regression fixtures; development requires the confirmed pooled host and `falling-rice-06970921`, while production remains `super-sunset-36592949`. Focused tests, full suite, typecheck, lint, contract, Prisma, workflow, policy, secret-scan, and diff checks pass. | W13 | this commit |
 | 2026-11-08 | Owner added the protected GitHub `production` Environment secret `DIRECT_DATABASE_URL`; Vercel Git integration confirmation remains before T6 can proceed. | W13 | this commit |
 | 2026-11-08 | Owner verified Vercel Git integration is connected to `CS3227-2610-MP4-Easel/CS3227-2610-MP4`; Production Branch is `main`, and Vercel reports every commit pushed to `main` creates a Production Deployment. | W13 | this commit |
 | 2026-11-08 | T6 close-out passed: 488 tests (462 passed, 26 skipped), typecheck, lint, contract, Prisma validation, workflow validation, agent-policy, secret scan, and diff check; branch is ready for owner review. | W13 | this commit |
@@ -106,6 +108,20 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Date:** 2026-11-09
 - **Who asked:** operator.
 - **Decision:** Remove T6's protected production workflow and Deploy Hook requirement. Production migration/deployment is an owner-operated manual handover documented in the runbook.
+
+### C~10 — Correct Neon project identity by tier
+
+- **Date:** 2026-11-09
+- **Who asked:** operator.
+- **Decision:** `APP_TIER=dev` must use Neon project `falling-rice-06970921`; `APP_TIER=prod` must use Neon project `super-sunset-36592949`.
+- **Why:** The development and production databases are separate Neon projects; the immutable target map must reject cross-tier project observations.
+
+### C~11 — Require the confirmed development Neon host
+
+- **Date:** 2026-11-09
+- **Who asked:** operator.
+- **Decision:** `APP_TIER=dev` requires host `ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech` together with project `falling-rice-06970921`; production retains its existing host and project `super-sunset-36592949`.
+- **Why:** The development project identity changed, but the confirmed pooled endpoint remains the active dev database host; both fields must be validated together to prevent cross-tier substitutions.
 
 ### T4 redacted evidence
 

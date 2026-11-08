@@ -46,7 +46,7 @@ test("E5 malformed and cross-tier database targets fail without echoing the URL"
     APP_TIER: "dev",
     DATABASE_URL: "postgresql://user:password@ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb",
     NEON_HOST: "ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech",
-    NEON_PROJECT: "super-sunset-36592949",
+    NEON_PROJECT: "falling-rice-06970921",
   };
   assert.deepEqual(parseDatabaseTarget(dev.DATABASE_URL), {
     protocol: "postgresql:",
@@ -71,7 +71,7 @@ test("W13 recovery seed accepts only the explicitly approved isolated branch", (
     NEON_BRANCH: "w13-recovery-baseline",
     DATABASE_URL: "postgresql://user:password@ep-w13-recovery-123456-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb",
     NEON_HOST: "ep-w13-recovery-123456-pooler.c-2.ap-southeast-1.aws.neon.tech",
-    NEON_PROJECT: "super-sunset-36592949",
+    NEON_PROJECT: "falling-rice-06970921",
   };
   assert.doesNotThrow(() => validateDatabaseTarget(rehearsal, "dev"));
   assert.throws(() => validateDatabaseTarget({ ...rehearsal, W13_RECOVERY_REHEARSAL: undefined }, "dev"), /target|rehearsal/i);
