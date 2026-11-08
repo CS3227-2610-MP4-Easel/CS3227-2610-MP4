@@ -7,9 +7,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w4-sign-in-screen (from `INT` at `512dc4c`)
 - **Base:** 512dc4c
 - **Owner:** ludannnn (Developer member)
-- **Status:** In review
-- **Approved:** —
-- **Last updated:** 2026-11-08 by Claude Opus 5.5 — close-out done, Gate 3 asked
+- **Status:** Approved
+- **Approved:** ludannnn 2026-11-08
+- **Last updated:** 2026-11-08 by Claude Opus 5.5 — Gate 3 approved by the owner
 
 **Untouched:** Architecture, Conventions
 
@@ -33,7 +33,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 - [x] Operator's manual check on 2026-11-08 with `src/fe/.env.local` against `agile-platform-dev`: registered an account, signed out and signed in again; flows worked.
 - [ ] **Handover:** to the PM (W10): the canvas screens, including the live sign-in and register screens that reuse their markup, are fixed-size (`.app { min-height: 1000px }` in `src/fe/app/canvas.css`, fixed flex bases such as `1 1 420px`), so they do not adapt to short or very wide windows (seen by the operator on an ultrawide monitor).
-- [ ] Gate 3: the owner approves the branch; then ask separately before pushing and opening the PR (call out C~7, the W12 test change, for the Dev Lead).
+- [x] Gate 3: approved by ludannnn on 2026-11-08.
+- [ ] Push and open the PR into `development` (operator's go-ahead pending); the PR body calls out C~7 (W12 test change) for the Dev Lead.
 
 - [x] T7 spec, Gate 1: approved by ludannnn on 2026-11-08 (one review round, four lenses).
 - [x] T7 plan, Gate 2: approved by ludannnn on 2026-11-08 (7 tasks, 5 waves, full review each).
@@ -51,7 +52,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W4 | Auth and registration | Building | [spec](../../specs/2026-10-31-w4-auth-design.md), [T7 spec](../../specs/2026-11-08-w4-sign-in-screen-design.md) (approved 2026-11-08) | [plan](../../plans/2026-11-08-w4-sign-in-screen/plan.md) (approved 2026-11-08) | T7 follow-up: 7/7 done, close-out done; awaiting manual run and Gate 3 | — |
+| W4 | Auth and registration | In review | [spec](../../specs/2026-10-31-w4-auth-design.md), [T7 spec](../../specs/2026-11-08-w4-sign-in-screen-design.md) (approved 2026-11-08) | [plan](../../plans/2026-11-08-w4-sign-in-screen/plan.md) (approved 2026-11-08) | T7 follow-up: done; Gate 3 approved 2026-11-08; PR next | — |
 
 ---
 
