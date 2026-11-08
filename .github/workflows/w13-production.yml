@@ -52,23 +52,6 @@ jobs:
           DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
         run: node scripts/w13/migrate-production.mjs
       - name: Deploy immutable production candidate
-        id: deploy
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
-          VERCEL_PROJECT_ID: prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd
         run: |
-          test -n "$VERCEL_TOKEN"
-          test -n "$VERCEL_TEAM_ID"
-          npx --yes vercel@41.6.0 link --yes --project "$VERCEL_PROJECT_ID" --scope "$VERCEL_TEAM_ID" --token "$VERCEL_TOKEN"
-          deployment_url="$(npx --yes vercel@41.6.0 deploy --prebuilt --prod --yes --token "$VERCEL_TOKEN" --meta githubCommitSha="$GITHUB_SHA" --meta artifactDigest="$ARTIFACT_DIGEST")"
-          printf '%s\n' "$deployment_url" > "$RUNNER_TEMP/deployment-url"
-          echo "deployment_url=$deployment_url" >> "$GITHUB_OUTPUT"
-      - name: Verify production identity before promotion
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          EXPECTED_SHA: ${{ github.sha }}
-          EXPECTED_ARTIFACT_DIGEST: ${{ env.ARTIFACT_DIGEST }}
-        run: |
-          npx --yes vercel@41.6.0 inspect "$(cat "$RUNNER_TEMP/deployment-url")" --token "$VERCEL_TOKEN" --json > "$RUNNER_TEMP/deployment.json"
-          CANDIDATE_JSON="$RUNNER_TEMP/deployment.json" EXPECTED_SHA="$EXPECTED_SHA" EXPECTED_ARTIFACT_DIGEST="$EXPECTED_ARTIFACT_DIGEST" node scripts/w13/verify-production-identity.mjs
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          printf 'Vercel Git integration must deploy this exact main SHA: %s\n' "$GITHUB_SHA"

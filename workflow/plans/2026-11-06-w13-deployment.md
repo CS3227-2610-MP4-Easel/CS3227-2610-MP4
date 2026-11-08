@@ -2,7 +2,7 @@
 
 - **Status:** Approved (operator, 2026-11-06)
 
-> Amended 2026-11-08 under branch-state C~5, then reversed by the operator: the removed automated development-check workflow/verifier remain retired. T4 is an owner-operated Vercel metadata plus health/auth/tier smoke gate; the W9 standup/AI probe is not required for T4.
+> Amended 2026-11-08 under branch-state C~5: the removed automated development-check workflow/verifier remain retired. T4 is an owner-operated Vercel metadata plus health/auth/tier smoke gate; the W9 standup/AI probe is not required for T4. T6 uses the protected Vercel Git integration on `main` and does not use a Vercel token.
 
 > Amended 2026-11-07 under branch-state C~4: T4 now uses a protected, read-only Vercel metadata token for authoritative deployment verification; the former no-token external-gate wording is superseded for this check. The implementation keeps the token in the pre-checkout lookup step only.
 
@@ -180,7 +180,7 @@
 
 | Action | Path | What changes |
 |---|---|---|
-| Create | `.github/workflows/w13-production.yml` | Protected `main` workflow with least privilege, pinned actions, environment approval, concurrency lock, fixed inputs, no PR-controlled code after secrets, migration, candidate deploy, smoke, and promotion. |
+| Create | `.github/workflows/w13-production.yml` | Protected `main` workflow with least privilege, pinned actions, environment approval, concurrency lock, fixed inputs, no PR-controlled code after secrets, migration, immutable build, and a tokenless handoff to the linked Vercel Git integration. |
 | Create | `scripts/w13/verify-production-identity.mjs` | Verify detached checkout SHA, manifest hash, artifact digest, Vercel candidate metadata, and promotion target. |
 | Create | `tests/w13/production-workflow.test.ts` | Cover E4-E6, E16, E25, E27, E34-E35, E38, E40 and no-live-key boundary. |
 | Modify | `scripts/check-workflows.mjs` | Extend validation for protected non-PR deployment workflows while preserving the deny rules for PR workflows; require fixed triggers, environments, permissions, and pinned actions. |
@@ -189,9 +189,9 @@
 **Checklist**
 
 - [x] 1. Write failing workflow tests for ref/review/check gates, SHA/artifact drift, concurrency, secret timing, and target identity.
-- [x] 2. Implement the protected workflow and immutable identity checks.
+- [x] 2. Implement the protected workflow, immutable source/build checks, and tokenless Vercel Git handoff.
 - [x] 3. Run workflow/security checks and focused W13 tests. **Done 2026-11-08:** 488 tests (462 passed, 26 skipped), typecheck, workflow validator, agent-policy, and secret scan pass.
-- [ ] 4. `GATE:` repository owner configures the GitHub Environment, Vercel production target, and production secrets.
+- [ ] 4. `GATE:` repository owner configures the GitHub `production` Environment and confirms the linked Vercel Git integration deploys protected `main`; no Vercel token is required.
 - [ ] 5. Update branch state and commit: `feat: add protected W13 production deployment`.
 
 ### T7: Fixed post-deploy smoke harness

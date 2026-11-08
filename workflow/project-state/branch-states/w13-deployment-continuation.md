@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 00:00 | Codex | W13 | Blocked — needs human | T6 draft introduced Vercel deployment secrets that conflict with approved C~5's no-token boundary | Owner chooses whether to keep C~5 (use tokenless Vercel Git integration) or explicitly reverse it before any production secret configuration | 2026-11-08 00:00 |
+| S1 | 2026-11-08 00:00 | Codex | W13 | Blocked — needs human | C~5 retained; T6 now uses a tokenless Vercel Git integration handoff after protected migration/build validation | Owner configures the GitHub `production` Environment and confirms Vercel Git integration is linked to protected `main` | 2026-11-08 00:00 |
 
 **Remaining**
 
@@ -75,6 +75,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Owner supplied the Vercel deployment ID and timestamps; reduced T4 evidence is complete with health/auth/foreign-token/tier checks passing and outcome `pass`. | W13 | this commit |
 | 2026-11-08 | T6 implementation is complete through validation: protected `main` workflow, detached SHA/artifact identity checks, production migration invocation, and candidate deployment verification are covered; owner production configuration is now the required gate. | W13 | this commit |
 | 2026-11-08 | Deviation found before configuration: the T6 draft references `VERCEL_TOKEN`/`VERCEL_TEAM_ID`, conflicting with approved C~5's no-token repository-workflow boundary; no production secrets should be added until resolved. | W13 | this commit |
+| 2026-11-08 | Operator kept C~5; removed token-based Vercel link/deploy/inspect steps from T6 and replaced them with a protected, tokenless Vercel Git integration handoff. | W13 | this commit |
 
 ### T4 redacted evidence
 
@@ -165,6 +166,12 @@ outcome: pass
 - **Found:** 2026-11-08 during owner configuration review.
 - **What:** The draft T6 workflow asks for `VERCEL_TOKEN` and `VERCEL_TEAM_ID`, while C~5 explicitly retains a no-Vercel-token boundary for repository workflows and application runtime.
 - **Consequence:** Production configuration is paused; no token should be restored until the owner chooses whether to preserve C~5 with tokenless Vercel Git deployment or reverse C~5.
+
+### C~7 — Keep C~5 for T6
+
+- **Date:** 2026-11-08
+- **Who asked:** operator.
+- **Decision:** Keep Vercel deployment tokens out of repository workflows and runtime; T6 validates the protected migration/build and relies on the linked Vercel Git integration for the `main` deployment.
 
 ## 8. Deviations
 
