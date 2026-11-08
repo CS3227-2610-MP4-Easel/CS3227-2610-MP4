@@ -94,10 +94,10 @@ Mutations on an archived project return 409 `CONFLICT_STATE` (one check in `core
 |---|---|---|---|---|---|---|
 | 34 | `POST /api/pm/projects/{id}/plans` | PM; member | `{ idea }` (20 to 6000 characters) | 201 `PlanProposal`, status PENDING, every epic expansion PENDING | 422 `VALIDATION_FAILED` (empty after sanitising) or `REQUEST_REFUSED`; 429 `AI_BUSY`, `RATE_LIMITED`; 503 `AI_UNAVAILABLE`, `AI_DISABLED` | opens an `ai_sessions` row; one stage-1 gateway call; inserts `ai_proposals` and `proposal_epics` |
 | 35 | `GET /api/pm/proposals/{proposalId}` | PM; member | none | 200 `PlanProposal` | | none |
-| 36 | `GET /api/pm/projects/{id}/proposals` | PM; member | `status?`, `page`, `size` | 200 page of `PlanProposal`, newest first | | none |
+| 36 | `GET /api/pm/projects/{id}/proposals` | PM; member | `status?`, `page`, `size` (at most 20) | 200 page of `PlanProposal`, newest first | | none |
 | 37 | `POST /api/pm/proposals/{proposalId}/epics/{index}/expand` | PM; member | `{}` (the server uses the stored epic; it takes no text) | 200 `PlanEpic` with expansion DONE | 409 `CONFLICT_STATE` unless the proposal is PENDING; 429 `AI_BUSY`; 503 `AI_UNAVAILABLE` | claims the epic (`IN_PROGRESS`, leased); one gateway call; stores tasks or `FAILED` |
-| 38 | `PATCH /api/pm/proposals/{proposalId}/epics/{index}` | PM; member | `{ title?, description?, checkpointName?, tasks?, version }` | 200 `PlanEpic` | 409 version; 409 `CONFLICT_STATE` unless PENDING | a change to title or description resets expansion to PENDING |
-| 39 | `POST /api/pm/proposals/{proposalId}/epics/{index}/regenerate` | PM; member | `{}` | 200 `PlanEpic` | as 37; 429 `RATE_LIMITED` when the session's regeneration cap is reached | `regenerate_count` + 1; one gateway call |
+| 38 | `PATCH /api/pm/proposals/{proposalId}/epics/{index}` | PM; member | `{ title?, description?, checkpointName?, tasks?, version }` | 200 `PlanProposal` | 409 version; 409 `CONFLICT_STATE` unless PENDING | editing title or description keeps tasks and expansion; `tasks` sets expansion DONE |
+| 39 | `POST /api/pm/proposals/{proposalId}/epics/{index}/regenerate` | PM; member | `{ version }` | 200 `PlanProposal` | as 37; 429 `RATE_LIMITED` when the session's regeneration cap is reached | `regenerate_count` + 1; one gateway call; raises the proposal version |
 | 40 | `POST /api/pm/proposals/{proposalId}/approve` | PM; member | `{ version }` | 200 `{ proposalId, status: "APPROVED", created: { checkpoints, epics, tasks } }` (the same body when repeated) | 409 `CONFLICT_STATE` if REJECTED or SUPERSEDED, or any epic is not DONE | one transaction takes a row lock on the proposal, re-checks it, creates checkpoints, epics, tasks and `CREATED` events, and marks it APPROVED; a second request waits on the lock and then returns the same result; session closed `ACCEPTED` or `EDITED` |
 | 41 | `POST /api/pm/proposals/{proposalId}/reject` | PM; member | `{ version }` | 200 `PlanProposal` (REJECTED) | 409 `CONFLICT_STATE` unless PENDING | session closed `REJECTED` |
 
@@ -128,6 +128,11 @@ Mutations on an archived project return 409 `CONFLICT_STATE` (one check in `core
 |---|---|---|---|---|---|---|
 | 56 | `GET /api/usage/sessions` | any; self | `from?`, `to?`, `feature?`, `page`, `size` | 200 page of `UsageSession` for the caller | | none |
 | 57 | `GET /api/usage/summary` | any | `from?`, `to?` | 200 list of `{ feature, model, calls, promptTokens, completionTokens, costMicroUsd, cacheHits, avgLatencyMs, schemaFailures, estimateErrorPercent }`, aggregated over all users, with no per-user content or flags | | none |
+| 58 | `PATCH /api/pm/proposals/{proposalId}/checkpoints` | PM; member | `{ checkpoints, version }` | 200 `PlanProposal` | 409 version or state | replaces checkpoints |
+| 59 | `POST /api/pm/proposals/{proposalId}/epics` | PM; member | `{ title, description, checkpointName, version }` | 201 `PlanProposal` | 409 version or state | adds an epic |
+| 60 | `DELETE /api/pm/proposals/{proposalId}/epics/{index}` | PM; member | `?version=` | 200 `PlanProposal` | 409 version or state | deletes an epic |
+
+Edits are creator-only and guarded by the proposal `version`.
 
 ## 4. Examples
 

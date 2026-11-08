@@ -25,7 +25,7 @@ test("N1/E16 registered principal is returned after token lookup", async () => {
 
 test("F1/E1/E2 every resource policy has an operation resolver or NONE predicate", () => {
   const policies = getPolicyMap();
-  assert.equal(policies.length, 57);
+  assert.equal(policies.length, 60);
   for (const policy of policies) {
     if (policy.predicate !== "NONE") assert.notEqual(policy.operationId, "", `${policy.policyKey} needs a resolver key`);
   }

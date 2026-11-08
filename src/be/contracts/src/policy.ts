@@ -29,11 +29,11 @@ const operationIds = [
   "HEALTH_READ", "AUTH_CODE_CHECK", "AUTH_REGISTER", "ME_READ", "PM_PROJECT_CREATE", "PROJECT_LIST", "PROJECT_READ", "PM_PROJECT_UPDATE", "PROJECT_MEMBER_LIST", "PROJECT_MEMBER_ADD", "PROJECT_MEMBER_REMOVE",
   "CHECKPOINT_LIST", "CHECKPOINT_CREATE", "CHECKPOINT_UPDATE", "CHECKPOINT_DELETE", "EPIC_LIST", "EPIC_CREATE", "EPIC_UPDATE", "EPIC_DELETE", "TASK_LIST", "TASK_CREATE", "TASK_READ", "TASK_UPDATE", "TASK_STATUS_UPDATE", "TASK_DELETE", "TASK_EVENT_LIST",
   "SPRINT_LIST", "SPRINT_CREATE", "SPRINT_UPDATE", "SPRINT_START", "SPRINT_CLOSE", "SPRINT_DELETE", "PROJECT_PROGRESS_READ", "PM_PLAN_CREATE", "PM_PROPOSAL_READ", "PM_PROPOSAL_LIST", "PM_EPIC_EXPAND", "PM_EPIC_UPDATE", "PM_EPIC_REGENERATE", "PM_PROPOSAL_APPROVE", "PM_PROPOSAL_REJECT",
-  "PROJECT_FACTS_READ", "LEAD_OVERVIEW_READ", "LEAD_DIGEST_CREATE", "LEAD_DIGEST_LATEST_READ", "LEAD_PROPOSAL_LIST", "LEAD_PROPOSAL_APPROVE", "LEAD_PROPOSAL_REJECT", "DEV_UPLOAD_CREATE", "DEV_SUMMARY_CREATE", "DEV_STANDUP_CREATE", "DEV_STANDUP_MINE_READ", "DEV_STANDUP_UPDATE", "DEV_STANDUP_FEEDBACK", "LEAD_STANDUP_LIST", "USAGE_SESSION_LIST", "USAGE_SUMMARY_READ",
+  "PROJECT_FACTS_READ", "LEAD_OVERVIEW_READ", "LEAD_DIGEST_CREATE", "LEAD_DIGEST_LATEST_READ", "LEAD_PROPOSAL_LIST", "LEAD_PROPOSAL_APPROVE", "LEAD_PROPOSAL_REJECT", "DEV_UPLOAD_CREATE", "DEV_SUMMARY_CREATE", "DEV_STANDUP_CREATE", "DEV_STANDUP_MINE_READ", "DEV_STANDUP_UPDATE", "DEV_STANDUP_FEEDBACK", "LEAD_STANDUP_LIST", "USAGE_SESSION_LIST", "USAGE_SUMMARY_READ", "PM_PROPOSAL_CHECKPOINTS_UPDATE", "PM_PROPOSAL_EPIC_CREATE", "PM_PROPOSAL_EPIC_DELETE",
 ] as const;
-if (operationIds.length !== 57) throw new Error("operation id map must contain exactly 57 entries");
+if (operationIds.length !== 60) throw new Error("operation id map must contain exactly 60 entries");
 const successStatuses = new Map<number, 200 | 201 | 204>([
-  [3, 201], [5, 201], [10, 201], [13, 201], [17, 201], [21, 201], [28, 201], [34, 201],
+  [3, 201], [5, 201], [10, 201], [13, 201], [17, 201], [21, 201], [28, 201], [34, 201], [59, 201],
   [11, 204], [15, 204], [19, 204], [25, 204], [32, 204],
 ]);
 const p = (n: number, method: PolicyEntry["method"], path: string, authState: AuthState, roleValues: RoleAlias[] = [], predicate: Predicate = "NONE"): PolicyEntry => ({
@@ -53,6 +53,7 @@ const POLICY_MAP: PolicyEntry[] = [
   p(42, "GET", "/api/projects/{id}/facts", "REGISTERED", ["PM", "LEAD"], "MEMBER"), p(43, "GET", "/api/lead/overview", "REGISTERED", ["LEAD"], "MEMBER_PROJECTS"), p(44, "POST", "/api/lead/projects/{id}/digests", "REGISTERED", ["LEAD"], "MEMBER"), p(45, "GET", "/api/lead/projects/{id}/digests/latest", "REGISTERED", ["LEAD"], "MEMBER"), p(46, "GET", "/api/lead/projects/{id}/proposals", "REGISTERED", ["LEAD"], "MEMBER"), p(47, "POST", "/api/lead/proposals/{proposalId}/approve", "REGISTERED", ["LEAD"], "MEMBER"), p(48, "POST", "/api/lead/proposals/{proposalId}/reject", "REGISTERED", ["LEAD"], "MEMBER"),
   p(49, "POST", "/api/dev/projects/{id}/uploads", "REGISTERED", ["DEV"], "MEMBER"), p(50, "POST", "/api/dev/projects/{id}/summaries", "REGISTERED", ["DEV"], "MEMBER"), p(51, "POST", "/api/dev/projects/{id}/standups", "REGISTERED", ["DEV"], "MEMBER"), p(52, "GET", "/api/dev/projects/{id}/standups/mine", "REGISTERED", ["DEV"], "SELF"), p(53, "PATCH", "/api/dev/standups/{standupId}", "REGISTERED", ["DEV"], "SELF"), p(54, "POST", "/api/dev/standups/{standupId}/feedback", "REGISTERED", ["DEV"], "SELF"), p(55, "GET", "/api/lead/projects/{id}/standups", "REGISTERED", ["LEAD"], "MEMBER"),
   p(56, "GET", "/api/usage/sessions", "REGISTERED", [], "SELF"), p(57, "GET", "/api/usage/summary", "REGISTERED"),
+  p(58, "PATCH", "/api/pm/proposals/{proposalId}/checkpoints", "REGISTERED", ["PM"], "MEMBER"), p(59, "POST", "/api/pm/proposals/{proposalId}/epics", "REGISTERED", ["PM"], "MEMBER"), p(60, "DELETE", "/api/pm/proposals/{proposalId}/epics/{index}", "REGISTERED", ["PM"], "MEMBER"),
 ];
 
 export function getPolicyMap(): PolicyEntry[] { return POLICY_MAP.map((entry) => ({ ...entry, roles: [...entry.roles] })); }
