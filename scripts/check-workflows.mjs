@@ -90,7 +90,7 @@ export function validateWorkflowText(text, pins, file = "workflow.yml") {
   }
   const allowedTriggers = trustedReviewWorkflow ? ["pull_request", "pull_request_review"] : ["pull_request"];
   if (triggers.length !== allowedTriggers.length || triggers.some((trigger) => !allowedTriggers.includes(trigger))) {
-    errors.push(`${file}: only the pull_request trigger is allowed (found: ${triggers.join(", ") || "none"})`);
+    errors.push(`${file}: unexpected workflow trigger (found: ${triggers.join(", ") || "none"})`);
   }
   if (trustedReviewWorkflow) {
     const reviewTypes = workflow.on?.pull_request_review?.types;

@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { createDbClient, incrementRateCounter, type FilteredDbClient } from "@agile/db";
+import { createDbClient, incrementRateCounter, type FilteredDbClient, validateRuntimeDatabaseTarget } from "@agile/db";
 import { createLookupRegisteredUser, createLookupUserByEmail, createLookupUserRole, createResolvePrincipal, type RegisteredPrincipal, type TokenPrincipal, type UserLookup } from "./principal.js";
 import { createHit, type Hit } from "./rate-limit.js";
 import { loadAuthSettings, type AuthSettings } from "./settings.js";
@@ -21,6 +21,13 @@ export type AuthRuntime = {
  * The client does not connect until its first query. Without Firebase settings (a mock preview, E50) identity calls fail with 500. */
 export function createAuthRuntime(env: Record<string, string | undefined>, overrides: { verifier?: TokenVerifier; base?: PrismaClient } = {}): AuthRuntime {
   const settings = loadAuthSettings(env);
+  validateRuntimeDatabaseTarget(env);
+  if (!settings.firebaseProjectId) {
+    const notConfigured = async (): Promise<never> => { throw new Error("AUTH_NOT_CONFIGURED"); };
+    const unavailableDb = new Proxy({} as FilteredDbClient, { get() { throw new Error("AUTH_NOT_CONFIGURED"); } });
+    const unavailableHit: Hit = async () => { throw new Error("AUTH_NOT_CONFIGURED"); };
+    return { settings, hit: unavailableHit, db: unavailableDb, resolvePrincipal: notConfigured, lookupRegisteredUser: notConfigured, lookupUserByEmail: notConfigured, lookupUserRole: notConfigured, lookupArchivedMembership: notConfigured };
+  }
   const base = overrides.base ?? new PrismaClient({ adapter: new PrismaPg({ connectionString: env.DATABASE_URL }) });
   const db = createDbClient(base);
   const hit = createHit((key, windowSeconds) => incrementRateCounter(base, key, windowSeconds));
@@ -29,10 +36,6 @@ export function createAuthRuntime(env: Record<string, string | undefined>, overr
   const lookupArchivedMembership = async (userId: string, projectId: string) => Boolean(await base.projectMember.findFirst({
     where: { userId, projectId, project: { status: "ARCHIVED" } }, select: { projectId: true },
   }));
-  if (!settings.firebaseProjectId) {
-    const notConfigured = async (): Promise<never> => { throw new Error("AUTH_NOT_CONFIGURED"); };
-    return { settings, hit, db, resolvePrincipal: notConfigured, lookupRegisteredUser: notConfigured, lookupUserByEmail: notConfigured, lookupUserRole: notConfigured, lookupArchivedMembership: notConfigured };
-  }
   const verifier = overrides.verifier ?? createFirebaseTokenVerifier(settings.firebaseProjectId);
   return { settings, hit, db, resolvePrincipal: createResolvePrincipal(verifier), lookupRegisteredUser: createLookupRegisteredUser(db), lookupUserByEmail: createLookupUserByEmail(db), lookupUserRole: createLookupUserRole(db), lookupArchivedMembership };
 }
