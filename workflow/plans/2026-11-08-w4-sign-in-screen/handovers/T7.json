@@ -1,0 +1,18 @@
+{
+  "task": "T7",
+  "status": "done",
+  "summary": "Source-scan Vitest enforcing the six auth rules plus .env.example check with breach samples; prototype-only comments on smoke and linkcheck scripts.",
+  "commit": "01dc43e",
+  "produces": [
+    {"kind": "file", "name": "source-rules.test.ts", "where": "src/fe/test/source-rules.test.ts", "note": "scans src/fe minus node_modules, .next, test, scripts; string-aware comment stripping"}
+  ],
+  "next": [
+    "Full fe suite: 12 files, 135 tests pass in 5.89s; root npm test ran with no failure reported.",
+    "Rule 6 also resolves the @/ alias; rule 1 allows only src/fe/lib/auth/firebase.ts."
+  ],
+  "deviations": [
+    {"what": "Root npm test pass/fail line not read from the log (log read was denied); tool reported no error", "why": "policy denied grep and read of the persisted output", "needs": "none"}
+  ],
+  "edge_cases": ["E83"],
+  "checks": {"build": "not run", "tests": "pass", "lint": "typecheck pass; scan:secrets clean"}
+}
