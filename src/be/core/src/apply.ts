@@ -21,10 +21,10 @@ const replanSchema = z.object({ id: uuid.optional(), projectId: uuid.optional(),
 
 export type ApplyDb = {
   user?: { findFirst(args: Row): Promise<Row | null> };
-  project?: { findFirst(args: Row): Promise<Row | null> };
+  project?: { findFirst(args: Row): Promise<Row | null>; update?(args: Row): Promise<Row> };
   projectMember?: { findFirst(args: Row): Promise<Row | null> };
   checkpoint?: { findFirst(args: Row): Promise<Row | null>; create(args: Row): Promise<Row>; update(args: Row): Promise<Row> };
-  epic?: { findFirst(args: Row): Promise<Row | null>; create(args: Row): Promise<Row>; update(args: Row): Promise<Row>; count(args: Row): Promise<number> };
+  epic?: { findFirst(args: Row): Promise<Row | null>; create(args: Row): Promise<Row>; update(args: Row): Promise<Row>; count(args: Row): Promise<number>; aggregate?(args: Row): Promise<Row> };
   task?: { findFirst(args: Row): Promise<Row | null>; create(args: Row): Promise<Row>; update(args: Row): Promise<Row> };
   sprint?: { findFirst(args: Row): Promise<Row | null> };
   taskEvent?: { create(args: Row): Promise<unknown> };
@@ -52,6 +52,18 @@ async function applied(tx: ApplyDb, id: string | undefined, actorId: string, ver
   if (id) await tx.aiProposal?.update({ where: { id, ...(version === undefined ? {} : { version }) }, data: { status: "APPROVED", appliedBy: actorId, appliedAt: new Date(), version: { increment: 1 } } });
 }
 
+async function validatePlanTasks(tx: ApplyDb, projectId: string, epics: Array<{ tasks?: Array<{ storyPoints?: number | null; assigneeId?: string | null; sprintId?: string | null }>; expansion?: { tasks: Array<{ storyPoints?: number | null; assigneeId?: string | null; sprintId?: string | null }> | null } }>): Promise<void> {
+  for (const epic of epics) for (const item of epic.tasks ?? epic.expansion?.tasks ?? []) {
+    if (item.storyPoints == null) throw new Error("VALIDATION_FAILED");
+    if (item.assigneeId && !await tx.projectMember?.findFirst({ where: { projectId, userId: item.assigneeId } })) throw new Error("VALIDATION_FAILED");
+    if (item.sprintId) {
+      const sprint = await tx.sprint?.findFirst({ where: { id: item.sprintId, projectId } });
+      if (!sprint) throw new Error("VALIDATION_FAILED");
+      if (sprint.status === "CLOSED") throw new Error("CONFLICT_STATE");
+    }
+  }
+}
+
 /** Apply functions receive a transaction from their caller and never start a second one. */
 export function createApply() {
   return {
@@ -59,14 +71,16 @@ export function createApply() {
       const parsed = planSchema.safeParse(value);
       if (!parsed.success) throw new Error("VALIDATION_FAILED");
       const tx = transaction as ApplyDb;
+      await tx.project?.update?.({ where: { id: projectId }, data: { version: { increment: 0 } } });
       await actor(tx, actorId, "PM"); await projectAccess(tx, actorId, projectId); await proposal(tx, parsed.data.id, projectId, "PLAN", parsed.data.version);
+      await validatePlanTasks(tx, projectId, parsed.data.epics);
       const checkpoints = new Map<string, string>();
       for (const input of parsed.data.checkpoints) {
         const row = await tx.checkpoint?.create({ data: { projectId, name: input.name, targetDate: new Date(`${input.targetDate}T00:00:00.000Z`) } });
         if (!row) throw new Error("CONFLICT_STATE");
         checkpoints.set(input.name, row.id);
       }
-      let position = await tx.epic?.count({ where: { projectId } }) ?? 0;
+      let position = (await tx.epic?.aggregate?.({ where: { projectId }, _max: { position: true } }))?._max?.position ?? 0;
       for (const input of parsed.data.epics) {
         const checkpointId = input.checkpointName == null ? null : checkpoints.get(input.checkpointName);
         if (input.checkpointName != null && !checkpointId) throw new Error("VALIDATION_FAILED");

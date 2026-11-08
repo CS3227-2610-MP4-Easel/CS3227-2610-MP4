@@ -16,7 +16,7 @@ test("E19 registration adapter registers exactly four W5 core source ids", () =>
 
 test("E31-E33 and E38 sources are project/user scoped, ordered, capped, and omit oversized values", async () => {
   const sources = createCoreContextSources({
-    projectMember: { findFirst: async () => ({ projectId }) },
+    projectMember: { findFirst: async ({ where }: any) => { assert.equal(where.userId, userId); assert.equal(where.projectId, projectId); assert.deepEqual(where.project, { status: "ACTIVE" }); return { projectId }; } },
     project: { findFirst: async () => ({ id: projectId, brief: "b".repeat(4301) }) },
     checkpoint: { findMany: async () => [{ id: "c1", projectId, name: "soon", targetDate: "2026-12-01" }] },
     taskEvent: { findMany: async (query) => { assert.deepEqual(query.where, { projectId, actorId: userId }); return [{ id: 2, projectId, taskId: "t", actorId: userId, type: "STATUS_CHANGED", at: "2026-12-01T00:00:00.000Z" }]; } },
@@ -25,6 +25,16 @@ test("E31-E33 and E38 sources are project/user scoped, ordered, capped, and omit
   assert.deepEqual(await sources.projectBrief(args), []);
   assert.equal((await sources.checkpoints(args))[0].ref.type, "CHECKPOINT");
   assert.equal((await sources.taskEvents(args))[0].ownerId, userId);
+  assert.deepEqual(await sources.blockedTasks(args), []);
+});
+
+test("task event and blocked-task sources return nothing without active membership", async () => {
+  const sources = createCoreContextSources({
+    projectMember: { findFirst: async () => null },
+    taskEvent: { findMany: async () => { throw new Error("must not query events"); } },
+    task: { findMany: async () => { throw new Error("must not query tasks"); } },
+  });
+  assert.deepEqual(await sources.taskEvents(args), []);
   assert.deepEqual(await sources.blockedTasks(args), []);
 });
 

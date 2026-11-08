@@ -20,7 +20,7 @@ const source = async <T>(id: string, work: () => Promise<T>): Promise<T> => {
   try { return await work(); } catch { throw new Error(`CORE_SOURCE_FAILED:${id}`); }
 };
 const member = async (db: ContextSourceDb, userId: string, projectId: string) =>
-  Boolean(await db.projectMember?.findFirst({ where: { userId, projectId }, select: { projectId: true } }));
+  Boolean(await db.projectMember?.findFirst({ where: { userId, projectId, project: { status: "ACTIVE" } }, select: { projectId: true } }));
 
 /** Source-side caps deliberately omit an over-limit row; ai-context should never receive a truncated value. */
 export function createCoreContextSources(db: ContextSourceDb): Readonly<Record<"projectBrief" | "checkpoints" | "taskEvents" | "blockedTasks", CoreContextSource>> {
@@ -41,6 +41,7 @@ export function createCoreContextSources(db: ContextSourceDb): Readonly<Record<"
       });
     }),
     taskEvents: async ({ caller, projectId, options }) => source("core.taskEvents", async () => {
+      if (!await member(db, caller.userId, projectId)) return [];
       const window = options.window ? { at: { gte: options.window.from, lt: options.window.to } } : {};
       const rows = await db.taskEvent?.findMany({ where: { projectId, actorId: caller.userId, ...window }, orderBy: [{ at: "desc" }, { id: "desc" }], take: 200, select: { id: true, projectId: true, taskId: true, actorId: true, type: true, fromValue: true, toValue: true, at: true } }) ?? [];
       return rows.filter((row) => row.projectId === projectId && row.actorId === caller.userId).flatMap((row) => {
@@ -50,6 +51,7 @@ export function createCoreContextSources(db: ContextSourceDb): Readonly<Record<"
       });
     }),
     blockedTasks: async ({ caller, projectId, options }) => source("core.blockedTasks", async () => {
+      if (!await member(db, caller.userId, projectId)) return [];
       const window = options.window ? { createdAt: { gte: options.window.from, lt: options.window.to } } : {};
       const rows = await db.task?.findMany({ where: { projectId, assigneeId: caller.userId, blocked: true, ...window }, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 50, select: { id: true, projectId: true, assigneeId: true, title: true, blockedReason: true, createdAt: true } }) ?? [];
       return rows.filter((row) => row.projectId === projectId && row.assigneeId === caller.userId).flatMap((row) => {

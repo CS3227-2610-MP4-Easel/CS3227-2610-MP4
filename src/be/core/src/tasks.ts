@@ -1,9 +1,7 @@
 import { NotMember, type UserRole } from "@agile/contracts";
 import { inMutationTransaction, type MutationTransaction } from "@agile/db";
 import { writeTaskEvent, type TaskEventInput } from "./task-events.js";
-
-type Actor = { userId: string; role: UserRole };
-type Row = Record<string, any>;
+type Actor = { userId: string; role: UserRole }; type Row = Record<string, any>;
 export type TaskAccess = { requireMember(userId: string, projectId: string, tx?: unknown): Promise<void>; archivedMembership(userId: string, projectId: string, tx?: unknown): Promise<boolean> };
 type TaskDb = MutationTransaction & { task?: { findFirst(args: Row): Promise<Row | null>; findMany(args: Row): Promise<Row[]>; count(args: Row): Promise<number>; create(args: Row): Promise<Row>; updateMany(args: Row): Promise<{ count: number }> }; epic?: { findFirst(args: Row): Promise<Row | null> }; sprint?: { findFirst(args: Row): Promise<Row | null> }; projectMember?: { findFirst(args: Row): Promise<Row | null> }; taskEvent?: { create(args: { data: TaskEventInput }): Promise<unknown> } };
 type Create = { epicId: string; title: string; description?: string | null; acceptanceCriteria?: string[]; storyPoints?: number | null; assigneeId?: string | null; sprintId?: string | null };
@@ -12,18 +10,9 @@ type Status = { status: "TODO" | "IN_PROGRESS" | "IN_REVIEW" | "DONE"; blocked?:
 const iso = (value: Date | string | null) => value === null ? null : value instanceof Date ? value.toISOString() : value;
 const view = (row: Row) => ({ id: row.id, projectId: row.projectId, epicId: row.epicId, sprintId: row.sprintId ?? null, assigneeId: row.assigneeId ?? null, title: row.title, description: row.description ?? null, acceptanceCriteria: row.acceptanceCriteria ?? [], status: row.status, blocked: row.blocked, blockedReason: row.blockedReason ?? null, storyPoints: row.storyPoints ?? null, doneAt: iso(row.doneAt ?? null), createdAt: iso(row.createdAt), updatedAt: iso(row.updatedAt), version: row.version });
 const access = async (gate: TaskAccess, actor: Actor, projectId: string, write = false, tx?: unknown) => { try { await gate.requireMember(actor.userId, projectId, tx); } catch (error) { if (!(error instanceof NotMember)) throw error; if (write && await gate.archivedMembership(actor.userId, projectId, tx)) throw new Error("CONFLICT_STATE"); throw new Error("NOT_FOUND"); } };
-const changed = (a: unknown, b: unknown) => a !== b;
-const str = (value: unknown) => value === null || value === undefined ? null : String(value);
-
+const changed = (a: unknown, b: unknown) => a !== b; const str = (value: unknown) => value === null || value === undefined ? null : String(value);
 export function createTasks(db: TaskDb, gate: TaskAccess) {
-  const relations = async (tx: any, projectId: string, input: Partial<Create>, current?: Row) => {
-    const epicId = input.epicId ?? current?.epicId;
-    if (!epicId || !await tx.epic?.findFirst({ where: { id: epicId, projectId } })) throw new Error("VALIDATION_FAILED");
-    const sprintId = input.sprintId === undefined ? current?.sprintId : input.sprintId;
-    if (sprintId) { const sprint = await tx.sprint?.findFirst({ where: { id: sprintId, projectId } }); if (!sprint) throw new Error("VALIDATION_FAILED"); if (sprint.status === "CLOSED") throw new Error("CONFLICT_STATE"); const points = input.storyPoints === undefined ? current?.storyPoints : input.storyPoints; if (points == null) throw new Error("VALIDATION_FAILED"); }
-    const assigneeId = input.assigneeId === undefined ? current?.assigneeId : input.assigneeId;
-    if (assigneeId && !await tx.projectMember?.findFirst({ where: { projectId, userId: assigneeId } })) throw new Error("VALIDATION_FAILED");
-  };
+  const relations = async (tx: any, projectId: string, input: Partial<Create>, current?: Row) => { const epicId = input.epicId ?? current?.epicId; if (!epicId || !await tx.epic?.findFirst({ where: { id: epicId, projectId } })) throw new Error("VALIDATION_FAILED"); const sprintId = input.sprintId === undefined ? current?.sprintId : input.sprintId; if (sprintId) { const sprint = await tx.sprint?.findFirst({ where: { id: sprintId, projectId } }); if (!sprint) throw new Error("VALIDATION_FAILED"); if (sprint.status === "CLOSED") throw new Error("CONFLICT_STATE"); const points = input.storyPoints === undefined ? current?.storyPoints : input.storyPoints; if (points == null) throw new Error("VALIDATION_FAILED"); } const assigneeId = input.assigneeId === undefined ? current?.assigneeId : input.assigneeId; if (assigneeId && !await tx.projectMember?.findFirst({ where: { projectId, userId: assigneeId } })) throw new Error("VALIDATION_FAILED"); };
   const event = (tx: any, actor: Actor, task: Row, type: TaskEventInput["type"], fromValue?: unknown, toValue?: unknown) => writeTaskEvent(tx, { taskId: task.id, projectId: task.projectId, actorId: actor.userId, type, fromValue: str(fromValue), toValue: str(toValue) });
   const writable = (actor: Actor) => { if (!actor.userId || (actor.role !== "PM" && actor.role !== "DEV_LEAD")) throw new Error("FORBIDDEN_ROLE"); };
   return {
