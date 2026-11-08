@@ -29,7 +29,7 @@
 | T1 Canonical target and shared preview policy | - | - | 1 | Done |
 | T2 Runtime database enforcement | T1 | - | 2 | Done |
 | T3 Migration boundary, fixtures, and whitespace | T1 | - | 2 | Done |
-| T4 Protected preview provisioning check | T1 | - | 2 | Post-merge |
+| T4 Protected preview provisioning check | T1 | - | 2 | Done |
 | T5 Close-out | T2, T3 | - | 3 | Done |
 
 ## Traceability
@@ -208,10 +208,10 @@ The implementation must call this before `new PrismaClient(...)`; the test seams
 
 **Checklist**
 
-- [ ] 1. `GATE:` After the branch is merged, inspect the Vercel project's variable names and scopes without revealing values.
-- [ ] 2. Confirm generic/fork PR Preview has only the spec's allowed identity fields and no forbidden name, including an empty or whitespace value.
-- [ ] 3. Confirm every dev-tier variable is restricted to Preview plus exact Git Branch `development`, never wildcard/generic Preview, and that the Vercel project is linked to `CS3227-2610-MP4-Easel/CS3227-2610-MP4`.
-- [ ] 4. Confirm GitHub still protects `development` with required review and no force-push; record the redacted owner result in the branch state before T4 is marked complete.
+- [x] 1. `GATE:` After the branch is merged, inspect the Vercel project's variable names and scopes without revealing values.
+- [x] 2. Confirm generic/fork PR Preview has only the spec's allowed identity fields and no forbidden name, including an empty or whitespace value.
+- [x] 3. Confirm every dev-tier variable is restricted to Preview plus exact Git Branch `development`, never wildcard/generic Preview, and that the Vercel project is linked to `CS3227-2610-MP4-Easel/CS3227-2610-MP4`.
+- [x] 4. Confirm GitHub still protects `development` with required review and no force-push; record the redacted owner result in the branch state before T4 is marked complete.
 
 **Amendment review 2026-11-08:** Implementer-plan review found and corrected the obsolete reference to the removed W13 development verification workflow. No remaining blocking findings.
 

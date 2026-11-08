@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-08 by Codex — T4 awaits owner MFA
+- **Last updated:** 2026-11-08 by Codex — T4 audit complete; T5 gate pending
 
 **Untouched:** Architecture, Conventions, Known Gaps
 
@@ -25,13 +25,12 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 00:00 | Codex | W13 | Blocked — needs human | T4 generic Preview `APP_TIER` check: Q~3 | Owner enters Vercel MFA in the handed-off browser page, then resume the value check | 2026-11-08 00:00 |
+| S1 | 2026-11-08 00:00 | Codex | W13 | Blocked — needs human | Original W13 T5 recovery rehearsal: Q~4 | Obtain the owner's confirmation of the active Neon plan and restricted rehearsal target before any restore action | 2026-11-08 00:00 |
 
 **Remaining**
 
-- [ ] Q~3: Vercel demands owner MFA before revealing the allowed, non-secret generic Preview `APP_TIER` value. Owner enters the code in the handed-off browser page; no code is shared in chat or recorded.
-- [ ] **Handover:** Complete T4's redacted Vercel/GitHub audit after Q~3; any failed scope or protection condition remains a blocker and requires no provider mutation.
-- [ ] **Handover:** After the amended approvals, record the redacted T4 audit result distinguishing generic PR previews from the protected `development` branch.
+- [ ] Q~4: Before original W13 T5, repository owner confirms the active Neon plan and approved restricted rehearsal target. The subsequent backup/restore rehearsal may alter that target and must remain owner-operated.
+- [ ] **Handover:** After the amended approvals, record the redacted T4 audit result distinguishing generic PR previews from the protected `development` branch. **Done 2026-11-08:** generic Preview is `APP_TIER=preview`; dev-tier variables are exact-`development` scoped; repository linkage and branch protection pass.
 
 ---
 
@@ -39,7 +38,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | Blocked — needs human | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | T4 scopes pass; non-secret `APP_TIER` check awaits MFA (Q~3) | — |
+| W13 | Environments, seed data and deployment | Blocked — needs human | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | Safety T4 done; original recovery rehearsal awaits Q~4 | — |
 
 ---
 
@@ -58,6 +57,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Operator approved the amended W13 T4 audit plan at Gate 2. | W13 | this commit |
 | 2026-11-08 | T4 read-only audit confirmed exact development scoping, no generic forbidden variable names, expected Vercel repository link, and AD-32 branch protection; the generic `APP_TIER` value remains intentionally unobserved. | W13 | this commit |
 | 2026-11-08 | Owner authorized revealing only generic Preview `APP_TIER`; Vercel required owner MFA, so the audit page was handed off without entering or recording a code. | W13 | this commit |
+| 2026-11-08 | Completed the redacted T4 audit: generic Preview is `APP_TIER=preview`; no forbidden names have generic/fork Preview scope; dev-tier variables are exact-`development` scoped; Vercel repository linkage and GitHub AD-32 protection pass. | W13 | this commit |
 
 ## 7. Decisions
 
@@ -86,8 +86,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 - **Found:** 2026-11-08 during the approved read-only T4 audit.
 - **What:** Vercel presents the generic Preview `APP_TIER` value as masked. The approved task requires `APP_TIER=preview` but also says not to reveal values.
-- **Consequence:** Names, scopes, repository linkage, and branch protections pass, but the exact generic `APP_TIER` value is unverified pending Q~3; Vercel requires owner MFA to reveal it.
-- **Evidence:** The Vercel project lists only generic Preview `APP_TIER`; all dev-tier variable names are Preview plus exact `development`; clicking its reveal control opened Vercel's MFA prompt, and no value or code was recorded.
+- **Consequence:** Resolved 2026-11-08 after owner MFA. The exact generic `APP_TIER` value is `preview`; no secret or MFA code was recorded.
+- **Evidence:** The Vercel project lists only generic Preview `APP_TIER`; all dev-tier variable names are Preview plus exact `development`; the owner completed MFA and the permitted non-secret value was observed.
 
 ## Lessons
 
