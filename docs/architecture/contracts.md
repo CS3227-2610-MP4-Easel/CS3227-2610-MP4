@@ -101,6 +101,12 @@ Mutations on an archived project return 409 `CONFLICT_STATE` (one check in `core
 | 40 | `POST /api/pm/proposals/{proposalId}/approve` | PM; member | `{ version }` | 200 `{ proposalId, status: "APPROVED", created: { checkpoints, epics, tasks } }` (the same body when repeated) | 409 `CONFLICT_STATE` if REJECTED or SUPERSEDED, or any epic is not DONE | one transaction takes a row lock on the proposal, re-checks it, creates checkpoints, epics, tasks and `CREATED` events, and marks it APPROVED; a second request waits on the lock and then returns the same result; session closed `ACCEPTED` or `EDITED` |
 | 41 | `POST /api/pm/proposals/{proposalId}/reject` | PM; member | `{ version }` | 200 `PlanProposal` (REJECTED) | 409 `CONFLICT_STATE` unless PENDING | session closed `REJECTED` |
 
+| 58 | `PATCH /api/pm/proposals/{proposalId}/checkpoints` | PM; member | `{ checkpoints, version }` | 200 `PlanProposal` | 409 version or state | replaces checkpoints |
+| 59 | `POST /api/pm/proposals/{proposalId}/epics` | PM; member | `{ title, description, checkpointName, version }` | 201 `PlanProposal` | 409 version or state | adds an epic |
+| 60 | `DELETE /api/pm/proposals/{proposalId}/epics/{index}` | PM; member | `?version=` | 200 `PlanProposal` | 409 version or state | deletes an epic |
+
+Edits are creator-only and guarded by the proposal `version`.
+
 ### 3.5 Dev Lead: facts, digest, re-plan
 | # | Endpoint | Policy | Request | Response | Errors | Side effects |
 |---|---|---|---|---|---|---|
@@ -128,11 +134,7 @@ Mutations on an archived project return 409 `CONFLICT_STATE` (one check in `core
 |---|---|---|---|---|---|---|
 | 56 | `GET /api/usage/sessions` | any; self | `from?`, `to?`, `feature?`, `page`, `size` | 200 page of `UsageSession` for the caller | | none |
 | 57 | `GET /api/usage/summary` | any | `from?`, `to?` | 200 list of `{ feature, model, calls, promptTokens, completionTokens, costMicroUsd, cacheHits, avgLatencyMs, schemaFailures, estimateErrorPercent }`, aggregated over all users, with no per-user content or flags | | none |
-| 58 | `PATCH /api/pm/proposals/{proposalId}/checkpoints` | PM; member | `{ checkpoints, version }` | 200 `PlanProposal` | 409 version or state | replaces checkpoints |
-| 59 | `POST /api/pm/proposals/{proposalId}/epics` | PM; member | `{ title, description, checkpointName, version }` | 201 `PlanProposal` | 409 version or state | adds an epic |
-| 60 | `DELETE /api/pm/proposals/{proposalId}/epics/{index}` | PM; member | `?version=` | 200 `PlanProposal` | 409 version or state | deletes an epic |
 
-Edits are creator-only and guarded by the proposal `version`.
 
 ## 4. Examples
 
