@@ -7,9 +7,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w7-implement-pm-plan-flow (from `INT` at `7caa23d`)
 - **Base:** faa1c08
 - **Owner:** Xiao-Congchen (PM)
-- **Status:** In review
-- **Approved:** —
-- **Last updated:** 2026-11-08 by Claude Sonnet 5.5 — W7 built (T1-T11), verified, whole-branch code review reported; awaiting Gate 3
+- **Status:** Approved
+- **Approved:** Xiao-Congchen 2026-11-08
+- **Last updated:** 2026-11-08 by Claude Sonnet 5.5 — W7 built (T1-T11), verified, whole-branch code review reported; approved at Gate 3
 
 **Untouched:** Conventions (Architecture Now blocks for pm, core and proposals are written at the fold; see Close-out)
 
@@ -57,7 +57,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-07 | W7 spec approved by the operator at Gate 1; `lint.mjs spec --approved` passes | W7 | this commit |
 | 2026-11-07 | Wave 1 built and reviewed (full, three lenses each): T2 scaffolded the core, proposals and pm workspaces; T3 added strict plan body schemas and made the approve response three counts; T1 added the session feature map, contract and AD-28 text. Fix rounds: tighter T3 tests, version and idea bounds; T1 closed/idle/foreign session tests and an own-keys-only map lookup. Rejected: lone-surrogate and control-character rules on the idea (the spec does not ask; the gateway sanitiser handles them); an EXPAND-session self-map test (it correctly fails). Learned: 
 pm install removes the generated Prisma client, so 	sc -b fails until `prisma:generate` runs (now in the plan's Shared context) | W7 | this commit |
-| 2026-11-07 | Wave 2 built: T4 `applyPlan` (12 database tests incl. a real lock barrier), T5 proposals create/view/resolvers (7 database tests), T8 `pm.similarItems` and settings, T9 output schemas, sections and mocks. Run against a local Postgres in Docker (`w7-pg`, port 5433; variables in untracked `.ws/w7.env`). Whole suite: 497 tests, 493 pass, 4 fail - all in `tests/process-security/agent-hook.test.ts` (F8 shell-write mediation, unrelated to W7; not compared with the base branch). The real database also found the session-rule regression (C~3) that skipped tests had hidden | W7 | this commit |
+| 2026-11-07 | Wave 2 built: T4 `applyPlan` (12 database tests incl. a real lock barrier), T5 proposals create/view/resolvers (7 database tests), T8 `pm.similarItems` and settings, T9 output schemas, sections and mocks. Run against a local Postgres in Docker (`w7-pg`; variables in untracked `.ws/w7.env`). Whole suite: 497 tests, 493 pass, 4 fail - all in `tests/process-security/agent-hook.test.ts` (F8 shell-write mediation, unrelated to W7; not compared with the base branch). The real database also found the session-rule regression (C~3) that skipped tests had hidden | W7 | this commit |
 | 2026-11-07 | W7 plan written (11 tasks, 6 waves), reviewed by an Implementer-lens reviewer, approved at Gate 2; `lint.mjs plan --approved` passes | W7 | this commit |
 
 ---
@@ -85,7 +85,7 @@ pm install removes the generated Prisma client, so 	sc -b fails until `prisma:ge
 ### C~3 — The session rule also admits a call of the session's own feature (spec SD3 amended)
 
 - **Date:** 2026-11-07.
-- **Who asked:** found while running W2's integration tests on a local Postgres (Docker, port 5433): sessions-integration.test.ts E26 opens a `PM_PLAN_EXPAND` session and regenerates it; the first rule from SD3 (`row.feature === (SESSION_FEATURE[feature] ?? feature)`) made that session unusable for its own feature. The operator asked for the local database; the AI amended the rule.
+- **Who asked:** found while running W2's integration tests on a local Postgres in Docker: sessions-integration.test.ts E26 opens a `PM_PLAN_EXPAND` session and regenerates it; the first rule from SD3 (`row.feature === (SESSION_FEATURE[feature] ?? feature)`) made that session unusable for its own feature. The operator asked for the local database; the AI amended the rule.
 - **Decision:** `assertUsable` passes when `row.feature === feature` or `row.feature === SESSION_FEATURE[feature]` (own keys only). An outline session admits expand calls; an expand session still rejects outline calls (E2).
 - **Why:** keeps every existing W2 behaviour and adds only the new case. Rejected: changing W2's E26 test to open an outline session (hides the regression). The earlier Tester-lens suggestion to cover the self case was wrongly rejected on 2026-11-07 and is now accepted.
 - **Follow-up:** the spec hash in the plan is restamped (`112dc7d0a8c1`); T1 gets a second fix round.
@@ -102,7 +102,7 @@ pm install removes the generated Prisma client, so 	sc -b fails until `prisma:ge
 
 ## 5. Close-out
 
-**Built.** Endpoints 34, 35, 37, 40, 41 (`@agile/pm` routes and flow, `@agile/proposals` store and resolvers, `@agile/core` `applyPlan`, API routes, W2 session feature map, contract schemas). Verified against a local Postgres 16 in Docker (`w7-pg`, port 5440 (5433 was taken by another project's container, so it was moved), variables in untracked `.ws/w7.env`): full suite 565 tests, 561 pass, 4 fail, 0 skipped. The 4 failures are `tests/process-security/agent-hook.test.ts` (F8 shell-write mediation); no file they depend on differs from the base commit, but they were not run on the base branch. One run also showed a gateway test (`run-integration` E25) fail once under parallel load; it passed alone three times and in two later full runs.
+**Built.** Endpoints 34, 35, 37, 40, 41 (`@agile/pm` routes and flow, `@agile/proposals` store and resolvers, `@agile/core` `applyPlan`, API routes, W2 session feature map, contract schemas). Verified against a local Postgres 16 in Docker (`w7-pg`, variables in untracked `.ws/w7.env`): full suite 565 tests, 561 pass, 4 fail, 0 skipped. The 4 failures are `tests/process-security/agent-hook.test.ts` (F8 shell-write mediation); no file they depend on differs from the base commit, but they were not run on the base branch. One run also showed a gateway test (`run-integration` E25) fail once under parallel load; it passed alone three times and in two later full runs.
 
 **Not done / not verified.** Nothing pushed. The Developer (W2 owner) has not agreed to the `Sessions` change (AD-11). The PM endpoints cannot be reached in the app until W5 registers the proposal resolvers and a project resolver (the placeholder returns 404). The whole-branch `code-review` reported 10 findings (none blocking). Fixed (commits 2ecaa2d, c26a5c3): approve replay without a stored count recounts from the stored rows; the proposal view reads in parallel and returns nothing for a viewer who is not a member of the proposal's project; the lock-wait test helpers wait only on the holder's backend; the body-limit and policy-key helpers are shared by the auth and pm routes; the pm runtime reuses one database client across failed builds and registers the similar-items source with a plain flag; a doubled blank line. Left on purpose: the placeholder resolvers (W5 owns them; Known Gap) and the top-50-by-id cut before ranking (accepted by spec SD5; Known Gap).
 
