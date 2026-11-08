@@ -11,7 +11,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Approved:** —
 - **Last updated:** 2026-11-08 by Claude Opus 5.5 — branch created, scoping T7
 
-**Untouched:** Architecture, Conventions, Known Gaps, Deviations
+**Untouched:** Architecture, Conventions, Deviations
 
 ---
 
@@ -27,7 +27,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 | Claude Opus 5.5 (lead) | W4 | Active | Scoping T7 with the operator | Once the scope questions are answered, write the T7 spec with `writing-specs-lite-v2` | 2026-11-08 |
+| S1 | 2026-11-08 | Claude Opus 5.5 (lead) + 4 `reviewer` agents (Implementer, Tester, Maintainer, Attacker) | W4 | Blocked — needs human | T7 spec reviewed (1 round, findings fixed); Gate 1 asked | On the operator's yes: set the spec's Status to Approved, run `lint.mjs spec --approved`, commit, then `writing-plans-lite-v2` | 2026-11-08 |
 
 **Remaining**
 
@@ -41,7 +41,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W4 | Auth and registration | Building | [spec](../../specs/2026-10-31-w4-auth-design.md), [T7 follow-up](../../specs/2026-10-31-w4-auth-design/follow-up-t7.md) | — | T7 follow-up: scoping | — |
+| W4 | Auth and registration | Building | [spec](../../specs/2026-10-31-w4-auth-design.md), [T7 spec](../../specs/2026-11-08-w4-sign-in-screen-design.md) (draft) | — | T7 spec reviewed; awaiting Gate 1 | — |
 
 ---
 
@@ -49,7 +49,14 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-08 | Branch state created for the T7 sign-in screen follow-up | W4 | this commit |
+| 2026-11-08 | Branch state created for the T7 sign-in screen follow-up | W4 | `4a3cfd9` |
+| 2026-11-08 | T7 spec written and reviewed (four lenses, one round) | W4 | this commit |
+
+---
+
+## 6. Known Gaps
+
+- **Sign-up reveals registered emails** — Firebase answers `auth/email-already-in-use` for an existing account and the register screen shows it (W4 ui.md), so anyone can test whether an email has a Firebase account; sits beside **Unverified email at registration** (AD-57).
 
 ---
 
