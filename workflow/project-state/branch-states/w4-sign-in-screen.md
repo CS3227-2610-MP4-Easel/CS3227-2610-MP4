@@ -65,6 +65,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | T1 first pass committed (Vitest, test chain); fix-up pending: Firebase 12.19 versions (C~6), W12 test assertion (C~7); `.env.example` committed by the operator (policy blocks env files) | W4 | `1b4d7e8` |
 | 2026-11-08 | T1 done: Vitest + jsdom in `src/fe` (cleanup setup, JSX smoke test), `@firebase/app` 0.16.2 and `@firebase/auth` 1.13.6, root `npm test` chains the fe suite, W12 pin updated, `.env.example`. Full review (Implementer, Tester, Attacker): Tester's two fixes applied; Attacker nit (guard the fe `test` script) handed to the Dev Lead | W4 | `878bfbb` |
 | 2026-11-08 | Wave 2 worktree dispatch failed (worktrees came from the remote base, which lacks this unpushed branch); T2 and T3 run one after another in the main checkout instead (skill fallback) | W4 | — |
+| 2026-11-08 | T3 task file corrected: its E60 note said `/api/%2e%2e/x` passes unchanged; URL parsing resolves it outside `/api/`, so encoded and trailing dot segments must be rejected (T3 Attacker review) | W4 | this commit |
 
 ---
 
