@@ -51,14 +51,32 @@ test("E3-E5 uses the newest three closed sprints, half-days upward, and reports 
       { id: id(21), projectId: target, name: "Late", targetDate: day("2026-11-12"), epics: [{ projectId: target, tasks: [{ projectId: target, storyPoints: 15, status: "TODO" }] }] },
     ] },
   }), { now: () => new Date("2026-11-09T10:00:00.000Z") }).target(target);
-  assert.deepEqual((sprintQuery as { orderBy: unknown }).orderBy, [{ endDate: "desc" }, { id: "asc" }]);
-  assert.equal((sprintQuery as { take: number }).take, 3);
+  assert.deepEqual((sprintQuery as { orderBy: unknown }).orderBy, [{ projectId: "asc" }, { endDate: "desc" }, { id: "asc" }]);
+  assert.equal((sprintQuery as { take?: number }).take, undefined);
   assert.equal(facts.avgVelocity, 5);
   assert.equal(facts.projectedCompletionDate, "2026-11-18");
   assert.deepEqual(facts.checkpoints, [
     { id: id(20), name: "Empty", targetDate: "2026-11-10", remainingPoints: 0, projectedDate: "2026-11-09", risk: "ON_TRACK" },
     { id: id(21), name: "Late", targetDate: "2026-11-12", remainingPoints: 15, projectedDate: "2026-11-18", risk: "AT_RISK" },
   ]);
+});
+
+test("short, absent, and zero sprint history leaves projections null and risks UNKNOWN", async () => {
+  const service = createFacts(db({
+    task: { findMany: async () => [{ projectId: target, storyPoints: 3, status: "TODO" }] },
+    checkpoint: { findMany: async () => [{ id: id(22), projectId: target, name: "Blocked", targetDate: day("2026-11-10"), epics: [{ projectId: target, tasks: [{ projectId: target, storyPoints: 3, status: "TODO" }] }] }] },
+  }), { now: () => new Date("2026-11-09T10:00:00.000Z") });
+  const absent = await service.target(target);
+  assert.equal(absent.avgVelocity, null);
+  assert.equal(absent.projectedCompletionDate, null);
+  assert.equal(absent.checkpoints[0].risk, "UNKNOWN");
+  const zero = await createFacts(db({
+    sprint: { findMany: async () => [{ id: id(23), name: "Zero", completedPoints: 0, startDate: day("2026-11-01"), endDate: day("2026-11-02"), projectId: target }] },
+    checkpoint: { findMany: async () => [{ id: id(24), projectId: target, name: "Blocked", targetDate: day("2026-11-10"), epics: [{ projectId: target, tasks: [{ projectId: target, storyPoints: 3, status: "TODO" }] }] }] },
+  }), { now: () => new Date("2026-11-09T10:00:00.000Z") }).target(target);
+  assert.equal(zero.avgVelocity, 0);
+  assert.equal(zero.projectedCompletionDate, null);
+  assert.equal(zero.checkpoints[0].risk, "UNKNOWN");
 });
 
 test("E6 and E25 separate caller-member overloads from target-only digest overloads", async () => {
@@ -77,9 +95,32 @@ test("E6 and E25 separate caller-member overloads from target-only digest overlo
   ]);
 });
 
+test("caller requires active target membership and averages completed work across each member project history", async () => {
+  const alex = id(32);
+  const targetSprint = id(33);
+  const otherSprint = id(34);
+  const queries: any[] = [];
+  const memberships = [
+    { projectId: target, userId: caller, project: { id: target, name: "Target", status: "ACTIVE" } },
+    { projectId: other, userId: caller, project: { id: other, name: "Other", status: "ACTIVE" } },
+    { projectId: target, userId: alex, user: { id: alex, displayName: "Alex" }, project: { id: target, name: "Target", status: "ACTIVE" }, assignedTasks: [{ projectId: target, assigneeId: alex, storyPoints: 3, status: "TODO" }, { projectId: target, assigneeId: alex, storyPoints: 6, status: "DONE", sprintId: targetSprint }] },
+    { projectId: other, userId: alex, user: { id: alex, displayName: "Alex" }, project: { id: other, name: "Other", status: "ACTIVE" }, assignedTasks: [{ projectId: other, assigneeId: alex, storyPoints: 2, status: "TODO" }, { projectId: other, assigneeId: alex, storyPoints: 4, status: "DONE", sprintId: otherSprint }] },
+  ];
+  const service = createFacts(db({
+    sprint: { findMany: async () => [{ id: targetSprint, projectId: target, name: "Target sprint", completedPoints: 6, startDate: day("2026-11-01"), endDate: day("2026-11-02") }, { id: otherSprint, projectId: other, name: "Other sprint", completedPoints: 4, startDate: day("2026-11-01"), endDate: day("2026-11-02") }] },
+    projectMember: { findMany: async (query: any) => { queries.push(query); return query.where.userId ? memberships.filter((member) => member.userId === query.where.userId) : memberships; } },
+  }), { now: () => new Date("2026-11-09T10:00:00.000Z") });
+  const facts = await service.caller(caller, target);
+  assert.equal(facts.overload[0].avgCompletedPerSprint, 5);
+  assert.equal(queries[0].where.userId, caller);
+  assert.deepEqual(queries[0].where.project, { status: "ACTIVE" });
+  assert.ok(queries.every((query) => query.take === undefined));
+  await assert.rejects(() => service.caller(caller, id(99)), { message: "NOT_MEMBER" });
+});
+
 test("hash is canonical and excludes asOf", () => {
   const first = { asOf: "2026-11-09T10:00:00.000Z", pointsTotal: 1, nested: { b: 2, a: 1 } };
   const second = { nested: { a: 1, b: 2 }, pointsTotal: 1, asOf: "2026-11-09T11:00:00.000Z" };
   assert.equal(hashFacts(first), hashFacts(second));
-  assert.match(hashFacts(first), /^[a-f0-9]{64}$/);
+  assert.equal(hashFacts(first), "1d7c8aa184d267086891bcebefdef4ad231d0b570b6199ea96551e825d0b9725");
 });

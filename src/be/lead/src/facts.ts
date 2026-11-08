@@ -3,7 +3,7 @@ import { forecast, projectCompletion, singaporeDate } from "./forecast.js";
 
 type Query = Record<string, unknown>;
 type FindMany<T> = { findMany(args: Query): Promise<T[]> };
-type Task = { projectId: string; assigneeId?: string | null; storyPoints: number | null; status: string; deletedAt?: Date | null; sprintId?: string | null };
+type Task = { id?: string; projectId: string; assigneeId?: string | null; storyPoints: number | null; status: string; deletedAt?: Date | null; sprintId?: string | null };
 type Sprint = { id: string; name: string; completedPoints: number | null; startDate: Date; endDate: Date; projectId?: string; deletedAt?: Date | null };
 type Checkpoint = { id: string; projectId: string; name: string; targetDate: Date; deletedAt?: Date | null; epics?: Array<{ projectId: string; deletedAt?: Date | null; tasks?: Task[] }> };
 type Member = { projectId: string; userId: string; project?: { id: string; name: string; status?: string }; user?: { id: string; displayName: string }; assignedTasks?: Task[] };
@@ -33,6 +33,18 @@ function averageSprintDays(sprints: Sprint[]): number | null {
   return Math.floor(days + 0.5);
 }
 
+function latestSprints(rows: Sprint[], fallbackProjectId: string, projectIds: Set<string>): Sprint[] {
+  const byProject = new Map<string, Sprint[]>();
+  for (const sprint of rows) {
+    const projectId = sprint.projectId ?? fallbackProjectId;
+    if (!projectIds.has(projectId) || sprint.deletedAt != null) continue;
+    const project = byProject.get(projectId) ?? [];
+    project.push(sprint);
+    byProject.set(projectId, project);
+  }
+  return [...byProject.entries()].sort(([a], [b]) => a.localeCompare(b)).flatMap(([, sprints]) => sprints.sort((a, b) => b.endDate.getTime() - a.endDate.getTime() || a.id.localeCompare(b.id)).slice(0, 3));
+}
+
 function overload(members: Member[], projectIds: Set<string>, sprints: Sprint[], requireMultipleProjects: boolean) {
   const byUser = new Map<string, { displayName: string; projects: Map<string, { name: string; openPoints: number }>; completed: number }>();
   const sprintIds = new Set(sprints.map(({ id }) => id));
@@ -57,13 +69,14 @@ export function createFacts(db: FactsDb, clock: Clock = systemClock) {
     const now = clock.now();
     const asOf = now.toISOString();
     const [taskRows, sprintRows, checkpointRows, memberRows] = await Promise.all([
-      db.task?.findMany({ where: liveTask(projectId), take: 500, select: { projectId: true, storyPoints: true, status: true, deletedAt: true } }) ?? [],
-      db.sprint?.findMany({ where: { projectId, deletedAt: null, status: "CLOSED", project: activeProject }, orderBy: [{ endDate: "desc" }, { id: "asc" }], take: 3, select: { id: true, name: true, completedPoints: true, startDate: true, endDate: true, projectId: true, deletedAt: true } }) ?? [],
-      db.checkpoint?.findMany({ where: { projectId, deletedAt: null, project: activeProject }, orderBy: [{ targetDate: "asc" }, { id: "asc" }], take: 100, select: { id: true, projectId: true, name: true, targetDate: true, deletedAt: true, epics: { where: { projectId, deletedAt: null, project: activeProject }, select: { projectId: true, deletedAt: true, tasks: { where: liveTask(projectId), take: 500, select: { projectId: true, storyPoints: true, status: true, deletedAt: true } } } } } }) ?? [],
-      db.projectMember?.findMany({ where: { projectId: { in: [...memberProjectIds] }, project: activeProject }, take: 500, select: { projectId: true, userId: true, project: { select: { id: true, name: true, status: true } }, user: { select: { id: true, displayName: true } }, assignedTasks: { where: { ...liveTask(), assigneeId: { not: null } }, take: 500, select: { projectId: true, assigneeId: true, storyPoints: true, status: true, deletedAt: true, sprintId: true } } } }) ?? [],
+      db.task?.findMany({ where: liveTask(projectId), orderBy: { id: "asc" }, select: { id: true, projectId: true, storyPoints: true, status: true, deletedAt: true } }) ?? [],
+      db.sprint?.findMany({ where: { projectId: { in: [...memberProjectIds] }, deletedAt: null, status: "CLOSED", project: activeProject }, orderBy: [{ projectId: "asc" }, { endDate: "desc" }, { id: "asc" }], select: { id: true, name: true, completedPoints: true, startDate: true, endDate: true, projectId: true, deletedAt: true } }) ?? [],
+      db.checkpoint?.findMany({ where: { projectId, deletedAt: null, project: activeProject }, orderBy: [{ targetDate: "asc" }, { id: "asc" }], select: { id: true, projectId: true, name: true, targetDate: true, deletedAt: true, epics: { where: { projectId, deletedAt: null, project: activeProject }, select: { projectId: true, deletedAt: true, tasks: { where: liveTask(projectId), orderBy: { id: "asc" }, select: { id: true, projectId: true, storyPoints: true, status: true, deletedAt: true } } } } } }) ?? [],
+      db.projectMember?.findMany({ where: { projectId: { in: [...memberProjectIds] }, project: activeProject }, orderBy: [{ projectId: "asc" }, { userId: "asc" }], select: { projectId: true, userId: true, project: { select: { id: true, name: true, status: true } }, user: { select: { id: true, displayName: true } }, assignedTasks: { where: { ...liveTask(), assigneeId: { not: null } }, orderBy: { id: "asc" }, select: { id: true, projectId: true, assigneeId: true, storyPoints: true, status: true, deletedAt: true, sprintId: true } } } }) ?? [],
     ]);
     const tasks = taskRows.filter((task) => isLiveTask(task, projectId));
-    const sprints = sprintRows.filter((sprint) => sprint.projectId == null || (sprint.projectId === projectId && sprint.deletedAt == null));
+    const allSprints = latestSprints(sprintRows, projectId, memberProjectIds);
+    const sprints = allSprints.filter((sprint) => sprint.projectId == null || sprint.projectId === projectId);
     const velocity = sprints.filter((sprint) => sprint.completedPoints != null).map((sprint) => ({ sprintId: sprint.id, name: sprint.name, completedPoints: sprint.completedPoints! }));
     const avgVelocity = velocity.length ? velocity.reduce((sum, sprint) => sum + sprint.completedPoints, 0) / velocity.length : null;
     const sprintDays = averageSprintDays(sprints);
@@ -75,14 +88,16 @@ export function createFacts(db: FactsDb, clock: Clock = systemClock) {
       const targetDate = singaporeDate(checkpoint.targetDate);
       return { id: checkpoint.id, name: checkpoint.name, targetDate, remainingPoints, ...forecast(singaporeDate(now), targetDate, remainingPoints, avgVelocity, sprintDays) };
     });
-    return { asOf, pointsTotal, pointsDone, pointsRemaining, unestimatedTasks: tasks.filter((task) => task.storyPoints == null).length, velocity, avgVelocity, projectedCompletionDate: projectCompletion(singaporeDate(now), pointsRemaining, avgVelocity, sprintDays), checkpoints, overload: overload(memberRows, memberProjectIds, sprints, requireMultipleProjects) };
+    return { asOf, pointsTotal, pointsDone, pointsRemaining, unestimatedTasks: tasks.filter((task) => task.storyPoints == null).length, velocity, avgVelocity, projectedCompletionDate: projectCompletion(singaporeDate(now), pointsRemaining, avgVelocity, sprintDays), checkpoints, overload: overload(memberRows, memberProjectIds, allSprints, requireMultipleProjects) };
   }
 
   return {
     target: (projectId: string) => build(projectId, new Set([projectId]), false),
     async caller(callerId: string, projectId: string) {
-      const memberships = await db.projectMember?.findMany({ where: { userId: callerId, project: activeProject }, take: 100, select: { projectId: true } }) ?? [];
-      return build(projectId, new Set(memberships.map(({ projectId }) => projectId)), true);
+      const memberships = await db.projectMember?.findMany({ where: { userId: callerId, project: activeProject }, orderBy: { projectId: "asc" }, select: { projectId: true } }) ?? [];
+      const projectIds = new Set(memberships.map(({ projectId }) => projectId));
+      if (!projectIds.has(projectId)) throw new Error("NOT_MEMBER");
+      return build(projectId, projectIds, true);
     },
   };
 }
