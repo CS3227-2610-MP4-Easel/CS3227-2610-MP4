@@ -5,7 +5,7 @@ describes `INT`; read it for context and write here instead of editing it.
 `sync-project-state` folds this file in after the branch merges.
 
 - **Branch:** w4-sign-in-screen (from `INT` at `512dc4c`)
-- **Base:** 512dc4c
+- **Base:** b95546f
 - **Owner:** ludannnn (Developer member)
 - **Status:** Approved
 - **Approved:** ludannnn 2026-11-08
@@ -80,6 +80,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | T6 done: register flow (role and code, account with hold and skip-`signUp`, finish setup, 429 countdown, error states, code kept only in component state). Implementer choice accepted: a role/code error at Create account returns to step 1. Full review: no blocking; fixed a lost displayName 422 message, cooldown enforced in code, email/password locked once the account exists, tests tightened (deferred double-click, hold release on error, code clearing). Rejected nit: Retry resends the values of the failed request (matches "repeats the failed request"). Deviations: two T4 gate tests updated to the real headings; fake timers limited to intervals. Wave 4 check: `npm test` 487/487 + fe 126/126, typecheck, build green | W4 | `d034112` |
 | 2026-11-08 | T7 done: `src/fe/test/source-rules.test.ts` enforces the six auth source rules and empty `.env.example` values, with breach samples; smoke and link-check scripts marked prototype-only. Full review: no blocking; fixed skip-dir scope, client-file detection behind comments, rule 6 for `export … from`/`require`/`.js`/`index`, template-literal imports, exact-path exemption tests. Remaining regex limits recorded as a Known Gap. Close-out checks: typecheck, `npm test` 487/487 + fe 139/139 (5.8 s), build, audit (no high), close-out lint clean | W4 | `f438c32` |
 | 2026-11-08 | Close-out code review (branch vs `development`, high): 10 findings; fixed 7 (stale Retry values, a 401 during registration stuck Retry, session stuck on "Loading…" after a no-user 401, hold release now re-reads `/api/me` (D~3), Top sign-out with no user, `/api/as` 500 on a malformed `to`, a redundant condition) and re-reviewed; rejected: Top role-mapping dedupe (screen role is `pm` on `/styleguide` and `/states`, so Top must read the session user), lazy Firebase SDK loading (handover); recorded D~2 (401 state) and D~4 (trailer format). Final checks: typecheck, `npm test` 487/487 + fe 149/149, build, audit no high | W4 | `efe86cb` |
+| 2026-11-08 | Merged `development` at `b95546f` (W5 PR #23) after Gate 3, no conflicts; re-checked: typecheck, `npm test` 562/562 + fe 149/149, build, audit no high | W4 | `9be278f` |
 
 ---
 
