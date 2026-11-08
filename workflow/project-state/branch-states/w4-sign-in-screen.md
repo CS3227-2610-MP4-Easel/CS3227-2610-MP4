@@ -33,6 +33,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 - [ ] T7 spec, Gate 1.
 - [ ] T7 plan, Gate 2; build; Gate 3.
+- [x] Local setup verified 2026-11-08: Firebase project `agile-platform-dev` created by ludannnn (Email/Password on, web app registered), local Postgres migrated, endpoint 2 returns `{"valid":true}` and endpoint 4 returns 401 without a token.
+- [ ] **Handover:** to the repo owner (W13): `agile-platform-dev` exists (owner ludannnn; add the repo owner as Owner); create `agile-platform-prod` with that exact ID (`src/be/db/src/tier-targets.ts`) and add the Vercel domains to Authorized domains on both projects; set the four `NEXT_PUBLIC_FIREBASE_*` values per tier.
 - [ ] **Handover:** close STATE Upcoming "Ask the PM about the W10 sign-in page": the merged W10 code answers it (design only: `components/canvas/Main.tsx` is static and signs in through the `/api/as?role=` cookie stand-in).
 
 ---
