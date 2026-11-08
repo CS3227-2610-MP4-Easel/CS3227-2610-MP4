@@ -71,18 +71,27 @@ function holdProposalLock(base: PrismaClient, proposalId: string) {
   const gate = new Promise<void>((resolve) => { release = resolve; });
   let locked!: () => void;
   const lockedPromise = new Promise<void>((resolve) => { locked = resolve; });
+  const holder = { pid: 0 };
   const done = base.$transaction(async (tx) => {
     await tx.aiProposal.update({ where: { id: proposalId }, data: { updatedAt: new Date() } });
+    const rows = await tx.$queryRaw<{ pid: number }[]>`select pg_backend_pid() as pid`;
+    holder.pid = Number(rows[0].pid);
     locked();
     await gate;
   }, { timeout: 30_000 });
   done.catch(() => locked());
-  return { release, locked: lockedPromise, done };
+  return { release, locked: lockedPromise, done, holder };
 }
 
-async function waitForBlocked(base: PrismaClient, atLeast: number): Promise<void> {
+/** Waits until at least `atLeast` backends are blocked (directly or through another blocked backend) by the holder's backend. */
+async function waitForBlocked(base: PrismaClient, holderPid: number, atLeast: number): Promise<void> {
   for (let i = 0; i < 100; i += 1) {
-    const rows = await base.$queryRaw<{ n: bigint }[]>`select count(*)::bigint as n from pg_stat_activity where wait_event_type = 'Lock' and datname = current_database()`;
+    const rows = await base.$queryRaw<{ n: bigint }[]>`
+      with recursive blocked(pid) as (
+        select a.pid from pg_stat_activity a where ${holderPid}::int = any(pg_blocking_pids(a.pid))
+        union
+        select a.pid from pg_stat_activity a join blocked b on b.pid = any(pg_blocking_pids(a.pid))
+      ) select count(*)::bigint as n from blocked`;
     if (Number(rows[0].n) >= atLeast) return;
     await new Promise((r) => setTimeout(r, 50));
   }
@@ -286,6 +295,19 @@ test("E44 Sessions.close throws after commit: the call still succeeds and only t
   });
 });
 
+test("a replayed approve without a stored applied count falls back to counting the stored rows", opts, async () => {
+  await withIntegrationDb(async (base, f) => {
+    const { db, pm, proposalId } = await seed(base, f, { epics: 2, checkpoints: 1, tasksPer: 3 });
+    const sessions = fakeSessions().sessions;
+    await approveProposal({ db, core, sessions }, { proposalId, version: 1, actorId: pm });
+    const row = await proposalRow(base, proposalId);
+    const { applied: _applied, ...rest } = row.payload as Record<string, unknown>;
+    await base.aiProposal.update({ where: { id: proposalId }, data: { payload: rest as never } });
+    const replay = await approveProposal({ db, core, sessions }, { proposalId, version: 2, actorId: pm });
+    assert.deepEqual(replay, { proposalId, status: "APPROVED", created: { checkpoints: 1, epics: 2, tasks: 6 } });
+  });
+});
+
 test("E33 two concurrent approves (barrier): one applies, the other waits and returns the same result; one set of rows", opts, async () => {
   await withIntegrationDb(async (base, f) => {
     const { db, pm, project, proposalId } = await seed(base, f, { epics: 2, checkpoints: 1, tasksPer: 3 });
@@ -299,7 +321,7 @@ test("E33 two concurrent approves (barrier): one applies, the other waits and re
         approveProposal({ db, core, sessions }, { proposalId, version: 1, actorId: pm }),
       ]);
       both.catch(() => undefined);
-      await waitForBlocked(base, 2);
+      await waitForBlocked(base, hold.holder.pid, 2);
     } finally {
       hold.release();
     }
@@ -327,9 +349,9 @@ for (const [firstName, order] of [["approve", ["approve", "reject"]], ["reject",
       try {
         await hold.locked;
         results.push(code(run[order[0]]()));
-        await waitForBlocked(base, 1);
+        await waitForBlocked(base, hold.holder.pid, 1);
         results.push(code(run[order[1]]()));
-        await waitForBlocked(base, 2);
+        await waitForBlocked(base, hold.holder.pid, 2);
       } finally {
         hold.release();
       }

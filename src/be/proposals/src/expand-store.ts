@@ -12,7 +12,6 @@ export type ClaimResult =
   | { kind: "DONE"; epic: PlanEpic }
   | { kind: "CLAIMED"; projectId: string; sessionId: string; approach: string; epic: { title: string; description: string; checkpointName: string | null }; claimedVersion: number };
 
-
 export async function claimEpic(db: FilteredDbClient, input: { proposalId: string; index: number; actorId: string; now?: Date }): Promise<ClaimResult> {
   const now = input.now ?? new Date();
   return db.$transaction(async (tx) => {

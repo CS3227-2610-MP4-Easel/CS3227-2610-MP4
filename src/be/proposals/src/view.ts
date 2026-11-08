@@ -27,15 +27,18 @@ function storedRetrieved(value: unknown): RetrievedId[] {
 
 /** Reads a plan proposal; retrieved titles and project names are looked up per viewer (member projects only). */
 export async function getProposalView(db: FilteredDbClient, proposalId: string, viewerId: string): Promise<PlanProposal | null> {
-  const proposal = await db.aiProposal.findFirst({ where: { id: proposalId } });
+  const [proposal, epicRows] = await Promise.all([
+    db.aiProposal.findFirst({ where: { id: proposalId } }),
+    db.proposalEpic.findMany({ where: { proposalId }, orderBy: { index: "asc" } }),
+  ]);
   if (!proposal) return null;
   const payload = (proposal.payload ?? {}) as Stored;
-  const epicRows = await db.proposalEpic.findMany({ where: { proposalId }, orderBy: { index: "asc" } });
   const ids = storedRetrieved(payload.retrieved);
-  const candidateProjects = [...new Set(ids.map((r) => r.projectId))];
+  const candidateProjects = [...new Set([proposal.projectId, ...ids.map((r) => r.projectId)])];
+  const memberships = await db.projectMember.findMany({ where: { userId: viewerId, projectId: { in: candidateProjects } } });
+  if (!memberships.some((m) => m.projectId === proposal.projectId)) return null;
   const retrieved: PlanProposal["retrieved"] = [];
   if (ids.length > 0) {
-    const memberships = await db.projectMember.findMany({ where: { userId: viewerId, projectId: { in: candidateProjects } } });
     const memberOf = [...new Set(memberships.map((m) => m.projectId))];
     if (memberOf.length > 0) {
       const projects = await db.project.findMany({ where: { id: { in: memberOf } } });
@@ -43,8 +46,10 @@ export async function getProposalView(db: FilteredDbClient, proposalId: string, 
       const visible = ids.filter((r) => names.has(r.projectId));
       const epicIds = visible.filter((r) => r.source === "EPIC").map((r) => r.id);
       const taskIds = visible.filter((r) => r.source === "TASK").map((r) => r.id);
-      const epics = epicIds.length ? await db.epic.findMany({ where: { id: { in: epicIds }, projectId: { in: memberOf } } }) : [];
-      const tasks = taskIds.length ? await db.task.findMany({ where: { id: { in: taskIds }, projectId: { in: memberOf } } }) : [];
+      const [epics, tasks] = await Promise.all([
+        epicIds.length ? db.epic.findMany({ where: { id: { in: epicIds }, projectId: { in: memberOf } } }) : Promise.resolve([]),
+        taskIds.length ? db.task.findMany({ where: { id: { in: taskIds }, projectId: { in: memberOf } } }) : Promise.resolve([]),
+      ]);
       const titles = new Map<string, { projectId: string; title: string }>([
         ...epics.map((e) => [`EPIC:${e.id}`, { projectId: e.projectId, title: e.title }] as const),
         ...tasks.map((t) => [`TASK:${t.id}`, { projectId: t.projectId, title: t.title }] as const),

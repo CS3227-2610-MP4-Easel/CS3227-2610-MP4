@@ -45,9 +45,12 @@ test("E51 a PM who is not a member of the retrieved item's project does not see 
     const forPm2 = await getProposalView(db, id, pm2);
     assert.deepEqual(forPm2?.retrieved.map((r) => r.id), [itemA]);
     assert.equal(forPm2?.retrieved.some((r) => r.id === taskB), false);
-    const forPm3 = await getProposalView(db, id, pm3);
-    assert.deepEqual(forPm3?.retrieved, []);
-    assert.equal(forPm3?.epics.length, 1);
+    // a user who is not a member of the proposal's own project gets nothing
+    assert.equal(await getProposalView(db, id, pm3), null);
+    // a member of another project only still gets nothing
+    const pm4 = await f.user();
+    await f.member(b, pm4);
+    assert.equal(await getProposalView(db, id, pm4), null);
     assert.equal(forPm2?.epics.length, 1);
     assert.equal(forPm2?.version, 1);
     assert.equal(await getProposalView(db, randomUUID(), pm1), null);

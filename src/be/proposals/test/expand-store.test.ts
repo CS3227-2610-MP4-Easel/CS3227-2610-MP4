@@ -32,21 +32,24 @@ function holdProposalLock(base: PrismaClient, proposalId: string, inside?: (tx: 
   const gate = new Promise<void>((resolve) => { release = resolve; });
   let locked!: () => void;
   const lockedPromise = new Promise<void>((resolve) => { locked = resolve; });
+  const holder = { pid: 0 };
   const done = base.$transaction(async (tx) => {
     await tx.aiProposal.update({ where: { id: proposalId }, data: { updatedAt: new Date() } });
     if (inside) await inside(tx);
+    const rows = await tx.$queryRaw<{ pid: number }[]>`select pg_backend_pid() as pid`;
+    holder.pid = Number(rows[0].pid);
     locked();
     await gate;
   }, { timeout: 30_000 });
   // A failed hold must not leave the test waiting forever.
   done.catch(() => locked());
-  return { release, locked: lockedPromise, done };
+  return { release, locked: lockedPromise, done, holder };
 }
 
-/** Waits until some backend is blocked on a lock (the second transaction is waiting). */
-async function waitForBlocked(base: PrismaClient): Promise<void> {
+/** Waits until a backend is blocked by the holder's backend (the second transaction is waiting). */
+async function waitForBlocked(base: PrismaClient, holderPid: number): Promise<void> {
   for (let i = 0; i < 100; i += 1) {
-    const rows = await base.$queryRaw<{ n: bigint }[]>`select count(*)::bigint as n from pg_stat_activity where wait_event_type = 'Lock' and datname = current_database()`;
+    const rows = await base.$queryRaw<{ n: bigint }[]>`select count(*)::bigint as n from pg_stat_activity a where ${holderPid}::int = any(pg_blocking_pids(a.pid))`;
     if (Number(rows[0].n) > 0) return;
     await new Promise((r) => setTimeout(r, 50));
   }
@@ -106,7 +109,7 @@ test("E24a the second expand arrives while the first holds the claim: one claim 
     try {
       await hold.locked;
       second = code(claimEpic(db, { proposalId, index: 0, actorId: pm }));
-      await waitForBlocked(base);
+      await waitForBlocked(base, hold.holder.pid);
     } finally {
       hold.release();
     }
@@ -139,7 +142,7 @@ test("E24b the second expand arrives after the first stored its result: DONE wit
     try {
       await hold.locked;
       first = claimEpic(db, { proposalId, index: 0, actorId: pm });
-      await waitForBlocked(base);
+      await waitForBlocked(base, hold.holder.pid);
     } finally {
       hold.release();
     }
