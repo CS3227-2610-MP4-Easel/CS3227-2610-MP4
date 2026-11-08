@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 00:00 | Codex | W13 | In progress — owner action | Regenerating the legacy W13 plan for the approved manual T4 gate | Update the T4 plan checklist and re-lint before T6 preflight | 2026-11-08 00:00 |
+| S1 | 2026-11-08 00:00 | Codex | W13 | Blocked — needs human | Manual T4 gate is partial: health passes, unauthenticated `/api/me` returns the expected 401, but seeded dev data and authenticated smoke evidence are missing | Owner seeds the canonical `development` target and reruns authenticated `/api/me`, foreign-token, and standup smoke checks | 2026-11-08 00:00 |
 
 **Remaining**
 
@@ -67,6 +67,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | T6 preflight found the plan's `.github/workflows/w13-dev-check.yml` was removed in `c9ed369`; option 1 cannot run until the owner chooses to recreate that workflow or accept an explicit audit exception. | W13 | this commit |
 | 2026-11-08 | Removed the dead dev-check verifier, dedicated test, and runbook section; historical plan/spec/state references remain for audit history. | W13 | this commit |
 | 2026-11-08 | Operator approved the amended W13 safety spec at Gate 1; the removed automated dev-check is replaced by owner-recorded Vercel metadata plus fixed development smoke evidence. | W13 | this commit |
+| 2026-11-08 | Owner reported partial manual T4 evidence: `GET /api/health` passes, unauthenticated `GET /api/me` returns the expected 401, and no seeded development data exists yet; T4 remains incomplete. | W13 | this commit |
 
 ## 7. Decisions
 
