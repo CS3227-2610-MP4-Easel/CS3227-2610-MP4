@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 00:00 | Codex | W13 | In progress — owner action | Original W13 T5 complete; preparing T6 handoff | Review T5 evidence summary and begin the protected production migration/deployment plan | 2026-11-08 00:00 |
+| S1 | 2026-11-08 00:00 | Codex | W13 | Blocked — needs human | T6 preflight blocked by the outstanding T4 deployment gate | Owner confirms the deployed development SHA and dev smoke evidence, or explicitly resolves the T4 gate | 2026-11-08 00:00 |
 
 **Remaining**
 
@@ -38,7 +38,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | In progress — owner action | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | Safety T4 and original W13 T5 done; T6 protected production migration/deployment is next | — |
+| W13 | Environments, seed data and deployment | Blocked — needs human | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-06-w13-deployment.md) | T5 done; T6 cannot start until T4 deployed-SHA and dev-smoke evidence is confirmed | — |
 
 ---
 
@@ -64,6 +64,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Operator amended the recovery target: seed `w13-recovery-baseline` and create `w13-recovery-past` from its pre-change point; the validator now accepts only the baseline name. | W13 | this commit |
 | 2026-11-08 | Owner confirmed `w13-recovery-past` contains the state from before the controlled changes to `w13-recovery-baseline`; restore verification passed, with timing and post-restore seed evidence still pending. | W13 | this commit |
 | 2026-11-08 | Owner `teleifo` verified the recovered branch and seed data; redacted T5 evidence records 20-second RPO/RTO (0.0056 hours each) and a passing outcome. | W13 | this commit |
+| 2026-11-08 | T6 preflight stopped at the plan gate: T4's deployed SHA and dev smoke evidence are not recorded in this continuation state, so protected production deployment work cannot begin yet. | W13 | this commit |
 
 ## 7. Decisions
 
@@ -100,6 +101,12 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Decision:** Supersede C~2. Use `agile-platform-dev/w13-recovery-baseline` as the seeded known-good branch and `w13-recovery-past` as its disposable recovered child created from the point immediately before the controlled change.
 - **Why:** The seeded baseline must remain intact while the recovered state is created from a branch whose parent contains the known-good data.
 - **Rejected:** Restoring the seeded branch directly from empty `development`.
+
+### Q~5 — T4 deployment evidence required before T6
+
+- **Date:** 2026-11-08
+- **Question:** Has the owner completed T4's deployed-SHA and dev smoke evidence gate, or should the existing T4 read-only configuration audit be explicitly accepted as the gate evidence?
+- **Why blocked:** T6 depends on T4, and the approved plan requires this owner gate before protected production migration/deployment work.
 
 ## 8. Deviations
 
