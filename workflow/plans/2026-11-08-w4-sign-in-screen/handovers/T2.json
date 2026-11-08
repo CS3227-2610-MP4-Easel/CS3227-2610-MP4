@@ -11,7 +11,10 @@
     "T4: call authMode(process.env) in layout.tsx and [[...slug]]/page.tsx only; pass as prop.",
     "T7: mode.ts is the module rule six protects."
   ],
-  "deviations": [],
+  "deviations": [
+    {"what": "Follow-up commit af955c8 used commit -a and also included the orchestrator's branch-state edit", "why": "recording the sha needed a second commit", "needs": "none"},
+    {"what": "Build run by the orchestrator, not the implementer: pass", "why": "not run in the task", "needs": "none"}
+  ],
   "edge_cases": ["E56", "E57", "E58", "E84", "E85", "E59", "E86", "E87"],
-  "checks": {"build": "not run", "tests": "pass", "lint": "pass"}
+  "checks": {"build": "pass", "tests": "pass (fe 4 files, 15 tests)", "lint": "pass"}
 }
