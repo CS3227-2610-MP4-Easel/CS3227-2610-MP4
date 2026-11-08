@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 00:00 | Codex | W13 | In progress — owner action | Owner reports the reduced health/auth/tier checks pass; the redacted T4 evidence object still needs deployment ID and timestamps | Owner supplies non-secret deployment metadata (`deploymentId`, `createdAt`, `checkedAt`) so T4 can be recorded complete | 2026-11-08 00:00 |
+| S1 | 2026-11-08 00:00 | Codex | W13 | In progress — owner action | T4 evidence is complete and redacted; T6 protected production workflow remains to be implemented | Implement T6, then run its review gate before any production promotion | 2026-11-08 00:00 |
 
 **Remaining**
 
@@ -38,7 +38,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | In progress — owner action | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-06-w13-deployment.md) | T5 done; approved manual T4 gate is being regenerated before T6 | — |
+| W13 | Environments, seed data and deployment | In progress — owner action | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-06-w13-deployment.md) | T4 and T5 done; T6 is next | — |
 
 ---
 
@@ -72,6 +72,27 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Operator reversed C~5's standup/AI prerequisite: T4 now requires only deployment metadata plus health/auth/foreign-token/tier evidence; W9 remains separate. | W13 | this commit |
 | 2026-11-08 | Operator verified the reduced T4 gate and authorized continuation; remaining work is owner-recorded deployment metadata plus health/auth/tier evidence. | W13 | this commit |
 | 2026-11-08 | Owner reported the reduced health, authenticated identity, foreign-token, and dev-tier checks as verified; T4 remains pending only for the redacted deployment metadata fields. | W13 | this commit |
+| 2026-11-08 | Owner supplied the Vercel deployment ID and timestamps; reduced T4 evidence is complete with health/auth/foreign-token/tier checks passing and outcome `pass`. | W13 | this commit |
+
+### T4 redacted evidence
+
+```yaml
+target: development
+commit: 512dc4c0ad0cf487cca2020756cc5d0c82716525
+pushTimestamp: 2026-11-08T10:24:21Z
+deploymentId: dpl_sPxp8s4zHAokr4fM9c5D8wwZZQUi
+project: prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd
+alias: development
+state: READY
+createdAt: 2026-11-08T10:24:25.623Z
+checkedAt: 2026-11-08T11:58:15Z
+health: pass
+auth: pass
+foreignAuth: pass
+tier: pass
+owner: teleifo
+outcome: pass
+```
 
 ## 7. Decisions
 

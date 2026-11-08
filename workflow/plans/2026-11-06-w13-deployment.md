@@ -149,8 +149,8 @@
 - [x] 1. Retire the removed automated dev-check workflow, verifier, and dedicated tests; preserve historical references only in audit records.
 - [x] 2. Amend and approve the manual T4 evidence contract and runbook under C~5.
 - [x] 3. Run the repository tests, workflow validator, agent-policy check, and secret scan after cleanup.
-- [ ] 4. `GATE:` repository owner confirms the merged `development` SHA, canonical project/alias from the tier manifest, `READY` deployment identity, and fixed health/auth/tier smoke results using the manual runbook.
-- [ ] 5. Record the redacted T4 evidence in branch state and mark T4 complete before T6 starts.
+- [x] 4. `GATE:` repository owner confirms the merged `development` SHA, canonical project/alias from the tier manifest, `READY` deployment identity, and fixed health/auth/tier smoke results using the manual runbook. **Done 2026-11-08:** owner `teleifo` verified the reduced gate.
+- [x] 5. Record the redacted T4 evidence in branch state and mark T4 complete before T6 starts. **Done 2026-11-08.**
 
 ### T5: Recovery rehearsal
 
