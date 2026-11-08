@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-08 by Codex — amended spec approved at Gate 1
+- **Last updated:** 2026-11-08 by Codex — amended T4 plan approved at Gate 2
 
 **Untouched:** Architecture, Conventions, Known Gaps
 
@@ -25,11 +25,11 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 00:00 | Codex | W13 | Active | Amend the T4 audit task for the approved F6 boundary | Validate and review the plan amendment, then request Gate 2 approval | 2026-11-08 00:00 |
+| S1 | 2026-11-08 00:00 | Codex | W13 | Active | T4 owner-gated scope and source audit | Record redacted Vercel and GitHub audit evidence; stop if any scope or protection check fails | 2026-11-08 00:00 |
 
 **Remaining**
 
-- [ ] Amend and re-approve the affected T4 plan task at Gate 2.
+- [ ] **Handover:** Complete T4's redacted Vercel/GitHub audit under the approved task contract; any failed scope or protection condition remains a blocker and requires no provider mutation.
 - [ ] **Handover:** After the amended approvals, record the redacted T4 audit result distinguishing generic PR previews from the protected `development` branch.
 
 ---
@@ -38,7 +38,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | Building | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | F6 amended spec approved; T4 plan amendment in flight | — |
+| W13 | Environments, seed data and deployment | Building | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | F6/T4 amendments approved; owner audit in flight | — |
 
 ---
 
@@ -52,6 +52,9 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Operator chose to retain AD-53; amended F6 will apply credential denial to untrusted PR previews, not protected `development`. | W13 | this commit |
 | 2026-11-08 | Amended the high-risk safety spec to make the protected development exception auditable; Implementer, Tester/QA, Attacker, and Maintainer reviews found no remaining blocking issues. | W13 | this commit |
 | 2026-11-08 | Operator approved the amended W13 safety specification at Gate 1. | W13 | this commit |
+| 2026-11-08 | Amended the sole outstanding legacy T4 audit for AD-53's protected development exception; retained the historical plan instead of creating a partial v2 plan that cannot truthfully trace already-merged requirements. | W13 | this commit |
+| 2026-11-08 | Plan review corrected an obsolete completion reference to the removed development verification workflow; the T4 audit now completes on its own redacted evidence. | W13 | this commit |
+| 2026-11-08 | Operator approved the amended W13 T4 audit plan at Gate 2. | W13 | this commit |
 
 ## 7. Decisions
 
