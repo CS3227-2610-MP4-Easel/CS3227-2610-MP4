@@ -43,7 +43,7 @@ test("E1/E2/E12/E15 workflow is isolated and gates on W1", async () => {
   assert.match(workflow, /sha256sum --check/);
 
   const packageManifest = JSON.parse(await readFile(new URL("package.json", root), "utf8"));
-  assert.equal(packageManifest.scripts?.test, "node --import tsx scripts/discover-tests.mjs");
+  assert.equal(packageManifest.scripts?.test, "node --import tsx scripts/discover-tests.mjs && npm --workspace easel-fe run test");
   assert.match(packageManifest.scripts?.["check:security-review"] ?? "", /check-security-review\.mjs/);
   assert.doesNotMatch(workflow, /npm run check:security-review/);
   assert.match(workflow, /npm run check:workflows -- --base-sha/);
