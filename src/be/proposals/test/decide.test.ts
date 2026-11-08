@@ -6,7 +6,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { applyPlan } from "@agile/core";
 import { createDbClient } from "@agile/db";
 import { createSessions } from "@agile/llm-gateway";
-import { ProposalError, approveProposal, claimEpic, createProposal, getProposalView, rejectProposal, storeEpic, type DecideDeps, type EpicTask } from "../src/index.js";
+import { ProposalError, approveProposal, editEpic, claimEpic, createProposal, getProposalView, rejectProposal, storeEpic, type DecideDeps, type EpicTask } from "../src/index.js";
 import { integrationUrl, withIntegrationDb, type Fixtures } from "./fakes.js";
 
 const opts = { skip: !integrationUrl };
@@ -147,7 +147,7 @@ test("E32 approve repeated with the old and the new version returns the same res
     assert.deepEqual(newVersion, first);
     assert.deepEqual(await domainCounts(base, project), afterFirst);
     assert.equal((await proposalRow(base, proposalId)).version, 2);
-    assert.equal(calls.length, 3);
+    assert.equal(calls.length, 1);
     assert.ok(calls.every((c) => c.sessionId === sessionId && c.outcome === "ACCEPTED"));
   });
 });
@@ -331,7 +331,7 @@ test("E33 two concurrent approves (barrier): one applies, the other waits and re
     assert.deepEqual(first, { proposalId, status: "APPROVED", created: { checkpoints: 1, epics: 2, tasks: 6 } });
     assert.deepEqual(await domainCounts(base, project), { checkpoints: 1, epics: 2, tasks: 6, events: 6 });
     assert.equal((await proposalRow(base, proposalId)).version, 2);
-    assert.equal(calls.length, 2);
+    assert.equal(calls.length, 1);
   });
 });
 
@@ -414,5 +414,57 @@ test("E56 approve after the session went idle over 30 minutes succeeds and the s
     assert.equal((await domainCounts(base, project)).tasks, 4);
     assert.equal((await base.aiSession.findUniqueOrThrow({ where: { id: sessionId } })).outcome, "ABANDONED");
     assert.equal((await getProposalView(db, proposalId, pm))?.status, "APPROVED");
+  });
+});
+
+
+test("W7b E46 stale approval creates nothing and does not close", opts, async () => {
+  await withIntegrationDb(async (base, f) => {
+    const { db, pm, project, proposalId } = await seed(base, f);
+    const { calls, sessions } = fakeSessions();
+    await base.aiProposal.update({ where: { id: proposalId }, data: { version: 2 } });
+    assert.equal(await code(approveProposal({ db, core, sessions }, { proposalId, version: 1, actorId: pm })), "CONFLICT_VERSION");
+    assert.deepEqual(await domainCounts(base, project), NONE);
+    assert.equal(calls.length, 0);
+  });
+});
+
+test("W7b E54 edited approval closes once and replay creates nothing; E57 edit after approve conflicts", opts, async () => {
+  await withIntegrationDb(async (base, f) => {
+    const { db, pm, project, proposalId, sessionId } = await seed(base, f);
+    const row = await proposalRow(base, proposalId);
+    await base.aiProposal.update({ where: { id: proposalId }, data: { payload: { ...(row.payload as object), edited: true } } });
+    const { calls, sessions } = fakeSessions();
+    const first = await approveProposal({ db, core, sessions }, { proposalId, version: 1, actorId: pm });
+    const counts = await domainCounts(base, project);
+    assert.deepEqual(await approveProposal({ db, core, sessions }, { proposalId, version: 1, actorId: pm }), first);
+    assert.deepEqual(await domainCounts(base, project), counts);
+    assert.deepEqual(calls, [{ sessionId, outcome: "EDITED", actorId: pm }]);
+    assert.equal(await code(editEpic(db, { proposalId, actorId: pm, version: 1, index: 0, title: "Changed" })), "CONFLICT_STATE");
+  });
+});
+
+test("W7b E55 unedited approval closes ACCEPTED", opts, async () => {
+  await withIntegrationDb(async (base, f) => {
+    const { db, pm, proposalId, sessionId } = await seed(base, f);
+    const { calls, sessions } = fakeSessions();
+    await approveProposal({ db, core, sessions }, { proposalId, version: 1, actorId: pm });
+    assert.deepEqual(calls, [{ sessionId, outcome: "ACCEPTED", actorId: pm }]);
+  });
+});
+
+test("W7b E56 edited approval succeeds if close throws and warns only session id", opts, async () => {
+  await withIntegrationDb(async (base, f) => {
+    const { db, pm, proposalId, sessionId } = await seed(base, f);
+    const row = await proposalRow(base, proposalId);
+    await base.aiProposal.update({ where: { id: proposalId }, data: { payload: { ...(row.payload as object), edited: true } } });
+    const { calls, sessions } = fakeSessions(true);
+    const warn = mock.method(console, "warn", () => undefined);
+    try {
+      assert.equal((await approveProposal({ db, core, sessions }, { proposalId, version: 1, actorId: pm })).status, "APPROVED");
+      assert.deepEqual(calls, [{ sessionId, outcome: "EDITED", actorId: pm }]);
+      assert.deepEqual(warn.mock.calls.map(c => c.arguments), [["pm_session_close_failed", { sessionId }]]);
+      assert.equal((await base.aiSession.findUniqueOrThrow({ where: { id: sessionId } })).outcome, "OPEN");
+    } finally { warn.mock.restore(); }
   });
 });

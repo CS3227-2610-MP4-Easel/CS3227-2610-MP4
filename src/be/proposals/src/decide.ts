@@ -28,13 +28,13 @@ export async function approveProposal(deps: DecideDeps, input: { proposalId: str
     if (proposal.status === "APPROVED") {
       const stored = payload.applied as Record<string, unknown> | null | undefined;
       const valid = !!stored && typeof stored === "object" && typeof stored.checkpoints === "number" && typeof stored.epics === "number" && typeof stored.tasks === "number";
-      if (valid) return { sessionId: proposal.sessionId, result: { proposalId: proposal.id, status: "APPROVED" as const, created: stored as PlanApproval["created"] } };
+      if (valid) return { closeOutcome: null, sessionId: proposal.sessionId, result: { proposalId: proposal.id, status: "APPROVED" as const, created: stored as PlanApproval["created"] } };
       const rows = await tx.proposalEpic.findMany({ where: { proposalId: proposal.id }, orderBy: { index: "asc" } });
       const counted = countPlan({
         checkpoints: (Array.isArray(payload.checkpoints) ? payload.checkpoints : []) as PlanInput["checkpoints"],
         epics: rows.map((epic) => ({ title: epic.title, description: epic.description, checkpointName: epic.checkpointName, tasks: (epic.tasks ?? []) as PlanInput["epics"][number]["tasks"] })),
       } as PlanInput);
-      return { sessionId: proposal.sessionId, result: { proposalId: proposal.id, status: "APPROVED" as const, created: counted } };
+      return { closeOutcome: null, sessionId: proposal.sessionId, result: { proposalId: proposal.id, status: "APPROVED" as const, created: counted } };
     }
     if (proposal.status !== "PENDING") throw new ProposalError("CONFLICT_STATE");
     if (proposal.version !== input.version) throw new ProposalError("CONFLICT_VERSION");
@@ -60,9 +60,9 @@ export async function approveProposal(deps: DecideDeps, input: { proposalId: str
       if (message === "FORBIDDEN_ROLE") throw new ProposalError("FORBIDDEN_ROLE");
       throw error; // rolls the transaction back
     }
-    return { sessionId: proposal.sessionId, result: { proposalId: proposal.id, status: "APPROVED" as const, created: applied } };
+    return { closeOutcome: payload.edited === true ? "EDITED" as const : "ACCEPTED" as const, sessionId: proposal.sessionId, result: { proposalId: proposal.id, status: "APPROVED" as const, created: applied } };
   }, { timeout: 20_000 });
-  await closeSession(sessions, outcome.sessionId, "ACCEPTED", input.actorId);
+  if (outcome.closeOutcome) await closeSession(sessions, outcome.sessionId, outcome.closeOutcome, input.actorId);
   return outcome.result;
 }
 
