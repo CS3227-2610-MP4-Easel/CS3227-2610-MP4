@@ -25,10 +25,14 @@ No down migration is used. If a migration fails, stop the job and preserve only 
 ## Manual recovery rehearsal
 
 The owner confirms that the active Neon plan supports RPO no greater than 24 hours and RTO no
-greater than 4 hours. Recovery is performed manually through the approved restricted Neon target;
-a developer or preview target is not permitted. Restore the last known-good backup, apply a
-corrected forward migration, and reapply the non-production seed only where the approved rehearsal
-target permits it.
+greater than 4 hours. Recovery is performed manually through the approved restricted Neon target.
+An ordinary developer environment, generic preview deployment, production project, or target
+containing production data is not permitted. The owner may use an explicitly approved isolated
+branch in a separate development project (for example, `agile-platform-dev/w13-recovery-rehearsal`)
+only when it contains synthetic non-production data, has no production credentials or application
+wiring, and is used solely for this owner-operated rehearsal. Restore the last known-good backup,
+apply a corrected forward migration, and reapply the non-production seed only where the approved
+rehearsal target permits it.
 
 Record a redacted evidence object containing exactly: `target`, `backupReference`,
 `migrationChecksum`, `restoreStartedAt`, `restoreEndedAt`, `rpoHours`, `rtoHours`, `seedResult`,

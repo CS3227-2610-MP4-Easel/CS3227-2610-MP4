@@ -59,6 +59,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Owner authorized revealing only generic Preview `APP_TIER`; Vercel required owner MFA, so the audit page was handed off without entering or recording a code. | W13 | this commit |
 | 2026-11-08 | Completed the redacted T4 audit: generic Preview is `APP_TIER=preview`; no forbidden names have generic/fork Preview scope; dev-tier variables are exact-`development` scoped; Vercel repository linkage and GitHub AD-32 protection pass. | W13 | this commit |
 | 2026-11-08 | Operator approved `agile-platform-dev / w13-recovery-rehearsal` as the restricted Neon target for original W13 T5; owner-operated backup/restore evidence is now the next action. | W13 | this commit |
+| 2026-11-08 | Amended the recovery runbook to permit the approved isolated development target under synthetic-data-only and no-production-wiring constraints; ordinary previews and production targets remain forbidden. | W13 | this commit |
 
 ## 7. Decisions
 
@@ -71,6 +72,14 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Decision:** Keep development-scoped dev-tier configuration on the protected `development` branch. Amend the W13 safety spec and T4 audit to forbid credentials only for untrusted PR previews; generic Preview receives only `APP_TIER=preview` and allowed non-sensitive Vercel identity fields.
 - **Why:** The protected development branch is the dev tier and must retain its operational configuration, while untrusted PR code must remain credential-free.
 - **Rejected:** Removing development-tier variables under Vercel's Preview deployment type, which would reverse AD-53 and disable the intended dev tier.
+
+### C~2 — Permit the approved isolated development recovery target
+
+- **Date:** 2026-11-08
+- **Who asked:** operator, after the W13 recovery runbook prohibited all developer targets.
+- **Decision:** Amend the runbook to permit `agile-platform-dev/w13-recovery-rehearsal` as a restricted T5 target because it is a separate project branch approved by the operator, provided it contains synthetic data only and has no production credentials or application wiring.
+- **Why:** The owner needs a safe, non-production target for the recovery rehearsal while preserving the prohibition on production projects, ordinary developer environments, generic previews, and production data.
+- **Rejected:** Using `agile-platform-prod/production` or an ordinary preview/developer target for recovery testing.
 
 ## 8. Deviations
 
