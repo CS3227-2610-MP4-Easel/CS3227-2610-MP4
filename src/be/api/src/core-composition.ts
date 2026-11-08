@@ -1,30 +1,34 @@
 import type { AuthRuntime } from "@agile/auth";
 import { registerContextSource, registerCore } from "@agile/ai-context";
-import { NotMember } from "@agile/contracts";
+import { NotMember, type ResolvedResource } from "@agile/contracts";
 import { createCheckpoints, createCore, createCoreResourceResolvers, createEpics, createProjects, createTasks, registerCoreContextSources, resolveCoreResource } from "@agile/core";
 import type { AuthDependencies } from "./middleware/auth.js";
 import { createW5Routes, type W5RouteServices } from "./routes/index.js";
 
-type Db = AuthRuntime["db"];
-
 export type CoreComposition = Pick<AuthDependencies, "resolveResource" | "requireMember"> & { routes: ReturnType<typeof createW5Routes> };
 
 /** The sole production owner of core, context registration, and W5 transport services. */
-export function createCoreComposition(auth: Pick<AuthRuntime, "db" | "lookupUserByEmail" | "lookupUserRole">): CoreComposition {
+export function createCoreComposition(auth: Pick<AuthRuntime, "db" | "lookupUserByEmail" | "lookupUserRole" | "lookupArchivedMembership">): CoreComposition {
   // Core's narrow structural ports deliberately accept only the delegates each service uses.
   const db = auth.db as unknown as Record<string, unknown>;
-  const core = createCore({ db: db as never });
+  const core = createCore({ db: db as never, archivedMembership: auth.lookupArchivedMembership });
   // The HTTP policy layer deliberately speaks only the anti-oracle NOT_FOUND sentinel.
   const requireMember: AuthDependencies["requireMember"] = async (userId, projectId) => {
     try { await core.requireMember(userId, projectId); } catch (error) {
+      if (error instanceof NotMember && await auth.lookupArchivedMembership(userId, projectId)) return;
       if (error instanceof NotMember) throw new Error("NOT_FOUND");
       throw error;
     }
   };
-  const access = { requireMember: core.requireMember, archivedMembership: async () => false };
+  const access = { requireMember: core.requireMember, archivedMembership: auth.lookupArchivedMembership };
   const resolvers = createCoreResourceResolvers(db as never);
   const resolveResource: AuthDependencies["resolveResource"] = async (operationId, request) => {
-    const resolved = await resolveCoreResource(resolvers, operationId, request);
+    let resolved = await resolveCoreResource(resolvers, operationId, request);
+    // Filtered reads hide archived projects. For the add-member operation, only the auth-owned
+    // membership probe may restore the archived shape needed to preserve 409/404 precedence.
+    if (operationId === "PROJECT_MEMBER_ADD" && !resolved && request.userId && typeof request.params.projectId === "string" && await auth.lookupArchivedMembership(request.userId, request.params.projectId)) {
+      resolved = { kind: "MEMBERSHIP", projectId: request.params.projectId, state: "ARCHIVED" } satisfies ResolvedResource;
+    }
     if (operationId !== "PROJECT_MEMBER_ADD" || !resolved || resolved.kind === "PROJECT_SET") return resolved;
     const email = request.body && typeof request.body === "object" ? (request.body as { email?: unknown }).email : undefined;
     if (typeof email !== "string") return resolved;
