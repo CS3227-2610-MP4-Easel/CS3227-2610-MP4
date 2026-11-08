@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 00:00 | Codex | W13 | Blocked — needs human | T6 implementation and validation are complete; production configuration is the explicit owner gate | Owner configures the GitHub `production` Environment, Vercel production target, and production secrets; do not run promotion without that approval | 2026-11-08 00:00 |
+| S1 | 2026-11-08 00:00 | Codex | W13 | Blocked — needs human | T6 draft introduced Vercel deployment secrets that conflict with approved C~5's no-token boundary | Owner chooses whether to keep C~5 (use tokenless Vercel Git integration) or explicitly reverse it before any production secret configuration | 2026-11-08 00:00 |
 
 **Remaining**
 
@@ -74,6 +74,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Owner reported the reduced health, authenticated identity, foreign-token, and dev-tier checks as verified; T4 remains pending only for the redacted deployment metadata fields. | W13 | this commit |
 | 2026-11-08 | Owner supplied the Vercel deployment ID and timestamps; reduced T4 evidence is complete with health/auth/foreign-token/tier checks passing and outcome `pass`. | W13 | this commit |
 | 2026-11-08 | T6 implementation is complete through validation: protected `main` workflow, detached SHA/artifact identity checks, production migration invocation, and candidate deployment verification are covered; owner production configuration is now the required gate. | W13 | this commit |
+| 2026-11-08 | Deviation found before configuration: the T6 draft references `VERCEL_TOKEN`/`VERCEL_TEAM_ID`, conflicting with approved C~5's no-token repository-workflow boundary; no production secrets should be added until resolved. | W13 | this commit |
 
 ### T4 redacted evidence
 
@@ -158,6 +159,12 @@ outcome: pass
 - **Who asked:** operator, after the route audit showed endpoint 51 is not implemented.
 - **Decision:** T4 requires deployment metadata plus health, authenticated identity, foreign-project rejection, and dev-tier evidence. The Developer standup/AI probe is removed from T4 and remains a separate W9 responsibility.
 - **Why:** W13 deployment safety must not be blocked by an unstarted feature workstream.
+
+### D~4 — T6 draft conflicts with C~5 no-token boundary
+
+- **Found:** 2026-11-08 during owner configuration review.
+- **What:** The draft T6 workflow asks for `VERCEL_TOKEN` and `VERCEL_TEAM_ID`, while C~5 explicitly retains a no-Vercel-token boundary for repository workflows and application runtime.
+- **Consequence:** Production configuration is paused; no token should be restored until the owner chooses whether to preserve C~5 with tokenless Vercel Git deployment or reverse C~5.
 
 ## 8. Deviations
 
