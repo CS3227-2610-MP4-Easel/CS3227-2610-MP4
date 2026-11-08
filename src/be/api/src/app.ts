@@ -14,9 +14,17 @@ import { registerRoute, type ApiEnv } from "./routes/register.js";
 export function createApiApp(deps?: AuthDependencies, routes?: readonly RouteDefinition[]) {
   if (!deps) {
     const auth = getAuthRuntime();
-    const composition = getCoreComposition(auth);
-    deps = createAppDependencies(auth, composition);
-    routes ??= [...ROUTES, ...composition.routes];
+    // Configuration-free previews deliberately have no Firebase or database client.  They still
+    // build the public API shell, while protected W5 routes remain fail-closed until a configured
+    // tier constructs the database-backed composition.
+    if (auth.settings.firebaseProjectId === null) {
+      deps = createAppDependencies(auth);
+      routes ??= ROUTES;
+    } else {
+      const composition = getCoreComposition(auth);
+      deps = createAppDependencies(auth, composition);
+      routes ??= [...ROUTES, ...composition.routes];
+    }
   }
   routes ??= ROUTES;
   const app = new Hono<ApiEnv>();
