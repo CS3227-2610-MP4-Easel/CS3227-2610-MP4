@@ -7,9 +7,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w13-deployment-continuation (from `INT` at `dc3447f`)
 - **Base:** dc3447f
 - **Owner:** operator / repository owner
-- **Status:** Draft
+- **Status:** In review
 - **Approved:** —
-- **Last updated:** 2026-11-08 by Codex — T4 audit complete; T5 gate pending
+- **Last updated:** 2026-11-08 by Codex — T6 complete; awaiting branch review
 
 **Untouched:** Architecture, Conventions, Known Gaps
 
@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 00:00 | Codex | W13 | In progress — owner action | T6 configuration gate is satisfied: GitHub production migration secret is present and Vercel Git integration is connected to `main` production tracking | Complete T6 review/close-out; no production deployment is triggered from this feature branch | 2026-11-08 00:00 |
+| S1 | 2026-11-08 00:00 | Codex | W13 | In review | T6 implementation and close-out verification are complete | Owner reviews the branch diff and approves or requests changes; no production deployment is triggered from this feature branch | 2026-11-08 00:00 |
 
 **Remaining**
 
@@ -38,7 +38,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | In progress — owner action | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-06-w13-deployment.md) | T4 and T5 done; T6 is next | — |
+| W13 | Environments, seed data and deployment | In review | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-06-w13-deployment.md) | T4, T5, and T6 done; T7 remains a post-merge smoke-harness handover | — |
 
 ---
 
@@ -78,6 +78,13 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Operator kept C~5; removed token-based Vercel link/deploy/inspect steps from T6 and replaced them with a protected, tokenless Vercel Git integration handoff. | W13 | this commit |
 | 2026-11-08 | Owner added the protected GitHub `production` Environment secret `DIRECT_DATABASE_URL`; Vercel Git integration confirmation remains before T6 can proceed. | W13 | this commit |
 | 2026-11-08 | Owner verified Vercel Git integration is connected to `CS3227-2610-MP4-Easel/CS3227-2610-MP4`; Production Branch is `main`, and Vercel reports every commit pushed to `main` creates a Production Deployment. | W13 | this commit |
+| 2026-11-08 | T6 close-out passed: 488 tests (462 passed, 26 skipped), typecheck, lint, contract, Prisma validation, workflow validation, agent-policy, secret scan, and diff check; branch is ready for owner review. | W13 | this commit |
+
+### Handover — post-merge production execution
+
+- **Owner:** repository owner.
+- **When:** after this branch is approved and merged to `development`, then promoted to `main` through the normal release PR.
+- **Steps:** confirm the protected GitHub production Environment approval, observe the tokenless migration/build workflow, and record the resulting production deployment/migration evidence. No Vercel token is used.
 
 ### T4 redacted evidence
 

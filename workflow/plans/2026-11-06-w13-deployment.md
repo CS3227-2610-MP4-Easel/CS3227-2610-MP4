@@ -27,7 +27,7 @@
 | T3 | T1 | — | 2 | Done |
 | T4 | T1, T3 | — | 3 | Done |
 | T5 | T3, T4 | — | 4 | Done |
-| T6 | T1, T3, T5 | T4 | 5 | In progress |
+| T6 | T1, T3, T5 | T4 | 5 | Done |
 | T7 | T1, T4, T6 | — | 6 | Not started |
 
 ## Traceability
@@ -191,8 +191,8 @@
 - [x] 1. Write failing workflow tests for ref/review/check gates, SHA/artifact drift, concurrency, secret timing, and target identity.
 - [x] 2. Implement the protected workflow, immutable source/build checks, and tokenless Vercel Git handoff.
 - [x] 3. Run workflow/security checks and focused W13 tests. **Done 2026-11-08:** 488 tests (462 passed, 26 skipped), typecheck, workflow validator, agent-policy, and secret scan pass.
-- [ ] 4. `GATE:` repository owner configures the GitHub `production` Environment and confirms the linked Vercel Git integration deploys protected `main`; no Vercel token is required.
-- [ ] 5. Update branch state and commit: `feat: add protected W13 production deployment`.
+- [x] 4. `GATE:` repository owner configures the GitHub `production` Environment and confirms the linked Vercel Git integration deploys protected `main`; no Vercel token is required. **Done 2026-11-08:** `DIRECT_DATABASE_URL` is configured and Vercel production tracking is connected to `main`.
+- [x] 5. Update branch state and commit: `feat: add protected W13 production deployment`. **Done 2026-11-08:** implementation and close-out evidence are recorded; production execution remains a post-merge handover.
 
 ### T7: Fixed post-deploy smoke harness
 
