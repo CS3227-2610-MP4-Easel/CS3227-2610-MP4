@@ -7,9 +7,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w5-core-planning (managed worktree, checked out at `faa1c08`)
 - **Base:** faa1c088b2efe7231bc751f9739a90e42e1d793b
 - **Owner:** operator / Codex
-- **Status:** In review
-- **Approved:** Gate 1 spec (operator, 2026-11-08); Gate 2 plan (operator, 2026-11-08)
-- **Last updated:** 2026-11-08 by Codex — focused T6 branch-review repairs verified; awaiting Gate 3
+- **Status:** Approved
+- **Approved:** Gate 1 spec (operator, 2026-11-08); Gate 2 plan (operator, 2026-11-08); Gate 3 branch review (operator, 2026-11-08)
+- **Last updated:** 2026-11-08 by Codex — Gate 3 branch review approved
 
 **Untouched:** Architecture, Conventions, Known Gaps, Decisions, Deviations
 

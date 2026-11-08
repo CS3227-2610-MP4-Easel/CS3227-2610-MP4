@@ -1,6 +1,6 @@
 # W5 Core Planning Implementation Plan
 
-- **Status:** Approved (operator, 2026-11-08)
+- **Status:** Approved (operator, 2026-11-08; Gate 3 branch review approved)
 - **Format:** v2
 - **Spec:** [W5 design](../../specs/2026-11-07-w5-core-planning-design.md) | **Spec hash:** 988caf67f8ca
 - **Workstream:** W5
