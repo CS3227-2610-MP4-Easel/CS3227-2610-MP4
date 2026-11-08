@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { addEpic, deleteEpic, editEpic, replaceCheckpoints, claimEpic, storeEpic, EXPAND_LEASE_MS, ProposalError } from "../src/index.js";
+import { addEpic, deleteEpic, editEpic, replaceCheckpoints, claimEpic, storeEpic, failEpic, EXPAND_LEASE_MS, ProposalError } from "../src/index.js";
 import { integrationUrl, withIntegrationDb } from "./fakes.js";
 import { seed, holdProposalLock } from "./edit-helpers.js";
 const opts = { skip: !integrationUrl };
@@ -24,7 +24,8 @@ test("W7b E31 E33 E34 rekeys and preserves shifted rows across delete and add", 
  let result=await deleteEpic(db,{proposalId,actorId:pm,version:2,index:0}); assert.equal(result.version,3);
  let after=await base.proposalEpic.findMany({where:{proposalId},orderBy:{index:"asc"}});
  assert.deepEqual(after.map(r=>r.index),[0,1,2,3,4,5,6,7,8]);
- for(let n=0;n<after.length;n++) { assert.equal(after[n].contentHash,before[n+1].contentHash); assert.equal(after[n].version,before[n+1].version+1); assert.equal(after[n].expansionStatus,before[n+1].expansionStatus); assert.deepEqual(after[n].tasks,before[n+1].tasks); assert.equal(after[n].error,before[n+1].error); }
+ const allocated=Math.max(...before.map(r=>r.version))+1;
+ for(let n=0;n<after.length;n++) { assert.equal(after[n].contentHash,before[n+1].contentHash); assert.equal(after[n].version,allocated); assert.equal(after[n].expansionStatus,before[n+1].expansionStatus); assert.deepEqual(after[n].tasks,before[n+1].tasks); assert.equal(after[n].error,before[n+1].error); }
  assert.equal(await code(deleteEpic(db,{proposalId,actorId:pm,version:2,index:0})),"CONFLICT_VERSION");
  let version=3; while(result.epics.length>1) result=await deleteEpic(db,{proposalId,actorId:pm,version:version++,index:0});
  assert.equal(await code(deleteEpic(db,{proposalId,actorId:pm,version,index:0})),"VALIDATION_FAILED");
@@ -32,6 +33,40 @@ test("W7b E31 E33 E34 rekeys and preserves shifted rows across delete and add", 
  assert.equal(await code(addEpic(db,input(proposalId,pm,version))),"VALIDATION_FAILED");
  });
  await withIntegrationDb(async(base,f)=>{ const {db,proposalId,pm}=await seed(base,f,4); const before=await base.proposalEpic.findMany({where:{proposalId},orderBy:{index:"asc"}}); await deleteEpic(db,{proposalId,actorId:pm,version:1,index:1}); const after=await base.proposalEpic.findMany({where:{proposalId},orderBy:{index:"asc"}}); assert.deepEqual(after.map(r=>r.contentHash),[before[0].contentHash,before[2].contentHash,before[3].contentHash]); });
+});
+
+test("W7b E37 stale claims cannot target shifted or replacement epics", opts, async()=>{
+ const now=new Date("2026-11-09T00:00:00Z"); const expired=new Date(now.getTime()+EXPAND_LEASE_MS+1);
+ const task={title:"t",description:"",acceptanceCriteria:[],storyPoints:1 as const};
+ await withIntegrationDb(async(base,f)=>{ const {db,proposalId,pm}=await seed(base,f,4);
+  await base.proposalEpic.update({where:{proposalId_index:{proposalId,index:1}},data:{version:3,expansionStatus:"IN_PROGRESS",leaseExpiresAt:now}});
+  await base.proposalEpic.update({where:{proposalId_index:{proposalId,index:2}},data:{version:2,expansionStatus:"IN_PROGRESS",leaseExpiresAt:now}});
+  await deleteEpic(db,{proposalId,actorId:pm,version:1,index:0,now:expired});
+  assert.equal(await code(storeEpic(db,{proposalId,index:1,claimedVersion:3,tasks:[task],flagged:false})),"CONFLICT_STATE");
+  assert.equal(await failEpic(db,{proposalId,index:1,claimedVersion:3,error:"stale"}),false);
+ });
+ await withIntegrationDb(async(base,f)=>{const {db,proposalId,pm}=await seed(base,f,2);
+  const old=await claimEpic(db,{proposalId,actorId:pm,index:1,now}); if(old.kind!=="CLAIMED") throw Error("claim");
+  await deleteEpic(db,{proposalId,actorId:pm,version:1,index:1,now:expired});
+  await addEpic(db,input(proposalId,pm,2));
+  const replacement=await claimEpic(db,{proposalId,actorId:pm,index:1,now:expired}); if(replacement.kind!=="CLAIMED") throw Error("claim");
+  assert.ok(replacement.claimedVersion>old.claimedVersion);
+  assert.equal(await code(storeEpic(db,{proposalId,index:1,claimedVersion:old.claimedVersion,tasks:[task],flagged:false})),"CONFLICT_STATE");
+  assert.equal(await failEpic(db,{proposalId,index:1,claimedVersion:old.claimedVersion,error:"stale"}),false);
+ });
+});
+
+test("W7b E37 delete watermark reserves completion headroom", opts, async()=>{
+ await withIntegrationDb(async(base,f)=>{ const {db,proposalId,pm}=await seed(base,f,2);
+  await base.proposalEpic.update({where:{proposalId_index:{proposalId,index:0}},data:{version:2_147_483_645}});
+  await deleteEpic(db,{proposalId,actorId:pm,version:1,index:1});
+  const proposal=await base.aiProposal.findUniqueOrThrow({where:{id:proposalId}});
+  assert.equal((proposal.payload as {epicVersionWatermark:number}).epicVersionWatermark,2_147_483_646);
+  await addEpic(db,input(proposalId,pm,2));
+  assert.equal(await code(deleteEpic(db,{proposalId,actorId:pm,version:3,index:0})),"CONFLICT_STATE");
+  const after=await base.aiProposal.findUniqueOrThrow({where:{id:proposalId}}); assert.equal(after.version,3);
+  assert.equal(await base.proposalEpic.count({where:{proposalId}}),2);
+ });
 });
 
 test("W7b E35 E37 live lease blocks delete and expired shifted claim cannot store", opts, async()=>{

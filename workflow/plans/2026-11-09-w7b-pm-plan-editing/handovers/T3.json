@@ -1,14 +1,40 @@
 {
   "task": "T3",
   "status": "done",
-  "summary": "Added versioned epic add and delete with whole-plan validation, ordered re-keying and live-lease protection.",
+  "summary": "Added versioned epic add and delete, with durable delete watermark protecting stale claims.",
   "commit": "pending",
   "produces": [
-    { "kind": "symbol", "name": "addEpic", "where": "src/be/proposals/src/epic-list.ts", "note": "Appends an epic and returns PlanProposal." },
-    { "kind": "symbol", "name": "deleteEpic", "where": "src/be/proposals/src/epic-list.ts", "note": "Deletes and re-keys later epics, returns PlanProposal." }
+    {
+      "kind": "symbol",
+      "name": "addEpic",
+      "where": "src/be/proposals/src/epic-list.ts",
+      "note": "Appends an epic and returns PlanProposal."
+    },
+    {
+      "kind": "symbol",
+      "name": "deleteEpic",
+      "where": "src/be/proposals/src/epic-list.ts",
+      "note": "Deletes and re-keys later epics, returns PlanProposal."
+    }
   ],
   "next": "Both return PlanProposal and throw ProposalError NOT_FOUND, CONFLICT_STATE, CONFLICT_VERSION or VALIDATION_FAILED.",
   "deviations": [],
-  "edge_cases": ["E1", "E3", "E4", "E31", "E32", "E33", "E34", "E35", "E37", "E58", "E60"],
-  "checks": { "build": "pass", "tests": "57 proposals tests passed, 0 failed, 0 skipped on rerun; first full run had one failure but output was truncated", "lint": "not run" }
+  "edge_cases": [
+    "E1",
+    "E3",
+    "E4",
+    "E31",
+    "E32",
+    "E33",
+    "E34",
+    "E35",
+    "E37",
+    "E58",
+    "E60"
+  ],
+  "checks": {
+    "build": "pass",
+    "tests": "62 proposal integration tests passed serially, 0 failed, 0 skipped; focused 7 passed",
+    "lint": "not run"
+  }
 }

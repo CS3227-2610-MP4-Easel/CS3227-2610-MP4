@@ -35,10 +35,12 @@ export async function deleteEpic(db: FilteredDbClient, i: Input & { index: numbe
     if (rows.some(row => isLive(row, i.now ?? new Date()))) throw new ProposalError("CONFLICT_STATE");
     const payload = payloadOf(proposal.payload);
     assertWholePlan(payload.checkpoints ?? [], rows.filter(row => row.index !== i.index));
+    const watermark = Math.max((payload.epicVersionWatermark as number | undefined) ?? 0, ...rows.map(row => row.version)) + 1;
+    if (watermark > 2_147_483_646) throw new ProposalError("CONFLICT_STATE");
     for (const row of rows.slice(i.index)) if (!await lockEpic(tx, i.proposalId, row.index)) throw new ProposalError("NOT_FOUND");
     await tx.proposalEpic.delete({ where: { proposalId_index: { proposalId: i.proposalId, index: i.index } } });
-    for (const row of rows.slice(i.index + 1)) await tx.proposalEpic.update({ where: { proposalId_index: { proposalId: i.proposalId, index: row.index } }, data: { index: row.index - 1, version: row.version + 1 } });
-    await tx.aiProposal.update({ where: { id: i.proposalId }, data: { payload: { ...payload, edited: true }, version: proposal.version + 1 } });
+    for (const row of rows.slice(i.index + 1)) await tx.proposalEpic.update({ where: { proposalId_index: { proposalId: i.proposalId, index: row.index } }, data: { index: row.index - 1, version: watermark } });
+    await tx.aiProposal.update({ where: { id: i.proposalId }, data: { payload: { ...payload, edited: true, epicVersionWatermark: watermark }, version: proposal.version + 1 } });
   });
   return view(db, i);
 }
