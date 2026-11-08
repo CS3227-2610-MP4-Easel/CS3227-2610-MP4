@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const idToken = vi.fn();
 const signOutUser = vi.fn();
@@ -40,6 +40,12 @@ beforeEach(() => {
   reply(200, '{"ok":true}');
 });
 
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
+});
+
 describe('apiFetch', () => {
   it('E60 rejects non same-origin or traversal paths before idToken and fetch', async () => {
     const bad = [
@@ -55,17 +61,28 @@ describe('apiFetch', () => {
       '/api/./x',
       '/api/a//b',
       '/api/a/../b',
+      '/api/%2e%2e/x',
+      '/api/%2E%2e/x',
+      '/api/..',
+      '/api/a/..',
+      '/api/.',
+      '/api/..?x',
+      '/api/a%2fb',
+      '/api/a%5Cb',
+      '/api/.%2e/x',
+      '/api/%2e./x',
     ];
     for (const p of bad) {
       await expect(apiFetch(p)).rejects.toThrow('apiFetch: path must be a same-origin /api/ path');
     }
+    await expect(apiFetch('/api/%2e%2e/x', { auth: false })).rejects.toThrow('apiFetch: path must be');
     expect(idToken).not.toHaveBeenCalled();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('E60 an encoded dot path stays same-origin and reaches fetch unchanged', async () => {
-    await apiFetch('/api/%2e%2e/x');
-    expect(fetchMock.mock.calls[0][0]).toBe('/api/%2e%2e/x');
+  it('E60 ordinary paths with a query pass', async () => {
+    await apiFetch('/api/a/b.c?x=1&y=%20');
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/a/b.c?x=1&y=%20');
   });
 
   it('E61 attaches the bearer token, redirect error, and keeps the token out of the URL', async () => {
@@ -76,7 +93,16 @@ describe('apiFetch', () => {
     expect(url).not.toContain('tok123');
     expect(init.headers.Authorization).toBe('Bearer tok123');
     expect(init.redirect).toBe('error');
+    expect(init.credentials).toBe('same-origin');
     expect(init.method).toBe('GET');
+    expect(init.body).toBeUndefined();
+    expect(init.headers['Content-Type']).toBeUndefined();
+    expect(Object.entries(init.headers).filter(([k, v]) => k !== 'Authorization' && String(v).includes('tok123'))).toEqual([]);
+  });
+
+  it('E61 the token is not in the body', async () => {
+    await apiFetch('/api/x', { method: 'POST', body: { a: 1 } });
+    expect(fetchMock.mock.calls[0][1].body).not.toContain('tok123');
   });
 
   it('E88 auth false sends no Authorization and a JSON body', async () => {
@@ -105,6 +131,9 @@ describe('apiFetch', () => {
   it('E63 parses Retry-After only for integers 1 to 3600', async () => {
     const cases: [string | null, number | null][] = [
       ['42', 42],
+      ['1', 1],
+      ['3600', 3600],
+      ['-1', null],
       ['0', null],
       ['3601', null],
       ['3.5', null],
@@ -117,6 +146,12 @@ describe('apiFetch', () => {
       const e = await fail(apiFetch('/api/x'));
       expect(e.retryAfterSeconds).toBe(want);
     }
+  });
+
+  it('E63 a Retry-After with surrounding space is rejected', async () => {
+    // Headers trims values, so hand fetch a response-like object that keeps the space.
+    fetchMock.mockResolvedValue({ status: 429, text: async () => '', headers: { get: () => ' 42' } });
+    expect((await fail(apiFetch('/api/x'))).retryAfterSeconds).toBeNull();
   });
 
   it('E64 a 502 HTML body becomes INTERNAL and a rejected fetch becomes NETWORK', async () => {
@@ -154,6 +189,7 @@ describe('apiFetch', () => {
     expect(signOutUser).toHaveBeenCalledTimes(1);
   });
 
+  // Removing the .catch in apiFetch makes vitest fail this file on the unhandled rejection.
   it('E90 a rejected sign-out does not change the thrown error', async () => {
     signOutUser.mockRejectedValue(new Error('x'));
     reply(401, '');
@@ -169,12 +205,54 @@ describe('apiFetch', () => {
   });
 
   it('E92 no console method receives the token, code or password', async () => {
-    const spies = (['log', 'info', 'warn', 'error', 'debug'] as const).map((m) => vi.spyOn(console, m));
+    const spies = (['log', 'info', 'warn', 'error', 'debug', 'trace', 'dir', 'table'] as const).map((m) => vi.spyOn(console, m));
     await apiFetch('/api/x', { method: 'POST', body: { code: 'SECRETCODE', password: 'pw-secret' } });
     reply(500, '{"error":{"code":"X","message":"m"}}');
     await fail(apiFetch('/api/x', { method: 'POST', body: { code: 'SECRETCODE' } }));
+    reply(401, '{"error":{"code":"U","message":"m"}}');
+    await fail(apiFetch('/api/x', { method: 'POST', body: { code: 'SECRETCODE' } }));
+    expect(signOutUser).toHaveBeenCalledTimes(1);
     const seen = JSON.stringify(spies.flatMap((s) => s.mock.calls));
     for (const s of ['tok123', 'SECRETCODE', 'pw-secret']) expect(seen).not.toContain(s);
+  });
+});
+
+describe('error body mapping', () => {
+  it('E62 a JSON body without error maps to INTERNAL', async () => {
+    reply(400, '{"x":1}');
+    expect((await fail(apiFetch('/api/x'))).code).toBe('INTERNAL');
+  });
+
+  it('E62 a non-string code maps to INTERNAL', async () => {
+    reply(400, '{"error":{"code":5,"message":"m"}}');
+    expect((await fail(apiFetch('/api/x'))).code).toBe('INTERNAL');
+  });
+
+  it('E62 missing details and requestId give [] and null', async () => {
+    reply(400, '{"error":{"code":"C","message":"m"}}');
+    const e = await fail(apiFetch('/api/x'));
+    expect([e.details, e.requestId]).toEqual([[], null]);
+  });
+
+  it('E63 a non-2xx INTERNAL still carries retryAfterSeconds', async () => {
+    reply(503, 'down', { 'Retry-After': '7' });
+    const e = await fail(apiFetch('/api/x'));
+    expect([e.code, e.retryAfterSeconds]).toEqual(['INTERNAL', 7]);
+  });
+
+  it('E62 server fields are truncated and details bounded', async () => {
+    const details = [
+      ...Array.from({ length: 60 }, () => ({ field: 'f'.repeat(300), message: 'm'.repeat(600) })),
+    ];
+    details.unshift(null as never, { x: 1 } as never);
+    reply(400, JSON.stringify({ error: { code: 'c'.repeat(200), message: 'm'.repeat(900), requestId: 'r'.repeat(200), details } }));
+    const e = await fail(apiFetch('/api/x'));
+    expect(e.code).toHaveLength(100);
+    expect(e.message).toHaveLength(500);
+    expect(e.requestId).toHaveLength(100);
+    expect(e.details).toHaveLength(50);
+    expect(e.details[0].field).toHaveLength(200);
+    expect(e.details[0].message).toHaveLength(500);
   });
 });
 

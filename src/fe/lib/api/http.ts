@@ -6,8 +6,26 @@ const PATH_OK = /^\/api\/[A-Za-z0-9._~\-/?=&%]*$/;
 
 function samePath(path: string): boolean {
   if (!PATH_OK.test(path)) return false;
-  const rest = path.slice('/api/'.length);
-  return !(rest.includes('/../') || rest.includes('/./') || rest.includes('//') || rest.startsWith('../') || rest.startsWith('./'));
+  const before = path.split('?')[0];
+  const rest = before.slice('/api/'.length);
+  if (/%2f|%5c/i.test(before) || rest.includes('//')) return false;
+  // URL parsing resolves these segments (also percent-encoded) and would leave /api/.
+  return !rest.split('/').some((s) => DOTS.includes(s.toLowerCase()));
+}
+
+const DOTS = ['.', '..', '%2e', '.%2e', '%2e.', '%2e%2e'];
+const cut = (v: string, n: number) => v.slice(0, n);
+
+function boundDetails(d: unknown): { field: string; message: string }[] {
+  if (!Array.isArray(d)) return [];
+  const out: { field: string; message: string }[] = [];
+  for (const x of d) {
+    if (out.length >= 50) break;
+    if (x && typeof x === 'object' && typeof (x as { field?: unknown }).field === 'string' && typeof (x as { message?: unknown }).message === 'string') {
+      out.push({ field: cut((x as { field: string }).field, 200), message: cut((x as { message: string }).message, 500) });
+    }
+  }
+  return out;
 }
 
 function retryAfter(h: string | null): number | null {
@@ -61,10 +79,10 @@ export async function apiFetch<T>(
   }
   const e = (parsed as { error?: { code?: unknown; message?: unknown; details?: unknown; requestId?: unknown } } | null)?.error;
   if (e && typeof e.code === 'string' && typeof e.message === 'string') {
-    throw new ApiError(e.code, e.message, {
+    throw new ApiError(cut(e.code, 100), cut(e.message, 500), {
       status,
-      details: Array.isArray(e.details) ? (e.details as { field: string; message: string }[]) : [],
-      requestId: typeof e.requestId === 'string' ? e.requestId : null,
+      details: boundDetails(e.details),
+      requestId: typeof e.requestId === 'string' ? cut(e.requestId, 100) : null,
       retryAfterSeconds: ra,
     });
   }

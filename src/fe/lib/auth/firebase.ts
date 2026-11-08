@@ -33,6 +33,7 @@ const map = (u: { uid: string; email: string | null } | null): FbUser | null =>
   u ? { uid: u.uid, email: u.email } : null;
 
 export function currentUser(): FbUser | null {
+  if (!firebaseConfigured()) return null;
   return map(auth().currentUser);
 }
 
@@ -53,6 +54,7 @@ export async function signOutUser(): Promise<void> {
 }
 
 export async function idToken(): Promise<string | null> {
+  if (!firebaseConfigured()) return null;
   const u = auth().currentUser;
   return u ? u.getIdToken() : null;
 }
