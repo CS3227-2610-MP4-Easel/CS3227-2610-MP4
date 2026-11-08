@@ -27,7 +27,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 | Claude Opus 5.5 (orchestrator) | W4 | Active | Plan approved (Gate 2); executing from T1 | Run `executing-plans-lite-v2` on [plan.md](../../plans/2026-11-08-w4-sign-in-screen/plan.md): dispatch T1, then T2+T3 | 2026-11-08 |
+| S1 | 2026-11-08 | Claude Opus 5.5 (orchestrator) | W4 | Paused | Plan approved (Gate 2); baseline blocked by a shell `DATABASE_URL` (operator removed it; restarting the session) | In the restarted session check `echo $DATABASE_URL` is empty, run the baseline (`npm run typecheck`, `npm test`), then `executing-plans-lite-v2` on [plan.md](../../plans/2026-11-08-w4-sign-in-screen/plan.md): dispatch T1 | 2026-11-08 |
 
 **Remaining**
 
