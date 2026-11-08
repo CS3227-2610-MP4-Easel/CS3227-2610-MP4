@@ -99,6 +99,14 @@ pm install removes the generated Prisma client, so 	sc -b fails until `prisma:ge
 - **Why:** the first four tasks' reviews found no blocking problem and cost about five subagent runs each; the real regression (the session rule) was found by running the tests against a real database, not by a reviewer.
 - **Rejected:** keeping `full` on every task as planned; skipping the close-out review.
 
+### C~5 — W7's `applyPlan` is the one the PM approve flow uses
+
+- **Date:** 2026-11-08.
+- **Who asked:** the operator, after the W5 merge showed two implementations.
+- **Decision:** the PM runtime keeps W7's `applyPlan` (client-generated ids, `createMany`, counts, `INVALID_PLAN`). W5's `createApply().applyPlan` stays registered as `Core.applyPlan` and is not used by this flow. No W5 file was changed.
+- **Why:** approve needs the created counts and W7's error mapping; W5's version returns nothing.
+- **Rejected:** switching `decide.ts` to W5's version; editing W5's `core.ts` to expose W7's.
+
 ---
 
 ## 5. Close-out
