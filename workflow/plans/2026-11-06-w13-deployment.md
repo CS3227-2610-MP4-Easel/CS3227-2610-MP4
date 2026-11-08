@@ -2,7 +2,7 @@
 
 - **Status:** Approved (operator, 2026-11-06)
 
-> Amended 2026-11-08 under branch-state C~5 and approved Gate 1: the removed automated development-check workflow/verifier are retired. T4 is now an owner-operated Vercel metadata and fixed development smoke gate; no repository workflow or application runtime receives a Vercel deployment token.
+> Amended 2026-11-08 under branch-state C~5, then reversed by the operator: the removed automated development-check workflow/verifier remain retired. T4 is an owner-operated Vercel metadata plus health/auth/tier smoke gate; the W9 standup/AI probe is not required for T4.
 
 > Amended 2026-11-07 under branch-state C~4: T4 now uses a protected, read-only Vercel metadata token for authoritative deployment verification; the former no-token external-gate wording is superseded for this check. The implementation keeps the token in the pre-checkout lookup step only.
 
@@ -149,7 +149,7 @@
 - [x] 1. Retire the removed automated dev-check workflow, verifier, and dedicated tests; preserve historical references only in audit records.
 - [x] 2. Amend and approve the manual T4 evidence contract and runbook under C~5.
 - [x] 3. Run the repository tests, workflow validator, agent-policy check, and secret scan after cleanup.
-- [ ] 4. `GATE:` repository owner confirms the merged `development` SHA, canonical project/alias from the tier manifest, `READY` deployment identity, and fixed health/auth/tier/AI smoke results using the manual runbook.
+- [ ] 4. `GATE:` repository owner confirms the merged `development` SHA, canonical project/alias from the tier manifest, `READY` deployment identity, and fixed health/auth/tier smoke results using the manual runbook.
 - [ ] 5. Record the redacted T4 evidence in branch state and mark T4 complete before T6 starts.
 
 ### T5: Recovery rehearsal

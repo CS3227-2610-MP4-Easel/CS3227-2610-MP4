@@ -23,7 +23,7 @@
 | E19 | F4 | Production has missing fields or `VERCEL_ENV=preview` | Startup rejects the first missing/mismatched resource setting | Prevents partial validation bypass | unit |
 | E20 | F4 | Complete production identity uses `VERCEL_ENV=production` and `VERCEL_GIT_COMMIT_REF=main` | Startup accepts the resource set | Makes production deployable | unit |
 | E21 | F1, F5 | Fixed smoke request is made against an alias other than the inspected `development` deployment | T4 remains incomplete and evidence is rejected | Binds smoke results to deployment identity | manual |
-| E22 | F1, F5 | Health, auth, tier, or AI smoke result is missing, unexpected, or unavailable | T4 remains incomplete; dev AI may be `degraded` only with `AI_ENABLED=false` and all non-AI checks passing | Makes manual smoke criteria deterministic | manual |
+| E22 | F1, F5 | Health, auth, or tier smoke result is missing, unexpected, or unavailable | T4 remains incomplete | Makes manual smoke criteria deterministic | manual |
 | E23 | F2, N2 | Each local/dev/test tier is substituted with another tier's host, project, or database path | Target validation rejects before client construction for every cross-tier substitution | Tests the complete target boundary rather than one production example | unit |
 | E24 | F3, N2 | A migration file is omitted from the manifest or a manifest entry has no repository file | Runner rejects before Prisma validation or deployment | Prevents a partial manifest from authorizing schema changes | unit |
 | E25 | N1 | A preflight or child-process failure includes a token, full URL, query string, or response body | Error and diagnostic output contain only fixed labels and non-secret identifiers | Keeps both normal and failure paths redacted | unit |
@@ -32,11 +32,11 @@
 | E28 | F2, F3 | `NEON_PROJECT` or database path is wrong while hostname matches | Target validation rejects before any client or Prisma command | Host alone does not prove project/database identity | unit |
 | E29 | F3, F6 | Executor captures its arguments and environment | Exactly two calls are observable on success, in validate/deploy order, with the allowlisted environment and derived validated URL | Makes subprocess safety testable | unit |
 | E30 | F1, N4 | Owner records a deployment with the wrong SHA, project, alias, or non-READY state | T4 remains incomplete and production deployment is blocked | Prevents manual evidence from becoming a bypass | manual |
-| E31 | F1, F5 | Owner omits health, auth, tier, or AI smoke evidence | T4 remains incomplete and no production gate is opened | Keeps manual evidence complete | manual |
+| E31 | F1, F5 | Owner omits health, auth, or tier smoke evidence | T4 remains incomplete and no production gate is opened | Keeps manual evidence complete | manual |
 | E32 | F5, N1 | Manual evidence contains a token, credential URL, response body, or secret value | Evidence is rejected and must be replaced with redacted fields | Prevents owner evidence from leaking credentials | manual |
 | E33 | F1, N4 | Owner follows a redirect from the inspected alias | The request fails on the `3xx`; no redirected origin may satisfy T4 | Binds checks to the inspected deployment | manual |
 | E34 | F1, N4 | Owner uses a deployment, project, alias, or push timestamp taken from the inspected deployment instead of the code/GitHub sources | T4 remains incomplete until the code-owned manifest and GitHub merge commit are used | Prevents self-authored comparison baselines | manual |
-| E35 | F1 | The fixed standup probe returns a `200` with missing/non-boolean `degraded`, `degraded=true` without `AI_ENABLED=false`, or a non-`200` response | `pass` requires `200` plus boolean `degraded=false`; `degraded` requires `200` plus boolean `degraded=true`, `AI_ENABLED=false`, and all non-AI checks passing; otherwise T4 fails | Makes AI evidence deterministic | manual |
+| E35 | F1 | The retired standup/AI probe is unavailable because W9 is not deployed | No effect on T4; the probe is tracked separately by W9 | Keeps deployment safety independent of feature-slice readiness | manual |
 
 ## What could corrupt data
 

@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 00:00 | Codex | W13 | Blocked — dependency | Manual T4 gate is partial: health passes and unauthenticated `/api/me` returns the expected 401, but the required Developer standup route is not implemented; seeded dev data and authenticated smoke evidence are also missing | W9 implements/deploys endpoints 49–55; owner then seeds canonical `development` and reruns the fixed smoke checks | 2026-11-08 00:00 |
+| S1 | 2026-11-08 00:00 | Codex | W13 | In progress — owner action | Manual T4 gate is partial: health passes and unauthenticated `/api/me` returns the expected 401; authenticated identity, foreign-token rejection, and deployment metadata remain to be recorded | Owner confirms the merged-SHA deployment metadata and reruns the health/auth/tier checks; W9 standup/AI evidence is tracked separately | 2026-11-08 00:00 |
 
 **Remaining**
 
@@ -69,6 +69,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Operator approved the amended W13 safety spec at Gate 1; the removed automated dev-check is replaced by owner-recorded Vercel metadata plus fixed development smoke evidence. | W13 | this commit |
 | 2026-11-08 | Owner reported partial manual T4 evidence: `GET /api/health` passes, unauthenticated `GET /api/me` returns the expected 401, and no seeded development data exists yet; T4 remains incomplete. | W13 | this commit |
 | 2026-11-08 | Route audit found only endpoints 1–4 registered; the required endpoint 51 belongs to W9's unimplemented Developer slice, so W13 T4 is blocked on W9 before owner smoke evidence can pass. | W13 | this commit |
+| 2026-11-08 | Operator reversed C~5's standup/AI prerequisite: T4 now requires only deployment metadata plus health/auth/foreign-token/tier evidence; W9 remains separate. | W13 | this commit |
 
 ## 7. Decisions
 
@@ -110,7 +111,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 - **Date:** 2026-11-08
 - **Question:** Has the owner completed T4's deployed-SHA and dev smoke evidence gate, or should the existing T4 read-only configuration audit be explicitly accepted as the gate evidence?
-- **Resolution:** Resolved 2026-11-08 by approving C~5 and replacing the removed workflow with the manual evidence gate; deployed-SHA and smoke evidence remain required before T6.
+- **Resolution:** Resolved 2026-11-08 by approving C~5 and replacing the removed workflow with the manual evidence gate; C~6 later removed the unimplemented W9 standup/AI probe, while deployed-SHA and health/auth/tier evidence remain required before T6.
 
 ### D~3 — T4 workflow removed before continuation
 
@@ -123,9 +124,16 @@ describes `INT`; read it for context and write here instead of editing it.
 
 - **Date:** 2026-11-08
 - **Who asked:** operator, after requesting removal of all `w13-dev-check` artifacts.
-- **Decision:** Retire the removed automated development-check workflow and verifier. T4 will require owner-recorded Vercel metadata for the merged SHA plus fixed development health/auth/tier/AI smoke results, with redacted evidence and no Vercel deployment token in repository workflows or application runtime.
+- **Decision:** Retire the removed automated development-check workflow and verifier. (Superseded by C~6 for the smoke composition.)
 - **Why:** Removes obsolete automation while preserving the deployment identity and smoke-evidence safety boundary.
 - **Rejected:** Recreating the removed workflow solely to satisfy its stale plan reference; accepting configuration audit alone without deployment and smoke evidence.
+
+### C~6 — Remove the W9 standup/AI probe from the T4 gate
+
+- **Date:** 2026-11-08
+- **Who asked:** operator, after the route audit showed endpoint 51 is not implemented.
+- **Decision:** T4 requires deployment metadata plus health, authenticated identity, foreign-project rejection, and dev-tier evidence. The Developer standup/AI probe is removed from T4 and remains a separate W9 responsibility.
+- **Why:** W13 deployment safety must not be blocked by an unstarted feature workstream.
 
 ## 8. Deviations
 
