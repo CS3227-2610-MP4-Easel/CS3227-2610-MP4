@@ -43,7 +43,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W7 | PM plan flow (proposals, pm) | In review | [spec](../../specs/2026-11-07-w7-pm-plan-flow-design.md) | [plan](../../plans/2026-11-07-w7-pm-plan-flow/plan.md) | T1-T11 done; 563 tests, 559 pass, 4 unrelated agent-hook failures | out of date: pm, core, proposals |
+| W7 | PM plan flow (proposals, pm) | In review | [spec](../../specs/2026-11-07-w7-pm-plan-flow-design.md) | [plan](../../plans/2026-11-07-w7-pm-plan-flow/plan.md) | T1-T11 done; 565 tests, 561 pass, 4 unrelated agent-hook failures | out of date: pm, core, proposals |
 
 ---
 
@@ -102,13 +102,16 @@ pm install removes the generated Prisma client, so 	sc -b fails until `prisma:ge
 
 ## 5. Close-out
 
-**Built.** Endpoints 34, 35, 37, 40, 41 (`@agile/pm` routes and flow, `@agile/proposals` store and resolvers, `@agile/core` `applyPlan`, API routes, W2 session feature map, contract schemas). Verified against a local Postgres 16 in Docker (`w7-pg`, port 5433, variables in untracked `.ws/w7.env`): full suite 563 tests, 559 pass, 4 fail, 0 skipped. The 4 failures are `tests/process-security/agent-hook.test.ts` (F8 shell-write mediation); no file they depend on differs from the base commit, but they were not run on the base branch. One run also showed a gateway test (`run-integration` E25) fail once under parallel load; it passed alone three times and in two later full runs.
+**Built.** Endpoints 34, 35, 37, 40, 41 (`@agile/pm` routes and flow, `@agile/proposals` store and resolvers, `@agile/core` `applyPlan`, API routes, W2 session feature map, contract schemas). Verified against a local Postgres 16 in Docker (`w7-pg`, port 5440 (5433 was taken by another project's container, so it was moved), variables in untracked `.ws/w7.env`): full suite 565 tests, 561 pass, 4 fail, 0 skipped. The 4 failures are `tests/process-security/agent-hook.test.ts` (F8 shell-write mediation); no file they depend on differs from the base commit, but they were not run on the base branch. One run also showed a gateway test (`run-integration` E25) fail once under parallel load; it passed alone three times and in two later full runs.
 
 **Not done / not verified.** Nothing pushed. The Developer (W2 owner) has not agreed to the `Sessions` change (AD-11). The PM endpoints cannot be reached in the app until W5 registers the proposal resolvers and a project resolver (the placeholder returns 404). The whole-branch `code-review` reported 10 findings (none blocking, listed in the review output); none has been fixed.
 
 ### Known Gaps (new)
 
 - **PM similar-item retrieval is keyword matching, not full-text search** - up to 8 keywords from the idea, `contains` on titles through the filtered client, at most 50 candidates per table in id order before ranking (spec SD5; contracts §5.2 and AD-28 amended in T1).
+
+- **The PM endpoints are unreachable in the running app until W5 lands** - `createAppDependencies` still uses the placeholder `resolveResource` (null) and a `requireMember` that throws, so the policy gate answers 404 for endpoints 34, 35, 37, 40, 41; the route and end-to-end tests inject their own dependencies.
+- **Retrieval candidates are the first 50 per table by id, ranked afterwards** - with more than 50 keyword matches in a table the best-ranked items may be missed (spec SD5).
 
 ### Deviations (new)
 
