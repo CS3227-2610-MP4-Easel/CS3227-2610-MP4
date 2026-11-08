@@ -129,7 +129,7 @@ describe('gate', () => {
     });
     await act(async () => fbCb!(fb));
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(screen.getByText('Create your account')).toBeTruthy();
+    expect(screen.getByText('Pick your role')).toBeTruthy();
     expect(replace).not.toHaveBeenCalled();
     release();
   });
@@ -190,7 +190,7 @@ describe('gate', () => {
     replace.mockReset();
     mount('/register');
     await act(async () => fbCb!(fb));
-    expect(screen.getByText('Create your account')).toBeTruthy();
+    expect(screen.getByText('Finish setting up')).toBeTruthy();
     expect(replace).not.toHaveBeenCalled();
   });
 
