@@ -2,6 +2,7 @@
 // Settings tests pass their own env maps and never read these.
 const defaults: Record<string, string> = {
   APP_TIER: "test",
+  DATABASE_URL: "postgresql://localhost/agile_platform",
   FIREBASE_PROJECT_ID: "w4-test",
   REGISTRATION_CODE_PM: "test-pm-code-000",
   REGISTRATION_CODE_DEV_LEAD: "test-lead-code-000",

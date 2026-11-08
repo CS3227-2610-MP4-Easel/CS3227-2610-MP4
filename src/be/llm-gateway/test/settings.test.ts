@@ -13,7 +13,8 @@ const rejects = (env: Record<string, string | undefined>, name: string) => {
 };
 
 test("E1 test and preview refuse live; prod refuses mock or unset", () => {
-  for (const tier of ["test", "preview"]) rejects({ APP_TIER: tier, LLM_MODE: "live", SOCLAAS_API_KEY: KEY }, "LLM_MODE");
+  rejects({ APP_TIER: "test", LLM_MODE: "live", SOCLAAS_API_KEY: KEY }, "LLM_MODE");
+  rejects({ APP_TIER: "preview", LLM_MODE: "live" }, "LLM_MODE");
   rejects({ APP_TIER: "prod", LLM_MODE: "mock" }, "LLM_MODE");
   rejects({ APP_TIER: "prod" }, "LLM_MODE");
 });

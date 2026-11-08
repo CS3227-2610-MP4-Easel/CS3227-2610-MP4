@@ -1,0 +1,16 @@
+{
+  "task": "T3",
+  "status": "done",
+  "summary": "Implemented planning services/routes; review fixes add locking, pagination, filters, optional block fields, CONFLICT_VERSION, and exact blocked=false parsing. Full suite passes.",
+  "commit": "pending",
+  "produces": [
+    { "kind": "symbol", "name": "createEpics", "where": "src/be/core/src/epics.ts", "note": "Project-scoped epic listing and serialized creation." },
+    { "kind": "symbol", "name": "createTasks", "where": "src/be/core/src/tasks.ts", "note": "Task reads, create, patch, and status lifecycle operations." },
+    { "kind": "symbol", "name": "writeTaskEvent", "where": "src/be/core/src/task-events.ts", "note": "Transaction-bound task event writer." },
+    { "kind": "route", "name": "createPlanningRoutes", "where": "src/be/api/src/routes/planning.ts", "note": "Endpoints 16-17 and 20-24 through injected services." }
+  ],
+  "next": "T4 may consume createEpics/createTasks relation checks. T5/T6 should compose createPlanningRoutes and retain transaction/event-failure fakes.",
+  "deviations": [],
+  "edge_cases": ["E8-E16", "E26", "E28-E30", "E37"],
+  "checks": { "build": "pass", "tests": "488 pass, 0 fail, 27 skipped", "lint": "pass; Prisma schema valid" }
+}

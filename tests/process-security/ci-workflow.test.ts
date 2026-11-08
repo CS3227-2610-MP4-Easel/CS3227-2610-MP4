@@ -16,7 +16,7 @@ test("E1/E2/E12/E15 workflow is isolated and gates on W1", async () => {
   assert.doesNotMatch(workflow, /pull_request_target/);
   assert.doesNotMatch(workflow, /secrets\./);
   assert.doesNotMatch(workflow, /environment:/);
-  assert.match(workflow, /DATABASE_URL:\s*postgresql:\/\/localhost:5432\/agile_platform/);
+  assert.match(workflow, /DATABASE_URL:\s*postgresql:\/\/postgres:postgres@localhost:5432\/agile_platform/);
 
   for (const job of ["workspace", "typecheck", "lint", "contract", "dependency-audit", "secret-scan", "workflow-security-pr"]) {
     assert.match(workflow, new RegExp(`^  ${job}:`, "m"));
@@ -29,6 +29,15 @@ test("E1/E2/E12/E15 workflow is isolated and gates on W1", async () => {
     const section = workflow.slice(start, next < 0 ? workflow.length : start + 1 + next);
     assert.match(section, /npm --workspace @agile\/db run prisma:generate/);
   }
+  const workspaceStart = workflow.indexOf("  workspace:");
+  const workspaceEnd = workflow.indexOf("\n  typecheck:", workspaceStart);
+  const workspace = workflow.slice(workspaceStart, workspaceEnd);
+  assert.match(workspace, /services:\s*\n\s+postgres:/);
+  assert.match(workspace, /postgres:16@sha256:/);
+  assert.match(workspace, /ports:\s*\n\s+- 5432:5432/);
+  assert.match(workspace, /W1_INTEGRATION_DATABASE_URL:\s*postgresql:\/\/postgres:postgres@localhost:5432\/agile_platform\?connection_limit=25/);
+  assert.match(workspace, /test -n "\$W1_INTEGRATION_DATABASE_URL"/);
+  assert.match(workspace, /prisma migrate deploy -- --schema prisma\/schema\.prisma/);
   assert.match(workflow, /GITLEAKS_VERSION:\s*8\.24\.2/);
   assert.match(workflow, /fa0500f6b7e41d28791ebc680f5dd9899cd42b58629218a5f041efa899151a8e/);
   assert.match(workflow, /sha256sum --check/);

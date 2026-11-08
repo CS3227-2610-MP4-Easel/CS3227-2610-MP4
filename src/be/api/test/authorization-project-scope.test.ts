@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { authorizeRequest } from "../src/middleware/auth.js";
+import { authorizeAdder, authorizeRequest } from "../src/middleware/auth.js";
 
 test("E6/E9 member predicate hides missing or cross-project resources as NOT_FOUND", async () => {
   const deps = {
@@ -71,4 +71,22 @@ test("MEMBER operation whose resolver returns no project is 404, not an unchecke
     evaluatePredicate: async () => { evaluated = true; },
   }, "Bearer token", { method: "GET", path: "/api/tasks/task", params: { id: "task" }, query: new URLSearchParams(), body: undefined }), (error: { code?: string; status?: number }) => error.code === "NOT_FOUND" && error.status === 404);
   assert.equal(evaluated, false);
+});
+
+test("E7/E34 ADDER checks membership and archive state before the body-derived role", async () => {
+  let predicateCalls = 0;
+  const request = { method: "POST", path: "/api/projects/project/members", params: { projectId: "project" }, query: new URLSearchParams(), body: undefined };
+  const deps = {
+    resolvePrincipal: async () => ({ firebaseUid: "firebase", tokenClaims: {} }),
+    lookupRegisteredUser: async () => ({ firebaseUid: "firebase", userId: "user", role: "PM" as const }),
+    resolveResource: async (_operation: string, value: typeof request) => ({ kind: "MEMBERSHIP" as const, projectId: "project", state: "ACTIVE" as const, ...(value.body ? { targetRole: "DEV_LEAD" as const } : {}) }),
+    requireMember: async () => undefined,
+    evaluatePredicate: async () => { predicateCalls++; },
+  };
+  const policy = { operationId: "PROJECT_MEMBER_ADD", method: "POST" as const, authState: "REGISTERED" as const, roles: ["PM" as const], predicate: "ADDER" as const };
+  const scope = await authorizeRequest(policy, deps, "Bearer token", request, true);
+  assert.equal(predicateCalls, 0);
+  request.body = { email: "lead@example.test" };
+  await authorizeAdder(deps, policy, scope.principal as { firebaseUid: string; userId: string; role: "PM" | "DEV_LEAD" | "DEVELOPER" }, request);
+  assert.equal(predicateCalls, 1);
 });

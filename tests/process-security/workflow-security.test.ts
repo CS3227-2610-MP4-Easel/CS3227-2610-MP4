@@ -105,7 +105,7 @@ test("F11 rejects deployment and non-pull-request triggers", () => {
     "  deployment:",
   ].join("\n");
   const errors = validateWorkflowText(bad, { actions: {} }, "fixture.yml");
-  assert.match(errors.join("\n"), /pull_request trigger/);
+  assert.match(errors.join("\n"), /unexpected workflow trigger/);
   assert.match(errors.join("\n"), /deployment trigger/);
 });
 
@@ -174,7 +174,7 @@ test("F7/F11 parse YAML structure instead of trusting quoted keys or block scala
   assert.match(quotedErrors.join("\n"), /write permissions/);
   assert.match(quotedErrors.join("\n"), /full commit SHA/);
   assert.match(quotedErrors.join("\n"), /approved repository/);
-  assert.match(scalarErrors.join("\n"), /pull_request trigger/);
+  assert.match(scalarErrors.join("\n"), /unexpected workflow trigger/);
 });
 
 test("F7 validates reusable workflow references as Actions", () => {
