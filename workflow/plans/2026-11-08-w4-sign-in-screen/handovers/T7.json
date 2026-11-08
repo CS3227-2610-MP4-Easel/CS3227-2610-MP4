@@ -15,5 +15,5 @@
     {"what": "Build and root npm test run by the orchestrator: build pass, 487/487 backend, fe 135/135", "why": "not run or not readable in the task", "needs": "none"}
   ],
   "edge_cases": ["E83"],
-  "checks": {"build": "pass", "tests": "pass (root 487/487, fe 12 files 135/135)", "lint": "typecheck pass; scan:secrets clean"}
+  "checks": {"build": "pass", "tests": "pass (root 487/487, fe 12 files 139/139 after the fix round)", "lint": "typecheck pass; scan:secrets clean"}
 }

@@ -27,7 +27,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 | Claude Opus 5.5 (orchestrator) + `implementer` | W4 | Active | Wave 5: T7 in flight | On T7's handover: validate, full review, then the plan's Close-out (closeout lint, checks, manual run with the operator, code review, Gate 3) | 2026-11-08 |
+| S1 | 2026-11-08 | Claude Opus 5.5 (orchestrator) + `implementer` | W4 | Active | Close-out: all 7 tasks done; branch code review next | Run the `code-review` skill on the branch diff against `development`, fix confirmed findings, then ask the operator for the manual sign-in run and Gate 3 | 2026-11-08 |
 
 **Remaining**
 
@@ -45,7 +45,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W4 | Auth and registration | Building | [spec](../../specs/2026-10-31-w4-auth-design.md), [T7 spec](../../specs/2026-11-08-w4-sign-in-screen-design.md) (approved 2026-11-08) | [plan](../../plans/2026-11-08-w4-sign-in-screen/plan.md) (approved 2026-11-08) | T7 follow-up: task 6/7 done; T7 (source rules) in flight | — |
+| W4 | Auth and registration | Building | [spec](../../specs/2026-10-31-w4-auth-design.md), [T7 spec](../../specs/2026-11-08-w4-sign-in-screen-design.md) (approved 2026-11-08) | [plan](../../plans/2026-11-08-w4-sign-in-screen/plan.md) (approved 2026-11-08) | T7 follow-up: 7/7 tasks done; close-out (code review, manual run, Gate 3) | — |
 
 ---
 
@@ -71,12 +71,14 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | T4 done: `SessionProvider`/`useSession` (generation counter, hold for registration), `AuthRoot`/`useAuthMode`, `AuthGate`, layout (`force-dynamic`) and page wiring, session-aware top bar, role bar only in prototype, placeholder auth screens. Full review: no blocking; tests tightened (E51 order, E54 at gate, E97 content, E100 hold), top-bar role fallback and idempotent hold release added. Rejected nit: a 401 with no following sign-out leaves "Loading…" (SD9 by design). Wave 3 check: `npm test` 487/487 + fe 82/82, typecheck, build green | W4 | `8d8003a` |
 | 2026-11-08 | T5 done: live sign-in form (Firebase `signIn`, messages unchanged, one request at a time, gate navigates). Deviation: a T4 gate test query made stricter (`getByRole` heading). Full review (one reviewer, three lenses): nits only, rejected: re-enable window before navigation (repeat `signIn` harmless), password stays shown after an error, `b-bad` class and `role="alert"` not asserted (outside the contract) | W4 | `b4a56eb` |
 | 2026-11-08 | T6 done: register flow (role and code, account with hold and skip-`signUp`, finish setup, 429 countdown, error states, code kept only in component state). Implementer choice accepted: a role/code error at Create account returns to step 1. Full review: no blocking; fixed a lost displayName 422 message, cooldown enforced in code, email/password locked once the account exists, tests tightened (deferred double-click, hold release on error, code clearing). Rejected nit: Retry resends the values of the failed request (matches "repeats the failed request"). Deviations: two T4 gate tests updated to the real headings; fake timers limited to intervals. Wave 4 check: `npm test` 487/487 + fe 126/126, typecheck, build green | W4 | `d034112` |
+| 2026-11-08 | T7 done: `src/fe/test/source-rules.test.ts` enforces the six auth source rules and empty `.env.example` values, with breach samples; smoke and link-check scripts marked prototype-only. Full review: no blocking; fixed skip-dir scope, client-file detection behind comments, rule 6 for `export … from`/`require`/`.js`/`index`, template-literal imports, exact-path exemption tests. Remaining regex limits recorded as a Known Gap. Close-out checks: typecheck, `npm test` 487/487 + fe 139/139 (5.8 s), build, audit (no high), close-out lint clean | W4 | `f438c32` |
 
 ---
 
 ## 6. Known Gaps
 
 - **Sign-up reveals registered emails** — Firebase answers `auth/email-already-in-use` for an existing account and the register screen shows it (W4 ui.md), so anyone can test whether an email has a Firebase account; sits beside **Unverified email at registration** (AD-57).
+- **The web app's auth source scan is regex-based** — `src/fe/test/source-rules.test.ts` catches the usual import, `fetch(`, `location.assign(`, `process.env` and `dangerouslySetInnerHTML` forms but not deliberate evasion such as `window['location'].assign`, `fetch (` with a space, `process["env"]` or computed specifiers; review covers those.
 
 ---
 
