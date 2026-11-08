@@ -1,4 +1,4 @@
-import { PlanInputSchema } from "@agile/core";
+import { PlanInputSchema, type PlanInput } from "@agile/core";
 import type { FilteredTransactionClient } from "@agile/db";
 import { ProposalError } from "./errors.js";
 import { lockProposal } from "./locks.js";
@@ -15,7 +15,8 @@ export async function guardEdit(tx: FilteredTransactionClient, i: { proposalId: 
   if (proposal.version !== i.version) throw new ProposalError("CONFLICT_VERSION");
   return proposal;
 }
-export function assertWholePlan(checkpoints: Checkpoint[], rows: EpicRowLike[]): void {
+export function assertWholePlan(checkpoints: Checkpoint[], rows: EpicRowLike[]): PlanInput {
   const result = PlanInputSchema.safeParse({ checkpoints, epics: rows.map(row => ({ title: row.title, description: row.description, checkpointName: row.checkpointName, tasks: row.expansionStatus === "DONE" ? row.tasks : [{ title: "x", description: "", acceptanceCriteria: [], storyPoints: 1 }] })) });
   if (!result.success) throw new ProposalError("VALIDATION_FAILED", result.error.issues[0]?.path.join("."));
+  return result.data;
 }

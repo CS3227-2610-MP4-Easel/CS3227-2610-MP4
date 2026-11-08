@@ -1,4 +1,3 @@
-import { PlanInputSchema } from "@agile/core";
 import type { PlanProposal } from "@agile/contracts";
 import type { FilteredDbClient } from "@agile/db";
 import { epicContentHash } from "./create.js";
@@ -29,8 +28,7 @@ export async function editEpic(db: FilteredDbClient, i: Input & { index: number;
     const checkpointName = i.checkpointName === undefined ? row.checkpointName : i.checkpointName;
     const changed = title !== row.title || description !== row.description || i.tasks !== undefined;
     const updated = { ...row, title, description, checkpointName, expansionStatus: i.tasks !== undefined ? "DONE" : row.expansionStatus, tasks: i.tasks !== undefined ? i.tasks : row.tasks };
-    assertWholePlan(checkpoints, rows.map(r => r.index === row.index ? updated : r));
-    const parsed = PlanInputSchema.parse({checkpoints, epics: rows.map(r => { const e = r.index === row.index ? updated : r; return { title: e.title, description: e.description, checkpointName: e.checkpointName, tasks: e.expansionStatus === "DONE" ? e.tasks : [{title:"x",description:"",acceptanceCriteria:[],storyPoints:1}] }; })});
+    const parsed = assertWholePlan(checkpoints, rows.map(r => r.index === row.index ? updated : r));
     await tx.proposalEpic.update({ where: { proposalId_index: { proposalId: i.proposalId, index: i.index } }, data: { title, description, checkpointName, contentHash: epicContentHash(title, description, checkpointName), ...(changed ? { version: row.version + 1 } : {}), ...(i.tasks !== undefined ? { tasks: parsed.epics[i.index].tasks, expansionStatus: "DONE", leaseExpiresAt: null, error: null } : {}) } });
     await tx.aiProposal.update({ where: { id: i.proposalId }, data: { payload: { ...payload, edited: true }, version: proposal.version + 1 } });
   });
@@ -49,9 +47,9 @@ export async function replaceCheckpoints(db: FilteredDbClient, i: Input & { chec
     const locked = [];
     for (const row of rows) { const epic = await lockEpic(tx, i.proposalId, row.index); if (!epic) throw new ProposalError("NOT_FOUND"); locked.push(epic); }
     const mapped = locked.map(row => ({ ...row, checkpointName: row.checkpointName === null ? null : i.checkpoints.find(c => c.previousName === row.checkpointName)?.name ?? (checkpoints.some(c => c.name === row.checkpointName) ? row.checkpointName : null) }));
-    assertWholePlan(checkpoints, mapped);
+    const parsed = assertWholePlan(checkpoints, mapped);
     for (const row of mapped) await tx.proposalEpic.update({ where: { proposalId_index: { proposalId: i.proposalId, index: row.index } }, data: { checkpointName: row.checkpointName, contentHash: epicContentHash(row.title, row.description, row.checkpointName) } });
-    await tx.aiProposal.update({ where: { id: i.proposalId }, data: { payload: { ...payload, checkpoints, edited: true }, version: proposal.version + 1 } });
+    await tx.aiProposal.update({ where: { id: i.proposalId }, data: { payload: { ...payload, checkpoints: parsed.checkpoints, edited: true }, version: proposal.version + 1 } });
   });
   return view(db, i);
 }
