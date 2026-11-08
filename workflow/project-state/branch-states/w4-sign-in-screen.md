@@ -7,9 +7,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w4-sign-in-screen (from `INT` at `512dc4c`)
 - **Base:** 512dc4c
 - **Owner:** ludannnn (Developer member)
-- **Status:** Draft
+- **Status:** In review
 - **Approved:** —
-- **Last updated:** 2026-11-08 by Claude Opus 5.5 — branch created, scoping T7
+- **Last updated:** 2026-11-08 by Claude Opus 5.5 — close-out done, Gate 3 asked
 
 **Untouched:** Architecture, Conventions
 
@@ -27,16 +27,21 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 | Claude Opus 5.5 (orchestrator) + `implementer` | W4 | Active | Close-out: all 7 tasks done; branch code review next | Run the `code-review` skill on the branch diff against `development`, fix confirmed findings, then ask the operator for the manual sign-in run and Gate 3 | 2026-11-08 |
+
 
 **Remaining**
 
+- [ ] Operator's manual check with `src/fe/.env.local`: register a PM with `PROJ_MANAGER_DEMO`, sign out, sign in, reach `/projects`.
+- [ ] Gate 3: the owner approves the branch; then ask separately before pushing and opening the PR (call out C~7, the W12 test change, for the Dev Lead).
+
 - [x] T7 spec, Gate 1: approved by ludannnn on 2026-11-08 (one review round, four lenses).
 - [x] T7 plan, Gate 2: approved by ludannnn on 2026-11-08 (7 tasks, 5 waves, full review each).
-- [ ] Build T1-T7; close-out; Gate 3.
+- [x] Build T1-T7 and close-out (code review, fixes, checks) on 2026-11-08.
+- [ ] **Handover:** guide out of date: setup (Firebase dev project, `src/fe/.env.local` from `.env.example`, local Postgres and the `agile-pg-test` container for integration tests) and testing (fe Vitest suite under root `npm test`).
 - [x] Local setup verified 2026-11-08: Firebase project `agile-platform-dev` created by ludannnn (Email/Password on, web app registered), local Postgres migrated, endpoint 2 returns `{"valid":true}` and endpoint 4 returns 401 without a token.
 - [ ] **Handover:** to the repo owner (W13): `agile-platform-dev` exists (owner ludannnn; add the repo owner as Owner); create `agile-platform-prod` with that exact ID (`src/be/db/src/tier-targets.ts`) and add the Vercel domains to Authorized domains on both projects; set the four `NEXT_PUBLIC_FIREBASE_*` values per tier.
 - [ ] **Handover:** to the Dev Lead (W12): `tests/process-security/ci-workflow.test.ts` now pins the chained root `test` script (C~7) but not `src/fe/package.json` `scripts.test` (`vitest run`) or `src/fe/vitest.config.ts`; consider asserting the fe script too (T1 Attacker review nit).
+- [ ] **Handover:** web app performance follow-up: `AuthRoot` in the root layout statically imports `lib/auth/firebase` and `session`, so `@firebase/app` and `@firebase/auth` ship in every page bundle, including prototype previews; load them lazily (`next/dynamic` or `import()`) only in `firebase` mode. `force-dynamic` on the layout is deliberate (mode read per request).
 - [ ] **Handover:** close STATE Upcoming "Ask the PM about the W10 sign-in page": the merged W10 code answers it (design only: `components/canvas/Main.tsx` is static and signs in through the `/api/as?role=` cookie stand-in).
 
 ---
@@ -45,7 +50,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W4 | Auth and registration | Building | [spec](../../specs/2026-10-31-w4-auth-design.md), [T7 spec](../../specs/2026-11-08-w4-sign-in-screen-design.md) (approved 2026-11-08) | [plan](../../plans/2026-11-08-w4-sign-in-screen/plan.md) (approved 2026-11-08) | T7 follow-up: 7/7 tasks done; close-out (code review, manual run, Gate 3) | — |
+| W4 | Auth and registration | Building | [spec](../../specs/2026-10-31-w4-auth-design.md), [T7 spec](../../specs/2026-11-08-w4-sign-in-screen-design.md) (approved 2026-11-08) | [plan](../../plans/2026-11-08-w4-sign-in-screen/plan.md) (approved 2026-11-08) | T7 follow-up: 7/7 done, close-out done; awaiting manual run and Gate 3 | — |
 
 ---
 
@@ -72,6 +77,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | T5 done: live sign-in form (Firebase `signIn`, messages unchanged, one request at a time, gate navigates). Deviation: a T4 gate test query made stricter (`getByRole` heading). Full review (one reviewer, three lenses): nits only, rejected: re-enable window before navigation (repeat `signIn` harmless), password stays shown after an error, `b-bad` class and `role="alert"` not asserted (outside the contract) | W4 | `b4a56eb` |
 | 2026-11-08 | T6 done: register flow (role and code, account with hold and skip-`signUp`, finish setup, 429 countdown, error states, code kept only in component state). Implementer choice accepted: a role/code error at Create account returns to step 1. Full review: no blocking; fixed a lost displayName 422 message, cooldown enforced in code, email/password locked once the account exists, tests tightened (deferred double-click, hold release on error, code clearing). Rejected nit: Retry resends the values of the failed request (matches "repeats the failed request"). Deviations: two T4 gate tests updated to the real headings; fake timers limited to intervals. Wave 4 check: `npm test` 487/487 + fe 126/126, typecheck, build green | W4 | `d034112` |
 | 2026-11-08 | T7 done: `src/fe/test/source-rules.test.ts` enforces the six auth source rules and empty `.env.example` values, with breach samples; smoke and link-check scripts marked prototype-only. Full review: no blocking; fixed skip-dir scope, client-file detection behind comments, rule 6 for `export … from`/`require`/`.js`/`index`, template-literal imports, exact-path exemption tests. Remaining regex limits recorded as a Known Gap. Close-out checks: typecheck, `npm test` 487/487 + fe 139/139 (5.8 s), build, audit (no high), close-out lint clean | W4 | `f438c32` |
+| 2026-11-08 | Close-out code review (branch vs `development`, high): 10 findings; fixed 7 (stale Retry values, a 401 during registration stuck Retry, session stuck on "Loading…" after a no-user 401, hold release now re-reads `/api/me` (D~3), Top sign-out with no user, `/api/as` 500 on a malformed `to`, a redundant condition) and re-reviewed; rejected: Top role-mapping dedupe (screen role is `pm` on `/styleguide` and `/states`, so Top must read the session user), lazy Firebase SDK loading (handover); recorded D~2 (401 state) and D~4 (trailer format). Final checks: typecheck, `npm test` 487/487 + fe 149/149, build, audit no high | W4 | `efe86cb` |
 
 ---
 
@@ -91,6 +97,20 @@ describes `INT`; read it for context and write here instead of editing it.
 - **What:** spec § 4.6 asks for `npm ci --ignore-scripts` and the audit on Node 20.19.5 before pushing; the operator's machine has Node 24.10.0 and npm 11.6.0, so `package-lock.json` is regenerated with npm 11.
 - **Consequence:** Node 20 / npm 10 compatibility is first checked by CI's `workspace` job on the PR, before merge. If CI's `npm ci` rejects the lockfile, regenerate it with `npx npm@10.8.2 install` and push.
 - **Rejected:** installing Node 20 locally first (setup time).
+
+### D~2 A 401 during registration sends the user to sign in
+- **Date:** 2026-11-08 · **Found by:** branch code review (close-out)
+- **What:** spec § 4.4 lists no state for a 401 from `register_3`. `apiFetch` signs the Firebase user out on that 401, so Retry could never succeed. Register now resets the account flags, clears the code, releases the hold and shows "Something went wrong." with a "Sign in instead" link, no Retry; signing in again leads to finish setup.
+- **Consequence:** one screen state beyond the spec's table; no change to the API or the session contract.
+
+### D~3 Releasing the registration hold re-reads `/api/me`
+- **Date:** 2026-11-08 · **Found by:** branch code review (close-out)
+- **What:** spec § 4.3 says release "calls nothing". It now re-runs the `me_4` load when a Firebase user arrived during the hold and `setUser` was not called, so the session never stays `signed-out` while Firebase is signed in; Register's unmount-time `retry()` workaround is removed.
+- **Consequence:** simpler and covers hard navigations; tests E100, E101 and E103 updated.
+
+### D~4 Branch commits carry `Workstream:`/`Task:` in the body, not as git trailers
+- **Date:** 2026-11-08 · **Found by:** branch code review (close-out)
+- **What:** commits on this branch put `Workstream: W4` / `Task: Tn` in a paragraph separated from `Co-Authored-By:` by a blank line, so `git interpret-trailers` does not see them (AGENTS.md § 6). The text is present in every commit message. History was not rewritten; later commits use one trailer block.
 
 ## 7. Decisions
 
