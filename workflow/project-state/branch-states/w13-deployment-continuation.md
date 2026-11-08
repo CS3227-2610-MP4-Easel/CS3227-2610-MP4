@@ -25,11 +25,11 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 00:00 | Codex | W13 | Blocked — needs human | Original W13 T5 recovery rehearsal: approved restricted non-production target | Obtain the owner's approved restricted rehearsal target before any restore action | 2026-11-08 00:00 |
+| S1 | 2026-11-08 00:00 | Codex | W13 | In progress — owner action | Original W13 T5 recovery rehearsal on approved restricted target | Owner performs backup/restore rehearsal and records redacted RPO/RTO evidence | 2026-11-08 00:00 |
 
 **Remaining**
 
-- [ ] Q~4: Before original W13 T5, repository owner confirms the active Neon plan and approved restricted rehearsal target. **Plan confirmed 2026-11-08:** Neon Free, which provides a six-hour instant-restore history; this can satisfy W13's <=24-hour RPO rehearsal criterion. The target remains unapproved. The subsequent backup/restore rehearsal may alter that target and must remain owner-operated.
+- [x] Q~4: Before original W13 T5, repository owner confirms the active Neon plan and approved restricted rehearsal target. **Confirmed 2026-11-08:** Neon Free, which provides a six-hour instant-restore history; approved target is `agile-platform-dev / w13-recovery-rehearsal`. The subsequent backup/restore rehearsal may alter that target and remains owner-operated.
 - [ ] **Handover:** After the amended approvals, record the redacted T4 audit result distinguishing generic PR previews from the protected `development` branch. **Done 2026-11-08:** generic Preview is `APP_TIER=preview`; dev-tier variables are exact-`development` scoped; repository linkage and branch protection pass.
 
 ---
@@ -38,7 +38,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | Blocked — needs human | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | Safety T4 done; original recovery rehearsal awaits Q~4 | — |
+| W13 | Environments, seed data and deployment | In progress — owner action | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | Safety T4 done; owner-operated recovery rehearsal approved and pending evidence | — |
 
 ---
 
@@ -58,6 +58,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | T4 read-only audit confirmed exact development scoping, no generic forbidden variable names, expected Vercel repository link, and AD-32 branch protection; the generic `APP_TIER` value remains intentionally unobserved. | W13 | this commit |
 | 2026-11-08 | Owner authorized revealing only generic Preview `APP_TIER`; Vercel required owner MFA, so the audit page was handed off without entering or recording a code. | W13 | this commit |
 | 2026-11-08 | Completed the redacted T4 audit: generic Preview is `APP_TIER=preview`; no forbidden names have generic/fork Preview scope; dev-tier variables are exact-`development` scoped; Vercel repository linkage and GitHub AD-32 protection pass. | W13 | this commit |
+| 2026-11-08 | Operator approved `agile-platform-dev / w13-recovery-rehearsal` as the restricted Neon target for original W13 T5; owner-operated backup/restore evidence is now the next action. | W13 | this commit |
 
 ## 7. Decisions
 
