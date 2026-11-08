@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| Codex | 2026-11-09 | T1 implementer | W7b | Active | Orchestrating wave 1 | Run wave checks | 2026-11-09 |
+| Codex | 2026-11-09 | none | W7b | Blocked - needs human | T3 review found D~5 | After owner approval, implement T4 watermark then repair T3 and review | 2026-11-09 |
 
 **Remaining**
 
@@ -46,7 +46,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
 | W7 | PM plan flow (proposals, pm) | In review | [spec](../../specs/2026-11-07-w7-pm-plan-flow-design.md) | [plan](../../plans/2026-11-07-w7-pm-plan-flow/plan.md) | T1-T11 done; 565 tests, 561 pass, 4 unrelated agent-hook failures | out of date: pm, core, proposals |
-| W7b | PM plan editing (endpoints 36, 38, 39, 58-60; carved from W16) | Building | [spec](../../specs/2026-11-09-w7b-pm-plan-editing-design.md) | [plan](../../plans/2026-11-09-w7b-pm-plan-editing/plan.md) | Wave 1 done; wave checks next | not started |
+| W7b | PM plan editing (endpoints 36, 38, 39, 58-60; carved from W16) | Building | [spec](../../specs/2026-11-09-w7b-pm-plan-editing-design.md) | [plan](../../plans/2026-11-09-w7b-pm-plan-editing/plan.md) | Blocked: D~5 amendment awaits owner approval | not started |
 
 ---
 
@@ -58,6 +58,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-09 | W7b T2 editing store implemented; review fixed strict-parse storage and deterministic lock races; 11 edit integration tests pass | W7b | 9bc5ec2, 8a5ed46 |
 | 2026-11-09 | W7b T5 approval outcome and replay implemented; 21 database tests pass; review clean | W7b | f3c4564 |
 | 2026-11-09 | W7b T6 proposal listing implemented; seven tests pass, full page uses eight queries; review clean | W7b | cb389e9 |
+| 2026-11-09 | T3 first pass committed; review found D~5. Draft spec and plan amendment reviewed, pending owner approval; first suite run had unexplained failure D~4, rerun passed | W7b | 9e30264 |
 | 2026-11-07 | Branch created from `development` at `7caa23d`; branch state written | W7 | this commit |
 | 2026-11-07 | Fast-forwarded to `INT` `faa1c08` (PR #21 folded W2, W3, W4, W6, W12 into `STATE.md`); no overlap, Base moved; dependency status recorded (W5 still Not started) | W7 | this commit |
 | 2026-11-07 | W7 spec written (Big, High tier; 56 edge cases, 12 threats) and reviewed by Implementer, Tester, Maintainer and Attacker lenses; findings folded; lint clean | W7 | this commit |
@@ -143,6 +144,10 @@ pm install removes the generated Prisma client, so 	sc -b fails until `prisma:ge
 - **The configured outline model times out on the live service** - a live run on SoCLaaS (2026-11-08, mock off) failed `PM_PLAN_OUTLINE` with `AI_UNAVAILABLE` (503): `qwen3.5:9b` took 58 s cold and about 17 s warm for a two-token reply, against the gateway's 25 s attempt deadline. With `LLM_MODEL_PM_PLAN_OUTLINE=llama3.1:8b` the whole flow worked (outline 6.9 s, six expansions 4 to 9 s, approve created 8 checkpoints, 6 epics and 25 tasks, no retries or flags). Not run live: retrieval with real items, injection text, the HTTP routes. Plan quality seen: tasks repeat across epics (for example a security task in four of six) and checkpoints are about two months apart.
 
 ### Deviations (new)
+
+- **D~5 Stale expansion claim can match a shifted epic** — review found that incrementing shifted versions can collide with an expired claim at the destination index, permitting tasks to land on the wrong epic. T3 mandates version +1, which cannot prevent the collision. Draft amendment uses a persistent proposal watermark for claim and delete allocations, reserves completion headroom, and adds collision and boundary tests. T4 precedes the T3 repair. Reviewed; awaiting owner approval.
+
+- **D~4 T3 proposal suite failure** — one of 57 tests failed; details were truncated. Rerun passed 57/57 with no skips; original failure remains unidentified.
 
 - **D~1 Archived project answers 404, not 409, on endpoints 35, 37, 40, 41** - the filtered client hides every row of an archived project, so the proposal is not found (spec SD17; architecture §8 says 409).
 - **D~2 The session rule changed after the first database run** - the first formula made a `PM_PLAN_EXPAND` session unusable for its own feature and broke W2's E26 test; fixed and recorded as C~3.

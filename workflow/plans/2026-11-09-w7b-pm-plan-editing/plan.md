@@ -2,7 +2,7 @@
 
 - **Status:** Approved (Xiao-Congchen, 2026-11-09)
 - **Format:** v2
-- **Spec:** [W7b PM plan editing design](../../specs/2026-11-09-w7b-pm-plan-editing-design.md) | **Spec hash:** 5548258be805
+- **Spec:** [W7b PM plan editing design](../../specs/2026-11-09-w7b-pm-plan-editing-design.md) | **Spec hash:** ef5c6a39770e
 - **Workstream:** W7b
 
 > **For the orchestrator:** this file is your router. Do not open task files yourself except to
@@ -43,12 +43,12 @@ only your own task's files. Contract tests marked read-only are not edited.
 | T2 Proposals: edit store (epic, checkpoints) | `tasks/T2.md` | - | T1, T5, T6 | 1 | complex | full | Done |
 | T5 Proposals: approve closes EDITED or ACCEPTED | `tasks/T5.md` | - | T1, T2, T6 | 1 | standard | light | Done |
 | T6 Proposals: list store | `tasks/T6.md` | - | T1, T2, T5 | 1 | standard | light | Done |
-| T3 Proposals: add and delete epic | `tasks/T3.md` | T2 | T4 | 2 | complex | full | Not started |
-| T4 Proposals: regenerate claim, store flag, pre-check | `tasks/T4.md` | T2 | T3 | 2 | complex | full | Not started |
-| T7 pm: plan flow additions and runtime binding | `tasks/T7.md` | T2, T3, T4, T5, T6 | - | 3 | complex | full | Not started |
-| T8 API: routes, composition, route and end-to-end tests | `tasks/T8.md` | T1, T7 | - | 4 | complex | full | Not started |
+| T3 Proposals: add and delete epic | `tasks/T3.md` | T2, T4 | - | 3 | complex | full | Blocked |
+| T4 Proposals: regenerate claim, store flag, pre-check | `tasks/T4.md` | T2 | - | 2 | complex | full | Not started |
+| T7 pm: plan flow additions and runtime binding | `tasks/T7.md` | T2, T3, T4, T5, T6 | - | 4 | complex | full | Not started |
+| T8 API: routes, composition, route and end-to-end tests | `tasks/T8.md` | T1, T7 | - | 5 | complex | full | Not started |
 
-Bundles: none. Same-wave tasks share no file: T1 touches contracts and docs; T2 `proposals/src/{errors,edit-common,edit-store,index}.ts` and `test/edit-helpers.ts`; T5 `decide.ts`; T6 `view.ts` (exports unchanged at every commit); T3 `epic-list.ts` and `index.ts` (T2 edits `index.ts` in wave 1, T3 in wave 2); T4 `expand-store.ts`.
+Bundles: none. Same-wave tasks share no file: T1 touches contracts and docs; T2 `proposals/src/{errors,edit-common,edit-store,index}.ts` and `test/edit-helpers.ts`; T5 `decide.ts`; T6 `view.ts` (exports unchanged at every commit); T4 `expand-store.ts` runs before T3 `epic-list.ts` and `index.ts` so claim allocation and deletion share the watermark contract.
 
 ## Traceability
 | Requirement | Task(s) | Verified by |
