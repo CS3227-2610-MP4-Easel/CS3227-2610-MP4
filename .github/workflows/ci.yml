@@ -17,6 +17,8 @@ jobs:
     services:
       postgres:
         image: postgres:16@sha256:933463a6c8eba2b9f5cd414138738cd8d5519cd2c471214c222652f547a66a32
+        ports:
+          - 5432:5432
         env:
           POSTGRES_DB: agile_platform
           POSTGRES_PASSWORD: postgres

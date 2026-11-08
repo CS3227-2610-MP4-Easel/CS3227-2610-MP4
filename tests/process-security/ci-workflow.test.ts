@@ -34,6 +34,7 @@ test("E1/E2/E12/E15 workflow is isolated and gates on W1", async () => {
   const workspace = workflow.slice(workspaceStart, workspaceEnd);
   assert.match(workspace, /services:\s*\n\s+postgres:/);
   assert.match(workspace, /postgres:16@sha256:/);
+  assert.match(workspace, /ports:\s*\n\s+- 5432:5432/);
   assert.match(workspace, /W1_INTEGRATION_DATABASE_URL:\s*postgresql:\/\/postgres:postgres@localhost:5432\/agile_platform\?connection_limit=25/);
   assert.match(workspace, /test -n "\$W1_INTEGRATION_DATABASE_URL"/);
   assert.match(workspace, /prisma migrate deploy -- --schema prisma\/schema\.prisma/);

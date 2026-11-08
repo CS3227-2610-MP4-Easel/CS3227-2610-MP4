@@ -8,7 +8,7 @@
 - **Owner:** repo owner
 - **Status:** In review
 - **Approved:** —
-- **Last updated:** 2026-11-08 by Codex — PR #22 opened
+- **Last updated:** 2026-11-08 by Codex — CI service port fixed
 
 **Untouched:** Architecture, Conventions, Known Gaps, Decisions, Deviations
 
@@ -45,6 +45,7 @@
 | 2026-11-08 | Removed the W13 protected Environment binding so development verification runs automatically. | W13 | this commit |
 | 2026-11-08 | Removed the W13 development verification workflow and its workflow-only test; workflow policy now rejects replacement push workflows. | W13 | this commit |
 | 2026-11-08 | Opened [PR #22](https://github.com/CS3227-2610-MP4-Easel/CS3227-2610-MP4/pull/22) against `development`. | W12 / W13 | `4271566` |
+| 2026-11-08 | Published the CI Postgres service port to the runner so migrations and integration tests can reach it. | W12 | this commit |
 
 ## 7. Decisions
 
