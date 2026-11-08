@@ -59,14 +59,15 @@ afterEach(() => {
 
 describe('top bar', () => {
   it('E77 shows the user, initials, role label and no role bar', async () => {
-    const cases: [string, string, string, string, string][] = [
-      ['DEVELOPER', 'Ana Lee', 'AL', 'Developer', 'r-dev'],
-      ['DEV_LEAD', 'bo', 'B', 'Dev Lead', 'r-lead'],
-      ['PM', '  Cy  de  Ro ', 'CD', 'Project Manager', 'r-pm'],
+    const cases: [string, string, string, string, string, string][] = [
+      ['DEVELOPER', 'Ana Lee', 'AL', 'Developer', 'r-dev', 'a3'],
+      ['DEV_LEAD', 'bo', 'B', 'Dev Lead', 'r-lead', 'a2'],
+      ['PM', '  Cy  de  Ro ', 'CD', 'Project Manager', 'r-pm', 'a1'],
     ];
-    for (const [role, name, initials, label, cls] of cases) {
+    for (const [role, name, initials, label, cls, av] of cases) {
       const v = await mountAs(role, name, 'who@x.io');
       expect(v.container.querySelector('.av')!.textContent).toBe(initials);
+      expect(v.container.querySelector('.av')!.className).toContain(av);
       expect(v.container.querySelector('.role')!.textContent).toBe(label);
       expect(v.container.querySelector('.role')!.className).toContain(cls);
       expect(v.container.querySelector('.b[style]')!.textContent).toBe(name);
@@ -76,11 +77,25 @@ describe('top bar', () => {
     }
   });
 
-  it('E51 Sign out calls signOutUser once, then hardNavigate to /sign-in', async () => {
+  it('E51 Sign out calls signOutUser once and hardNavigate to /sign-in only after it settles', async () => {
     await mountAs('PM', 'Cy');
+    let done!: () => void;
+    signOutUser.mockImplementation(() => new Promise<void>((r) => (done = r)));
     await act(async () => screen.getByRole('button', { name: 'Sign out' }).click());
     expect(signOutUser).toHaveBeenCalledTimes(1);
+    expect(hardNavigate).not.toHaveBeenCalled();
+    await act(async () => done());
     expect(hardNavigate).toHaveBeenCalledTimes(1);
+    expect(hardNavigate).toHaveBeenCalledWith('/sign-in');
+    expect(signOutUser.mock.invocationCallOrder[0]).toBeLessThan(hardNavigate.mock.invocationCallOrder[0]);
+  });
+
+  it('E51 still navigates to /sign-in when signOutUser rejects', async () => {
+    await mountAs('PM', 'Cy');
+    signOutUser.mockRejectedValue(new Error('x'));
+    await act(async () => {
+      screen.getByRole('button', { name: 'Sign out' }).click();
+    });
     expect(hardNavigate).toHaveBeenCalledWith('/sign-in');
   });
 

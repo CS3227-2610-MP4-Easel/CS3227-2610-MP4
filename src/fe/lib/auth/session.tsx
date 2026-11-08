@@ -101,7 +101,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       },
       holdForRegistration: () => {
         holds.current++;
+        let released = false;
         return () => {
+          if (released) return;
+          released = true;
           holds.current--;
         };
       },

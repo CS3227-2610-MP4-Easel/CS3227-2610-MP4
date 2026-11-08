@@ -31,6 +31,7 @@ import AuthGate from '../components/auth-gate';
 import RoleBar from '../components/role-bar';
 import Screen from '../components/screen';
 import { AuthRoot } from '../lib/auth/mode-context';
+import { useSession } from '../lib/auth/session';
 import { HOME, resolve } from '../lib/screens';
 
 const fetchMock = vi.fn();
@@ -58,17 +59,79 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  document.cookie = 'role=; max-age=0';
 });
 
 describe('gate', () => {
   it('E67 loading shows only Loading…, then signed-out replaces to /sign-in with Loading… still shown', async () => {
     mount('/projects');
     expect(screen.getByText('Loading…')).toBeTruthy();
+    expect(document.querySelector('header.top')).toBeNull();
     expect(replace).not.toHaveBeenCalled();
     await act(async () => fbCb!(null));
     expect(replace).toHaveBeenCalledTimes(1);
     expect(replace).toHaveBeenCalledWith('/sign-in');
     expect(screen.getByText('Loading…')).toBeTruthy();
+    expect(document.querySelector('header.top')).toBeNull();
+  });
+
+  it('E54 a 401 from me_4 on /projects, then onUserChanged(null), replaces to /sign-in with no error view', async () => {
+    fetchMock.mockImplementation(async () => err(401, 'UNAUTHENTICATED'));
+    mount('/projects');
+    await act(async () => fbCb!(fb));
+    expect(screen.queryByText('Something went wrong.')).toBeNull();
+    expect(replace).not.toHaveBeenCalled();
+    await act(async () => fbCb!(null));
+    expect(replace).toHaveBeenCalledTimes(1);
+    expect(replace).toHaveBeenCalledWith('/sign-in');
+    expect(screen.queryByText('Something went wrong.')).toBeNull();
+  });
+
+  it('E81 setUser while a 403 me_4 is in flight leaves ready and never replaces to /register', async () => {
+    let resolveFetch!: (r: Response) => void;
+    fetchMock.mockImplementation(() => new Promise<Response>((r) => (resolveFetch = r)));
+    let s!: ReturnType<typeof useSession>;
+    function Grab() {
+      s = useSession();
+      return null;
+    }
+    pathname = '/projects';
+    render(
+      <AuthRoot mode="firebase">
+        <Grab />
+        <AuthGate pathname="/projects" />
+      </AuthRoot>,
+    );
+    await act(async () => fbCb!(fb));
+    await act(async () => s!.setUser({ id: 'u1', email: 'a@x.io', displayName: 'Ana', role: 'PM' }));
+    await act(async () => resolveFetch(err(403, 'USER_NOT_REGISTERED')));
+    expect(s!.status).toBe('ready');
+    expect(replace).not.toHaveBeenCalledWith('/register');
+  });
+
+  it('E100 /register keeps rendering Register during a hold when a user appears', async () => {
+    let hold!: () => () => void;
+    function Grab() {
+      hold = useSession()!.holdForRegistration;
+      return null;
+    }
+    pathname = '/register';
+    render(
+      <AuthRoot mode="firebase">
+        <Grab />
+        <AuthGate pathname="/register" />
+      </AuthRoot>,
+    );
+    await act(async () => fbCb!(null));
+    let release!: () => void;
+    act(() => {
+      release = hold();
+    });
+    await act(async () => fbCb!(fb));
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(screen.getByText('Create your account')).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+    release();
   });
 
   it('E66 ready as DEV_LEAD on /lead/overview renders the lead overview whatever the role cookie says', async () => {
@@ -78,6 +141,7 @@ describe('gate', () => {
     await act(async () => fbCb!(fb));
     expect(screen.queryByText('Loading…')).toBeNull();
     expect(screen.getByText('Dev Lead')).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 1, name: 'Overview' })).toBeTruthy();
     expect(screen.queryByText('Page not found')).toBeNull();
     expect(screen.queryByText('You cannot open this page')).toBeNull();
     expect(replace).not.toHaveBeenCalled();
@@ -155,17 +219,27 @@ describe('gate', () => {
   });
 
   it('E97 /styleguide and /states render with no replace while signed-out and unregistered', async () => {
+    const heading: Record<string, string> = { '/styleguide': 'Design system', '/states': 'Global states and errors' };
     for (const p of ['/styleguide', '/states']) {
       const v = mount(p);
       await act(async () => fbCb!(null));
-      expect(screen.queryByText('Loading…')).toBeNull();
+      expect(screen.getByRole('heading', { level: 1, name: heading[p] })).toBeTruthy();
       v.unmount();
-      fetchMock.mockResolvedValue(err(403, 'USER_NOT_REGISTERED'));
+      fetchMock.mockImplementation(async () => err(403, 'USER_NOT_REGISTERED'));
       const w = mount(p);
       await act(async () => fbCb!(fb));
-      expect(screen.queryByText('Loading…')).toBeNull();
+      expect(screen.getByRole('heading', { level: 1, name: heading[p] })).toBeTruthy();
       w.unmount();
     }
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('E97 the open pages use role pm even when the user is DEV_LEAD', async () => {
+    fetchMock.mockImplementation(async () => me('DEV_LEAD'));
+    mount('/styleguide');
+    await act(async () => fbCb!(fb));
+    expect(screen.getByRole('heading', { level: 1, name: 'Design system' })).toBeTruthy();
+    expect(screen.queryByText('You cannot open this page')).toBeNull();
     expect(replace).not.toHaveBeenCalled();
   });
 

@@ -110,6 +110,31 @@ describe('session', () => {
     release();
   });
 
+  it('E100 a user-to-user change under a hold calls me_4; after release null -> user calls it; release is idempotent', async () => {
+    fetchMock.mockImplementation(async () => json(200, user('PM')));
+    mount();
+    await act(async () => fbCb!(null));
+    let release!: () => void;
+    act(() => {
+      release = sess!.holdForRegistration();
+    });
+    await act(async () => fbCb!(fb('a')));
+    expect(fetchMock).not.toHaveBeenCalled();
+    await act(async () => fbCb!(fb('b')));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    release();
+    release();
+    await act(async () => fbCb!(null));
+    await act(async () => fbCb!(fb('c')));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const other = sess!.holdForRegistration();
+    release();
+    await act(async () => fbCb!(null));
+    await act(async () => fbCb!(fb('d')));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    other();
+  });
+
   it('E99 useSession outside a provider returns null', () => {
     render(<Probe />);
     expect(screen.getByText('none')).toBeTruthy();
