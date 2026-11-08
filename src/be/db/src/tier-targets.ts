@@ -44,6 +44,18 @@ const PREVIEW_FORBIDDEN_NAMES = [
   "SOCLAAS_API_KEY", "VERCEL_TOKEN", "VERCEL_TEAM_ID",
 ] as const;
 
+const W13_RECOVERY_BRANCH = "w13-recovery-rehearsal";
+
+function isApprovedW13RecoveryTarget(env: Record<string, string | undefined>, target: TierTarget, parsed: { host: string; databaseName: string }): boolean {
+  return target.tier === "dev"
+    && env.W13_RECOVERY_REHEARSAL === "1"
+    && env.NEON_BRANCH === W13_RECOVERY_BRANCH
+    && env.NEON_PROJECT === target.neonProject
+    && env.NEON_HOST === parsed.host
+    && parsed.databaseName === target.databaseName
+    && parsed.host !== TARGETS.prod.neonHost;
+}
+
 export function validatePreviewEnvironment(env: Record<string, string | undefined>): true {
   if (env.APP_TIER !== "preview") throw new Error("APP_TIER must be preview");
   const forbidden = PREVIEW_FORBIDDEN_NAMES.find((name) => env[name] !== undefined);
@@ -62,7 +74,8 @@ export function validateRuntimeDatabaseTarget(env: Record<string, string | undef
   }
   if (!env.DATABASE_URL) throw new Error("DATABASE_URL is required");
   const parsed = parseDatabaseTarget(env.DATABASE_URL);
-  if (parsed.host !== target.neonHost || parsed.databaseName !== target.databaseName) throw new Error("DATABASE_URL does not match APP_TIER target");
+  const recoveryTarget = isApprovedW13RecoveryTarget(env, target, parsed);
+  if ((!recoveryTarget && parsed.host !== target.neonHost) || parsed.databaseName !== target.databaseName) throw new Error("DATABASE_URL does not match APP_TIER target");
   const hasHost = env.NEON_HOST !== undefined;
   const hasProject = env.NEON_PROJECT !== undefined;
   if (target.tier === "dev" || target.tier === "prod" || hasHost || hasProject) {
@@ -76,7 +89,8 @@ export function validateDatabaseTarget(env: Record<string, string | undefined>, 
   if (target.databaseName === null) throw new Error("database credentials are not permitted for preview");
   if (!databaseUrl) throw new Error("DATABASE_URL is required");
   const parsed = parseDatabaseTarget(databaseUrl);
-  if (parsed.host !== target.neonHost || parsed.databaseName !== target.databaseName) throw new Error("DATABASE_URL does not match APP_TIER target");
-  if (env.NEON_HOST !== target.neonHost || env.NEON_PROJECT !== target.neonProject) throw new Error("Neon observations do not match APP_TIER target");
+  const recoveryTarget = isApprovedW13RecoveryTarget(env, target, parsed);
+  if ((!recoveryTarget && parsed.host !== target.neonHost) || parsed.databaseName !== target.databaseName) throw new Error("DATABASE_URL does not match APP_TIER target");
+  if ((!recoveryTarget && env.NEON_HOST !== target.neonHost) || env.NEON_PROJECT !== target.neonProject) throw new Error("Neon observations do not match APP_TIER target");
   return target;
 }

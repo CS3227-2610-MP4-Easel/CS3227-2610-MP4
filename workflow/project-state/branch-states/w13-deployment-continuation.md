@@ -60,6 +60,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Completed the redacted T4 audit: generic Preview is `APP_TIER=preview`; no forbidden names have generic/fork Preview scope; dev-tier variables are exact-`development` scoped; Vercel repository linkage and GitHub AD-32 protection pass. | W13 | this commit |
 | 2026-11-08 | Operator approved `agile-platform-dev / w13-recovery-rehearsal` as the restricted Neon target for original W13 T5; owner-operated backup/restore evidence is now the next action. | W13 | this commit |
 | 2026-11-08 | Amended the recovery runbook to permit the approved isolated development target under synthetic-data-only and no-production-wiring constraints; ordinary previews and production targets remain forbidden. | W13 | this commit |
+| 2026-11-08 | Added a narrowly scoped tier-validator exception for the exact approved W13 rehearsal branch; regression and full-suite tests pass. | W13 | this commit |
 
 ## 7. Decisions
 
@@ -80,6 +81,14 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Decision:** Amend the runbook to permit `agile-platform-dev/w13-recovery-rehearsal` as a restricted T5 target because it is a separate project branch approved by the operator, provided it contains synthetic data only and has no production credentials or application wiring.
 - **Why:** The owner needs a safe, non-production target for the recovery rehearsal while preserving the prohibition on production projects, ordinary developer environments, generic previews, and production data.
 - **Rejected:** Using `agile-platform-prod/production` or an ordinary preview/developer target for recovery testing.
+
+### C~3 — Allow the approved W13 branch through dev seed validation
+
+- **Date:** 2026-11-08
+- **Who asked:** operator, after the seed command was blocked by canonical dev-target validation.
+- **Decision:** Permit `APP_TIER=dev` to use a non-canonical Neon host only when `W13_RECOVERY_REHEARSAL=1`, `NEON_BRANCH=w13-recovery-rehearsal`, the canonical dev Neon project is declared, the database is `neondb`, and the host is not the production host.
+- **Why:** The approved disposable recovery branch needs the repository's existing seed command without weakening generic preview or production target checks.
+- **Rejected:** Bypassing validation or allowing arbitrary non-canonical dev database hosts.
 
 ## 8. Deviations
 
