@@ -2,7 +2,7 @@
   "task": "T3",
   "status": "done",
   "summary": "Firebase wrapper, hardNavigate, apiFetch with same-origin token rule, extended ApiError, and checkCode_2/register_3/me_4 added; tests green.",
-  "commit": "ce907cc",
+  "commit": "12b4864",
   "produces": [
     {"kind": "file", "name": "lib/auth/firebase.ts", "where": "src/fe/lib/auth/firebase.ts", "note": "firebaseConfigured, currentUser, onUserChanged, signIn, signUp, signOutUser, idToken; only @firebase/* importer"},
     {"kind": "symbol", "name": "hardNavigate", "where": "src/fe/lib/auth/navigate.ts", "note": "only location.assign caller"},
