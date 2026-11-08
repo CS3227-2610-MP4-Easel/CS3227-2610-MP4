@@ -46,9 +46,9 @@ only your own task's files. Contract tests marked read-only are not edited.
 | T1 Test runner and dependencies | `tasks/T1.md` | - | - | 1 | standard | full | Done |
 | T2 Auth mode and the prototype route | `tasks/T2.md` | T1 | T3 | 2 | standard | full | Done |
 | T3 Firebase wrapper and API client | `tasks/T3.md` | T1 | T2 | 2 | complex | full | Done |
-| T4 Session, gate, layout and top bar | `tasks/T4.md` | T2, T3 | - | 3 | complex | full | In progress |
-| T5 Sign-in screen | `tasks/T5.md` | T3, T4 | T6 | 4 | standard | full | Not started |
-| T6 Register screen | `tasks/T6.md` | T3, T4 | T5 | 4 | complex | full | Not started |
+| T4 Session, gate, layout and top bar | `tasks/T4.md` | T2, T3 | - | 3 | complex | full | Done |
+| T5 Sign-in screen | `tasks/T5.md` | T3, T4 | T6 | 4 | standard | full | In progress |
+| T6 Register screen | `tasks/T6.md` | T3, T4 | T5 | 4 | complex | full | In progress |
 | T7 Source rules and prototype scripts | `tasks/T7.md` | T5, T6 | - | 5 | standard | full | Not started |
 
 Full review on every task means Implementer + Tester + Attacker lenses (authentication, tokens, registration codes, security-sensitive paths).
