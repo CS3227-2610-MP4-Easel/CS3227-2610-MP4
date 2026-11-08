@@ -18,7 +18,7 @@ type Fail =
   | { kind: 'firebase'; message: string; signIn: boolean }
   | { kind: 'conflict' }
   | { kind: 'form'; messages: string[] };
-type FieldErrors = { role?: string; code?: string; displayName?: string };
+type FieldErrors = { role?: string; code?: string };
 
 function FieldError({ id, text }: { id: string; text?: string }) {
   if (!text) return null;
@@ -81,6 +81,7 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fields, setFields] = useState<FieldErrors>({});
+  const [dnError, setDnError] = useState<string | undefined>(undefined);
   const [fail, setFail] = useState<Fail | null>(null);
   const [wait, setWait] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
@@ -91,6 +92,8 @@ export default function Register() {
   const lastAction = useRef<() => void>(() => {});
 
   const cooling = wait !== null;
+  const coolingRef = useRef(false);
+  coolingRef.current = cooling;
   useEffect(() => {
     if (!cooling) return;
     const id = setInterval(() => setWait((w) => (w === null || w <= 1 ? null : w - 1)), 1000);
@@ -125,7 +128,8 @@ export default function Register() {
       if (e.status === 422 && e.code === 'VALIDATION_FAILED') {
         const rest: string[] = [];
         for (const d of e.details) {
-          if (d.field === 'role' || d.field === 'code' || d.field === 'displayName') next[d.field] = d.message;
+          if (d.field === 'displayName') setDnError(d.message);
+          else if (d.field === 'role' || d.field === 'code') next[d.field] = d.message;
           else rest.push(d.message);
         }
         setFields(next);
@@ -146,12 +150,13 @@ export default function Register() {
   }
 
   async function run(from: 1 | 2 | 3, work: () => Promise<void>) {
-    if (inFlight.current) return;
+    if (inFlight.current || coolingRef.current) return;
     inFlight.current = true;
     lastAction.current = () => void run(from, work);
     setBusy(true);
     setFail(null);
     setFields({});
+    if (from !== 1) setDnError(undefined);
     try {
       await work();
     } catch (e) {
@@ -252,8 +257,8 @@ export default function Register() {
         <CodeField id="fc" value={code} onChange={setCode} error={fields.code} />
         <div className="field">
           <label htmlFor="fn">Display name</label>
-          <input id="fn" className={fields.displayName ? 'in err' : 'in'} value={displayName} onChange={(e) => setDisplayName(e.target.value)} autoComplete="name" />
-          <FieldError id="fn-err" text={fields.displayName} />
+          <input id="fn" className={dnError ? 'in err' : 'in'} value={displayName} onChange={(e) => setDisplayName(e.target.value)} autoComplete="name" />
+          <FieldError id="fn-err" text={dnError} />
           <span className="hint">1 to 100 characters</span>
         </div>
         {banners}
@@ -288,11 +293,11 @@ export default function Register() {
       </div>
       <div className="field">
         <label htmlFor="n">Display name</label>
-        <input id="n" className={fields.displayName ? 'in err' : 'in'} value={displayName} onChange={(e) => setDisplayName(e.target.value)} autoComplete="name" />
-        <FieldError id="n-err" text={fields.displayName} />
+        <input id="n" className={dnError ? 'in err' : 'in'} value={displayName} onChange={(e) => setDisplayName(e.target.value)} autoComplete="name" />
+        <FieldError id="n-err" text={dnError} />
       </div>
-      <div className="field"><label htmlFor="e">Email</label><input id="e" className="in" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" /></div>
-      <div className="field"><label htmlFor="p">Password</label><input id="p" className="in" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" /></div>
+      <div className="field"><label htmlFor="e">Email</label><input id="e" className="in" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" disabled={accountMade} /></div>
+      <div className="field"><label htmlFor="p">Password</label><input id="p" className="in" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" disabled={accountMade} /></div>
       {banners}
       <div className="row between">
         <button type="button" className="muted b" onClick={() => { setStep(1); setFail(null); setFields({}); }} style={{background: "none", border: 0, padding: 0, cursor: "pointer"}}>Back</button>

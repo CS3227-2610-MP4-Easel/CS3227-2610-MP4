@@ -73,6 +73,11 @@ async function step2(u: ReturnType<typeof userEvent.setup>, name = 'Ana') {
   await u.click(screen.getByRole('button', { name: 'Create account' }));
 }
 const text = () => document.body.textContent ?? '';
+function deferred<T>() {
+  let resolve!: (v: T) => void;
+  const promise = new Promise<T>((res) => { resolve = res; });
+  return { promise, resolve };
+}
 
 beforeEach(() => {
   fbCb = null;
@@ -166,14 +171,19 @@ describe('register step 2', () => {
   });
 
   it('E100 a user change between signUp and register_3 triggers no me_4 and ends ready', async () => {
-    route({});
+    const reg = deferred<Response>();
+    route({ reg: () => reg.promise as unknown as Response });
     vi.mocked(signUp).mockImplementation(async () => { fbCb!({ uid: 'a', email: 'a@x.io' }); });
     const { u } = mount();
     await signedOut();
     await step1(u);
     await step2(u);
+    expect(calls('/auth/register')).toHaveLength(1);
     expect(calls('/api/me')).toHaveLength(0);
+    expect(screen.getByRole('heading', { name: 'Create your account' })).toBeTruthy();
     expect(screen.queryByText(/profile is not set up/)).toBeNull();
+    await act(async () => reg.resolve(ok(USER)));
+    expect(calls('/api/me')).toHaveLength(0);
     expect(replace).toHaveBeenCalledTimes(1);
     expect(replace).toHaveBeenCalledWith('/projects');
   });
@@ -196,8 +206,10 @@ describe('register step 2', () => {
     await step2(u);
     expect(calls('/api/me')).toHaveLength(1);
     await act(async () => lateMe(notRegistered()));
+    expect(screen.queryByText(/profile is not set up/)).toBeNull();
     expect(replace).toHaveBeenCalledTimes(1);
     expect(replace).toHaveBeenCalledWith('/projects');
+    expect(replace).not.toHaveBeenCalledWith('/register');
   });
 
   it('E101 register_3 500 then Retry calls signUp once and register_3 twice', async () => {
@@ -212,6 +224,52 @@ describe('register step 2', () => {
     expect(signUp).toHaveBeenCalledTimes(1);
     expect(calls('/auth/register')).toHaveLength(2);
     expect(body(calls('/auth/register')[1]).code).toBe(CODE);
+  });
+
+  it('E101 the hold is released after a failed register_3 so a later user change reads me_4', async () => {
+    route({ reg: () => err(500, 'INTERNAL') });
+    const { u } = mount();
+    await signedOut();
+    await step1(u);
+    await step2(u);
+    expect(screen.getByText('Something went wrong.')).toBeTruthy();
+    expect(calls('/api/me')).toHaveLength(0);
+    await act(async () => fbCb!({ uid: 'a', email: 'a@x.io' }));
+    expect(calls('/api/me')).toHaveLength(1);
+  });
+
+  it('E101 after a 422 on displayName, correcting it and Create account again skips signUp', async () => {
+    let n = 0;
+    route({ reg: () => (++n === 1 ? err(422, 'VALIDATION_FAILED', { details: [{ field: 'displayName', message: 'dn bad' }] }) : ok(USER)) });
+    const { u } = mount();
+    await signedOut();
+    await step1(u);
+    await step2(u);
+    expect(screen.getByText('dn bad')).toBeTruthy();
+    expect((screen.getByLabelText('Email') as HTMLInputElement).disabled).toBe(true);
+    expect((screen.getByLabelText('Password') as HTMLInputElement).disabled).toBe(true);
+    await u.type(screen.getByLabelText('Display name'), 'b');
+    await u.click(screen.getByRole('button', { name: 'Create account' }));
+    expect(signUp).toHaveBeenCalledTimes(1);
+    expect(calls('/auth/register')).toHaveLength(2);
+    expect(replace).toHaveBeenCalledWith('/projects');
+  });
+
+  it('E52c a 422 with displayName and code keeps the display name message for step 2', async () => {
+    let n = 0;
+    route({
+      reg: () => (++n === 1 ? err(422, 'VALIDATION_FAILED', { details: [{ field: 'displayName', message: 'dn bad' }, { field: 'code', message: 'code bad' }] }) : ok(USER)),
+    });
+    const { u } = mount();
+    await signedOut();
+    await step1(u);
+    await step2(u);
+    const card = within(document.querySelector('form') as HTMLElement);
+    expect(card.getByText('code bad')).toBeTruthy();
+    expect(card.queryByText('dn bad')).toBeNull();
+    await u.click(screen.getByRole('button', { name: 'Next' }));
+    expect(within(document.querySelector('form') as HTMLElement).getByText('dn bad')).toBeTruthy();
+    expect(within(document.querySelector('form') as HTMLElement).queryByText('code bad')).toBeNull();
   });
 
   it('E52a 403 at Create account shows Code not accepted under the code field', async () => {
@@ -311,17 +369,69 @@ describe('register step 2', () => {
     expect(calls('check-code')).toHaveLength(2);
   });
 
-  it('E80 a double click on Create account calls signUp and register_3 once', async () => {
-    route({});
-    const { u } = mount();
-    await signedOut();
-    await step1(u);
+  async function fillStep2(u: ReturnType<typeof userEvent.setup>) {
     await u.type(screen.getByLabelText('Display name'), 'Ana');
     await u.type(screen.getByLabelText('Email'), 'a@x.io');
     await u.type(screen.getByLabelText('Password'), 'pw123456');
+  }
+
+  it('E80 a double click while signUp is pending calls signUp once, with busy label and aria-busy', async () => {
+    route({});
+    const su = deferred<void>();
+    vi.mocked(signUp).mockImplementation(() => su.promise as never);
+    const { u } = mount();
+    await signedOut();
+    await step1(u);
+    await fillStep2(u);
+    await u.dblClick(screen.getByRole('button', { name: 'Create account' }));
+    expect(signUp).toHaveBeenCalledTimes(1);
+    const busy = screen.getByRole('button', { name: 'Please wait…' }) as HTMLButtonElement;
+    expect(busy.getAttribute('aria-busy')).toBe('true');
+    expect(busy.disabled).toBe(true);
+    await act(async () => su.resolve());
+    expect(signUp).toHaveBeenCalledTimes(1);
+    expect(calls('/auth/register')).toHaveLength(1);
+  });
+
+  it('E80 a double click while register_3 is pending calls register_3 once', async () => {
+    const reg = deferred<Response>();
+    route({ reg: () => reg.promise as unknown as Response });
+    const { u } = mount();
+    await signedOut();
+    await step1(u);
+    await fillStep2(u);
     await u.dblClick(screen.getByRole('button', { name: 'Create account' }));
     expect(signUp).toHaveBeenCalledTimes(1);
     expect(calls('/auth/register')).toHaveLength(1);
+    await act(async () => reg.resolve(ok(USER)));
+    expect(calls('/auth/register')).toHaveLength(1);
+  });
+
+  it('E51 Create account is disabled while the session status is loading', async () => {
+    route({ me: () => new Promise<Response>(() => {}) as unknown as Response });
+    const { u } = mount();
+    await signedOut();
+    await step1(u);
+    await act(async () => fbCb!({ uid: 'a', email: 'a@x.io' }));
+    expect((screen.getByRole('button', { name: 'Create account' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(signUp).not.toHaveBeenCalled();
+  });
+
+  it('E34 a 429 at Create account counts down and continues across Back', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    route({ reg: () => err(429, 'RATE_LIMITED', {}, { 'Retry-After': '3' }) });
+    const { u } = mount();
+    await signedOut();
+    await step1(u);
+    await fillStep2(u);
+    await u.click(screen.getByRole('button', { name: 'Create account' }));
+    expect(screen.getByText('Too many attempts. Try again in 3 seconds.')).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'Create account' }) as HTMLButtonElement).disabled).toBe(true);
+    await u.click(screen.getByRole('button', { name: 'Back' }));
+    await act(async () => { vi.advanceTimersByTime(1000); });
+    expect(screen.getByText('Too many attempts. Try again in 2 seconds.')).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'Next' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(calls('check-code')).toHaveLength(1);
   });
 
   it('E39 a script-like display name is sent as typed and adds no script element', async () => {
@@ -447,6 +557,7 @@ describe('secrets and lifecycle', () => {
     await signedOut();
     await step1(u);
     await step2(u);
+    expectNoCode();
     await act(async () => finishReg(ok(USER)));
     expectNoCode();
   });
@@ -464,12 +575,6 @@ describe('secrets and lifecycle', () => {
 
   it('E103 unmount after signUp without setUser calls retry once and a remount starts empty at step 1', async () => {
     route({ reg: () => err(500, 'INTERNAL') });
-    const m = mount();
-    await signedOut();
-    await act(async () => fbCb!({ uid: 'a', email: 'a@x.io' }));
-    m.unmount();
-    fetchMock.mockClear();
-    route({ reg: () => err(500, 'INTERNAL') });
     const m2 = mount();
     await signedOut();
     await step1(m2.u);
@@ -484,6 +589,35 @@ describe('secrets and lifecycle', () => {
     expect(screen.getByRole('heading', { name: 'Pick your role' })).toBeTruthy();
     expect((screen.getByLabelText('Registration code') as HTMLInputElement).value).toBe('');
     m3.unmount();
+  });
+
+  it('E103 unmount after setUser does not call retry', async () => {
+    route({});
+    const m = mount();
+    await signedOut();
+    await step1(m.u);
+    await step2(m.u);
+    expect(replace).toHaveBeenCalledWith('/projects');
+    const before = calls('/api/me').length;
+    m.unmount();
+    await act(async () => {});
+    expect(calls('/api/me').length).toBe(before);
+  });
+
+  it('E55 finish setup: the code is in the input before submit and gone after success', async () => {
+    const reg = deferred<Response>();
+    route({ reg: () => reg.promise as unknown as Response });
+    const m = mount();
+    await signedOut();
+    await act(async () => fbCb!({ uid: 'a', email: 'a@x.io' }));
+    await m.u.click(screen.getByRole('radio', { name: /Developer/ }));
+    await m.u.type(screen.getByLabelText('Registration code'), CODE);
+    expect((screen.getByLabelText('Registration code') as HTMLInputElement).value).toBe(CODE);
+    await m.u.type(screen.getByLabelText('Display name'), 'Ana');
+    await m.u.click(screen.getByRole('button', { name: 'Finish' }));
+    await act(async () => reg.resolve(ok(USER)));
+    expectNoCode();
+    expect(replace).toHaveBeenCalledWith('/projects');
   });
 
   it('E104 code inputs disable autocomplete and the password uses new-password', async () => {
