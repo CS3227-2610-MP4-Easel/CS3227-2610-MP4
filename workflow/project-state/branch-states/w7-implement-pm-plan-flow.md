@@ -112,6 +112,7 @@ pm install removes the generated Prisma client, so 	sc -b fails until `prisma:ge
 
 - **The PM endpoints are unreachable in the running app until W5 lands** - `createAppDependencies` still uses the placeholder `resolveResource` (null) and a `requireMember` that throws, so the policy gate answers 404 for endpoints 34, 35, 37, 40, 41; the route and end-to-end tests inject their own dependencies.
 - **Retrieval candidates are the first 50 per table by id, ranked afterwards** - with more than 50 keyword matches in a table the best-ranked items may be missed (spec SD5).
+- **The configured outline model times out on the live service** - a live run on SoCLaaS (2026-11-08, mock off) failed `PM_PLAN_OUTLINE` with `AI_UNAVAILABLE` (503): `qwen3.5:9b` took 58 s cold and about 17 s warm for a two-token reply, against the gateway's 25 s attempt deadline. With `LLM_MODEL_PM_PLAN_OUTLINE=llama3.1:8b` the whole flow worked (outline 6.9 s, six expansions 4 to 9 s, approve created 8 checkpoints, 6 epics and 25 tasks, no retries or flags). Not run live: retrieval with real items, injection text, the HTTP routes. Plan quality seen: tasks repeat across epics (for example a security task in four of six) and checkpoints are about two months apart.
 
 ### Deviations (new)
 
@@ -123,5 +124,6 @@ pm install removes the generated Prisma client, so 	sc -b fails until `prisma:ge
 
 - **W2 owner (Developer):** agree to the `Sessions.assertUsable` change (a session admits its own feature and the one mapped by `SESSION_FEATURE`; contracts §5.3 amended).
 - **W5 owner (Dev Lead):** register `createProposalResolvers(db)` and a project resolver that reads path parameter `id` for endpoint 34; lock the project row (`update` of `updatedAt`) before epic inserts so `position` cannot race `applyPlan`; add `Core.assertWritable`; merge `src/be/core/src/index.ts` exports with W7's `applyPlan`, `PlanInputSchema`, `countPlan`.
+- **W2 owner (Developer), model config:** decide the `PM_PLAN_OUTLINE` model or deadline: `qwen3.5:9b` does not answer within the 25 s attempt deadline on SoCLaaS (see Known Gaps). Either set the feature to `llama3.1:8b` in `FEATURES` or allow a longer deadline for it; the environment override `LLM_MODEL_PM_PLAN_OUTLINE` works in the meantime.
 - **W13:** `PM_SIMILAR_ITEMS` (`on`/`off`, default `on`) and the seed data that gives retrieval something to find.
 - **Architecture Now blocks:** write `pm`, `core` and `proposals` area files from the built code at the fold.
