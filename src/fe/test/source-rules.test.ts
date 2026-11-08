@@ -7,7 +7,8 @@ import { fileURLToPath } from 'node:url';
 const FE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const REPO = path.resolve(FE, '../..');
 const EXT = /\.(ts|tsx|js|jsx|mjs|cjs|mts|cts)$/;
-const SKIP_DIRS = new Set(['node_modules', '.next', 'test', 'scripts']);
+const SKIP_ANYWHERE = new Set(['node_modules', '.next']);
+const SKIP_TOP = new Set(['test', 'scripts']);
 
 // Blank out comments (keeping newlines so offsets and lines stay aligned) outside string literals.
 function strip(src: string): string {
@@ -48,10 +49,9 @@ function lineOf(text: string, index: number): number {
   return text.slice(0, index).split('\n').length;
 }
 
-function isClient(rel: string, src: string): boolean {
+function isClient(rel: string, text: string): boolean {
   if (rel === 'src/fe/lib/auth/firebase.ts' || rel === 'src/fe/lib/auth/navigate.ts') return true;
-  const first = src.split('\n').find((l) => l.trim() !== '') ?? '';
-  return /^(['"])use client\1;?$/.test(first.trim());
+  return /^﻿?\s*(['"])use client\1[ \t]*(?:;|\r?\n|$)/.test(text);
 }
 
 function resolveSpec(rel: string, spec: string): string | null {
@@ -59,7 +59,7 @@ function resolveSpec(rel: string, spec: string): string | null {
   if (spec.startsWith('.')) target = path.posix.join(path.posix.dirname(rel), spec);
   else if (spec.startsWith('@/')) target = path.posix.join('src/fe', spec.slice(2));
   else return null;
-  return target.replace(/\.(ts|tsx)$/, '');
+  return target.replace(/\.(ts|tsx|js)$/, '').replace(/\/index$/, '');
 }
 
 function check(rel: string, src: string): Hit[] {
@@ -72,8 +72,8 @@ function check(rel: string, src: string): Hit[] {
   };
 
   if (rel !== 'src/fe/lib/auth/firebase.ts') {
-    scan(/\b(?:from|import|require)\s*\(?\s*(['"])([^'"]+)\1/g, (m) => {
-      if (/^(@firebase\/|firebase($|[/-]))/.test(m[2])) add(1, m.index, m[2]);
+    scan(/\b(?:from|import|require)\s*\(?\s*(['"`])([^'"`]+)\1/g, (m) => {
+      if (!m[2].includes('${') && /^(@firebase\/|firebase($|[/-]))/.test(m[2])) add(1, m.index, m[2]);
     });
   }
   if (rel !== 'src/fe/lib/api/http.ts' && !rel.startsWith('src/fe/app/api/')) {
@@ -84,14 +84,20 @@ function check(rel: string, src: string): Hit[] {
   }
   scan(/dangerouslySetInnerHTML/g, (m) => add(4, m.index, m[0]));
 
-  if (isClient(rel, src)) {
+  if (isClient(rel, text)) {
     scan(/process\.env(?!\.NEXT_PUBLIC_FIREBASE_(?:API_KEY|AUTH_DOMAIN|PROJECT_ID|APP_ID)\b)/g, (m) =>
       add(5, m.index, m[0]),
     );
-    scan(/\bimport\s*(type\b)?\s*(?:[^'";()]*?\bfrom\s*|\(\s*)?(['"])([^'"]+)\2/g, (m) => {
-      if (m[1]) return;
-      if (resolveSpec(rel, m[3]) === 'src/fe/lib/auth/mode') add(6, m.index, m[3]);
+    const modeHit = (m: RegExpExecArray, spec: string) => {
+      if (resolveSpec(rel, spec) === 'src/fe/lib/auth/mode') add(6, m.index, spec);
+    };
+    scan(/\bimport\s*(type(?=\s*[{*]))?\s*(?:[^'";()]*?\bfrom\s*|\(\s*)?(['"`])([^'"`]+)\2/g, (m) => {
+      if (!m[1]) modeHit(m, m[3]);
     });
+    scan(/\bexport\s*(type(?=\s*[{*]))?\s*(?:\*(?:\s+as\s+\w+)?|\{[^}]*\})\s*from\s*(['"`])([^'"`]+)\2/g, (m) => {
+      if (!m[1]) modeHit(m, m[3]);
+    });
+    scan(/\brequire\s*\(\s*(['"`])([^'"`]+)\1/g, (m) => modeHit(m, m[2]));
   }
   return hits;
 }
@@ -99,7 +105,8 @@ function check(rel: string, src: string): Hit[] {
 function walk(dir: string, out: string[] = []): string[] {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     if (e.isDirectory()) {
-      if (!SKIP_DIRS.has(e.name)) walk(path.join(dir, e.name), out);
+      const skip = SKIP_ANYWHERE.has(e.name) || (dir === FE && SKIP_TOP.has(e.name));
+      if (!skip) walk(path.join(dir, e.name), out);
     } else if (EXT.test(e.name)) out.push(path.join(dir, e.name));
   }
   return out;
@@ -128,6 +135,31 @@ describe('source rules on the real tree', () => {
 
 describe('source rules catch breaches', () => {
   const other = 'src/fe/components/x.tsx';
+
+  it('E83 owner exemptions are exact paths and hits report original lines', () => {
+    expect(ruleHits('x/lib/api/http.ts', 'fetch(u);', 2)).toHaveLength(1);
+    expect(ruleHits('x/lib/auth/navigate.ts', 'location.assign(u);', 3)).toHaveLength(1);
+    const hits = ruleHits(other, "/* a\nb\nc */\n\nfetch(u);", 2);
+    expect(hits.map((h) => h.line)).toEqual([5]);
+  });
+
+  it('E83 client detection tolerates BOM, leading comments and trailing comments', () => {
+    const env = 'const k = process.env.SECRET;';
+    expect(ruleHits(other, `// note\n'use client';\n${env}`, 5)).toHaveLength(1);
+    expect(ruleHits(other, `'use client'; // x\n${env}`, 5)).toHaveLength(1);
+    expect(ruleHits(other, `﻿'use client';\n${env}`, 5)).toHaveLength(1);
+    expect(ruleHits(other, `import a from 'a';\n'use client';\n${env}`, 5)).toHaveLength(0);
+  });
+
+  it('E83 rule 1 catches a template-literal dynamic import without interpolation', () => {
+    expect(ruleHits(other, 'await import(`firebase/app`)', 1)).toHaveLength(1);
+  });
+
+  it('E83 skipped directories apply only at the top of src/fe', () => {
+    const s = "import 'firebase/app'";
+    expect(ruleHits('src/fe/app/api/test/x.ts', s, 1)).toHaveLength(1);
+    expect(ruleHits('src/fe/components/scripts/y.tsx', s, 1)).toHaveLength(1);
+  });
 
   it('E83 rule 1 catches every firebase import form outside lib/auth/firebase.ts', () => {
     const samples = [
@@ -179,6 +211,19 @@ describe('source rules catch breaches', () => {
     expect(ruleHits(f, "'use client';\nimport { authMode } from './mode';", 6)).toHaveLength(1);
     expect(ruleHits(f, "'use client';\nimport { type AuthMode } from './mode.ts';", 6)).toHaveLength(1);
     expect(ruleHits('src/fe/components/y.tsx', "\"use client\";\nimport { authMode } from '../lib/auth/mode';", 6)).toHaveLength(1);
+    for (const s of [
+      "export { authMode } from './mode';",
+      "export * from './mode';",
+      "const m = require('./mode');",
+      "import type from './mode';",
+      "import { authMode } from './mode.js';",
+      "import { authMode } from './mode/index';",
+      "import { authMode } from './mode/index.ts';",
+    ]) {
+      expect(ruleHits(f, `'use client';\n${s}`, 6), s).toHaveLength(1);
+    }
+    expect(ruleHits(f, "'use client';\nexport type { AuthMode } from './mode';", 6)).toHaveLength(0);
+    expect(ruleHits(f, "'use client';\nimport type * as M from './mode';", 6)).toHaveLength(0);
     expect(ruleHits(f, "'use client';\nimport type { AuthMode } from './mode';", 6)).toHaveLength(0);
     expect(ruleHits(f, "import { authMode } from './mode';", 6)).toHaveLength(0);
   });
