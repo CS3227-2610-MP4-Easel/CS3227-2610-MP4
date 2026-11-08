@@ -6,3 +6,4 @@ export * from "./expand-store.js";
 export * from "./decide.js";
 export * from "./edit-common.js";
 export * from "./edit-store.js";
+export * from "./epic-list.js";
