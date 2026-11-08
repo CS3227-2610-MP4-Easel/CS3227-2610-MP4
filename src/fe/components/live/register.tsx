@@ -218,7 +218,7 @@ export default function Register() {
     else onFinish();
   }
 
-  const label =(text: string) => (busy ? 'Please wait…' : text);
+  const label = (text: string) => (busy ? 'Please wait…' : text);
   const busyAttr = busy ? 'true' : undefined;
 
   const banners: ReactNode = (

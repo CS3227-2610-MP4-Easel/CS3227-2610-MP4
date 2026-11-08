@@ -47,6 +47,7 @@ beforeEach(() => {
   fbCb = null;
   sess = null;
   fetchMock.mockReset();
+  vi.mocked(currentUser).mockReset();
   signOutUser.mockReset();
   signOutUser.mockResolvedValue(undefined);
   vi.stubGlobal('fetch', fetchMock);

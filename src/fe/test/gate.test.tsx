@@ -54,6 +54,7 @@ beforeEach(() => {
   fbCb = null;
   configured = true;
   replace.mockReset();
+  vi.mocked(currentUser).mockReset();
   fetchMock.mockReset();
   vi.stubGlobal('fetch', fetchMock);
 });
