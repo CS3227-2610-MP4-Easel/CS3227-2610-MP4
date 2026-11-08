@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 00:00 | Codex | W13 | In progress — owner action | T4 evidence is complete and redacted; T6 protected production workflow remains to be implemented | Implement T6, then run its review gate before any production promotion | 2026-11-08 00:00 |
+| S1 | 2026-11-08 00:00 | Codex | W13 | Blocked — needs human | T6 implementation and validation are complete; production configuration is the explicit owner gate | Owner configures the GitHub `production` Environment, Vercel production target, and production secrets; do not run promotion without that approval | 2026-11-08 00:00 |
 
 **Remaining**
 
@@ -73,6 +73,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Operator verified the reduced T4 gate and authorized continuation; remaining work is owner-recorded deployment metadata plus health/auth/tier evidence. | W13 | this commit |
 | 2026-11-08 | Owner reported the reduced health, authenticated identity, foreign-token, and dev-tier checks as verified; T4 remains pending only for the redacted deployment metadata fields. | W13 | this commit |
 | 2026-11-08 | Owner supplied the Vercel deployment ID and timestamps; reduced T4 evidence is complete with health/auth/foreign-token/tier checks passing and outcome `pass`. | W13 | this commit |
+| 2026-11-08 | T6 implementation is complete through validation: protected `main` workflow, detached SHA/artifact identity checks, production migration invocation, and candidate deployment verification are covered; owner production configuration is now the required gate. | W13 | this commit |
 
 ### T4 redacted evidence
 

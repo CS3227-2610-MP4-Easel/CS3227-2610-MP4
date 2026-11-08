@@ -1,0 +1,70 @@
+name: Protected production deployment
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: 20.19.5
+  NPM_VERSION: 10.8.2
+  APP_TIER: prod
+  VERCEL_ENV: production
+  NEON_HOST: ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech
+  NEON_PROJECT: super-sunset-36592949
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    environment: production
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm install --global npm@${NPM_VERSION}
+      - run: npm ci --ignore-scripts
+      - run: npm --workspace @agile/db run prisma:generate
+      - name: Verify detached source identity
+        run: test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - name: Typecheck and build immutable artifact
+        run: |
+          npm run typecheck
+          npm --prefix src/fe run build
+          tar --sort=name --mtime='UTC 1970-01-01' --owner=0 --group=0 --numeric-owner -C src/fe -cf "$RUNNER_TEMP/artifact.tar" .next
+          echo "ARTIFACT_DIGEST=$(sha256sum "$RUNNER_TEMP/artifact.tar" | cut -d' ' -f1)" >> "$GITHUB_ENV"
+      - name: Apply protected production migration
+        env:
+          DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+        run: node scripts/w13/migrate-production.mjs
+      - name: Deploy immutable production candidate
+        id: deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          test -n "$VERCEL_TOKEN"
+          deployment_url="$(npx --yes vercel@41.6.0 deploy --prebuilt --prod --yes --token "$VERCEL_TOKEN" --meta githubCommitSha="$GITHUB_SHA" --meta artifactDigest="$ARTIFACT_DIGEST")"
+          printf '%s\n' "$deployment_url" > "$RUNNER_TEMP/deployment-url"
+          echo "deployment_url=$deployment_url" >> "$GITHUB_OUTPUT"
+      - name: Verify production identity before promotion
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          EXPECTED_SHA: ${{ github.sha }}
+          EXPECTED_ARTIFACT_DIGEST: ${{ env.ARTIFACT_DIGEST }}
+        run: |
+          npx --yes vercel@41.6.0 inspect "$(cat "$RUNNER_TEMP/deployment-url")" --token "$VERCEL_TOKEN" --json > "$RUNNER_TEMP/deployment.json"
+          CANDIDATE_JSON="$RUNNER_TEMP/deployment.json" EXPECTED_SHA="$EXPECTED_SHA" EXPECTED_ARTIFACT_DIGEST="$EXPECTED_ARTIFACT_DIGEST" node scripts/w13/verify-production-identity.mjs

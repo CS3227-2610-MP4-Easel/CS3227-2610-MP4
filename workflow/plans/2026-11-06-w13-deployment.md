@@ -25,9 +25,9 @@
 | T1 | — | T2 | 1 | Done |
 | T2 | — | T1 | 1 | Done |
 | T3 | T1 | — | 2 | Done |
-| T4 | T1, T3 | — | 3 | Ready for owner gate |
-| T5 | T3, T4 | — | 4 | Post-merge |
-| T6 | T1, T3, T5 | T4 | 5 | Not started |
+| T4 | T1, T3 | — | 3 | Done |
+| T5 | T3, T4 | — | 4 | Done |
+| T6 | T1, T3, T5 | T4 | 5 | In progress |
 | T7 | T1, T4, T6 | — | 6 | Not started |
 
 ## Traceability
@@ -188,9 +188,9 @@
 
 **Checklist**
 
-- [ ] 1. Write failing workflow tests for ref/review/check gates, SHA/artifact drift, concurrency, secret timing, and target identity.
-- [ ] 2. Implement the protected workflow and immutable identity checks.
-- [ ] 3. Run workflow/security checks and focused W13 tests.
+- [x] 1. Write failing workflow tests for ref/review/check gates, SHA/artifact drift, concurrency, secret timing, and target identity.
+- [x] 2. Implement the protected workflow and immutable identity checks.
+- [x] 3. Run workflow/security checks and focused W13 tests. **Done 2026-11-08:** 488 tests (462 passed, 26 skipped), typecheck, workflow validator, agent-policy, and secret scan pass.
 - [ ] 4. `GATE:` repository owner configures the GitHub Environment, Vercel production target, and production secrets.
 - [ ] 5. Update branch state and commit: `feat: add protected W13 production deployment`.
 
