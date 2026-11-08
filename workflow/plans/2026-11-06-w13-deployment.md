@@ -2,6 +2,8 @@
 
 - **Status:** Approved (operator, 2026-11-06)
 
+> Amended 2026-11-08 under branch-state C~5 and approved Gate 1: the removed automated development-check workflow/verifier are retired. T4 is now an owner-operated Vercel metadata and fixed development smoke gate; no repository workflow or application runtime receives a Vercel deployment token.
+
 > Amended 2026-11-07 under branch-state C~4: T4 now uses a protected, read-only Vercel metadata token for authoritative deployment verification; the former no-token external-gate wording is superseded for this check. The implementation keeps the token in the pre-checkout lookup step only.
 
 > **For agents:** tick each checklist item as it is completed. Keep the branch-state Progress cell current. Spec: [W13 design](../specs/2026-11-06-w13-deployment-design.md).
@@ -131,7 +133,7 @@
 - [x] 4. Run focused migration tests, `npm --workspace @agile/db run prisma:validate`, and `npm run lint`.
 - [ ] 5. Update branch state and commit: `feat: add W13 migration and recovery controls`.
 
-### T4: Development Vercel deployment
+### T4: Manual development deployment evidence
 
 **Delivers:** owner-merge dev deployment contract and dev-tier configuration | **Satisfies:** F2, F3 | **Depends on:** T1, T3 | **Wave:** 3
 
@@ -139,18 +141,16 @@
 
 | Action | Path | What changes |
 |---|---|---|
-| Modify | `.github/workflows/w13-dev-check.yml` | Before checkout, use the protected `w13-development-verification` environment's read-only Vercel token to fetch and poll exact deployment metadata; pass only sanitized project/alias/state/commit evidence to the checked-out verifier; do not receive production credentials. |
-| Modify | `scripts/w13/verify-dev-deployment.mjs` | Compare Vercel deployment metadata SHA/project/alias to the merged commit and manifest. |
-| Modify | `tests/w13/dev-deployment.test.ts` | Cover E2, E26, E41-E42 and preview variable isolation. |
-| Modify | `scripts/check-workflows.mjs` | Allow only the fixed owner-merge dev check workflow to use its protected `push` trigger; retain pull-request restrictions elsewhere. |
+| Modify | `docs/operations/w13-deployment.md` | Document the owner-operated Vercel metadata inspection, exact alias-bound smoke requests, redacted evidence schema, and T4 completion gate. |
+| Modify | `workflow/project-state/branch-states/w13-deployment-continuation.md` | Record the owner’s redacted T4 evidence and deployed SHA. |
 
 **Checklist**
 
-- [x] 1. Write failing workflow/script tests for merged-SHA, alias, missing settings, preview isolation, and dev AI degradation.
-- [x] 2. Implement the fixed dev check without production secrets.
-- [x] 3. Run `npm run check:workflows`, `npm run check:agent-policy`, and focused W13 tests.
-- [ ] 4. `GATE:` repository owner configures the canonical Vercel dev project/alias and merges a reviewed commit to `development`.
-- [ ] 5. Record the deployed SHA and smoke evidence; update branch state and commit: `feat: verify W13 development deployment`.
+- [x] 1. Retire the removed automated dev-check workflow, verifier, and dedicated tests; preserve historical references only in audit records.
+- [x] 2. Amend and approve the manual T4 evidence contract and runbook under C~5.
+- [x] 3. Run the repository tests, workflow validator, agent-policy check, and secret scan after cleanup.
+- [ ] 4. `GATE:` repository owner confirms the merged `development` SHA, canonical project/alias from the tier manifest, `READY` deployment identity, and fixed health/auth/tier/AI smoke results using the manual runbook.
+- [ ] 5. Record the redacted T4 evidence in branch state and mark T4 complete before T6 starts.
 
 ### T5: Recovery rehearsal
 
