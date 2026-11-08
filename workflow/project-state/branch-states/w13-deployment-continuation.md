@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 00:00 | Codex | W13 | Blocked — needs human | T6 preflight blocked by the outstanding T4 deployment gate | Owner confirms the deployed development SHA and dev smoke evidence, or explicitly resolves the T4 gate | 2026-11-08 00:00 |
+| S1 | 2026-11-08 00:00 | Codex | W13 | Blocked — needs human | T6 preflight blocked by the outstanding T4 deployment gate and missing workflow | Owner chooses whether to recreate the removed T4 workflow or accept the audit exception | 2026-11-08 00:00 |
 
 **Remaining**
 
@@ -64,7 +64,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Operator amended the recovery target: seed `w13-recovery-baseline` and create `w13-recovery-past` from its pre-change point; the validator now accepts only the baseline name. | W13 | this commit |
 | 2026-11-08 | Owner confirmed `w13-recovery-past` contains the state from before the controlled changes to `w13-recovery-baseline`; restore verification passed, with timing and post-restore seed evidence still pending. | W13 | this commit |
 | 2026-11-08 | Owner `teleifo` verified the recovered branch and seed data; redacted T5 evidence records 20-second RPO/RTO (0.0056 hours each) and a passing outcome. | W13 | this commit |
-| 2026-11-08 | T6 preflight stopped at the plan gate: T4's deployed SHA and dev smoke evidence are not recorded in this continuation state, so protected production deployment work cannot begin yet. | W13 | this commit |
+| 2026-11-08 | T6 preflight found the plan's `.github/workflows/w13-dev-check.yml` was removed in `c9ed369`; option 1 cannot run until the owner chooses to recreate that workflow or accept an explicit audit exception. | W13 | this commit |
 
 ## 7. Decisions
 
@@ -107,6 +107,13 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Date:** 2026-11-08
 - **Question:** Has the owner completed T4's deployed-SHA and dev smoke evidence gate, or should the existing T4 read-only configuration audit be explicitly accepted as the gate evidence?
 - **Why blocked:** T6 depends on T4, and the approved plan requires this owner gate before protected production migration/deployment work.
+
+### D~3 — T4 workflow removed before continuation
+
+- **Found:** 2026-11-08 during the T6 option-1 procedure audit.
+- **What:** The approved W13 plan references `.github/workflows/w13-dev-check.yml`, but commit `c9ed369` removed that workflow. Only the verifier script and tests remain.
+- **Consequence:** The planned deployed-SHA and dev-smoke evidence cannot be produced through the approved workflow as written; recreating it changes the implementation scope.
+- **Next decision:** Owner must choose workflow recreation (amend the plan/spec first) or explicitly accept the existing read-only audit as a T4 exception.
 
 ## 8. Deviations
 
