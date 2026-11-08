@@ -1,6 +1,7 @@
-import { EmptyBodySchema, PlanApprovalSchema, PlanCreateBodySchema, PlanEpicSchema, PlanProposalSchema, policyForRoute, ProposalVersionBodySchema, type RouteDefinition } from "@agile/contracts";
+import { EmptyBodySchema, PlanApprovalSchema, PlanCreateBodySchema, PlanEpicSchema, PlanProposalSchema, ProposalVersionBodySchema, type RouteDefinition } from "@agile/contracts";
 import { loadPmSettings, PlanFlowError, type PlanFlow } from "@agile/pm";
 import { errorResponse, HttpError } from "../errors.js";
+import { bodyTooLarge, route } from "./shared.js";
 
 // Validation only: a bad PM_SIMILAR_ITEMS stops startup as W4's settings do.
 loadPmSettings(process.env);
@@ -8,26 +9,6 @@ loadPmSettings(process.env);
 const CREATE_MAX_BYTES = 32_768;
 const SMALL_MAX_BYTES = 1_024;
 const INDEX_PATTERN = /^(0|[1-9][0-9]{0,2})$/;
-
-const route = (policyKey: string): Pick<RouteDefinition, "operationId" | "method" | "path" | "policyKey"> => {
-  const policy = policyForRoute(policyKey);
-  return { operationId: policy.operationId, method: policy.method, path: policy.path, policyKey };
-};
-
-/** Counts body bytes as they stream in and stops past the limit, so an oversized body is never buffered whole. */
-async function bodyTooLarge(request: Request, max: number): Promise<boolean> {
-  const length = request.headers.get("content-length");
-  if (length !== null && /^\d+$/.test(length) && Number(length) > max) return true;
-  const reader = request.clone().body?.getReader();
-  if (!reader) return false;
-  let total = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) return false;
-    total += value.byteLength;
-    if (total > max) { reader.cancel().catch(() => {}); return true; }
-  }
-}
 
 // The size check intentionally runs before authorisation (a `before` hook): it reads at most `max` bytes, so it is bounded, and it matches the W4 endpoints.
 const bodyLimit = (max: number): NonNullable<RouteDefinition["before"]> => async ({ requestId, request }) => {
