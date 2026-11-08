@@ -2,7 +2,7 @@
 
 - **Status:** Approved (ludannnn, 2026-11-08)
 - **Format:** v2
-- **Spec:** [W4 sign-in screen design](../../specs/2026-11-08-w4-sign-in-screen-design.md) | **Spec hash:** 55265d27d7b8
+- **Spec:** [W4 sign-in screen design](../../specs/2026-11-08-w4-sign-in-screen-design.md) | **Spec hash:** c94edfe7bf13
 - **Workstream:** W4
 
 > **For the orchestrator:** this file is your router. Do not open task files yourself except to
@@ -43,7 +43,7 @@ only your own task's files. Contract tests marked read-only are not edited.
 ## Task order
 | Task | File | Depends on | Concurrent with | Wave | Weight | Review | Status |
 |---|---|---|---|---|---|---|---|
-| T1 Test runner and dependencies | `tasks/T1.md` | - | - | 1 | standard | full | Not started |
+| T1 Test runner and dependencies | `tasks/T1.md` | - | - | 1 | standard | full | In progress |
 | T2 Auth mode and the prototype route | `tasks/T2.md` | T1 | T3 | 2 | standard | full | Not started |
 | T3 Firebase wrapper and API client | `tasks/T3.md` | T1 | T2 | 2 | complex | full | Not started |
 | T4 Session, gate, layout and top bar | `tasks/T4.md` | T2, T3 | - | 3 | complex | full | Not started |

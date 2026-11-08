@@ -11,7 +11,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Approved:** —
 - **Last updated:** 2026-11-08 by Claude Opus 5.5 — branch created, scoping T7
 
-**Untouched:** Architecture, Conventions, Deviations
+**Untouched:** Architecture, Conventions
 
 ---
 
@@ -27,7 +27,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 | Claude Opus 5.5 (orchestrator) | W4 | Paused | Plan approved (Gate 2); baseline blocked by a shell `DATABASE_URL` (operator removed it; restarting the session) | In the restarted session check `echo $DATABASE_URL` is empty, run the baseline (`npm run typecheck`, `npm test`), then `executing-plans-lite-v2` on [plan.md](../../plans/2026-11-08-w4-sign-in-screen/plan.md): dispatch T1 | 2026-11-08 |
+| S1 | 2026-11-08 | Claude Opus 5.5 (orchestrator) + `implementer` | W4 | Active | Wave 1: T1 in flight | On T1's handover: validate it, run the full review (Implementer, Tester, Attacker), then dispatch T2 and T3 in worktrees | 2026-11-08 |
 
 **Remaining**
 
@@ -57,7 +57,9 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | `npm --prefix src/fe run dev` failed on Next.js 16 (Turbopack default with a `webpack` config); `dev` now passes `--webpack`, matching `build` | W4 | `38e5768` |
 | 2026-11-08 | T7 spec approved at Gate 1 | W4 | `a5915ab` |
 | 2026-11-08 | T7 plan written, reviewed and approved at Gate 2 | W4 | `e7d9f6e` |
-| 2026-11-08 | Committed the files `next dev` (Next.js 16) regenerates on every run: `src/fe/tsconfig.json` (`jsx: react-jsx`, `.next/dev/types`) and `src/fe/AGENTS.md` (pointer to Next's bundled docs), so the tree stays clean | W4 | this commit |
+| 2026-11-08 | Committed the files `next dev` (Next.js 16) regenerates on every run: `src/fe/tsconfig.json` (`jsx: react-jsx`, `.next/dev/types`) and `src/fe/AGENTS.md` (pointer to Next's bundled docs), so the tree stays clean | W4 | `cf52e09` |
+| 2026-11-08 | Baseline before T1: `npm run typecheck` green, `npm test` 487/487 (integration tests against a local `agile-pg-test` container on 5433; `DATABASE_URL` for agent commands comes from the operator's `.claude/settings.local.json`) | W4 | `12e31bf` |
+| 2026-11-08 | T1 blocked on its Node check (local Node 24); check relaxed in `tasks/T1.md`, D~1 recorded, T1 redispatched | W4 | this commit |
 
 ---
 
@@ -67,9 +69,25 @@ describes `INT`; read it for context and write here instead of editing it.
 
 ---
 
+## 8. Deviations
+
+> Legend: `D` = Deviation, where reality diverged from a spec or plan. Not to be confused with AD-nn, an Architecture Decision.
+
+### D~1 The install check runs on Node 24, not Node 20.19.5
+- **Date:** 2026-11-08 · **Found by:** T1 implementer (Expected state check); operator chose to continue
+- **What:** spec § 4.6 asks for `npm ci --ignore-scripts` and the audit on Node 20.19.5 before pushing; the operator's machine has Node 24.10.0 and npm 11.6.0, so `package-lock.json` is regenerated with npm 11.
+- **Consequence:** Node 20 / npm 10 compatibility is first checked by CI's `workspace` job on the PR, before merge. If CI's `npm ci` rejects the lockfile, regenerate it with `npx npm@10.8.2 install` and push.
+- **Rejected:** installing Node 20 locally first (setup time).
+
 ## 7. Decisions
 
 > Legend: `C` = project decision. AD-nn entries are in docs/architecture.
+
+### C~5 Use `@firebase/app` and `@firebase/auth`, not the `firebase` package
+- **Date:** 2026-11-08 · **Asked by:** ludannnn (operator), after T1's audit stopped on a high finding
+- **Decision:** `src/fe` depends on `@firebase/app` 0.16.5 and `@firebase/auth` 1.13.9 (the versions inside `firebase` 13.2.0); the spec is amended (§ 4.3, § 4.5, SD15).
+- **Why:** `firebase` installs every product; its `@firebase/firestore` brings `@grpc/grpc-js` 1.9.16 (GHSA-m9gg-hp2v-232j, GHSA-f596-whhp-79r4, high), which fails `npm run audit:dependencies` in CI. Sign-in needs only app and auth.
+- **Rejected:** an npm `overrides` pin of `@grpc/grpc-js` to 1.14.7; accepting the finding (CI fails on high).
 
 ### C~1 Settle W4 before continuing W9
 - **Date:** 2026-11-08 · **Asked by:** ludannnn (operator)
