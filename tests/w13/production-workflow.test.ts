@@ -45,6 +45,8 @@ test("E4/E27 production workflow is protected and does not run on pull requests"
   assert.match(workflow, /concurrency:/);
   assert.match(workflow, /github\.sha/);
   assert.match(workflow, /DIRECT_DATABASE_URL/);
+  assert.match(workflow, /VERCEL_TEAM_ID/);
+  assert.match(workflow, /vercel.*link.*--project/i);
   assert.match(workflow, /verify-production-identity/);
   assert.match(workflow, /vercel.*--prod/i);
 });
