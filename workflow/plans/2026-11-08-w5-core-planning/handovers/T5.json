@@ -1,0 +1,19 @@
+{
+  "task": "T5",
+  "status": "done",
+  "summary": "Composed W5 core/context/routes; ADDER now uses storage-derived roles and an archive-aware membership probe.",
+  "produces": [
+    { "kind": "composition", "name": "createCoreComposition", "where": "src/be/api/src/core-composition.ts", "note": "Production owner for core, context registrations, resource resolution, and W5 route services." },
+    { "kind": "route", "name": "createW5Routes", "where": "src/be/api/src/routes/index.ts", "note": "Registers endpoints 5-7, 9-10, 12-13, and 16-17/20-24 through injected services." },
+    { "kind": "auth", "name": "lookupUserByEmail and lookupUserRole", "where": "src/be/auth/src/runtime.ts", "note": "Storage-backed target-role lookup used by ADDER after validation." }
+    ,{ "kind": "auth", "name": "lookupArchivedMembership", "where": "src/be/auth/src/runtime.ts", "note": "Auth-owned unfiltered probe preserves archived-member 409 versus non-member 404." }
+  ],
+  "checks": {
+    "build": "pass",
+    "tests": "pass: APP_TIER=preview npm test (479 pass, 0 fail, 27 skipped); focused API/auth tests (14 pass)"
+  },
+  "next": [],
+  "deviations": [],
+  "commit": "df689e6",
+  "notes": ["The pre-parse ADDER phase checks membership/archive visibility before body parsing; the storage-derived target role is evaluated only after the body validates.", "Production-composition regression proves an archived member receives 409 and a non-member receives 404 for malformed ADDER bodies."]
+}
