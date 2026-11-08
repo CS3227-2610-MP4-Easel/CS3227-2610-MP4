@@ -1,5 +1,6 @@
 import { NotMember, type UserRole } from "@agile/contracts";
 import { inMutationTransaction, type MutationTransaction } from "@agile/db";
+import { lockProjectForMutation } from "./core.js";
 
 type Actor = { userId: string; role: UserRole };
 type Row = Record<string, any>;
@@ -31,7 +32,7 @@ export function createCheckpoints(db: CheckpointDb, access: CheckpointAccess) {
       if (!actor.userId || (actor.role !== "PM" && actor.role !== "DEV_LEAD")) throw new Error("FORBIDDEN_ROLE");
       await requireProjectAccess(access, actor, projectId, true);
       if (!validDate(input.targetDate)) throw new Error("VALIDATION_FAILED");
-      return inMutationTransaction(db, async () => {}, async (tx) => requireProjectAccess(access, actor, projectId, true, tx), async (tx: any) => checkpoint(await tx.checkpoint.create({ data: { projectId, name: input.name, targetDate: new Date(`${input.targetDate}T00:00:00.000Z`) } })));
+      return inMutationTransaction(db, (tx) => lockProjectForMutation(tx as any, projectId), async (tx) => requireProjectAccess(access, actor, projectId, true, tx), async (tx: any) => checkpoint(await tx.checkpoint.create({ data: { projectId, name: input.name, targetDate: new Date(`${input.targetDate}T00:00:00.000Z`) } })));
     },
   };
 }

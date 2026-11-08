@@ -30,7 +30,7 @@ test("checkpoint creation rejects impossible calendar dates", async () => {
 });
 
 test("checkpoint creation rechecks membership with its transaction and blocks an archive race", async () => {
-  const tx = { checkpoint: { create: async () => { throw new Error("must not write"); } } };
+  const tx = { project: { update: async () => ({}) }, checkpoint: { create: async () => { throw new Error("must not write"); } } };
   const seen: unknown[] = [];
   let calls = 0;
   const checkpoints = createCheckpoints({ $transaction: async (work: (transaction: unknown) => Promise<unknown>) => work(tx) } as any, {
@@ -39,4 +39,18 @@ test("checkpoint creation rechecks membership with its transaction and blocks an
   });
   await assert.rejects(() => checkpoints.create({ userId, role: "DEV_LEAD" }, projectId, { name: "M1", targetDate: "2026-12-01" }), /CONFLICT_STATE/);
   assert.deepEqual(seen, [undefined, tx]);
+});
+
+test("checkpoint creation locks the project before its transaction membership check", async () => {
+  const order: string[] = [];
+  const tx = {
+    project: { update: async () => { order.push("lock"); return {}; } },
+    checkpoint: { create: async () => { order.push("create"); return {}; } },
+  };
+  const checkpoints = createCheckpoints({ $transaction: async (work: (transaction: unknown) => Promise<unknown>) => work(tx) } as any, {
+    requireMember: async (_userId, _projectId, transaction) => { order.push(transaction ? "recheck" : "preflight"); },
+    archivedMembership: async () => false,
+  });
+  await checkpoints.create({ userId, role: "DEV_LEAD" }, projectId, { name: "M1", targetDate: "2026-12-01" });
+  assert.deepEqual(order, ["preflight", "lock", "recheck", "create"]);
 });

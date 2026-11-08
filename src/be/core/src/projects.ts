@@ -1,5 +1,6 @@
 import { NotMember, type UserRole } from "@agile/contracts";
 import { inMutationTransaction, type MutationTransaction } from "@agile/db";
+import { lockProjectForMutation } from "./core.js";
 
 type Actor = { userId: string; role: UserRole };
 type Row = Record<string, any>;
@@ -72,7 +73,7 @@ export function createProjects(db: ProjectDb, access: ProjectAccess) {
       await requireProjectAccess(access, actor, projectId, true);
       let targetId: string | undefined;
       try {
-        return await inMutationTransaction(db, async () => {}, async (tx) => requireProjectAccess(access, actor, projectId, true, tx), async (tx: any) => {
+        return await inMutationTransaction(db, (tx) => lockProjectForMutation(tx as any, projectId), async (tx) => requireProjectAccess(access, actor, projectId, true, tx), async (tx: any) => {
           const user = await tx.user.findFirst({ where: { email }, select: { id: true, displayName: true, role: true } });
           if (!user || (actor.role === "PM" && user.role !== "DEV_LEAD") || (actor.role === "DEV_LEAD" && user.role !== "DEVELOPER")) invalid();
           targetId = user.id;

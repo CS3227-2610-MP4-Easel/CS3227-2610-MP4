@@ -16,6 +16,11 @@ export type CoreDependencies = {
   archivedMembership?: (userId: string, projectId: string) => Promise<boolean>;
 };
 
+/** Serialize a writable project against archive mutations inside the caller's transaction. */
+export async function lockProjectForMutation(tx: { project?: { update(args: Row): Promise<Row> } }, projectId: string): Promise<void> {
+  if (typeof tx.project?.update === "function") await tx.project.update({ where: { id: projectId }, data: { version: { increment: 0 } } });
+}
+
 const unavailable = async (): Promise<never> => { throw new Error("CORE_OPERATION_UNAVAILABLE"); };
 
 export function createCore({ db, archivedMembership = async () => false }: CoreDependencies): Core {
