@@ -25,11 +25,11 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 00:00 | Codex | W13 | Blocked — needs human | Original W13 T5 recovery rehearsal: Q~4 | Obtain the owner's confirmation of the active Neon plan and restricted rehearsal target before any restore action | 2026-11-08 00:00 |
+| S1 | 2026-11-08 00:00 | Codex | W13 | Blocked — needs human | Original W13 T5 recovery rehearsal: approved restricted non-production target | Obtain the owner's approved restricted rehearsal target before any restore action | 2026-11-08 00:00 |
 
 **Remaining**
 
-- [ ] Q~4: Before original W13 T5, repository owner confirms the active Neon plan and approved restricted rehearsal target. The subsequent backup/restore rehearsal may alter that target and must remain owner-operated.
+- [ ] Q~4: Before original W13 T5, repository owner confirms the active Neon plan and approved restricted rehearsal target. **Plan confirmed 2026-11-08:** Neon Free, which provides a six-hour instant-restore history; this can satisfy W13's <=24-hour RPO rehearsal criterion. The target remains unapproved. The subsequent backup/restore rehearsal may alter that target and must remain owner-operated.
 - [ ] **Handover:** After the amended approvals, record the redacted T4 audit result distinguishing generic PR previews from the protected `development` branch. **Done 2026-11-08:** generic Preview is `APP_TIER=preview`; dev-tier variables are exact-`development` scoped; repository linkage and branch protection pass.
 
 ---
