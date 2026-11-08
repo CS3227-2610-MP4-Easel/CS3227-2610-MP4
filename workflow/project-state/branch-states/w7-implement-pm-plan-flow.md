@@ -35,7 +35,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - [ ] **Handover W2 owner (Developer):** spec SD3 changes `Sessions.assertUsable` (a `PM_PLAN_OUTLINE` session also admits `PM_PLAN_EXPAND`) and amends contracts §5.3; their agreement is recorded in T1 (AD-11, as C59); not yet obtained.
 - [x] **W5 (Dev Lead) integrated 2026-11-08:** `origin/w5-core-planning` (PR 23, not yet merged to `INT`) is merged into this branch; W5 supplies `requireMember`, `Core.assertWritable` and a `PM_PLAN_CREATE` project resolver that reads `id`; W7 registers the four proposal resolvers in `core-composition.ts`; both `applyPlan` implementations exist (see Known Gaps). This branch now depends on PR 23 merging first.
 - [x] W5's owner estimate: no longer needed, W5 is in PR 23.
-- [ ] **W7b (PM plan editing):** spec drafted and reviewed 2026-11-09 (`lint.mjs spec` clean). Next: Gate 1, the operator approves the spec (note the decisions SD8-SD12 in § 8); then the plan (Gate 2); then build. Nothing coded yet.
+- [ ] **W7b (PM plan editing):** spec drafted and reviewed 2026-11-09 (`lint.mjs spec` clean). Gate 1 passed 2026-11-09. Next: write the plan (writing-plans-lite-v2), Gate 2, then build. Nothing coded yet.
 - [ ] Carry STATE.md Upcoming items addressed to W7 into the spec: W6 sources and `assembleWith` (`pm.similarItems`, titles only, at most 5, filtered by member projects); W3 section rules, blocked-input handling (`BLOCKED_INPUT` to 422 `VALIDATION_FAILED`, `REQUEST_REFUSED` to 422) and output schemas without URLs or angle brackets; W2 mock responses, static sections and `assertStaticSectionsFit`; W7 proposal resolvers.
 
 ---
@@ -45,7 +45,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
 | W7 | PM plan flow (proposals, pm) | In review | [spec](../../specs/2026-11-07-w7-pm-plan-flow-design.md) | [plan](../../plans/2026-11-07-w7-pm-plan-flow/plan.md) | T1-T11 done; 565 tests, 561 pass, 4 unrelated agent-hook failures | out of date: pm, core, proposals |
-| W7b | PM plan editing (endpoints 36, 38, 39, 58-60; carved from W16) | Spec'd | [spec](../../specs/2026-11-09-w7b-pm-plan-editing-design.md) | not written | Gate 1 pending: spec reviewed by 3 lenses (C~6) | not started |
+| W7b | PM plan editing (endpoints 36, 38, 39, 58-60; carved from W16) | Spec'd | [spec](../../specs/2026-11-09-w7b-pm-plan-editing-design.md) | not written | Gate 1 pending: Gate 1 passed 2026-11-09; plan next (C~6) | not started |
 
 ---
 
@@ -62,6 +62,7 @@ pm install removes the generated Prisma client, so 	sc -b fails until `prisma:ge
 | 2026-11-07 | Wave 2 built: T4 `applyPlan` (12 database tests incl. a real lock barrier), T5 proposals create/view/resolvers (7 database tests), T8 `pm.similarItems` and settings, T9 output schemas, sections and mocks. Run against a local Postgres in Docker (`w7-pg`; variables in untracked `.ws/w7.env`). Whole suite: 497 tests, 493 pass, 4 fail - all in `tests/process-security/agent-hook.test.ts` (F8 shell-write mediation, unrelated to W7; not compared with the base branch). The real database also found the session-rule regression (C~3) that skipped tests had hidden | W7 | this commit |
 | 2026-11-08 | Merged `origin/w5-core-planning` (PR 23) after Gate 3. Conflicts resolved by union in `api` and `core` package files, `routes/index.ts` and `core/src/index.ts`; `package-lock.json` taken from W5 and re-installed. Added the four proposal resolvers to W5's `core-composition.ts` (`PM_PROPOSAL_READ`, `PM_EPIC_EXPAND`, `PM_PROPOSAL_APPROVE`, `PM_PROPOSAL_REJECT`) and `@agile/proposals` to the api package; new test `pm-composition.test.ts`. Typecheck, lint and contract pass; suite 674 tests, 667 pass. Failing: 4 F8 agent-hook tests (as before), E9/E29 (Windows CRLF migration checksum), and E5 and E35 timing tests that pass alone. Live run on SoCLaaS before the merge: see Known Gaps | W7 | this commit |
 | 2026-11-09 | W7b spec drafted (Medium, Attacker lens added): the PM edits generated checkpoints, epics and tasks (add, change, delete), regenerates one epic, lists proposals; adds endpoints 58-60 and widens 38 and 39 to answer the proposal. Reviewed by Implementer, Tester and Attacker lenses (round 1: 12 blocking, 31 judgement findings, all folded; 60 edge cases, 11 threats); lint clean. Awaiting Gate 1 | W7b | this commit |
+| 2026-11-09 | W7b spec approved by the operator at Gate 1, with one change: editing an epic's title or description keeps its tasks and status (the contract's reset to PENDING is removed); the UI reminds the PM to create a new epic for substantial changes. `lint.mjs spec --approved` passes | W7b | this commit |
 | 2026-11-07 | W7 plan written (11 tasks, 6 waves), reviewed by an Implementer-lens reviewer, approved at Gate 2; `lint.mjs plan --approved` passes | W7 | this commit |
 
 ---
@@ -117,6 +118,7 @@ pm install removes the generated Prisma client, so 	sc -b fails until `prisma:ge
 - **Decision:** a new workstream W7b on this branch builds endpoints 38, 36, 39 and three new ones (58 checkpoints, 59 add epic, 60 delete epic). Tasks are edited by sending an epic's whole task list. Edits answer `PlanProposal` and are guarded by the proposal `version`. The contract list grows from 57 to 60 endpoints.
 - **Why:** the plan the AI produces is a draft; without edits the PM must reject and regenerate everything. Rejected: edit-only; a model conversation (AD-61, A-07; future spec); per-entity endpoints; one replace-everything endpoint.
 - **Follow-up:** the other owners agree to the three new endpoints (AD-11); W5's `policy.test.ts` count and contracts.md §3.4 are amended in the build.
+- **Gate 1 (2026-11-09):** the operator approved the spec and its decisions SD1-SD12 and changed SD10: a title or description edit does not clear an epic's tasks; the UI reminds the PM to create a new epic instead for substantial changes. Why: the operator wants edits to be cheap and non-destructive. Rejected: clearing the tasks.
 
 ---
 
