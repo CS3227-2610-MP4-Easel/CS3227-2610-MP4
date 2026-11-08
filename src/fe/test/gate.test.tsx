@@ -30,6 +30,7 @@ vi.mock('next/navigation', () => ({
 import AuthGate from '../components/auth-gate';
 import RoleBar from '../components/role-bar';
 import Screen from '../components/screen';
+import { currentUser } from '../lib/auth/firebase';
 import { AuthRoot } from '../lib/auth/mode-context';
 import { useSession } from '../lib/auth/session';
 import { HOME, resolve } from '../lib/screens';
@@ -76,6 +77,7 @@ describe('gate', () => {
   });
 
   it('E54 a 401 from me_4 on /projects, then onUserChanged(null), replaces to /sign-in with no error view', async () => {
+    vi.mocked(currentUser).mockReturnValue(fb as never);
     fetchMock.mockImplementation(async () => err(401, 'UNAUTHENTICATED'));
     mount('/projects');
     await act(async () => fbCb!(fb));

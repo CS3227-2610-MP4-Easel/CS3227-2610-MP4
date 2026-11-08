@@ -111,6 +111,18 @@ describe('top bar', () => {
     expect(v.container.querySelector('script')).toBeNull();
   });
 
+  it('E51 a session without a user still renders the Firebase Sign out button', async () => {
+    fetchMock.mockImplementation(async () => new Response(JSON.stringify({ error: { code: 'USER_NOT_REGISTERED', message: 'm' } }), { status: 403 }));
+    const v = render(
+      <AuthRoot mode="firebase">
+        <Top />
+      </AuthRoot>,
+    );
+    await act(async () => fbCb!({ uid: 'a', email: 'a@x.io' }));
+    expect(screen.getByRole('button', { name: 'Sign out' })).toBeTruthy();
+    expect(v.container.querySelector('a[href^="/api/as"]')).toBeNull();
+  });
+
   it('E99 without a provider Top renders the prototype content and link', () => {
     render(<Top />);
     expect(screen.getByText('Aisha Rahman')).toBeTruthy();

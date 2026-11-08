@@ -73,6 +73,14 @@ describe('/api/as', () => {
     expect(res.headers.get('set-cookie')).toBeNull();
   });
 
+  it('E87 a malformed target redirects to /projects and still sets the cookie', async () => {
+    prototypeEnv();
+    const res = await call(`role=pm&to=${encodeURIComponent('http://[')}`);
+    expect(res.status).toBe(307);
+    expect(new URL(res.headers.get('location')!).pathname).toBe('/projects');
+    expect(res.headers.get('set-cookie')).toContain('role=pm');
+  });
+
   it.each([
     '/\\evil.com',
     '/%5Cevil.com',

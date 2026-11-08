@@ -226,6 +226,47 @@ describe('register step 2', () => {
     expect(body(calls('/auth/register')[1]).code).toBe(CODE);
   });
 
+  it('E101 Retry after a register_3 failure sends the edited display name', async () => {
+    let n = 0;
+    route({ reg: () => (++n === 1 ? err(500, 'INTERNAL') : ok(USER)) });
+    const { u } = mount();
+    await signedOut();
+    await step1(u);
+    await step2(u);
+    await u.type(screen.getByLabelText('Display name'), ' B');
+    await u.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(body(calls('/auth/register')[1]).displayName).toBe('Ana B');
+  });
+
+  it('E101 Retry after a network failure on step 1 sends the edited role', async () => {
+    route({});
+    fetchMock.mockRejectedValueOnce(new TypeError('x'));
+    const { u } = mount();
+    await signedOut();
+    await step1(u);
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
+    await u.click(screen.getByRole('radio', { name: /Dev Lead/ }));
+    await u.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(body(calls('check-code').at(-1)!).role).toBe('DEV_LEAD');
+  });
+
+  it('E54 a 401 from register_3 resets the flow with a sign-in link and no Retry', async () => {
+    route({ reg: () => err(401, 'UNAUTHENTICATED') });
+    const { u } = mount();
+    await signedOut();
+    await step1(u);
+    await step2(u);
+    expect(screen.getByText('Something went wrong.')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Sign in instead' }).getAttribute('href')).toBe('/sign-in');
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+    expect((screen.getByLabelText('Email') as HTMLInputElement).disabled).toBe(false);
+    expect((screen.getByLabelText('Password') as HTMLInputElement).disabled).toBe(false);
+    await u.click(screen.getByRole('button', { name: 'Create account' }));
+    expect(signUp).toHaveBeenCalledTimes(2);
+    await u.click(screen.getByRole('button', { name: 'Back' }));
+    expect((screen.getByLabelText('Registration code') as HTMLInputElement).value).toBe('');
+  });
+
   it('E101 the hold is released after a failed register_3 so a later user change reads me_4', async () => {
     route({ reg: () => err(500, 'INTERNAL') });
     const { u } = mount();
@@ -573,22 +614,48 @@ describe('secrets and lifecycle', () => {
     expectNoCode();
   });
 
-  it('E103 unmount after signUp without setUser calls retry once and a remount starts empty at step 1', async () => {
+  it('E103 a failed flow reconciles to unregistered on release and a remount starts empty at step 1', async () => {
     route({ reg: () => err(500, 'INTERNAL') });
+    vi.mocked(signUp).mockImplementation(async () => { fbCb!({ uid: 'a', email: 'a@x.io' }); });
     const m2 = mount();
     await signedOut();
     await step1(m2.u);
-    vi.mocked(signUp).mockClear();
     await step2(m2.u);
-    const before = calls('/api/me').length;
+    expect(calls('/api/me')).toHaveLength(1);
+    expect(screen.getByText('Something went wrong.')).toBeTruthy();
     m2.unmount();
     await act(async () => {});
-    expect(calls('/api/me').length).toBe(before + 1);
+    expect(calls('/api/me')).toHaveLength(1);
     const m3 = mount();
     await signedOut();
     expect(screen.getByRole('heading', { name: 'Pick your role' })).toBeTruthy();
     expect((screen.getByLabelText('Registration code') as HTMLInputElement).value).toBe('');
     m3.unmount();
+  });
+
+  it('E103 a failed register_3 reconciles the session to unregistered without relying on unmount', async () => {
+    route({ reg: () => err(500, 'INTERNAL') });
+    vi.mocked(signUp).mockImplementation(async () => { fbCb!({ uid: 'a', email: 'a@x.io' }); });
+    const { u } = mount();
+    await signedOut();
+    await step1(u);
+    await step2(u);
+    expect(calls('/api/me')).toHaveLength(1);
+    expect(screen.getByRole('heading', { name: 'Create your account' })).toBeTruthy();
+  });
+
+  it('E103 no extra me_4 runs after a successful setUser', async () => {
+    route({});
+    vi.mocked(signUp).mockImplementation(async () => { fbCb!({ uid: 'a', email: 'a@x.io' }); });
+    const m = mount();
+    await signedOut();
+    await step1(m.u);
+    await step2(m.u);
+    expect(replace).toHaveBeenCalledWith('/projects');
+    expect(calls('/api/me')).toHaveLength(0);
+    m.unmount();
+    await act(async () => {});
+    expect(calls('/api/me')).toHaveLength(0);
   });
 
   it('E103 unmount after setUser does not call retry', async () => {

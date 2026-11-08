@@ -17,6 +17,7 @@ type Fail =
   | { kind: 'generic'; requestId: string | null }
   | { kind: 'firebase'; message: string; signIn: boolean }
   | { kind: 'conflict' }
+  | { kind: 'expired' }
   | { kind: 'form'; messages: string[] };
 type FieldErrors = { role?: string; code?: string };
 
@@ -88,8 +89,7 @@ export default function Register() {
   const [accountMade, setAccountMade] = useState(false);
   const inFlight = useRef(false);
   const signedUp = useRef(false);
-  const userSet = useRef(false);
-  const lastAction = useRef<() => void>(() => {});
+  const lastStep = useRef<1 | 2 | 3>(1);
 
   const cooling = wait !== null;
   const coolingRef = useRef(false);
@@ -100,17 +100,20 @@ export default function Register() {
     return () => clearInterval(id);
   }, [cooling]);
 
-  // A signUp that never reached setUser leaves a profile-less account; re-read /api/me so the next visit sees it.
-  useEffect(() => () => {
-    if (signedUp.current && !userSet.current) sessionRef.current?.retry();
-  }, []);
-
   const finish = session?.status === 'unregistered' && !accountMade;
-  const blocked = busy || cooling || (session?.status === 'loading' && !busy);
+  const blocked = busy || cooling || session?.status === 'loading';
 
   function handle(e: unknown, from: 1 | 2 | 3) {
     const next: FieldErrors = {};
     if (e instanceof ApiError) {
+      if (e.status === 401 && from !== 1) {
+        // apiFetch has signed the Firebase user out, so the next attempt starts from sign-up again.
+        signedUp.current = false;
+        setAccountMade(false);
+        setCode('');
+        setFail({ kind: 'expired' });
+        return;
+      }
       if (e.status === 429 || e.code === 'RATE_LIMITED') {
         setWait(Math.max(1, e.retryAfterSeconds ?? 60));
         return;
@@ -152,7 +155,7 @@ export default function Register() {
   async function run(from: 1 | 2 | 3, work: () => Promise<void>) {
     if (inFlight.current || coolingRef.current) return;
     inFlight.current = true;
-    lastAction.current = () => void run(from, work);
+    lastStep.current = from;
     setBusy(true);
     setFail(null);
     setFields({});
@@ -167,8 +170,8 @@ export default function Register() {
     }
   }
 
-  function onNext(ev: FormEvent) {
-    ev.preventDefault();
+  function onNext(ev?: FormEvent) {
+    ev?.preventDefault();
     if (!role) return;
     void run(1, async () => {
       await checkCode_2(role, code);
@@ -179,12 +182,11 @@ export default function Register() {
   async function complete(r: ApiRole) {
     const u = await register_3(r, code, displayName);
     setCode('');
-    userSet.current = true;
     sessionRef.current?.setUser(u);
   }
 
-  function onCreate(ev: FormEvent) {
-    ev.preventDefault();
+  function onCreate(ev?: FormEvent) {
+    ev?.preventDefault();
     if (!role) return;
     void run(2, async () => {
       const release = sessionRef.current?.holdForRegistration();
@@ -201,8 +203,8 @@ export default function Register() {
     });
   }
 
-  function onFinish(ev: FormEvent) {
-    ev.preventDefault();
+  function onFinish(ev?: FormEvent) {
+    ev?.preventDefault();
     if (!role) return;
     void run(3, async () => {
       await checkCode_2(role, code);
@@ -210,7 +212,13 @@ export default function Register() {
     });
   }
 
-  const label = (text: string) => (busy ? 'Please wait…' : text);
+  function retry() {
+    if (lastStep.current === 1) onNext();
+    else if (lastStep.current === 2) onCreate();
+    else onFinish();
+  }
+
+  const label =(text: string) => (busy ? 'Please wait…' : text);
   const busyAttr = busy ? 'true' : undefined;
 
   const banners: ReactNode = (
@@ -221,6 +229,9 @@ export default function Register() {
       {fail?.kind === 'conflict' && (
         <div className="banner b-bad"><span>This account is already registered. Sign in instead.</span> <a href="/sign-in">Sign in instead</a></div>
       )}
+      {fail?.kind === 'expired' && (
+        <div className="banner b-bad"><span>Something went wrong.</span> <a href="/sign-in">Sign in instead</a></div>
+      )}
       {fail?.kind === 'firebase' && (
         <div className="banner b-bad"><span>{fail.message}</span>{fail.signIn ? <> <a href="/sign-in">Sign in instead</a></> : null}</div>
       )}
@@ -230,7 +241,7 @@ export default function Register() {
       {fail?.kind === 'generic' && (
         <div className="banner b-bad">
           <span>Something went wrong.</span>
-          <button type="button" className="btn" onClick={() => lastAction.current()} disabled={blocked}>Retry</button>
+          <button type="button" className="btn" onClick={retry} disabled={blocked}>Retry</button>
           {fail.requestId ? <span className="small">Request ID: {fail.requestId}</span> : null}
         </div>
       )}

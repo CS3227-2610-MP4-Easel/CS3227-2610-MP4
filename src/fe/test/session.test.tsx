@@ -18,6 +18,7 @@ vi.mock('../lib/auth/firebase', () => ({
 }));
 vi.mock('../lib/auth/navigate', () => ({ hardNavigate: vi.fn() }));
 
+import { currentUser } from '../lib/auth/firebase';
 import { initialsOf, SessionProvider, useSession, type Session } from '../lib/auth/session';
 
 const fetchMock = vi.fn();
@@ -57,6 +58,7 @@ afterEach(() => {
 
 describe('session', () => {
   it('E54 a 401 from me_4 starts sign-out and changes nothing; onUserChanged(null) then signs out', async () => {
+    vi.mocked(currentUser).mockReturnValue(fb('a') as never);
     fetchMock.mockResolvedValue(err(401, 'UNAUTHENTICATED'));
     mount();
     await act(async () => fbCb!(fb('a')));
@@ -65,6 +67,46 @@ describe('session', () => {
     await act(async () => fbCb!(null));
     expect(sess!.status).toBe('signed-out');
     expect(sess!.error).toBeNull();
+  });
+
+  it('E54 a 401 from me_4 with no Firebase user settles to signed-out', async () => {
+    vi.mocked(currentUser).mockReturnValue(null as never);
+    fetchMock.mockResolvedValue(err(401, 'UNAUTHENTICATED'));
+    mount();
+    await act(async () => fbCb!(fb('a')));
+    expect(sess!.status).toBe('signed-out');
+    expect(sess!.user).toBeNull();
+  });
+
+  it('E100 releasing the hold re-reads me_4 for a user that arrived during it', async () => {
+    fetchMock.mockResolvedValue(err(403, 'USER_NOT_REGISTERED'));
+    mount();
+    await act(async () => fbCb!(null));
+    let release!: () => void;
+    act(() => {
+      release = sess!.holdForRegistration();
+    });
+    await act(async () => fbCb!(fb('a')));
+    expect(fetchMock).not.toHaveBeenCalled();
+    await act(async () => release());
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(sess!.status).toBe('unregistered');
+    await act(async () => release());
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('E100 releasing the hold after setUser does not call me_4', async () => {
+    mount();
+    await act(async () => fbCb!(null));
+    let release!: () => void;
+    act(() => {
+      release = sess!.holdForRegistration();
+    });
+    await act(async () => fbCb!(fb('a')));
+    await act(async () => sess!.setUser(user('PM') as never));
+    await act(async () => release());
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(text()).toBe('ready|PM');
   });
 
   it('E70 a reply for uid A that arrives after uid B is discarded', async () => {

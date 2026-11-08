@@ -2,7 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ApiError, me_4, type ApiRole, type User } from '../api';
 import type { Role } from '../screens';
-import { onUserChanged, signOutUser } from './firebase';
+import { currentUser, onUserChanged, signOutUser } from './firebase';
 import { hardNavigate } from './navigate';
 
 export type SessionStatus = 'loading' | 'signed-out' | 'unregistered' | 'ready' | 'error';
@@ -41,6 +41,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const gen = useRef(0);
   const holds = useRef(0);
   const hadUser = useRef(false);
+  const skipped = useRef(false);
 
   const load = useCallback((g: number) => {
     setStatus('loading');
@@ -53,7 +54,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       },
       (e: unknown) => {
         if (g !== gen.current) return;
-        if (e instanceof ApiError && e.status === 401) return;
+        if (e instanceof ApiError && e.status === 401) {
+          // With no Firebase user no sign-out event follows, so settle here.
+          if (!currentUser()) {
+            setUserState(null);
+            setStatus('signed-out');
+          }
+          return;
+        }
         if (e instanceof ApiError && e.code === 'USER_NOT_REGISTERED') {
           setStatus('unregistered');
           return;
@@ -67,6 +75,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsub = onUserChanged((u) => {
       const g = ++gen.current;
+      skipped.current = false;
       if (!u) {
         hadUser.current = false;
         setUserState(null);
@@ -77,7 +86,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       const was = hadUser.current;
       hadUser.current = true;
       setFirebaseEmail(u.email);
-      if (holds.current > 0 && !was) return;
+      if (holds.current > 0 && !was) {
+        skipped.current = true;
+        return;
+      }
       load(g);
     });
     return () => {
@@ -95,6 +107,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       retry: () => load(gen.current),
       setUser: (u) => {
         gen.current++;
+        skipped.current = false;
         setUserState(u);
         setError(null);
         setStatus('ready');
@@ -106,6 +119,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           if (released) return;
           released = true;
           holds.current--;
+          if (holds.current === 0 && skipped.current) {
+            skipped.current = false;
+            load(++gen.current);
+          }
         };
       },
       signOut: async () => {
