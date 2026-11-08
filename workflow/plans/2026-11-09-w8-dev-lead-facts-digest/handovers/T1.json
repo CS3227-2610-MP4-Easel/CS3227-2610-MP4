@@ -1,0 +1,8 @@
+{
+  "task": "T1",
+  "status": "completed",
+  "exports": ["createFacts", "hashFacts", "Facts", "FactsDb", "Clock", "systemClock"],
+  "modes": { "target": "createFacts(db, clock).target(projectId)", "caller": "createFacts(db, clock).caller(callerId, projectId)" },
+  "verification": ["node --import tsx --test src/be/lead/test/facts.test.ts", "npm test", "npm run typecheck", "npm run lint"],
+  "for": { "T2": "Use target(projectId) and hashFacts for digest persistence.", "T3": "Use caller(callerId, projectId) for endpoint 42." }
+}
