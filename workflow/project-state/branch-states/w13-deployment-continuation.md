@@ -9,9 +9,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-08 by Codex — T4 stopped on policy collision
+- **Last updated:** 2026-11-08 by Codex — amended spec approved at Gate 1
 
-**Untouched:** Architecture, Conventions, Known Gaps, Decisions
+**Untouched:** Architecture, Conventions, Known Gaps
 
 ---
 
@@ -25,12 +25,12 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 00:00 | Codex | W13 | Blocked — needs human | T4 protected Vercel preview audit: Q~1 | Confirm whether AD-53's development-scoped dev credentials remain permitted or the safety spec reverses that policy | 2026-11-08 00:00 |
+| S1 | 2026-11-08 00:00 | Codex | W13 | Active | Amend the T4 audit task for the approved F6 boundary | Validate and review the plan amendment, then request Gate 2 approval | 2026-11-08 00:00 |
 
 **Remaining**
 
-- [ ] Q~1: Resolve the conflict between AD-53's development exception and the safety spec's all-Preview credential prohibition before completing T4.
-- [ ] **Handover:** After Q~1, record a redacted T4 audit result and either retain the development exception or remove its credentials through an approved reversal.
+- [ ] Amend and re-approve the affected T4 plan task at Gate 2.
+- [ ] **Handover:** After the amended approvals, record the redacted T4 audit result distinguishing generic PR previews from the protected `development` branch.
 
 ---
 
@@ -38,7 +38,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | Blocked — needs human | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | T4 stopped: AD-53 and F6 conflict (Q~1) | — |
+| W13 | Environments, seed data and deployment | Building | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-07-w13-pr18-safety-fixes.md) | F6 amended spec approved; T4 plan amendment in flight | — |
 
 ---
 
@@ -49,6 +49,21 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Created continuation branch and recorded the invalid-plan blocker before the owner-gated preview audit. | W13 | this commit |
 | 2026-11-08 | Corrected the false legacy-linter blocker: the approved spec is Format v2, whose design intentionally has no implementation-order section; resumed T4. | W13 | this commit |
 | 2026-11-08 | Redacted Vercel audit found development-scoped Preview variables that F6 forbids but AD-53 permits for the protected development branch; T4 stopped for an owner decision. | W13 | this commit |
+| 2026-11-08 | Operator chose to retain AD-53; amended F6 will apply credential denial to untrusted PR previews, not protected `development`. | W13 | this commit |
+| 2026-11-08 | Amended the high-risk safety spec to make the protected development exception auditable; Implementer, Tester/QA, Attacker, and Maintainer reviews found no remaining blocking issues. | W13 | this commit |
+| 2026-11-08 | Operator approved the amended W13 safety specification at Gate 1. | W13 | this commit |
+
+## 7. Decisions
+
+> Legend: `C` = project decision. AD-nn entries are in docs/architecture.
+
+### C~1 — Preserve AD-53's protected development exception
+
+- **Date:** 2026-11-08
+- **Who asked:** operator, after the T4 Vercel audit found F6's all-Preview wording conflicted with AD-53.
+- **Decision:** Keep development-scoped dev-tier configuration on the protected `development` branch. Amend the W13 safety spec and T4 audit to forbid credentials only for untrusted PR previews; generic Preview receives only `APP_TIER=preview` and allowed non-sensitive Vercel identity fields.
+- **Why:** The protected development branch is the dev tier and must retain its operational configuration, while untrusted PR code must remain credential-free.
+- **Rejected:** Removing development-tier variables under Vercel's Preview deployment type, which would reverse AD-53 and disable the intended dev tier.
 
 ## 8. Deviations
 
