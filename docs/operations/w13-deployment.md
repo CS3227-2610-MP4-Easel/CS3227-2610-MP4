@@ -12,20 +12,20 @@ The owner performs this gate after a reviewed commit is merged to `development`:
 
 T4 is complete only when all fields are present, `health`, `auth`, `foreignAuth`, and `tier` pass, and `outcome` is `pass`. No repository workflow or application runtime receives a Vercel deployment token.
 
-## Production migration
+## Production migration (manual handover)
 
-Production migration is an owner-approved protected GitHub Environment operation. It runs only
-from protected `main`, after checkout and commit/resource identity checks. The job validates the
-schema and committed migration checksum, then runs the forward migration with the protected direct
-Neon connection:
+Production migration and deployment are owner-operated manual actions. No protected repository
+workflow or Vercel Deploy Hook is used. Before running, confirm the checked-out release commit,
+production tier identity, and the committed migration manifest. Run the forward migration with the
+direct production Neon connection:
 
 ```text
 DATABASE_URL="$DIRECT_DATABASE_URL" npm --workspace @agile/db exec prisma validate -- --schema prisma/schema.prisma
 DATABASE_URL="$DIRECT_DATABASE_URL" npm --workspace @agile/db exec prisma migrate deploy -- --schema prisma/schema.prisma
 ```
 
-The direct URL exists only in the migration process environment and is cleared in the finalizer.
-No down migration is used. If a migration fails, stop the job and preserve only redacted evidence.
+The direct URL exists only in the migration process environment and must not be recorded. No down
+migration is used. If a migration fails, stop and preserve only redacted evidence.
 
 ## Manual recovery rehearsal
 

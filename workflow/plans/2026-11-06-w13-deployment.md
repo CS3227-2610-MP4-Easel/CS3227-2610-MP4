@@ -2,7 +2,7 @@
 
 - **Status:** Approved (operator, 2026-11-06)
 
-> Amended 2026-11-09 under branch-state C~8: the removed automated development-check workflow/verifier remain retired. T4 is an owner-operated Vercel metadata plus health/auth/tier smoke gate; the W9 standup/AI probe is not required for T4. T6 disables production Git auto-deploy and invokes an owner-created Vercel Deploy Hook after protected migration/build validation; no Vercel token is used.
+> Amended 2026-11-09 under branch-state C~9: T6's protected production migration/deployment workflow and Deploy Hook are retired by operator decision. Production migration/deployment is a manual owner handover; T4 remains the reduced development gate.
 
 > Amended 2026-11-07 under branch-state C~4: T4 now uses a protected, read-only Vercel metadata token for authoritative deployment verification; the former no-token external-gate wording is superseded for this check. The implementation keeps the token in the pre-checkout lookup step only.
 
@@ -27,7 +27,7 @@
 | T3 | T1 | — | 2 | Done |
 | T4 | T1, T3 | — | 3 | Done |
 | T5 | T3, T4 | — | 4 | Done |
-| T6 | T1, T3, T5 | T4 | 5 | In progress |
+| T6 | T1, T3, T5 | T4 | 5 | Retired by operator |
 | T7 | T1, T4, T6 | — | 6 | Not started |
 
 ## Traceability
@@ -172,27 +172,14 @@
 - [x] 3. `GATE:` repository owner reapplies/verifies the non-production seed and records all required evidence fields.
 - [x] 4. Attach the redacted evidence and mark T5 complete only if RPO ≤24 hours and RTO ≤4 hours. **Done 2026-11-08:** owner `teleifo` verified the recovered `w13-recovery-past` state; measured RPO/RTO are 20 seconds each (0.0056 hours), seed result passed, outcome passed.
 
-### T6: Protected production migration and deployment
+### T6: Protected production migration and deployment (retired)
 
-**Delivers:** protected production job that migrates, builds, smokes, and promotes one immutable SHA | **Satisfies:** F4, N1 | **Depends on:** T1, T3, T5 | **Wave:** 5
-
-**Files**
-
-| Action | Path | What changes |
-|---|---|---|
-| Create | `.github/workflows/w13-production.yml` | Protected `main` workflow with least privilege, pinned actions, environment approval, concurrency lock, fixed inputs, no PR-controlled code after secrets, migration, immutable build, and a tokenless post-validation Vercel Deploy Hook. |
-| Create | `scripts/w13/verify-production-identity.mjs` | Verify detached checkout SHA, manifest hash, artifact digest, Vercel candidate metadata, and promotion target. |
-| Create | `tests/w13/production-workflow.test.ts` | Cover E4-E6, E16, E25, E27, E34-E35, E38, E40 and no-live-key boundary. |
-| Modify | `scripts/check-workflows.mjs` | Extend validation for protected non-PR deployment workflows while preserving the deny rules for PR workflows; require fixed triggers, environments, permissions, and pinned actions. |
-| Modify | `workflow/action-pins.json` | Add approved commit-SHA pins for the protected deployment workflows. |
+**Status:** Retired 2026-11-09 under SD7. Production migration/deployment is a manual owner-operated handover documented in `docs/operations/w13-deployment.md`.
 
 **Checklist**
 
-- [x] 1. Write failing workflow tests for ref/review/check gates, SHA/artifact drift, concurrency, secret timing, and target identity.
-- [x] 2. Implement the protected workflow, immutable source/build checks, and tokenless post-validation Deploy Hook.
-- [x] 3. Run workflow/security checks and focused W13 tests. **Done 2026-11-08:** 488 tests (462 passed, 26 skipped), typecheck, workflow validator, agent-policy, and secret scan pass.
-- [ ] 4. `GATE:` repository owner configures the GitHub `production` Environment, disables Vercel production Git auto-deploy, creates a production Deploy Hook for `main`, and stores only its URL as `VERCEL_DEPLOY_HOOK_URL`; no Vercel token is required.
-- [x] 5. Update branch state and commit: `feat: add protected W13 production deployment`. **Done 2026-11-08:** implementation and close-out evidence are recorded; production execution remains a post-merge handover.
+- [x] 1. Retire the protected workflow and Deploy Hook requirement under SD7.
+- [x] 2. Amend the runbook and branch state to record the manual owner-operated production handover.
 
 ### T7: Fixed post-deploy smoke harness
 

@@ -10,6 +10,7 @@ Amended 2026-11-07 after Implementer, Tester, Maintainer, and Attacker review: c
 
 Amended 2026-11-08 under continuation branch C~5: the removed automated development-check workflow and verifier are retired. T4 now uses an owner-operated, read-only Vercel inspection plus fixed development health/auth smoke checks; the unimplemented Developer standup/AI probe is no longer a T4 prerequisite. No Vercel token is used by repository workflows or application runtime.
 Amended 2026-11-09 under C~8: production Git auto-deploy is disabled; the protected production workflow invokes an owner-created Vercel Deploy Hook only after migration and build validation, preserving the no-token boundary while preventing deployment/migration races.
+Amended 2026-11-09 under C~9: the protected production migration/deployment workflow and Deploy Hook are retired. Production migration and deployment are owner-operated manual handovers; development safety gates remain unchanged.
 
 ## 1. Problem
 
@@ -50,3 +51,4 @@ See [requirements.md](2026-11-07-w13-deployment-safety-design/requirements.md).
 | SD4 | Add separate `vercelEnv` values to the tier manifest; application tier `prod` maps to Vercel `production`, while `dev` maps to Vercel `preview`. | One field cannot safely represent both the application label and Vercel's system environment names. | operator, 2026-11-07 |
 | SD5 | Remove the Developer standup and AI smoke probe from the manual T4 completion gate; retain deployment metadata, health, authenticated identity, foreign-project rejection, and tier checks. | Endpoint 51 belongs to unstarted W9; blocking W13 deployment evidence on that route would couple deployment safety to an unrelated feature workstream. | operator, 2026-11-08 |
 | SD6 | Sequence production deployment through a protected Vercel Deploy Hook invoked only after migration/build validation; disable Vercel's automatic production deployment from Git. | Tokenless Git auto-deploy races the migration workflow; a Deploy Hook preserves C~5 without using a Vercel deployment token. | operator, 2026-11-09 |
+| SD7 | Retire T6's protected production migration/deployment workflow and Deploy Hook; retain a manual owner-operated production migration/deployment handover. | The operator does not need the protected production job; keeping it would add deployment automation and secrets outside the requested scope. | operator, 2026-11-09 |

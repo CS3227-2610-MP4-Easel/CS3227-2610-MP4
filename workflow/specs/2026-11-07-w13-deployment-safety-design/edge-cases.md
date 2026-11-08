@@ -37,7 +37,7 @@
 | E33 | F1, N4 | Owner follows a redirect from the inspected alias | The request fails on the `3xx`; no redirected origin may satisfy T4 | Binds checks to the inspected deployment | manual |
 | E34 | F1, N4 | Owner uses a deployment, project, alias, or push timestamp taken from the inspected deployment instead of the code/GitHub sources | T4 remains incomplete until the code-owned manifest and GitHub merge commit are used | Prevents self-authored comparison baselines | manual |
 | E35 | F1 | The retired standup/AI probe is unavailable because W9 is not deployed | No effect on T4; the probe is tracked separately by W9 | Keeps deployment safety independent of feature-slice readiness | manual |
-| E45 | F9 | The production Deploy Hook is missing, malformed, or invoked before migration/build validation completes | The protected workflow fails closed and does not trigger production deployment | Preserves migration-before-deploy ordering without a Vercel token | workflow |
+| E45 | F4 | Production migration/deployment automation is retired by SD7 | Owner follows the manual production handover; no repository workflow or Deploy Hook is invoked | Keeps deployment scope explicit | manual |
 
 ## What could corrupt data
 
