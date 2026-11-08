@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 00:00 | Codex | W13 | Blocked — needs human | T6 preflight blocked by the outstanding T4 deployment gate and missing workflow | Owner chooses whether to recreate the removed T4 workflow or accept the audit exception | 2026-11-08 00:00 |
+| S1 | 2026-11-08 00:00 | Codex | W13 | In progress — owner action | Regenerating the legacy W13 plan for the approved manual T4 gate | Update the T4 plan checklist and re-lint before T6 preflight | 2026-11-08 00:00 |
 
 **Remaining**
 
@@ -38,7 +38,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | Blocked — needs human | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-06-w13-deployment.md) | T5 done; T6 cannot start until T4 deployed-SHA and dev-smoke evidence is confirmed | — |
+| W13 | Environments, seed data and deployment | In progress — owner action | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-06-w13-deployment.md) | T5 done; approved manual T4 gate is being regenerated before T6 | — |
 
 ---
 
@@ -66,6 +66,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Owner `teleifo` verified the recovered branch and seed data; redacted T5 evidence records 20-second RPO/RTO (0.0056 hours each) and a passing outcome. | W13 | this commit |
 | 2026-11-08 | T6 preflight found the plan's `.github/workflows/w13-dev-check.yml` was removed in `c9ed369`; option 1 cannot run until the owner chooses to recreate that workflow or accept an explicit audit exception. | W13 | this commit |
 | 2026-11-08 | Removed the dead dev-check verifier, dedicated test, and runbook section; historical plan/spec/state references remain for audit history. | W13 | this commit |
+| 2026-11-08 | Operator approved the amended W13 safety spec at Gate 1; the removed automated dev-check is replaced by owner-recorded Vercel metadata plus fixed development smoke evidence. | W13 | this commit |
 
 ## 7. Decisions
 
@@ -107,7 +108,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 - **Date:** 2026-11-08
 - **Question:** Has the owner completed T4's deployed-SHA and dev smoke evidence gate, or should the existing T4 read-only configuration audit be explicitly accepted as the gate evidence?
-- **Why blocked:** T6 depends on T4, and the approved plan requires this owner gate before protected production migration/deployment work.
+- **Resolution:** Resolved 2026-11-08 by approving C~5 and replacing the removed workflow with the manual evidence gate; deployed-SHA and smoke evidence remain required before T6.
 
 ### D~3 — T4 workflow removed before continuation
 
@@ -115,6 +116,14 @@ describes `INT`; read it for context and write here instead of editing it.
 - **What:** The approved W13 plan references `.github/workflows/w13-dev-check.yml`, but commit `c9ed369` removed that workflow. Only the verifier script and tests remain.
 - **Consequence:** The planned deployed-SHA and dev-smoke evidence cannot be produced through the approved workflow as written; recreating it changes the implementation scope.
 - **Next decision:** Owner must choose workflow recreation (amend the plan/spec first) or explicitly accept the existing read-only audit as a T4 exception.
+
+### C~5 — Replace automated dev-check with manual owner evidence
+
+- **Date:** 2026-11-08
+- **Who asked:** operator, after requesting removal of all `w13-dev-check` artifacts.
+- **Decision:** Retire the removed automated development-check workflow and verifier. T4 will require owner-recorded Vercel metadata for the merged SHA plus fixed development health/auth/tier/AI smoke results, with redacted evidence and no Vercel deployment token in repository workflows or application runtime.
+- **Why:** Removes obsolete automation while preserving the deployment identity and smoke-evidence safety boundary.
+- **Rejected:** Recreating the removed workflow solely to satisfy its stale plan reference; accepting configuration audit alone without deployment and smoke evidence.
 
 ## 8. Deviations
 

@@ -1,6 +1,6 @@
 # W13 Deployment Safety Corrections Design
 
-- **Status:** Approved (operator, 2026-11-07)
+- **Status:** Approved (operator, 2026-11-08)
 - **Risk tier:** High — these checks protect production deployment identity, database writes, migration execution, and production startup.
 - **Workstream:** W13 | **Plan:** pending approval
 - **Lenses:** Implementer, Tester, Maintainer, Attacker
