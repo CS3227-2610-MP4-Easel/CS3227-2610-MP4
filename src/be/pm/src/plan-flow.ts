@@ -34,7 +34,7 @@ export type ProposalsApi = {
   getProposalView(proposalId: string, viewerId: string): Promise<PlanProposal | null>;
   claimEpic(i: { proposalId: string; index: number; actorId: string; now?: Date }): Promise<ClaimResult>;
   storeEpic(i: { proposalId: string; index: number; claimedVersion: number; tasks: EpicTask[]; flagged: boolean }): Promise<PlanEpic>;
-  failEpic(i: { proposalId: string; index: number; claimedVersion: number; error: string }): Promise<void>;
+  failEpic(i: { proposalId: string; index: number; claimedVersion: number; error: string }): Promise<boolean>;
   approveProposal(i: { proposalId: string; version: number; actorId: string }): Promise<PlanApproval>;
   rejectProposal(i: { proposalId: string; version: number; actorId: string }): Promise<PlanProposal>;
 };

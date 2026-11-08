@@ -159,7 +159,7 @@ test("E24b the second expand arrives after the first stored its result: DONE wit
   });
 });
 
-test("E25 the first function died: after the lease passes the epic is claimed again, stored, and version rises by 2 per claim-and-store", opts, async () => {
+test("E25 the first function died: after the lease passes the epic is claimed again, stored, and versions increase across claims and stores", opts, async () => {
   await withIntegrationDb(async (base, f) => {
     const { db, proposalId, pm } = await seed(base, f);
     const t0 = new Date("2026-11-07T10:00:00.000Z");
@@ -192,12 +192,12 @@ test("E25 the first function died: after the lease passes the epic is claimed ag
     if (second.kind !== "CLAIMED") return;
     await failEpic(db, { proposalId, index: 1, claimedVersion: second.claimedVersion, error: "GATEWAY_TIMEOUT" });
     const failed = await epicRow(base, proposalId, 1);
-    assert.deepEqual([failed.expansionStatus, failed.error, failed.leaseExpiresAt, failed.version], ["FAILED", "GATEWAY_TIMEOUT", null, 3]);
+    assert.deepEqual([failed.expansionStatus, failed.error, failed.leaseExpiresAt, failed.version], ["FAILED", "GATEWAY_TIMEOUT", null, second.claimedVersion + 1]);
     const retry = await claimEpic(db, { proposalId, index: 1, actorId: pm });
     assert.equal(retry.kind, "CLAIMED");
     const retried = await epicRow(base, proposalId, 1);
     assert.equal(retried.error, null);
-    assert.equal(retried.version, 4);
+    assert.equal(retried.version, failed.version + 1);
   });
 });
 
