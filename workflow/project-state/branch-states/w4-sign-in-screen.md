@@ -27,7 +27,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 | Claude Opus 5.5 (orchestrator) + `implementer` | W4 | Active | Wave 4: T5 and T6 in flight (main checkout, separate files) | On each handover: validate, full review (Implementer, Tester, Attacker); when both are Done, wave check, then T7 | 2026-11-08 |
+| S1 | 2026-11-08 | Claude Opus 5.5 (orchestrator) + `implementer` | W4 | Active | Wave 5: T7 in flight | On T7's handover: validate, full review, then the plan's Close-out (closeout lint, checks, manual run with the operator, code review, Gate 3) | 2026-11-08 |
 
 **Remaining**
 
@@ -45,7 +45,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W4 | Auth and registration | Building | [spec](../../specs/2026-10-31-w4-auth-design.md), [T7 spec](../../specs/2026-11-08-w4-sign-in-screen-design.md) (approved 2026-11-08) | [plan](../../plans/2026-11-08-w4-sign-in-screen/plan.md) (approved 2026-11-08) | T7 follow-up: task 4/7 done; T5 and T6 (auth screens) in flight | — |
+| W4 | Auth and registration | Building | [spec](../../specs/2026-10-31-w4-auth-design.md), [T7 spec](../../specs/2026-11-08-w4-sign-in-screen-design.md) (approved 2026-11-08) | [plan](../../plans/2026-11-08-w4-sign-in-screen/plan.md) (approved 2026-11-08) | T7 follow-up: task 6/7 done; T7 (source rules) in flight | — |
 
 ---
 
@@ -70,6 +70,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | T3 done: `lib/auth/firebase.ts` (lazy, null when unconfigured), `hardNavigate`, `apiFetch` confined to `/api/` (round 1 found encoded and trailing dot segments escaping; fixed and re-reviewed), bounded server error fields, `ApiError` in `errors.ts`, endpoints 2-4. Rejected nit: clear SDK mocks between firebase-config tests (no assertion depends on order today). Wave 2 check: typecheck, `npm test` 487/487 + fe 51/51, build green | W4 | `12b4864` |
 | 2026-11-08 | T4 done: `SessionProvider`/`useSession` (generation counter, hold for registration), `AuthRoot`/`useAuthMode`, `AuthGate`, layout (`force-dynamic`) and page wiring, session-aware top bar, role bar only in prototype, placeholder auth screens. Full review: no blocking; tests tightened (E51 order, E54 at gate, E97 content, E100 hold), top-bar role fallback and idempotent hold release added. Rejected nit: a 401 with no following sign-out leaves "Loading…" (SD9 by design). Wave 3 check: `npm test` 487/487 + fe 82/82, typecheck, build green | W4 | `8d8003a` |
 | 2026-11-08 | T5 done: live sign-in form (Firebase `signIn`, messages unchanged, one request at a time, gate navigates). Deviation: a T4 gate test query made stricter (`getByRole` heading). Full review (one reviewer, three lenses): nits only, rejected: re-enable window before navigation (repeat `signIn` harmless), password stays shown after an error, `b-bad` class and `role="alert"` not asserted (outside the contract) | W4 | `b4a56eb` |
+| 2026-11-08 | T6 done: register flow (role and code, account with hold and skip-`signUp`, finish setup, 429 countdown, error states, code kept only in component state). Implementer choice accepted: a role/code error at Create account returns to step 1. Full review: no blocking; fixed a lost displayName 422 message, cooldown enforced in code, email/password locked once the account exists, tests tightened (deferred double-click, hold release on error, code clearing). Rejected nit: Retry resends the values of the failed request (matches "repeats the failed request"). Deviations: two T4 gate tests updated to the real headings; fake timers limited to intervals. Wave 4 check: `npm test` 487/487 + fe 126/126, typecheck, build green | W4 | `d034112` |
 
 ---
 
