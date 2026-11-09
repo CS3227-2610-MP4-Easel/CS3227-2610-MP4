@@ -206,7 +206,8 @@ asserts generated row keys cover all 57 policies and every declared role/predica
 
 The corpus runner installs and removes a deny-all tripwire around each run before runner imports for
 `fetch`, `node:http` request/get, `node:https` request/get, `node:net` connect/createConnection,
-`node:tls` connect, `node:dns` lookup/resolve, and `node:dns/promises`; any call fails the test.
+`node:tls` connect, `node:dns` lookup/resolve, and `node:dns/promises`; imports needed for pure
+helpers such as `node:net` address parsing are allowed, but any network call fails the test.
 The process-safety harness also intercepts child-process spawn/exec/fork, and filesystem
 write/open/append/mkdir/rename/remove calls, allowing writes only below its temporary fixture
 directory. Its dispatch is a literal map from validated `layer`/`boundary` values to imported
