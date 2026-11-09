@@ -2,6 +2,7 @@ import { DigestSchema, FactsSchema, policyForRoute, type RouteDefinition } from 
 import { z } from "zod/v3";
 import type { Digest, Facts } from "@agile/contracts";
 import { errorResponse, HttpError } from "../errors.js";
+import { STRICT_BODY_PARSER } from "./register.js";
 
 type Actor = { userId: string; role: "PM" | "DEV_LEAD" | "DEVELOPER" };
 type LeadFlow = {
@@ -13,7 +14,7 @@ export type LeadRouteServices = { runtime: () => LeadFlow };
 
 const Id = z.object({ id: z.string().uuid() }).strict();
 const EmptyBody = z.object({}).strict();
-const route = (key: string) => { const policy = policyForRoute(key); return { operationId: policy.operationId, method: policy.method, path: policy.path, policyKey: key }; };
+const route = (key: string) => { const policy = policyForRoute(key); return { operationId: policy.operationId, method: policy.method, path: policy.path, policyKey: key, [STRICT_BODY_PARSER]: true as const }; };
 
 function leadError(error: unknown): HttpError {
   if (error instanceof HttpError) return error;

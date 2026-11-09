@@ -7,9 +7,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w8-dev-lead-facts-digest (from `INT` at `b95546f`)
 - **Base:** b95546f
 - **Owner:** project operator
-- **Status:** Approved
+- **Status:** In review
 - **Approved:** Gate 1 spec, Gate 2 plan, and Gate 3 branch review — project operator, 2026-11-09
-- **Last updated:** 2026-11-09 by Codex — Gate 3 approved; preparing PR
+- **Last updated:** 2026-11-09 by Codex — operator authorized auth/parser compatibility correction
 
 **Untouched:** Architecture, Conventions, Known Gaps, Decisions, Deviations
 
@@ -47,7 +47,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human` (name the ques
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W8 | Dev Lead facts and digest | Approved | [spec](../../specs/2026-11-09-w8-dev-lead-facts-digest-design.md) (approved 2026-11-09) | [plan](../../plans/2026-11-09-w8-dev-lead-facts-digest/plan.md) (approved 2026-11-09) | T1-T3 complete; Gate 3 approved; preparing PR | lead API routes; guide update after merge |
+| W8 | Dev Lead facts and digest | In review | [spec](../../specs/2026-11-09-w8-dev-lead-facts-digest-design.md) (approved 2026-11-09) | [plan](../../plans/2026-11-09-w8-dev-lead-facts-digest/plan.md) (approved 2026-11-09) | Auth/parser compatibility correction complete; verification passed | lead API routes; guide update after merge |
 
 ## 3. Changes
 
@@ -62,6 +62,7 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-09 | Execution baseline passed: typecheck, lint, contract and 534 tests (28 integration skips); T1 started under S2 | W8 | pending task commit |
 | 2026-11-09 | T1 repair cycle fixed membership, cross-project velocity, deterministic ordering, and hash tests; review still requires bounded facts reads and a short-history regression | W8 | pending operator direction |
 | 2026-11-09 | Project operator chose deterministic pagination and a short-history regression test over accepting a bounded-read limitation | W8 | pending follow-up commit |
+| 2026-11-09 | Preserved auth parser 400 mappings and made strict 415/422 body parsing opt-in for W8 lead routes; focused and full verification passed | W8 | pending task commit |
 
 ## 4. Deviations
 
@@ -72,18 +73,21 @@ One line per change on this branch: what changed and why, with a commit as the r
 | D~3 | A reviewer requested a hard total-row budget for complete caller aggregation. | A hard budget would omit caller-member facts or introduce a new degraded response not in the approved contract. | Accepted 2026-11-09 under the operator's complete-aggregation decision: pagination bounds peak batch size and concurrency, while total work remains proportional to complete input. Independent checkpoint pagination and active-project filtering are still required. |
 | 2026-11-09 | Operator chose complete aggregation with bounded concurrency and incremental pagination; no silent omission or new response behavior | W8 | pending follow-up commit |
 | D~4 | No real lead database fixture exists for transaction/concurrency integration tests. | Deterministic transaction fixtures cover control flow, but Prisma rollback/schema/concurrent visibility remain unverified locally. | Carry as a close-out deviation; add a database-backed fixture when the repository integration database is available. |
-| D~5 | W8 changed the shared JSON parser to return 415/422 for lead-route semantics, while existing auth tests expect 400. | Four auth-route assertions fail; the behavior change is a cross-route compatibility issue, not an unrelated failure. | Handover: standardize body error mappings in a follow-up; keep auth compatibility on this branch. |
+| D~5 | W8 changed the shared JSON parser to return 415/422 for lead-route semantics, while existing auth tests expect 400. | Four auth-route assertions fail; the behavior change is a cross-route compatibility issue, not an unrelated failure. | Resolved 2026-11-09: parser defaults to auth's legacy 400 mappings; W8 lead routes explicitly opt into 415/422. |
 
 ## 5. Close-out evidence
 
 - `npm run typecheck`: pass
 - `npm run lint`: pass
 - `npm run contract`: 7 pass
-- `npm test`: 596 total, 564 pass, 4 fail, 28 skipped; four auth-route assertions expose the shared-parser compatibility issue recorded in D~5
+- `npm test`: 597 total, 569 pass, 28 skipped, 0 fail
+- Focused auth/lead/input-parser tests: 41 pass
 - Plan/handover lint: pass
 - Full branch review: Implementer/Tester/Attacker task reviews completed; close-out tenancy finding repaired
 
 ## 6. Handover items
 
-- Standardize HTTP body error mappings across auth and lead routes (`415` unsupported media type, `400` malformed JSON, `422` semantic validation) in a follow-up contract change; update affected tests and clients together.
+- Standardize HTTP body error mappings across auth and lead routes (`415` unsupported media type, `400` malformed JSON, `422` semantic validation) in a follow-up contract change; update affected tests and clients together. Resolved by preserving auth's legacy 400 behavior and opting W8 lead routes into strict 415/422 parsing.
+
+- Immediate correction: preserve auth's legacy `400` parser behavior and make strict `415`/`422` mapping opt-in for W8 lead routes; rerun CI before merge. Resolved in this branch.
 

@@ -36,6 +36,8 @@ test("endpoint 44 accepts only JSON {} and maps typed AI_BUSY with Retry-After",
   const badBody = await app.request(`http://localhost/api/lead/projects/${projectId}/digests`, { method: "POST", headers: { authorization: "Bearer token", "content-type": "application/json" }, body: "{\"unexpected\":true}" });
   assert.equal(badType.status, 415);
   assert.equal(badBody.status, 422);
+  const malformed = await app.request(`http://localhost/api/lead/projects/${projectId}/digests`, { method: "POST", headers: { authorization: "Bearer token", "content-type": "application/json" }, body: "{" });
+  assert.equal(malformed.status, 422);
   assert.equal(calls, 0);
   const busy = await app.request(`http://localhost/api/lead/projects/${projectId}/digests`, { method: "POST", headers: { authorization: "Bearer token", "content-type": "application/json" }, body: "{}" });
   assert.equal(busy.status, 429);
