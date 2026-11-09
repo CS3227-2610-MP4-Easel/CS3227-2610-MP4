@@ -48,8 +48,8 @@ only your own task's files. Contract tests marked read-only are not edited.
 | T4 AI definitions: prompts, schemas, mocks, hashes, errors | `tasks/T4.md` | T3 | T5, T6 | 3 | standard | full | Done |
 | T5 Upload store (49) | `tasks/T5.md` | T1, T3 | T4, T6 | 3 | complex | full | Done |
 | T6 Summary and standup store, sources, resolvers | `tasks/T6.md` | T3 | T4, T5 | 3 | complex | full | Done |
-| T7 Summary flow (50) | `tasks/T7.md` | T1, T4, T6 | T8 | 4 | complex | full | Not started |
-| T8 Standup flow (51) | `tasks/T8.md` | T1, T4, T6 | T7 | 4 | complex | full | Not started |
+| T7 Summary flow (50) | `tasks/T7.md` | T1, T4, T6 | T8 | 4 | complex | full | Done |
+| T8 Standup flow (51) | `tasks/T8.md` | T1, T4, T6 | T7 | 4 | complex | full | Done |
 | T9 Runtime, routes and composition | `tasks/T9.md` | T1, T5, T7, T8 | - | 5 | complex | full | Not started |
 | T10 Postgres integration and concurrency | `tasks/T10.md` | T9 | - | 6 | complex | full | Not started |
 
