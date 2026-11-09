@@ -7,9 +7,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w9-dev-slice (from `INT` at `dc3447f`)
 - **Base:** 3519ff0
 - **Owner:** ludannnn (Developer member)
-- **Status:** In review
-- **Approved:** —
-- **Last updated:** 2026-11-09 by Claude Opus 5.5 — all 10 tasks done, close-out review fixed, Gate 3 asked
+- **Status:** Approved
+- **Approved:** ludannnn 2026-11-09
+- **Last updated:** 2026-11-09 by Claude Opus 5.5 — Gate 3 approved by the owner
 
 **Untouched:** Architecture, Conventions, Deviations
 
@@ -37,7 +37,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - [ ] **Handover:** tell W17 that `CACHE_HIT` rows now exist for DEV_SUMMARY and DEV_STANDUP (spec SD13); summary hits have a null `session_id`.
 - [ ] **Handover:** S20 (Upload and standup) and S18 (Team standups) wiring to the live API is a Medium follow-up spec (C~1); the browser must cut bodies over 2000 characters instead of rejecting them (spec SD4), send `{}` (not an empty body) to endpoint 51, and render summaries and standup lines as plain text only.
 - [x] Build T1-T10 and close-out: plan lint `--closeout` clean; typecheck, lint, `prisma:validate` green; `npm test` 808/808 (0 skipped, Postgres ran) + fe 149/149; audit passes at high; whole-branch code review (high) with two fixes (`e2e1e00`).
-- [ ] Gate 3: branch review by the owner (asked 2026-11-09).
+- [x] Gate 3: approved by ludannnn on 2026-11-09 (after the C~9 fix).
 - [ ] Push and open the PR into `development` (separate question after Gate 3).
 - [ ] **Handover:** to the W4 owner (this owner): the 413 counter moved to `src/be/api/src/body-limit.ts`; `auth.ts` keeps 4,096 bytes. To the W1 owners: `RouteDefinition.bodyLimitBytes` (plan P1) reads the body after authorisation; endpoints 49 (1 MiB), 50 and 51 (16 KiB) use it.
 - [ ] **Handover:** test follow-ups (two-round limit): poll `pg_locks` instead of a 300 ms wait in the E47 lock test, and await the pending write before cleanup on failure (`src/be/dev/test/dev-integration.test.ts`).
