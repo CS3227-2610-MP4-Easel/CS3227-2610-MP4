@@ -7,7 +7,7 @@ import { createDevRoutes } from "./routes/index.js";
 
 export type DevComposition = { resolvers: ReturnType<typeof createDevRuntime>["resolvers"]; routes: RouteDefinition[] };
 
-/** Builds the dev runtime over core's own membership check and registers its sources and mocks; once per auth runtime in production. */
+// Registers process-wide context sources: call once per auth runtime (tests reset the registry first).
 export function createDevComposition(auth: Pick<AuthRuntime, "db" | "lookupArchivedMembership">): DevComposition {
   const db = auth.db as unknown as Record<string, unknown>;
   const core = createCore({ db: db as never, archivedMembership: auth.lookupArchivedMembership });
@@ -29,7 +29,7 @@ export function getDevComposition(auth: AuthRuntime): DevComposition {
 export function withDevComposition(core: CoreComposition, dev: DevComposition): CoreComposition {
   return {
     requireMember: core.requireMember,
-    resolveResource: (operationId, request, tx) => dev.resolvers[operationId] ? dev.resolvers[operationId](request) : core.resolveResource(operationId, request, tx),
+    resolveResource: (operationId, request, tx) => Object.hasOwn(dev.resolvers, operationId) ? dev.resolvers[operationId](request) : core.resolveResource(operationId, request, tx),
     routes: [...core.routes, ...dev.routes],
   };
 }

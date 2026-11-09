@@ -18,14 +18,16 @@ export type DevRouteServices = {
 };
 
 const MAX_UPLOAD_BYTES = 1_048_576;
-const Id = z.object({ id: z.string().uuid() }).strict();
+const MAX_SMALL_BYTES = 16_384;
+const lower = (value: string) => value.toLowerCase();
+const Id = z.object({ id: z.string().uuid().transform(lower) }).strict();
 const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => { const parsed = new Date(`${value}T00:00:00Z`); return !Number.isNaN(parsed.valueOf()) && parsed.toISOString().slice(0, 10) === value; });
 const distinct = (ids: string[]) => new Set(ids).size === ids.length;
 const UploadBody = z.object({ items: z.array(z.unknown()).max(100) }).strict();
 const SummaryBody = z.object({ itemIds: z.array(z.string().uuid()).min(1).max(10).transform((ids) => ids.map((id) => id.toLowerCase())).refine(distinct) }).strict();
 const StandupBody = z.object({ date: z.string().nullable().optional() }).strict();
 const MineQuery = z.object({ date: dateString.optional() }).strict();
-const LeadListQuery = z.object({ date: dateString.optional(), developerId: z.string().uuid().optional(), page: z.coerce.number().int().min(0).default(0), size: z.coerce.number().int().min(1).max(100).default(20) }).strict();
+const LeadListQuery = z.object({ date: dateString.optional(), developerId: z.string().uuid().transform(lower).optional(), page: z.coerce.number().int().min(0).max(10_000).default(0), size: z.coerce.number().int().min(1).max(100).default(20) }).strict();
 
 const route = (key: string) => { const policy = policyForRoute(key); return { operationId: policy.operationId, method: policy.method, path: policy.path, policyKey: key }; };
 const forbidden = () => new HttpError("FORBIDDEN_ROLE", 403, "The user's role cannot access this operation.");
@@ -37,6 +39,10 @@ const MESSAGES: Record<string, string> = {
   AI_DISABLED: "AI features are disabled.",
   VALIDATION_FAILED: "The request is not valid.",
   INTERNAL_ERROR: "Internal server error.",
+};
+
+const sizeGuard = (maxBytes: number): NonNullable<RouteDefinition["before"]> => async ({ requestId, request }) => {
+  if (contentLengthTooLarge(request, maxBytes)) return errorResponse(new HttpError("PAYLOAD_TOO_LARGE", 413, "The request body is too large."), requestId);
 };
 
 /** Runs a service call; a DevError becomes its envelope response, so no handler formats errors itself. */
@@ -58,11 +64,11 @@ export function createDevRoutes(services: DevRouteServices): RouteDefinition[] {
   const caller = (principal: Actor | undefined): Caller => ({ userId: actor(principal).userId, role: "DEVELOPER" });
   return [
     { ...route("endpoint-49"), paramsSchema: Id, bodySchema: UploadBody, bodyLimitBytes: MAX_UPLOAD_BYTES, responseSchema: {},
-      before: async ({ requestId, request }) => { if (contentLengthTooLarge(request, MAX_UPLOAD_BYTES)) return errorResponse(new HttpError("PAYLOAD_TOO_LARGE", 413, "The request body is too large."), requestId); },
+      before: sizeGuard(MAX_UPLOAD_BYTES),
       handler: async ({ requestId, principal, input }) => respond(requestId, () => services.upload(actor(principal).userId, (input.params as { id: string }).id, (input.body as { items: unknown[] }).items)) },
-    { ...route("endpoint-50"), paramsSchema: Id, bodySchema: SummaryBody, responseSchema: {},
+    { ...route("endpoint-50"), paramsSchema: Id, bodySchema: SummaryBody, bodyLimitBytes: MAX_SMALL_BYTES, before: sizeGuard(MAX_SMALL_BYTES), responseSchema: {},
       handler: async ({ requestId, principal, input }) => respond(requestId, () => services.summaries(caller(principal), (input.params as { id: string }).id, (input.body as { itemIds: string[] }).itemIds)) },
-    { ...route("endpoint-51"), paramsSchema: Id, bodySchema: StandupBody, responseSchema: {},
+    { ...route("endpoint-51"), paramsSchema: Id, bodySchema: StandupBody, bodyLimitBytes: MAX_SMALL_BYTES, before: sizeGuard(MAX_SMALL_BYTES), responseSchema: {},
       handler: async ({ requestId, principal, input }) => respond(requestId, () => services.standup(caller(principal), (input.params as { id: string }).id, (input.body as { date?: string | null }).date ?? undefined)) },
     { ...route("endpoint-52"), paramsSchema: Id, querySchema: MineQuery, responseSchema: {},
       handler: async ({ requestId, principal, input }) => respond(requestId, () => services.mine(actor(principal).userId, (input.params as { id: string }).id, (input.query as { date?: string }).date ?? defaultStandupDate(now()))) },

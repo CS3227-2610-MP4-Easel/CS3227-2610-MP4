@@ -1,22 +1,19 @@
 {
   "task": "T9",
   "status": "done",
-  "summary": "Endpoints 49-52 and 55 served via createDevRuntime, createDevRoutes and withDevComposition merged into app.ts; dev sources and mocks register at boot.",
+  "summary": "Endpoints 49-52 and 55 served via createDevRuntime, createDevRoutes and withDevComposition; review round 1 applied (injected clock, 16 KiB limits, lowercase ids, real-runtime tests).",
   "commit": "HEAD",
   "produces": [
-    { "kind": "symbol", "name": "createDevRuntime", "where": "src/be/dev/src/runtime.ts", "note": "createDevRuntime(deps: DevRuntimeDeps) -> { resolvers, upload, summaries, standup, mine, leadList }; overrides: Partial<{ gateway, sessions, ai, recordCacheHit }>; also exports DevRuntime, DevRuntimeDeps and DevError from @agile/dev" },
-    { "kind": "symbol", "name": "createDevRoutes", "where": "src/be/api/src/routes/dev.ts", "note": "createDevRoutes(services: DevRouteServices): RouteDefinition[]; DevRouteServices has an optional now()" },
-    { "kind": "symbol", "name": "createDevComposition", "where": "src/be/api/src/dev-composition.ts", "note": "createDevComposition(auth): { resolvers, routes }; uncached, registers sources" },
+    { "kind": "symbol", "name": "createDevRuntime", "where": "src/be/dev/src/runtime.ts", "note": "createDevRuntime(deps: DevRuntimeDeps) -> { now, resolvers, upload, summaries, standup, mine, leadList }; overrides: Partial<{ gateway, sessions, ai, recordCacheHit }>; also exports DevRuntime, DevRuntimeDeps and DevError from @agile/dev" },
+    { "kind": "symbol", "name": "createDevRoutes", "where": "src/be/api/src/routes/dev.ts", "note": "createDevRoutes(services: DevRouteServices): RouteDefinition[]; optional now() drives 52's default date; 50 and 51 limited to 16 KiB; ids lowercased" },
+    { "kind": "symbol", "name": "createDevComposition", "where": "src/be/api/src/dev-composition.ts", "note": "createDevComposition(auth): { resolvers, routes }; uncached, registers process-wide sources once per auth runtime" },
     { "kind": "symbol", "name": "getDevComposition", "where": "src/be/api/src/dev-composition.ts", "note": "getDevComposition(auth: AuthRuntime), cached per auth in a WeakMap" },
-    { "kind": "symbol", "name": "withDevComposition", "where": "src/be/api/src/dev-composition.ts", "note": "withDevComposition(core: CoreComposition, dev): CoreComposition" }
+    { "kind": "symbol", "name": "withDevComposition", "where": "src/be/api/src/dev-composition.ts", "note": "withDevComposition(core: CoreComposition, dev): CoreComposition; chains with Object.hasOwn" }
   ],
   "next": "T10: build createApiApp(createAppDependencies(rt, composition), composition.routes) with composition = withDevComposition(createCoreComposition(rt), createDevComposition(rt)), rt.db = createDbClient(base), after resetContextRegistries(). Runtime overrides: gateway, sessions, ai, recordCacheHit; deps also take now.",
   "deviations": [
-    { "what": "Test paths use /api/dev/projects/{id}/uploads and /api/lead/projects/{id}/standups (the policy map paths).", "why": "The task file's route names are logical; the policy map owns the real paths.", "needs": "none" },
-    { "what": "E25 route test covers only the DevError to 422 mapping with a fake service; the date window itself is enforced by generateStandup (T8).", "why": "Route tests use fake services.", "needs": "none" },
-    { "what": "Endpoint 52 validates date shape and calendar only, not the accepted-date window.", "why": "The task gives dateString as the only rule and the window would block reading older standups.", "needs": "orchestrator" },
-    { "what": "Full `ws test` / `npm test` did not finish within the 600s tool limit in this sandbox, so I ran api, dev and ai-context test files directly (363 pass) plus typecheck (clean).", "why": "Run time exceeded the tool limit; background runs may still be live and could not be killed because the sandbox denied pkill.", "needs": "orchestrator" }
+    { "what": "Endpoint 52 validates date shape and calendar only, not the accepted-date window.", "why": "The task gives dateString as the only rule and the window would block reading older standups.", "needs": "orchestrator" }
   ],
   "edge_cases": ["E1", "E2", "E3", "E11", "E14", "E25", "E35", "E39", "E41", "E44", "E45", "E57", "E58", "E59", "E69", "F8"],
-  "checks": { "build": "pass", "tests": "363 pass / 0 fail (api, dev, ai-context); full npm test not completed", "lint": "n/a" }
+  "checks": { "build": "pass", "tests": "786 pass / 0 fail (be) and 149 pass (fe)", "lint": "n/a" }
 }

@@ -40,6 +40,7 @@ export function createDevRuntime(deps: DevRuntimeDeps) {
   const ai = () => deps.overrides?.ai ?? getAiContext();
   const recordCacheHit = (input: CacheHitInput) => (deps.overrides?.recordCacheHit ?? defaultRecordCacheHit)(input);
   return {
+    now,
     resolvers,
     upload: (userId: string, projectId: string, items: unknown[]) => uploadItems({ ...write, sanitiseFlag, currentKey: key, now }, userId, projectId, items),
     summaries: (caller: Caller, projectId: string, itemIds: string[]) => {
