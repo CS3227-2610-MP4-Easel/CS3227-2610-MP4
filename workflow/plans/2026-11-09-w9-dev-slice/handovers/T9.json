@@ -2,7 +2,7 @@
   "task": "T9",
   "status": "done",
   "summary": "Endpoints 49-52 and 55 served via createDevRuntime, createDevRoutes and withDevComposition; review round 1 applied (injected clock, 16 KiB limits, lowercase ids, real-runtime tests).",
-  "commit": "HEAD",
+  "commit": "24d48d8",
   "produces": [
     { "kind": "symbol", "name": "createDevRuntime", "where": "src/be/dev/src/runtime.ts", "note": "createDevRuntime(deps: DevRuntimeDeps) -> { now, resolvers, upload, summaries, standup, mine, leadList }; overrides: Partial<{ gateway, sessions, ai, recordCacheHit }>; also exports DevRuntime, DevRuntimeDeps and DevError from @agile/dev" },
     { "kind": "symbol", "name": "createDevRoutes", "where": "src/be/api/src/routes/dev.ts", "note": "createDevRoutes(services: DevRouteServices): RouteDefinition[]; optional now() drives 52's default date; 50 and 51 limited to 16 KiB; ids lowercased" },

@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S2 | 2026-11-09 | Claude Opus 5.5 (lead) | W9 | Active | Executing the W9 plan, orchestrator; waves 1-4 done | Wave 5: T9 (runtime, routes, composition) | 2026-11-09 |
+| S2 | 2026-11-09 | Claude Opus 5.5 (lead) | W9 | Active | Executing the W9 plan, orchestrator; waves 1-5 done | Wave 6: T10 (Postgres integration), then close-out | 2026-11-09 |
 
 **Remaining**
 
@@ -44,7 +44,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W9 | Developer upload, summaries, standup | Building | [spec](../../specs/2026-11-08-w9-dev-slice-design.md) (approved 2026-11-08, amended 2026-11-09) | [plan](../../plans/2026-11-09-w9-dev-slice/plan.md) (approved 2026-11-09) | Wave 5/6: T9 next; T1-T8 done | — |
+| W9 | Developer upload, summaries, standup | Building | [spec](../../specs/2026-11-08-w9-dev-slice-design.md) (approved 2026-11-08, amended 2026-11-09) | [plan](../../plans/2026-11-09-w9-dev-slice/plan.md) (approved 2026-11-09) | Wave 6/6: T10 next; T1-T9 done | — |
 
 ---
 
@@ -74,6 +74,9 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-09 | T8 done: `generateStandup` for endpoint 51 (cached on unchanged hash, regenerate or open, one run, code-built fallback through `checkLine`, one upsert). Full review round 1: the empty-window path now checks membership before any session call, a model `ok` that fails the local parse keeps its `flagged`, the standup Row is typed (cast removed), and tests widened (error propagation, nothing-stored assertions, model content, upsert count, E66 ids and negatives, argument checks, surrogate boundaries); round 2 approved. Rejected: AI_BUSY after regenerate burning a regeneration (spec; self-only), prompt version on cache hits (in the input hash), concurrent first generations (T10 E34), INVALID_LLM_CALL test case (same path as the tested errors) | W9 | `e6a99aa` |
 | 2026-11-09 | T7 done: `generateSummaries` for endpoint 50 (cached answers, window check, `openOrReuse`, one run, row-number mapping, one insert after the call). Full review round 1: ids de-duplicated case-insensitively before any session, explicit `REQUEST_REFUSED` (unknown codes → 500), the post-insert cache hit cannot fail a committed request, tests strengthened (E72 one-line row, E73 exact 900 and truncated false, real transaction scope in N2, real-gateway result codes, argument checks, window boundary); round 2 found the code correct. Carried to T9 (two-round limit): a mixed-case id test (the T7 case-variant test uses an id with no hex letters). Rejected: caching refused or failed items (spec), the hash-read vs assemble window (self-only), skipDuplicates race (T10 E20) | W9 | `d903bbf` |
 | 2026-11-09 | Wave 4 check: typecheck green, `npm test` 758/758 (0 skipped) + fe 149/149 | W9 | wave 4 |
+| 2026-11-09 | Plan-only change: T9's route 50 body lowercases `itemIds` before the distinct check, plus a mixed-case id test (carried from T7) | W9 | tasks/T9.md |
+| 2026-11-09 | T9 done: `createDevRuntime`, `routes/dev.ts` (49-52, 55), `dev-composition.ts` (`getDevComposition`, `withDevComposition`), one `app.ts` line; dev sources and mocks register at boot. Deviations (none needed): route tests use the policy map paths; 52 validates calendar dates only (spec: any day). Full review round 1: 16 KiB body limits on 50 and 51 (were unbounded), `page` capped at 10,000, path and developer ids lowercased, injected clock reaches route 52, `Object.hasOwn` in resolver chaining, and real-runtime route tests (archived 409/404, real upload, E25 through the real flow, Singapore default date, E69 body never read); round 2 approved. Carried to T10: an upper-case project id through the real resolvers on Postgres (`projects.id` is `@db.Uuid`, so it is case-insensitive). Rejected: quietHit on the all-cached summaries path (T7), sharing one core instance (flows map NotMember), idempotent source registration (once per auth runtime, documented). Deliberate: an oversize `Content-Length` gets 413 before authentication (only a header is read) | W9 | `24d48d8` |
+| 2026-11-09 | Wave 5 check: typecheck green, `npm test` 786/786 (0 skipped) + fe 149/149 | W9 | wave 5 |
 
 ---
 

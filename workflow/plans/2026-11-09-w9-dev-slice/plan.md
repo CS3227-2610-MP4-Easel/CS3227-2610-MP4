@@ -50,7 +50,7 @@ only your own task's files. Contract tests marked read-only are not edited.
 | T6 Summary and standup store, sources, resolvers | `tasks/T6.md` | T3 | T4, T5 | 3 | complex | full | Done |
 | T7 Summary flow (50) | `tasks/T7.md` | T1, T4, T6 | T8 | 4 | complex | full | Done |
 | T8 Standup flow (51) | `tasks/T8.md` | T1, T4, T6 | T7 | 4 | complex | full | Done |
-| T9 Runtime, routes and composition | `tasks/T9.md` | T1, T5, T7, T8 | - | 5 | complex | full | Not started |
+| T9 Runtime, routes and composition | `tasks/T9.md` | T1, T5, T7, T8 | - | 5 | complex | full | Done |
 | T10 Postgres integration and concurrency | `tasks/T10.md` | T9 | - | 6 | complex | full | Not started |
 
 Full review = Implementer + Tester + Attacker lenses (untrusted text, ownership, membership, security-sensitive paths).
