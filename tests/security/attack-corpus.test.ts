@@ -51,7 +51,7 @@ test("E15 session barrier admits exactly its cap and rejects excess", async () =
 test("E22 three isolated runs stay below the five second hard timeout", async () => {
   const runnerUrl = new URL("./attack-corpus/runner.ts", import.meta.url).href;
   const workerRun = () => new Promise<void>((resolve, reject) => {
-    const worker = new Worker(`import { parentPort } from "node:worker_threads"; import(${JSON.stringify(runnerUrl)}).then(({ runCorpus }) => { runCorpus(); parentPort.postMessage("done"); }).catch((error) => { parentPort.postMessage({ error: String(error) }); });`, { eval: true, type: "module", execArgv: ["--import", "tsx"] });
+    const worker = new Worker(`import { parentPort } from "node:worker_threads"; import(${JSON.stringify(runnerUrl)}).then(({ runCorpus }) => { runCorpus(); parentPort.postMessage("done"); }).catch((error) => { parentPort.postMessage({ error: String(error) }); });`, { eval: true, type: "module", execArgv: ["--import=tsx"] });
     const timer = setTimeout(() => { void worker.terminate(); reject(new Error("W11_TIMEOUT")); }, 5_000);
     worker.on("message", (message) => { clearTimeout(timer); void worker.terminate(); if (message === "done") resolve(); else reject(new Error(message.error)); });
     worker.on("error", (error) => { clearTimeout(timer); reject(error); });
