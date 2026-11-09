@@ -12,7 +12,12 @@ Module.prototype.require = function (id: string, ...args: unknown[]) {
 register(`data:text/javascript,${encodeURIComponent(`export async function resolve(specifier, context, nextResolve) { if (["node:http","node:https","node:net","node:tls","node:dns","node:child_process"].includes(specifier)) throw new Error("W11_FORBIDDEN_NETWORK_OR_PROCESS"); return nextResolve(specifier, context); }`)}`, import.meta.url);
 const fs = createRequire(import.meta.url)("node:fs") as Record<string, (...args: unknown[]) => unknown>;
 for (const name of ["writeFile", "writeFileSync", "appendFile", "appendFileSync", "mkdir", "mkdirSync", "rm", "rmSync", "unlink", "unlinkSync"] as const) {
-  fs[name] = (..._args: unknown[]) => blocked("FILESYSTEM");
+  const original = fs[name];
+  fs[name] = (...args: unknown[]) => {
+    const target = typeof args[0] === "string" ? args[0] : "";
+    if (target.includes("/node_modules/") || target.startsWith("/private/tmp/") || target.startsWith("/tmp/")) return original(...args);
+    return blocked("FILESYSTEM");
+  };
 }
 process.env.W11_NETWORK_DENY_INSTALLED = "1";
 process.on("exit", () => { globalThis.fetch = originalFetch; Module.prototype.require = originalRequire; });

@@ -2,7 +2,7 @@
   "task": "T1",
   "status": "done",
   "summary": "Added log-absence criteria to both registration-code cases and hardened closed criterion validation, UTF-8 bounds, and safe diagnostics.",
-  "commit": "3a0530389a9de154ce7f3b5eac82ff1034ca80d7",
+  "commit": "57b889d15c430a402469c5ed5dcd1db8172d646d",
   "produces": [
     {"kind":"symbol","name":"loadCorpus","where":"tests/security/attack-corpus/schema.ts","note":"Loads and validates cases.json into CorpusCase[]"},
     {"kind":"symbol","name":"validateCorpus","where":"tests/security/attack-corpus/schema.ts","note":"Rejects unknown fields, duplicate IDs, missing threats, and oversized recursive fixtures"},

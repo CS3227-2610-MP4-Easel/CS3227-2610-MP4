@@ -61,7 +61,10 @@ export function assertCriterion(item: CorpusCase, observation: CorpusObservation
     case "RATE_LIMITED": assert.equal(observation.status, criterion.status, item.id); assert.equal(observation.code, criterion.code, item.id); assert.equal(observation.retryAfterSeconds, criterion.retryAfterSeconds, item.id); break;
     case "TEXT_ONLY": {
       const value = observation.value as Record<string, unknown> | string;
-      assert.equal(typeof value === "string" ? value : value[criterion.field], item.fixture.kind === "OUTPUT_TEXT" ? item.fixture.text : "{\"refusal\":false}", item.id); break;
+      const expected = item.fixture.kind === "OUTPUT_TEXT" ? item.fixture.text : JSON.parse(item.fixture.text);
+      assert.deepEqual(typeof value === "string" ? value : value[criterion.field], expected, item.id);
+      if (criterion.escaped) assert.doesNotMatch(JSON.stringify(value), /<|>|\]\(|!\[/u, item.id);
+      break;
     }
     case "NO_EXECUTION": assert.deepEqual([...observation.executed], ["process.data-only"], item.id); break;
     case "NO_LOGGED_SECRET": assert.ok(criterion.forbidden.every((secret) => !JSON.stringify(observation.logs).includes(secret)), item.id); break;
