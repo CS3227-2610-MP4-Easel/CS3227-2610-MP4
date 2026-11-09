@@ -9,7 +9,7 @@ test("digest cache is checked before session or gateway and persistence is the o
   const db = { projectDigest: { findFirst: async () => { order.push("cache"); return { id: "d", projectId: P, facts, factsHash: "x", degraded: false, proposalId: null }; } }, $transaction: async () => { tx++; return undefined; } };
   const flow = createLeadFlow({ db, facts: { target: async () => { order.push("facts"); return facts; }, caller: async () => facts }, binding: { gateway: { run: async () => { order.push("gateway"); throw new Error("called"); } }, sessions: { open: async () => { order.push("session"); return "s"; }, close: async () => {} } } });
   const result = await flow.createDigest({ userId: U, role: "DEV_LEAD" }, P);
-  assert.equal(result.cached, true); assert.deepEqual(order, ["cache"]); assert.equal(tx, 0);
+  assert.equal(result.cached, true); assert.deepEqual(order, ["facts", "cache"]); assert.equal(tx, 0);
 });
 
 test("degraded same-hash rows retry while healthy same-hash rows hit cache", async () => {
@@ -51,7 +51,16 @@ test("latest digest is caller-authorized and ordered by facts asOf, then created
   ];
   const flow = createLeadFlow({ db: { projectDigest: { findMany: async (args: unknown) => { calls.push(args); return rows; }, findFirst: async () => null } }, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => { throw new Error("unused"); } }, sessions: { open: async () => "s", close: async () => {} } }, requireMember: async () => {} });
   assert.equal((await flow.latestDigest({ userId: U, role: "DEV_LEAD" }, P)).id, "b");
-  assert.deepEqual(calls, [{ where: { projectId: P }, orderBy: [{ createdAt: "desc" }, { id: "desc" }] }]);
+  assert.deepEqual(calls, [{ where: { projectId: P }, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 100 }]);
+});
+
+test("createDigest uses target-only facts and accepts a valid proposal", async () => {
+  const targetFacts = { ...facts, checkpoints: [], overload: [{ userId: U, displayName: "U", openPoints: 1, avgCompletedPerSprint: null, projects: [{ projectId: P, name: "P", openPoints: 1 }] }] };
+  const task = "00000000-0000-4000-0000-000000000003"; let persisted: any; let proposalId = ""; let closed = "";
+  const db = { projectDigest: { findFirst: async () => null }, task: { findMany: async () => [{ id: task }] }, projectMember: { findMany: async () => [{ userId: U }] }, $transaction: async (fn: (tx: any) => Promise<unknown>) => fn({ projectDigest: { create: async ({ data }: any) => { persisted = data; return { id: "d", createdAt: new Date() }; }, update: async () => {} }, aiProposal: { create: async () => { proposalId = "p"; return { id: proposalId }; } } }) };
+  const flow = createLeadFlow({ db, facts: { target: async () => targetFacts, caller: async () => ({ ...targetFacts, pointsTotal: 999 }) }, binding: { gateway: { run: async () => ({ ok: true, value: { explanation: "Move the task", suggestions: [{ id: "00000000-0000-4000-0000-000000000004", type: "REASSIGN_TASK", taskId: task, assigneeId: U, rationale: "Assign it" }] }, callId: U, flagged: false, truncated: false, cacheHit: false, promptTokens: 0, completionTokens: 0, costMicroUsd: 0 }) }, sessions: { open: async () => "s", close: async (_id, outcome) => { closed = outcome; } } }, context: { assembleWith: async () => ({ sections: [], provenance: [] }) } as any });
+  const result = await flow.createDigest({ userId: U, role: "DEV_LEAD" }, P);
+  assert.equal(result.degraded, false); assert.equal(result.proposalId, proposalId); assert.equal(persisted.facts.pointsTotal, targetFacts.pointsTotal); assert.equal(persisted.factsHash, hashFacts(targetFacts)); assert.equal(closed, "ACCEPTED");
 });
 
 test("foreign and conflicting suggestion references degrade without inserting a proposal", async () => {

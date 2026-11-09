@@ -51,7 +51,7 @@ export function createLeadFlow(deps: FlowDeps) {
   }
   async function factsFor(callerId: string | undefined, projectId: string) { return callerId ? deps.facts.caller(callerId, projectId) : deps.facts.target(projectId); }
   async function createDigest(caller: { userId: string; role: "DEV_LEAD" }, projectId: string) {
-    const facts = await factsFor(caller.userId, projectId); const factsHash = hashFacts(facts);
+    const facts = await deps.facts.target(projectId); const factsHash = hashFacts(facts);
     const cached = await deps.db.projectDigest.findFirst({ where: { projectId, factsHash, degraded: false }, orderBy: { createdAt: "desc" } });
     if (cached) return { ...cached, cached: true, proposalId: cached.proposalId ?? null };
     let sessionId: string | null = null;
@@ -80,7 +80,8 @@ export function createLeadFlow(deps: FlowDeps) {
     async latestDigest(caller: Caller, projectId: string) {
       if (deps.requireMember) await deps.requireMember(caller.userId, projectId);
       else if (!(await deps.db.projectMember?.findFirst?.({ where: { projectId, userId: caller.userId }, select: { userId: true } }))) throw new Error("NOT_MEMBER");
-      const rows = await deps.db.projectDigest.findMany({ where: { projectId }, orderBy: [{ createdAt: "desc" }, { id: "desc" }] });
+      // JSON facts.asOf is not indexable in the current schema; bound the candidate read, then apply the full tie-break order.
+      const rows = await deps.db.projectDigest.findMany({ where: { projectId }, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 100 });
       rows.sort((a: any, b: any) => String(b.facts?.asOf ?? "").localeCompare(String(a.facts?.asOf ?? "")) || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() || String(b.id).localeCompare(String(a.id)));
       const row = rows[0]; return row ? { ...row, cached: false } : null;
     },

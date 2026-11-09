@@ -38,7 +38,7 @@ export function createCoreComposition(auth: Pick<AuthRuntime, "db" | "lookupUser
     return targetRole ? { ...resolved, targetRole } : resolved;
   };
   const leadRuntime = () => {
-    try { return getLeadRuntime(); } catch (error) {
+    try { return getLeadRuntime(db as never); } catch (error) {
       if (!(error instanceof Error) || error.message !== "LEAD_RUNTIME_NOT_INITIALIZED") throw error;
       return initLeadRuntime(db as never);
     }
