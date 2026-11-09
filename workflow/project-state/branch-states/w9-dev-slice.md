@@ -7,15 +7,15 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w9-dev-slice (from `INT` at `dc3447f`)
 - **Base:** 3519ff0
 - **Owner:** ludannnn (Developer member)
-- **Status:** Draft
+- **Status:** In review
 - **Approved:** —
-- **Last updated:** 2026-11-09 by Claude Opus 5.5 — merged `development` (W5, W4 sign-in); spec amended, re-approval pending
+- **Last updated:** 2026-11-09 by Claude Opus 5.5 — all 10 tasks done, close-out review fixed, Gate 3 asked
 
 **Untouched:** Architecture, Conventions, Deviations
 
 ---
 
-**Scope.** W9 Developer upload, summaries and standup, backend only: endpoints 49-52 and 55 (architecture §9.4), the `src/be/dev` package, the `dev.activityItems` and `dev.itemSummaries` context sources, the DEV_SUMMARY and DEV_STANDUP mocks, and the dev resource resolvers. The S20 and S18 screen wiring is a follow-up (C~1). W5 (PR #23) is open: the spec is written now, while building waits for W5 to merge (C~4).
+**Scope.** W9 Developer upload, summaries and standup, backend only: endpoints 49-52 and 55 (architecture §9.4), the `src/be/dev` package, the `dev.activityItems` and `dev.itemSummaries` context sources, the DEV_SUMMARY and DEV_STANDUP mocks, and the dev resource resolvers. The S20 and S18 screen wiring is a follow-up (C~1). Built on `development` after W5 (PR #23) merged.
 
 ---
 
@@ -25,7 +25,6 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S2 | 2026-11-09 | Claude Opus 5.5 (lead) | W9 | Active | Executing the W9 plan, orchestrator; waves 1-5 done | Wave 6: T10 (Postgres integration), then close-out | 2026-11-09 |
 
 **Remaining**
 
@@ -36,7 +35,13 @@ describes `INT`; read it for context and write here instead of editing it.
 - [ ] **Handover:** to the Dev Lead (W5): W9 adds an export of `lockProjectForMutation` to `src/be/core/src/index.ts` (C~8); its no-op `version: { increment: 0 }` update bumps `projects.updated_at` (`@updatedAt`) on every task, checkpoint, membership and now W9 write. When member removal (endpoint 11) and project archive are built, they must update the project row (`lockProjectForMutation`) so they serialise with W9's writes; W9's seam reads membership through core's `requireMember`, which does not take the transaction.
 - [ ] **Handover:** contracts.md rows 50 and 51 list fewer errors than W9 returns (`RATE_LIMITED`, `AI_DISABLED`, 422 for `BLOCKED_INPUT`, 404, 409); add them as a clarification (they follow architecture §8 and the W3 handover).
 - [ ] **Handover:** tell W17 that `CACHE_HIT` rows now exist for DEV_SUMMARY and DEV_STANDUP (spec SD13); summary hits have a null `session_id`.
-- [ ] **Handover:** S20 (Upload and standup) and S18 (Team standups) wiring to the live API is a Medium follow-up spec (C~1); the browser must cut bodies over 2000 characters instead of rejecting them (spec SD on truncation).
+- [ ] **Handover:** S20 (Upload and standup) and S18 (Team standups) wiring to the live API is a Medium follow-up spec (C~1); the browser must cut bodies over 2000 characters instead of rejecting them (spec SD4), send `{}` (not an empty body) to endpoint 51, and render summaries and standup lines as plain text only.
+- [x] Build T1-T10 and close-out: plan lint `--closeout` clean; typecheck, lint, `prisma:validate` green; `npm test` 808/808 (0 skipped, Postgres ran) + fe 149/149; audit passes at high; whole-branch code review (high) with two fixes (`e2e1e00`).
+- [ ] Gate 3: branch review by the owner (asked 2026-11-09).
+- [ ] Push and open the PR into `development` (separate question after Gate 3).
+- [ ] **Handover:** to the W4 owner (this owner): the 413 counter moved to `src/be/api/src/body-limit.ts`; `auth.ts` keeps 4,096 bytes. To the W1 owners: `RouteDefinition.bodyLimitBytes` (plan P1) reads the body after authorisation; endpoints 49 (1 MiB), 50 and 51 (16 KiB) use it.
+- [ ] **Handover:** test follow-ups (two-round limit): poll `pg_locks` instead of a 300 ms wait in the E47 lock test, and await the pending write before cleanup on failure (`src/be/dev/test/dev-integration.test.ts`).
+- [ ] **Handover:** guide out of date: the dev package (`src/be/dev`), endpoints 49-52 and 55, the gateway additions (`openOrReuse`, `recordCacheHit`), `RouteDefinition.bodyLimitBytes`, and the Postgres integration tests.
 
 ---
 
@@ -44,7 +49,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W9 | Developer upload, summaries, standup | Building | [spec](../../specs/2026-11-08-w9-dev-slice-design.md) (approved 2026-11-08, amended 2026-11-09) | [plan](../../plans/2026-11-09-w9-dev-slice/plan.md) (approved 2026-11-09) | Wave 6/6: T10 next; T1-T9 done | — |
+| W9 | Developer upload, summaries, standup | In review | [spec](../../specs/2026-11-08-w9-dev-slice-design.md) (approved 2026-11-08, amended 2026-11-09) | [plan](../../plans/2026-11-09-w9-dev-slice/plan.md) (approved 2026-11-09) | T1-T10 done; close-out done; Gate 3 asked | — |
 
 ---
 
@@ -79,6 +84,8 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-09 | Wave 5 check: typecheck green, `npm test` 786/786 (0 skipped) + fe 149/149 | W9 | wave 5 |
 | 2026-11-09 | T10 done: 18 Postgres integration tests (atomic upload, idempotency, E20/E34 with a rendezvous so both calls pass the cache read, E61 exactly one created, E48 stale hash, deterministic E47 archive races for 49/50/51 with a lock gate, foreign-item summary insert, 500-item scan cap, upper-case project id through the full API, 5-writer retry budget); 18/18 on five runs; no product defects. Full review round 1 found the sleep-based E47 could not fail without the lock (fixed); round 2: the lock-held test fails if the lock or the recheck is removed. Deviations (none needed): E47-50 archives inside the stub model call (filtered reads hide archived projects); ordering proven by the archive settling after the gate release. Follow-ups (two-round limit): poll `pg_locks` instead of a 300 ms wait in the lock test, await the pending write before cleanup on failure. Rejected: a separate recheck test (unit-tested in `writable.test.ts`), member removal mid-transaction (no removal path yet; Dev Lead handover) | W9 | `127daca` |
 | 2026-11-09 | P6 measured: 5 concurrent uploads to one project → 2 fail with a serialization error (P2034/40001) on every run, no partial writes; they surface as 500 | W9 | `127daca` |
+| 2026-11-09 | Close-out checks: typecheck, lint, `prisma:validate` green; `npm test` 804/804 (0 skipped) + fe 149/149; audit passes at high (8 moderate, pre-existing; this branch only adds the `@agile/dev` workspace link to the lockfile); plan lint `--closeout` clean | W9 | `f975ca5` |
+| 2026-11-09 | Close-out code review (high, whole branch): 10 findings. Fixing: preview tier makes 50/51 return 500 (session proxy throws AI_NOT_CONFIGURED; map to 503 AI_DISABLED), and a failing usage row on a standup cache hit fails the request (swallow it, like summaries). Recorded, not fixed: summary session opened before assembly (spec order; self-only cap use), dev resolvers ignore the authorization tx (production supplies none, spec § 4.6), a body-less POST to 51 is 400 (same as every bodySchema route; the S20 follow-up must send `{}`), and maintainability nits (limit declared twice per route, repeated helpers and CacheHitInput copy, second core instance in dev-composition, N+1 reads in openOrReuse, repeated id dedupe, duplicated window body) | W9 | close-out |
 
 ---
 
@@ -86,7 +93,9 @@ describes `INT`; read it for context and write here instead of editing it.
 
 - **Upload storage is unbounded** — endpoint 49 has no per-user rate limit or row cap and activity items are never deleted; spend is bounded by the session caps and AI windows, storage is not.
 - **A regeneration or summary retry can spend a session without storing anything** — `regenerate` counts before `run`, so a busy or refused standup call uses one of the five regenerations and stores nothing.
-- **Concurrent W9 writes to one project can exhaust the transaction retries** — writes queue on the project-row lock and each waiter is retried after a serialization error; `inMutationTransaction` allows 3 attempts, so four or more simultaneous uploads, summary inserts or standup writes on one project can return 500 (plan P6).
+- **Concurrent W9 writes to one project can exhaust the transaction retries** — writes queue on the project-row lock and each waiter is retried after a serialization error; `inMutationTransaction` allows 3 attempts, so four or more simultaneous uploads, summary inserts or standup writes on one project can return 500 (plan P6). Measured on Postgres: 5 concurrent uploads → 2 fail with a serialization error on every run, no partial writes.
+- **An oversize `Content-Length` gets 413 before authentication** — endpoints 49-51 check the header (only the header; no body is read) before the token, so an unauthenticated client sees 413 instead of 401.
+- **A summary session is opened before context assembly** — if assembly fails (membership removed, a source error), the opened DEV_SUMMARY session stays OPEN and counts toward the caller's own caps.
 - **A Developer on four or more projects can hit the 3-open DEV_STANDUP cap** — W9 leaves standup sessions open for W16's edit and accept (53, 54), so a fourth standup within 30 minutes gets 429 `RATE_LIMITED`.
 
 ---
