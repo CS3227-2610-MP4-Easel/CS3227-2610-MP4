@@ -56,16 +56,18 @@ export function createLeadFlow(deps: FlowDeps) {
     if (cached) return { ...cached, cached: true, proposalId: cached.proposalId ?? null };
     let sessionId: string | null = null;
     try { sessionId = await deps.binding.sessions.open({ feature: "LEAD_DIGEST", userId: caller.userId, projectId }); } catch { const saved = await persist(projectId, caller.userId, facts, factsHash, null, null, false, true); return { ...degraded(facts, saved.digest.id), id: saved.digest.id, projectId }; }
-    let output: DigestOutput | null = null; let flagged = false;
+    let output: DigestOutput | null = null; let flagged = false; let persistSessionId: string | null = sessionId;
     try {
       const assembled = await context.assembleWith(caller, "LEAD_DIGEST", projectId, {});
       const result = await deps.binding.gateway.run({ feature: "LEAD_DIGEST", caller, sessionId, projectId, sections: [...LEAD_STATIC_SECTIONS, ...assembled.sections], output: { kind: "json", schema: DigestOutputSchema }, inputHash: factsHash });
-      if (result.ok) { const parsed = DigestOutputSchema.safeParse(result.value); if (parsed.success && await validOutput(parsed.data, facts, projectId)) { output = parsed.data; flagged = result.flagged; } }
-    } catch { /* failure is represented by the degraded digest below */ }
+      flagged = Boolean((result as { flagged?: unknown }).flagged);
+      if (!result.ok && !(result as { callId?: unknown }).callId) persistSessionId = null;
+      if (result.ok) { const parsed = DigestOutputSchema.safeParse(result.value); if (parsed.success && await validOutput(parsed.data, facts, projectId)) output = parsed.data; }
+    } catch { persistSessionId = null; /* failure is represented by the degraded digest below */ }
     let saved: Awaited<ReturnType<typeof persist>>;
     let outcome: "ACCEPTED" | "REJECTED" = "REJECTED";
     try {
-      saved = await persist(projectId, caller.userId, facts, factsHash, output, sessionId, flagged, !output);
+      saved = await persist(projectId, caller.userId, facts, factsHash, output, persistSessionId, flagged, !output);
       outcome = output ? "ACCEPTED" : "REJECTED";
     } finally {
       await deps.binding.sessions.close(sessionId, outcome, caller.userId);

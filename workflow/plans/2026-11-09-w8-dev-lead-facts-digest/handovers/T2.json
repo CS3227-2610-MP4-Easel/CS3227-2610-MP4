@@ -1,7 +1,7 @@
 {
   "task": "T2",
   "status": "done",
-  "summary": "Repaired latest ordering and authorization, closed suggestion/reference validation, W3 output safety, session-finalization, and transaction rollback coverage.",
+  "summary": "Repaired gateway flagged propagation, session-id persistence semantics, real calendar dates, cache retry/hit behavior, and regression coverage.",
   "commit": "pending",
   "produces": [
     { "kind": "symbol", "name": "getLeadRuntime", "where": "src/be/lead/src/runtime.ts", "note": "Lead runtime access after initLeadRuntime." },
@@ -14,5 +14,5 @@
     { "what": "The lead integration test uses an executable deterministic transaction fixture rather than a real database fixture.", "why": "The repository provides no lead persistence integration fixture, and Prisma/schema changes are outside T2; no test is skipped.", "needs": "none" }
   ],
   "edge_cases": ["E9", "E12", "E17", "E19", "E22", "E24", "E27", "E29", "E30"],
-  "checks": { "build": "pass", "tests": "587 total, 559 pass, 28 skipped, 0 fail", "lint": "pass", "contract": "7 pass" }
+  "checks": { "build": "pass", "tests": "590 total, 562 pass, 28 skipped, 0 fail", "lint": "pass", "contract": "7 pass" }
 }
