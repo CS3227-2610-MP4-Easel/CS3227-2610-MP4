@@ -44,7 +44,7 @@ only your own task's files. Contract tests marked read-only are not edited.
 |---|---|---|---|---|---|---|---|
 | T1 Shared additions: date window, body limits, lock export | `tasks/T1.md` | - | T2 | 1 | standard | full | Done |
 | T2 Gateway: `openOrReuse` and `recordCacheHit` | `tasks/T2.md` | - | T1 | 1 | standard | full | Done |
-| T3 Dev package, gateway binding, write seam | `tasks/T3.md` | T1, T2 | - | 2 | standard | full | Not started |
+| T3 Dev package, gateway binding, write seam | `tasks/T3.md` | T1, T2 | - | 2 | standard | full | Done |
 | T4 AI definitions: prompts, schemas, mocks, hashes, errors | `tasks/T4.md` | T3 | T5, T6 | 3 | standard | full | Not started |
 | T5 Upload store (49) | `tasks/T5.md` | T1, T3 | T4, T6 | 3 | complex | full | Not started |
 | T6 Summary and standup store, sources, resolvers | `tasks/T6.md` | T3 | T4, T5 | 3 | complex | full | Not started |

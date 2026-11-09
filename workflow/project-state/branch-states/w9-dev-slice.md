@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S2 | 2026-11-09 | Claude Opus 5.5 (lead) | W9 | Active | Executing the W9 plan (`executing-plans-lite-v2`), orchestrator; wave 1 done | Dispatch T3 (wave 2) | 2026-11-09 |
+| S2 | 2026-11-09 | Claude Opus 5.5 (lead) | W9 | Active | Executing the W9 plan (`executing-plans-lite-v2`), orchestrator; waves 1-2 done | Dispatch wave 3 (T4, T5, T6) | 2026-11-09 |
 
 **Remaining**
 
@@ -33,7 +33,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] Check PR #23 fixes 3 and 4 against the spec (2026-11-09): fix 3 matches; fix 4 shipped `inMutationTransaction`, so § 4.6 and SD16 are amended (C~7).
 - [x] Re-approval of the 2026-11-09 spec amendments (§ 4.1, § 4.6, F8, SD11, SD16): approved by ludannnn on 2026-11-09.
 - [x] Gate 2: W9 plan approved by ludannnn on 2026-11-09 (10 tasks, 6 waves, full review each).
-- [ ] **Handover:** to the Dev Lead (W5): W9 adds an export of `lockProjectForMutation` to `src/be/core/src/index.ts` (C~8); its no-op `version: { increment: 0 }` update bumps `projects.updated_at` (`@updatedAt`) on every task, checkpoint, membership and now W9 write.
+- [ ] **Handover:** to the Dev Lead (W5): W9 adds an export of `lockProjectForMutation` to `src/be/core/src/index.ts` (C~8); its no-op `version: { increment: 0 }` update bumps `projects.updated_at` (`@updatedAt`) on every task, checkpoint, membership and now W9 write. When member removal (endpoint 11) and project archive are built, they must update the project row (`lockProjectForMutation`) so they serialise with W9's writes; W9's seam reads membership through core's `requireMember`, which does not take the transaction.
 - [ ] **Handover:** contracts.md rows 50 and 51 list fewer errors than W9 returns (`RATE_LIMITED`, `AI_DISABLED`, 422 for `BLOCKED_INPUT`, 404, 409); add them as a clarification (they follow architecture §8 and the W3 handover).
 - [ ] **Handover:** tell W17 that `CACHE_HIT` rows now exist for DEV_SUMMARY and DEV_STANDUP (spec SD13); summary hits have a null `session_id`.
 - [ ] **Handover:** S20 (Upload and standup) and S18 (Team standups) wiring to the live API is a Medium follow-up spec (C~1); the browser must cut bodies over 2000 characters instead of rejecting them (spec SD on truncation).
@@ -44,7 +44,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W9 | Developer upload, summaries, standup | Building | [spec](../../specs/2026-11-08-w9-dev-slice-design.md) (approved 2026-11-08, amended 2026-11-09) | [plan](../../plans/2026-11-09-w9-dev-slice/plan.md) (approved 2026-11-09) | Wave 2/6: T3 next; T1, T2 done | — |
+| W9 | Developer upload, summaries, standup | Building | [spec](../../specs/2026-11-08-w9-dev-slice-design.md) (approved 2026-11-08, amended 2026-11-09) | [plan](../../plans/2026-11-09-w9-dev-slice/plan.md) (approved 2026-11-09) | Wave 3/6: T4, T5, T6 next; T1-T3 done | — |
 
 ---
 
@@ -62,6 +62,8 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-09 | T1 done: `standupActivityWindowFor` (contracts now re-exports `date-rules.js`), `body-limit.ts` (auth.ts uses it), `RouteDefinition.bodyLimitBytes` read after authorization, `lockProjectForMutation` exported. Full review: no blocking; round 1 fixed content type checked before the limited read, BOM stripped (TextDecoder), header-path, `bodyTooLarge` and route 413/400/422 tests; round 2 approved. Rejected nits: invisible BOM literal in a test, extra rollback assertions, stream-cancel memory test, Mon-Thu loop for E23 | W9 | `7e008d9` |
 | 2026-11-09 | T2 done: `GatewaySessions.openOrReuse` (newest usable OPEN session for user, feature, project and tier, else `open`), `recordCacheHit`/`createCacheHits` (one `CACHE_HIT` row; validates ids, role and hex hashes; a non-null session must belong to the caller, tier and feature). Full review round 1 fixed: catch only NOT_FOUND/CONFLICT_STATE, `projectId ?? null`, session ownership and input validation, API key no longer captured by the cache-hit writer, non-DB reuse tests, cap/ordering/preview/limiter tests; round 2 approved. Rejected: tie `recordCacheHit`'s `projectId` to the session's (W9 callers pass the authorised path project and the session opened for it; recorded for T7/T8), recording on closed sessions (harmless), preview Proxy `then` trap, three test nits; concurrent `openOrReuse` race (soft-cap Known Gap), no rate limit on cache-hit rows (routes sit behind the AI windows), reuse just under the idle cutoff, absolute session age | W9 | `9ec8195` |
 | 2026-11-09 | Wave 1 check: typecheck green, `npm test` 592/592 (0 skipped) + fe 149/149, plan lint clean | W9 | wave 1 |
+| 2026-11-09 | T3 done: `@agile/dev` package (wired into api), `gateway-binding.ts`, `inDevWrite`/`assertDevWriteAllowed` (W5 lock, P2025→CONFLICT_STATE, then ACTIVE check, then membership). Full review: no blocking; round 1 tightened the seam tests (rethrow identity, NOT_FOUND branch, missing project, rollback/attempt counts, lock target). Rejected: passing `tx` to `requireMember` (frozen `Core`; no member-removal or archive path exists yet, handover), NOT_FOUND vs CONFLICT_STATE probing (spec: archived beats non-member; middleware 404s non-members first), lock before authorisation (same as W5), `registerMockResponse` in the binding (spec § 4.1; read only in mock mode) | W9 | `324da17` |
+| 2026-11-09 | Wave 2 check: typecheck green, `npm test` 602/602 (0 skipped) + fe 149/149 | W9 | wave 2 |
 
 ---
 

@@ -2,7 +2,7 @@
   "task": "T3",
   "status": "done",
   "summary": "Added @agile/dev package, the gateway binding and the inDevWrite/assertDevWriteAllowed write seam; wired into api.",
-  "commit": "HEAD",
+  "commit": "324da17",
   "produces": [
     { "kind": "other", "name": "@agile/dev", "where": "src/be/dev", "note": "workspace package, wired into src/be/api package.json and tsconfig" },
     { "kind": "file", "name": "gateway-binding.ts", "where": "src/be/dev/src/gateway-binding.ts", "note": "re-exports getLlmGateway, getSessions, sanitiseInput, checkOutput, GUARD_VERSION, recordCacheHit, registerMockResponse, SessionCapReached; types CacheHitInput, GatewaySessions" },
