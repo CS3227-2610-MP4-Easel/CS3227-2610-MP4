@@ -3,9 +3,11 @@
 // Screens call these and nothing else. Linking the backend replaces the bodies with calls to /api
 // through the contracts client; the signatures stay. Fixtures are used only inside this folder.
 import { read, write } from './store';
-import type { Checkpoint, Epic, Member, Sprint, Standup, Task, TaskStatus } from './types';
+import { call, LIVE_PROJECT_ID, LiveError } from './live';
+import type { Checkpoint, Epic, Member, PlanApproved, PlanEpic, PlanProposal, Sprint, Standup, Task, TaskStatus } from './types';
 
 export { useDb, reset as resetPrototypeData } from './store';
+export { isLive, ModeProvider } from './mode';
 export * from './types';
 
 const wait = (ms = 250) => new Promise((r) => setTimeout(r, ms));
@@ -15,6 +17,27 @@ export class ApiError extends Error {
     super(message);
   }
 }
+
+// Plan flow, live only (LLM_MODE=live, see ./mode). Calls go to /api; failures become ApiError with the server's message.
+const live = async <T,>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<T> => {
+  try {
+    return await call<T>(method, path, body);
+  } catch (e) {
+    if (e instanceof LiveError) throw new ApiError(e.code, e.message);
+    throw new ApiError('NETWORK', 'Could not reach the server. Try again.');
+  }
+};
+
+// 34: draft a plan from an idea
+export const createPlan_34 = (idea: string) => live<PlanProposal>('POST', `/pm/projects/${LIVE_PROJECT_ID}/plans`, { idea });
+// 35: read a proposal
+export const getProposal_35 = (id: string) => live<PlanProposal>('GET', `/pm/proposals/${id}`);
+// 37: expand one epic into tasks
+export const expandEpic_37 = (id: string, index: number) => live<PlanEpic>('POST', `/pm/proposals/${id}/epics/${index}/expand`, {});
+// 40: approve; creates the checkpoints, epics and tasks
+export const approvePlan_40 = (id: string, version: number) => live<PlanApproved>('POST', `/pm/proposals/${id}/approve`, { version });
+// 41: reject
+export const rejectPlan_41 = (id: string, version: number) => live<PlanProposal>('POST', `/pm/proposals/${id}/reject`, { version });
 
 // 8: archive the project
 export async function archiveProject_8(): Promise<void> {

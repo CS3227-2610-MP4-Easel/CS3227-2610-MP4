@@ -29,6 +29,23 @@ export type Suggestion = { id: string; text: string; state: 'PENDING' | 'APPLIED
 export type TeamStandup = { date: string; person: Person; yesterday: string[]; today: string[]; blockers: string[]; outcome: 'GENERATED' | 'EDITED' | 'ACCEPTED'; activityOnly: boolean; flagged: boolean };
 export type AiSession = { id: string; feature: string; startedAt: string; outcome: 'Accepted' | 'Rejected' | 'Open'; regens: number; feedback: 'up' | 'down' | null; calls: number; prompt: number; completion: number; cost: number; elapsed: number };
 
+// Plan proposal (endpoints 34 to 41); mirrors PlanProposalSchema in @agile/contracts.
+export type PlanTask = { title: string; description: string; acceptanceCriteria: string[]; storyPoints: number | null };
+export type PlanEpic = { index: number; title: string; description: string; checkpointName: string | null; contentHash: string; expansion: { status: 'PENDING' | 'IN_PROGRESS' | 'DONE' | 'FAILED'; tasks: PlanTask[] | null; error: string | null } };
+export type PlanProposal = {
+  id: string;
+  projectId: string;
+  kind: 'PLAN';
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUPERSEDED';
+  approach: string;
+  checkpoints: { name: string; targetDate: string }[];
+  epics: PlanEpic[];
+  retrieved: { source: string; projectId: string; projectName: string; id: string; title: string }[];
+  flagged: boolean;
+  version: number;
+};
+export type PlanApproved = { proposalId: string; status: 'APPROVED'; created: { checkpoints: number; epics: number; tasks: number } };
+
 export type Db = {
   project: Project;
   epics: Epic[];
