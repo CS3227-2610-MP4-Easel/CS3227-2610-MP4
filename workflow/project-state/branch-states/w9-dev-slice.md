@@ -25,14 +25,14 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S2 | 2026-11-09 | Claude Opus 5.5 (lead) | W9 | Active | Writing the W9 plan (`writing-plans-lite-v2`) | Finish the plan folder `workflow/plans/2026-11-09-w9-dev-slice/`, lint, review, ask Gate 2 | 2026-11-09 |
+| S2 | 2026-11-09 | Claude Opus 5.5 (lead) | W9 | Active | Executing the W9 plan (`executing-plans-lite-v2`), orchestrator | Dispatch wave 1 (T1, T2) | 2026-11-09 |
 
 **Remaining**
 
 - [x] Gate 1: W9 spec approved by ludannnn on 2026-11-08 (one review round, four lenses).
 - [x] Check PR #23 fixes 3 and 4 against the spec (2026-11-09): fix 3 matches; fix 4 shipped `inMutationTransaction`, so § 4.6 and SD16 are amended (C~7).
 - [x] Re-approval of the 2026-11-09 spec amendments (§ 4.1, § 4.6, F8, SD11, SD16): approved by ludannnn on 2026-11-09.
-- [ ] Gate 2: W9 plan.
+- [x] Gate 2: W9 plan approved by ludannnn on 2026-11-09 (10 tasks, 6 waves, full review each).
 - [ ] **Handover:** to the Dev Lead (W5): W9 adds an export of `lockProjectForMutation` to `src/be/core/src/index.ts` (C~8); its no-op `version: { increment: 0 }` update bumps `projects.updated_at` (`@updatedAt`) on every task, checkpoint, membership and now W9 write.
 - [ ] **Handover:** contracts.md rows 50 and 51 list fewer errors than W9 returns (`RATE_LIMITED`, `AI_DISABLED`, 422 for `BLOCKED_INPUT`, 404, 409); add them as a clarification (they follow architecture §8 and the W3 handover).
 - [ ] **Handover:** tell W17 that `CACHE_HIT` rows now exist for DEV_SUMMARY and DEV_STANDUP (spec SD13); summary hits have a null `session_id`.
@@ -44,7 +44,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W9 | Developer upload, summaries, standup | Spec'd | [spec](../../specs/2026-11-08-w9-dev-slice-design.md) (approved 2026-11-08) | — | Spec amended after W5 merge (C~7), re-approved 2026-11-09; plan in progress | — |
+| W9 | Developer upload, summaries, standup | Building | [spec](../../specs/2026-11-08-w9-dev-slice-design.md) (approved 2026-11-08, amended 2026-11-09) | [plan](../../plans/2026-11-09-w9-dev-slice/plan.md) (approved 2026-11-09) | Wave 1/6: T1, T2 | — |
 
 ---
 
@@ -55,7 +55,9 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Branch state created; W9 spec written, reviewed (four lenses) and approved | W9 | `6148492` |
 | 2026-11-09 | Merged `development` at `3519ff0` (W5 PR #23, W4 sign-in PR #25), no conflicts; Base moved | W9 | `6334f78` |
 | 2026-11-09 | Spec checked against W5's merged code and amended: writes run in `inMutationTransaction` with W9's own `FOR SHARE` lock (SD16); wiring is two lines in `app.ts` (SD11); F8's boot test also covers the core sources; W7 runtime reference dropped (C~7) | W9 | `365f001` |
-| 2026-11-09 | Plan path check found the filtered client drops raw SQL, so the `FOR SHARE` lock cannot run; SD16 and § 4.6 amended to W5's exported `lockProjectForMutation` (C~8, L~1) | W9 | this commit |
+| 2026-11-09 | Plan path check found the filtered client drops raw SQL, so the `FOR SHARE` lock cannot run; SD16 and § 4.6 amended to W5's exported `lockProjectForMutation` (C~8, L~1) | W9 | `ebdb865` |
+| 2026-11-09 | Plan drafted: 10 tasks in 6 waves, all full review; plan-level choices P1 (`RouteDefinition.bodyLimitBytes`, since handlers get no raw `Request`), P2 (any-integer `n` so E65 holds), P3 (ISO timestamp in the item hash), P4 (summary cache-hit hash); lint clean | W9 | plan folder |
+| 2026-11-09 | Plan review round 1 (Implementer lens): 1 blocking (`AI_BUSY` details must be the envelope's `{ field, message }[]`, P5), 6 should-fix (same-wave execution rule, registry resets in tests, E44 assertion, stale task references, upsert is not native so the lock is the guarantee (P6), retry-safe `mutate`), 7 nits; all applied; lint clean | W9 | plan folder |
 
 ---
 
@@ -63,6 +65,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 - **Upload storage is unbounded** — endpoint 49 has no per-user rate limit or row cap and activity items are never deleted; spend is bounded by the session caps and AI windows, storage is not.
 - **A regeneration or summary retry can spend a session without storing anything** — `regenerate` counts before `run`, so a busy or refused standup call uses one of the five regenerations and stores nothing.
+- **Concurrent W9 writes to one project can exhaust the transaction retries** — writes queue on the project-row lock and each waiter is retried after a serialization error; `inMutationTransaction` allows 3 attempts, so four or more simultaneous uploads, summary inserts or standup writes on one project can return 500 (plan P6).
 - **A Developer on four or more projects can hit the 3-open DEV_STANDUP cap** — W9 leaves standup sessions open for W16's edit and accept (53, 54), so a fourth standup within 30 minutes gets 429 `RATE_LIMITED`.
 
 ---
