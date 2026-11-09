@@ -2,7 +2,7 @@
   "task": "T1",
   "status": "done",
   "summary": "Added standupActivityWindowFor, shared body-limit helpers (auth.ts uses them), RouteDefinition.bodyLimitBytes read after authorization, and the core lock export.",
-  "commit": "c254e63 plus review fix (HEAD of the T1 fix commit)",
+  "commit": "7e008d9",
   "produces": [
     { "kind": "symbol", "name": "standupActivityWindowFor(date: string, now: Date): { from: Date; to: Date }", "where": "src/be/contracts/src/date-rules.ts, exported from @agile/contracts", "note": "from = 00:00 SGT of last Mon-Fri day before date; to = now; from >= to means empty" },
     { "kind": "symbol", "name": "contentLengthTooLarge(request, maxBytes): boolean", "where": "src/be/api/src/body-limit.ts", "note": "never reads the body" },

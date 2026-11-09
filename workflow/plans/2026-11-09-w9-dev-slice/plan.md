@@ -42,8 +42,8 @@ only your own task's files. Contract tests marked read-only are not edited.
 ## Task order
 | Task | File | Depends on | Concurrent with | Wave | Weight | Review | Status |
 |---|---|---|---|---|---|---|---|
-| T1 Shared additions: date window, body limits, lock export | `tasks/T1.md` | - | T2 | 1 | standard | full | Not started |
-| T2 Gateway: `openOrReuse` and `recordCacheHit` | `tasks/T2.md` | - | T1 | 1 | standard | full | Not started |
+| T1 Shared additions: date window, body limits, lock export | `tasks/T1.md` | - | T2 | 1 | standard | full | Done |
+| T2 Gateway: `openOrReuse` and `recordCacheHit` | `tasks/T2.md` | - | T1 | 1 | standard | full | Done |
 | T3 Dev package, gateway binding, write seam | `tasks/T3.md` | T1, T2 | - | 2 | standard | full | Not started |
 | T4 AI definitions: prompts, schemas, mocks, hashes, errors | `tasks/T4.md` | T3 | T5, T6 | 3 | standard | full | Not started |
 | T5 Upload store (49) | `tasks/T5.md` | T1, T3 | T4, T6 | 3 | complex | full | Not started |

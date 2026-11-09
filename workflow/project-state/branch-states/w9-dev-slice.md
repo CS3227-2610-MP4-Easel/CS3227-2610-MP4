@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S2 | 2026-11-09 | Claude Opus 5.5 (lead) | W9 | Active | Executing the W9 plan (`executing-plans-lite-v2`), orchestrator | Dispatch wave 1 (T1, T2) | 2026-11-09 |
+| S2 | 2026-11-09 | Claude Opus 5.5 (lead) | W9 | Active | Executing the W9 plan (`executing-plans-lite-v2`), orchestrator; wave 1 done | Dispatch T3 (wave 2) | 2026-11-09 |
 
 **Remaining**
 
@@ -44,7 +44,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W9 | Developer upload, summaries, standup | Building | [spec](../../specs/2026-11-08-w9-dev-slice-design.md) (approved 2026-11-08, amended 2026-11-09) | [plan](../../plans/2026-11-09-w9-dev-slice/plan.md) (approved 2026-11-09) | Wave 1/6: T1, T2 | — |
+| W9 | Developer upload, summaries, standup | Building | [spec](../../specs/2026-11-08-w9-dev-slice-design.md) (approved 2026-11-08, amended 2026-11-09) | [plan](../../plans/2026-11-09-w9-dev-slice/plan.md) (approved 2026-11-09) | Wave 2/6: T3 next; T1, T2 done | — |
 
 ---
 
@@ -58,6 +58,10 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-09 | Plan path check found the filtered client drops raw SQL, so the `FOR SHARE` lock cannot run; SD16 and § 4.6 amended to W5's exported `lockProjectForMutation` (C~8, L~1) | W9 | `ebdb865` |
 | 2026-11-09 | Plan drafted: 10 tasks in 6 waves, all full review; plan-level choices P1 (`RouteDefinition.bodyLimitBytes`, since handlers get no raw `Request`), P2 (any-integer `n` so E65 holds), P3 (ISO timestamp in the item hash), P4 (summary cache-hit hash); lint clean | W9 | plan folder |
 | 2026-11-09 | Plan review round 1 (Implementer lens): 1 blocking (`AI_BUSY` details must be the envelope's `{ field, message }[]`, P5), 6 should-fix (same-wave execution rule, registry resets in tests, E44 assertion, stale task references, upsert is not native so the lock is the guarantee (P6), retry-safe `mutate`), 7 nits; all applied; lint clean | W9 | plan folder |
+| 2026-11-09 | Plan approved at Gate 2; baseline before T1: typecheck green, `npm test` 562/562 (Postgres ran, 0 skipped) + fe 149/149. Wave 1 run one task after another in the main checkout (branch unpushed, so worktrees from the remote base would miss it) | W9 | `a15242f` |
+| 2026-11-09 | T1 done: `standupActivityWindowFor` (contracts now re-exports `date-rules.js`), `body-limit.ts` (auth.ts uses it), `RouteDefinition.bodyLimitBytes` read after authorization, `lockProjectForMutation` exported. Full review: no blocking; round 1 fixed content type checked before the limited read, BOM stripped (TextDecoder), header-path, `bodyTooLarge` and route 413/400/422 tests; round 2 approved. Rejected nits: invisible BOM literal in a test, extra rollback assertions, stream-cancel memory test, Mon-Thu loop for E23 | W9 | `7e008d9` |
+| 2026-11-09 | T2 done: `GatewaySessions.openOrReuse` (newest usable OPEN session for user, feature, project and tier, else `open`), `recordCacheHit`/`createCacheHits` (one `CACHE_HIT` row; validates ids, role and hex hashes; a non-null session must belong to the caller, tier and feature). Full review round 1 fixed: catch only NOT_FOUND/CONFLICT_STATE, `projectId ?? null`, session ownership and input validation, API key no longer captured by the cache-hit writer, non-DB reuse tests, cap/ordering/preview/limiter tests; round 2 approved. Rejected: tie `recordCacheHit`'s `projectId` to the session's (W9 callers pass the authorised path project and the session opened for it; recorded for T7/T8), recording on closed sessions (harmless), preview Proxy `then` trap, three test nits; concurrent `openOrReuse` race (soft-cap Known Gap), no rate limit on cache-hit rows (routes sit behind the AI windows), reuse just under the idle cutoff, absolute session age | W9 | `9ec8195` |
+| 2026-11-09 | Wave 1 check: typecheck green, `npm test` 592/592 (0 skipped) + fe 149/149, plan lint clean | W9 | wave 1 |
 
 ---
 
