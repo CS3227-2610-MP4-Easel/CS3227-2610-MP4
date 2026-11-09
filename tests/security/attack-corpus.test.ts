@@ -31,6 +31,17 @@ test("markdown-link corpus cases invoke the production output guard", async () =
   }
 });
 
+test("W11 network deny blocks DNS promises and socket connections", { skip: process.env.W11_NETWORK_DENY_INSTALLED !== "1" }, async () => {
+  await assert.rejects(() => import("node:dns/promises"), /W11_FORBIDDEN_NETWORK_OR_PROCESS/);
+  const net = await import("node:net");
+  const socket = new net.Socket();
+  try {
+    assert.throws(() => socket.connect({ host: "127.0.0.1", port: 9 }), /W11_FORBIDDEN_NETWORK_OR_PROCESS/);
+  } finally {
+    socket.destroy();
+  }
+});
+
 test("E13 registration replay uses the existing auth route and has no side effect", async () => {
   const rows: Array<{ id: string; firebaseUid: string; email: string; displayName: string; role: "DEVELOPER" }> = [];
   const db = { user: { create: async ({ data }: { data: typeof rows[number] }) => {

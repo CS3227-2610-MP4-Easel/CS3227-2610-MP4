@@ -1,16 +1,26 @@
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { tmpdir } from "node:os";
 import { test } from "node:test";
 
 const routesDir = join(process.cwd(), "src/be/api/src/routes");
-const routeFiles = readdirSync(routesDir).filter((file) => file.endsWith(".ts")).sort();
-const sources = routeFiles.map((file) => ({ file, source: readFileSync(join(routesDir, file), "utf8") }));
+export const readRouteSources = (directory: string) => readdirSync(directory).filter((file) => file.endsWith(".ts")).sort().map((file) => ({ file, source: readFileSync(join(directory, file), "utf8") }));
+const sources = readRouteSources(routesDir);
 const handlerSources = sources.filter(({ file }) => file !== "register.ts" && file !== "index.ts" && file !== "health.ts");
 
 test("W11 scans exactly the route-handler source set", () => {
-  assert.deepEqual(routeFiles, ["auth.ts", "checkpoints.ts", "health.ts", "index.ts", "planning.ts", "projects.ts", "register.ts"]);
   assert.ok(sources.every(({ file, source }) => file === "index.ts" || source.includes("operationId") || source.includes("policyKey") || source.includes("registerRoute") || source.includes("policyForRoute")));
+});
+
+test("W11 discovers a new route file without an allow-list update", () => {
+  const directory = mkdtempSync(join(tmpdir(), "w11-routes-"));
+  try {
+    writeFileSync(join(directory, "sprints.ts"), "export const operationId = 'SPRINT_LIST';");
+    assert.deepEqual(readRouteSources(directory).map(({ file }) => file), ["sprints.ts"]);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 });
 
 test("W11 route handlers contain no direct role or policy authorization", () => {

@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** Dev Lead
 - **Status:** In review
 - **Approved:** — (project owner only)
-- **Last updated:** 2026-11-09 by Codex — fixed PR #27 workspace CI loader compatibility and reran the full suite
+- **Last updated:** 2026-11-10 by Codex — resolved network-deny and route-file review blockers
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -69,6 +69,7 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-09 | Fixed E22 worker execution across Node 20/22 by bundling the TypeScript runner with esbuild before starting the isolated worker and resolving its corpus from the workspace root; exact workspace launcher passes locally | W11 | 8c88f3a |
 | 2026-11-09 | Resolved review blockers by routing markdown, context, registration-code, limiter, and replay corpus cases through production seams; aligned schema/spec and declared esbuild directly | W11 | uncommitted |
 | 2026-11-09 | Fixed the dedicated deny-all command so the real rate-limit IP parser may import `node:net` while connect/createConnection remain blocked; full verification passes | W11 | uncommitted |
+| 2026-11-10 | Closed the network deny gaps for DNS promises and socket instances, allowed the platform temp directory for the TypeScript loader, and made route-source discovery accept new `.ts` route files | W11 | uncommitted |
 
 ## 4. Decisions
 
@@ -87,7 +88,11 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-09 | Resolved deviation | Initial T1-E2 expectation required arbitrary canary/tag removal not provided by the frozen guard; operator approved a spec/task/manifest amendment to test PII redaction and injection flagging instead | None |
 | 2026-11-09 | Review deviation | Initial corpus runner duplicated markdown, context, and auth decisions instead of exercising production seams; review required seam calls and an approved contract alignment | None |
 | 2026-11-09 | Review deviation | The deny harness initially blocked a pure `node:net` import required by the real rate-limit seam; it now permits parsing and blocks network calls | None |
+| 2026-11-10 | Resolved review deviation | The deny harness omitted `node:dns/promises` and `Socket.prototype.connect`; both are now blocked and covered by a dedicated regression test. The route scan no longer uses a filename allow-list and has new-route coverage. | None |
 
 ## 6. Remaining / Handover
 
 Gate 3: approved by operator. PR [#27](https://github.com/CS3227-2610-MP4-Easel/CS3227-2610-MP4/pull/27) is open against `development`; no merge has been performed.
+
+Review follow-up resolved: the network deny covers DNS promises and socket connections, and
+route-source discovery accepts newly added TypeScript route files.
