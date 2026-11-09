@@ -2,7 +2,7 @@
   "task": "T2",
   "status": "done",
   "summary": "Corrected T2 with the existing createUser seam, release-aware limiter/session adapters, ESM deny hooks, strict output/log assertions, and worker-enforced timing.",
-  "commit": "3501a4123d3206edcc79e43937c47c267802f790",
+  "commit": "0c59cc01f3abf546bb951206246ace587a72cd95",
   "produces": [
     {"kind":"file","name":"runner.ts","where":"tests/security/attack-corpus/runner.ts","note":"Loads T1 corpus, dispatches closed fixture kinds, captures logs, and evaluates machine-checkable criteria."},
     {"kind":"file","name":"w11-network-deny.setup.ts","where":"tests/security/w11-network-deny.setup.ts","note":"Installs fetch, network/process module, and filesystem-write deny tripwires before runner imports."},
