@@ -46,7 +46,7 @@ only your own task's files. Contract tests marked read-only are not edited.
 | T3 Proposals: add and delete epic | `tasks/T3.md` | T2, T4 | - | 3 | complex | full | Done |
 | T4 Proposals: regenerate claim, store flag, pre-check | `tasks/T4.md` | T2 | - | 2 | complex | full | Done |
 | T7 pm: plan flow additions and runtime binding | `tasks/T7.md` | T2, T3, T4, T5, T6 | - | 4 | complex | full | Done |
-| T8 API: routes, composition, route and end-to-end tests | `tasks/T8.md` | T1, T7 | - | 5 | complex | full | Not started |
+| T8 API: routes, composition, route and end-to-end tests | `tasks/T8.md` | T1, T7 | - | 5 | complex | full | Done |
 
 Bundles: none. Same-wave tasks share no file: T1 touches contracts and docs; T2 `proposals/src/{errors,edit-common,edit-store,index}.ts` and `test/edit-helpers.ts`; T5 `decide.ts`; T6 `view.ts` (exports unchanged at every commit); T4 `expand-store.ts` runs before T3 `epic-list.ts` and `index.ts` so claim allocation and deletion share the watermark contract.
 
@@ -130,9 +130,9 @@ Threat coverage (spec § 6): ownership (IDOR) E4; stale or replayed requests E1,
 
 ## Close-out
 Run by the orchestrator (no task file):
-- [ ] `lint.mjs plan <plan.md> --closeout` has no errors; every Done task has a valid handover.
+- [x] `lint.mjs plan <plan.md> --closeout` has no errors; every Done task has a valid handover.
 - [ ] `npm run typecheck`, `npm run lint`, `npm run contract`, `npm test` green (integration tests run with `W1_INTEGRATION_DATABASE_URL` set); each F/N has a passing test or a recorded manual check; every E and T row is covered (N4).
-- [ ] Code review of the branch diff (`code-review` skill); confirmed findings fixed or recorded as Deviations.
-- [ ] Branch state: workstream `In review`, session rows removed, Changes lines, Handover (other owners' sign-off on endpoints 58-60 and the changed responses of 38 and 39; `docs/architecture` text that says 57 endpoints; the UI reminder of SD10; creator-only edits versus member-wide approve), `guide out of date: pm, proposals, contracts`.
+- [x] Code review of the branch diff (`code-review` skill); confirmed findings fixed or recorded as Deviations.
+- [x] Branch state: workstream `In review`, session rows removed, Changes lines, Handover (other owners' sign-off on endpoints 58-60 and the changed responses of 38 and 39; `docs/architecture` text that says 57 endpoints; the UI reminder of SD10; creator-only edits versus member-wide approve), `guide out of date: pm, proposals, contracts`.
 - [ ] Ask the operator to review the branch (`AGENTS.md` § 8, gate 3); `Approved` only on their yes;
       never push, open a PR or merge before it.

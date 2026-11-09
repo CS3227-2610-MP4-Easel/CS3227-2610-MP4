@@ -1,12 +1,12 @@
 # W7b close-out coverage audit
 
-Audit of test assertions, 2026-11-09. A listed test is evidence for the row, not a claim every subcase is covered. Previous full discover run: 713 pass, 8 fail, 0 skipped; E57 passed alone but timed out twice under load. Its test isolation was improved in c6fae04; a new full-suite run is in progress. **N4 awaits the full-suite result.**
+Audit of test assertions, 2026-11-09. A listed test is evidence for the row, not a claim every subcase is covered. Final full discover run: 721 pass, 7 fail, 0 skipped; E57 passed after fixture isolation (c6fae04). The seven failures are recorded in branch state D~10.
 
 ## Requirements
 
 | ID | Evidence | Status |
 |---|---|---|
-| F1 | edit-store.test.ts, epic-list.test.ts, regenerate-store.test.ts, plan-flow.test.ts | Coverage added; E57 awaiting full-suite rerun |
+| F1 | edit-store.test.ts, epic-list.test.ts, regenerate-store.test.ts, plan-flow.test.ts | Coverage added; E57 passed in full-suite rerun |
 | F2 | edit-store.test.ts | Covered: chain, empty-list and date-only cases added |
 | F3 | edit-store.test.ts, pm-edit-schemas.test.ts, pm-edit-routes.test.ts | Covered: completed and expired expansion cases added |
 | F4 | epic-list.test.ts, pm-edit-e2e.test.ts | Covered |
@@ -15,9 +15,9 @@ Audit of test assertions, 2026-11-09. A listed test is evidence for the row, not
 | F7 | decide.test.ts, pm-edit-e2e.test.ts | Covered: regeneration-only approval tested |
 | F8 | edit-store.test.ts, pm-edit-e2e.test.ts | Thirty varied edit sequences and maximum-size plan approved through HTTP |
 | N1 | plan-flow.test.ts (E38/E39 and N1) | Covered |
-| N2 | edit-store.test.ts (E57/E58) | E57 isolation improved; awaiting full-suite rerun |
+| N2 | edit-store.test.ts (E57/E58) | E57 passed in full-suite rerun |
 | N3 | list.test.ts (N3 query count) | Covered |
-| N4 | E/T mapping below | Awaiting full-suite results |
+| N4 | E/T mapping below | Mapping audited; full suite has unrelated failures (D~10) |
 
 ## Edge cases
 
@@ -79,7 +79,7 @@ Audit of test assertions, 2026-11-09. A listed test is evidence for the row, not
 | E54 | pm-edit-e2e.test.ts, decide.test.ts | Named coverage; no gap identified in this audit |
 | E55 | decide.test.ts, plan-flow.test.ts | Actual regeneration followed by approval closes the session ACCEPTED. |
 | E56 | decide.test.ts | Named coverage; no gap identified in this audit |
-| E57 | decide.test.ts, edit-store.test.ts | Both lock orders tested; holder isolation and transaction timeout improved after earlier suite timeouts. Full-suite rerun pending. |
+| E57 | decide.test.ts, edit-store.test.ts | Both lock orders tested; holder isolation and transaction timeout improved after earlier suite timeouts. Full-suite rerun passed this test. |
 | E58 | edit-store.test.ts, epic-list.test.ts | Named coverage; no gap identified in this audit |
 | E59 | pm-edit-e2e.test.ts, edit-store.test.ts | Thirty seeded HTTP sequences vary title, checkpoint, add and delete edits and replace all tasks before approval; the maximum-size plan also approves over HTTP. |
 | E60 | edit-store.test.ts, epic-list.test.ts, regenerate-store.test.ts | Named coverage; no gap identified in this audit |
@@ -90,7 +90,7 @@ Audit of test assertions, 2026-11-09. A listed test is evidence for the row, not
 |---|---|---|
 | T1 | E4 | Covered |
 | T2 | E1, E2, E42 | Covered; stale requests checked over HTTP |
-| T3 | E57 | Test isolation improved; full-suite rerun pending |
+| T3 | E57 | Test isolation improved; full-suite rerun passed |
 | T4 | E28, E29, E35, E37 | Covered |
 | T5 | E9 | Covered |
 | T6 | E39, E42 | Covered: stale/capped calls preserve persisted counts |
