@@ -8,6 +8,16 @@ const code = (p: Promise<unknown>) => p.then(() => "OK", (e: unknown) => e insta
 const tasks = [{title:"old",description:"",acceptanceCriteria:[],storyPoints:1 as const}];
 const replacement = [{title:"new",description:"",acceptanceCriteria:[],storyPoints:2 as const}];
 
+test("W7b E1 claim checks supplied proposal version in both modes", opts, async () => {
+ await withIntegrationDb(async (base, f) => {
+  const { db, proposalId, pm } = await seed(base, f);
+  for (const mode of ["EXPAND", "REGENERATE"] as const) {
+   assert.equal(await code(claimEpic(db, { proposalId, index: 0, actorId: pm, mode, expectedProposalVersion: 2 })), "CONFLICT_VERSION");
+  }
+  assert.equal((await claimEpic(db, { proposalId, index: 0, actorId: pm })).kind, "CLAIMED");
+ });
+});
+
 test("W7b E38 E41 E42 E43 regenerate preserves tasks, stores and guards claims", opts, async () => {
  await withIntegrationDb(async (base,f) => { const {db,proposalId,pm,sessionId}=await seed(base,f);
  const initial=await claimEpic(db,{proposalId,index:0,actorId:pm}); if(initial.kind!=="CLAIMED") throw Error("claim");

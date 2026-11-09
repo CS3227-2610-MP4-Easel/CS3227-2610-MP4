@@ -171,6 +171,30 @@ test("W7b E45 simultaneous regenerations admit one model call and reject a stale
   assert.equal((await h.base.aiSession.findUniqueOrThrow({ where: { id: h.runs[0].sessionId } })).regenerateCount, 1);
 }));
 
+test("W7b E1 deletion between precheck and pending claim rejects the stale request", opts, withHarness({}, async (h) => {
+  const a = await h.actor();
+  const plan = await create(h, a);
+  const precheck = h.proposals.precheckRegenerate;
+  let release!: () => void; let entered!: () => void;
+  const gate = new Promise<void>((r) => { release = r; });
+  const inside = new Promise<void>((r) => { entered = r; });
+  h.proposals.precheckRegenerate = async (input) => {
+    const result = await precheck(input);
+    entered();
+    await gate;
+    return result;
+  };
+  const calls = h.runs.length;
+  const regenerate = h.flow.regenerateEpic({ caller: a.caller, proposalId: plan.id, index: 1, version: plan.version });
+  try {
+    await inside;
+    await h.flow.deleteEpic({ caller: a.caller, proposalId: plan.id, index: 0, version: plan.version });
+  } finally { release(); }
+  assert.equal((await flowError(regenerate)).code, "CONFLICT_VERSION");
+  assert.equal(h.runs.length, calls);
+  assert.equal((await epicRow(h, plan.id, 1)).expansionStatus, "PENDING");
+}));
+
 test("W7b E29 N1 edits and listing do not call the model; a moved failed claim becomes conflict", opts, withHarness({}, async (h) => {
   const a = await h.actor();
   let plan = await create(h, a);

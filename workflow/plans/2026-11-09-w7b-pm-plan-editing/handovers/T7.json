@@ -4,10 +4,38 @@
   "summary": "Added PM edit, list and regeneration flows with shared model handling and runtime bindings.",
   "commit": "pending",
   "produces": [
-    { "kind": "symbol", "name": "PlanFlow.editEpic, replaceCheckpoints, addEpic, deleteEpic, regenerateEpic, listProposals", "where": "src/be/pm/src/plan-flow.ts", "note": "All take caller and return proposal or page; validation maps to 422 and cap to 429." }
+    {
+      "kind": "symbol",
+      "name": "PlanFlow.editEpic, replaceCheckpoints, addEpic, deleteEpic, regenerateEpic, listProposals",
+      "where": "src/be/pm/src/plan-flow.ts",
+      "note": "All take caller and return proposal or page; validation maps to 422 and cap to 429."
+    }
   ],
   "next": "T8 calls each method with caller { userId, role: PM }; addEpic returns 201, other successes 200. PlanFlowError maps validation details and retry seconds.",
-  "deviations": [],
-  "edge_cases": ["E1", "E3", "E29", "E38", "E39", "E40", "E41", "E42", "E43", "E44", "E45", "E47"],
-  "checks": { "build": "pass", "tests": "49 PM tests passed serially, 0 failed, 0 skipped; 4 enhanced focused tests passed afterward", "lint": "handover lint pass; full lint not run" }
+  "deviations": [
+    {
+      "why": "A deletion between precheck and claim could shift the target (D~8)",
+      "needs": "none",
+      "what": "Versioned regeneration claims now recheck the version in both modes"
+    }
+  ],
+  "edge_cases": [
+    "E1",
+    "E3",
+    "E29",
+    "E38",
+    "E39",
+    "E40",
+    "E41",
+    "E42",
+    "E43",
+    "E44",
+    "E45",
+    "E47"
+  ],
+  "checks": {
+    "build": "pass",
+    "tests": "31 affected flow and store tests passed serially, 0 failed, 0 skipped; previous full PM suite 49 passed",
+    "lint": "handover lint pass; full lint not run"
+  }
 }

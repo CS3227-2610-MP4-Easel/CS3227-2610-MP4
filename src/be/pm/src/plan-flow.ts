@@ -237,7 +237,7 @@ export function createPlanFlow(deps: PlanFlowDeps) {
       }
     }
     let claim: ClaimResult;
-    try { claim = await proposals.claimEpic({ proposalId, index, actorId: caller.userId, now: clock.now(), mode: precheck.status === "DONE" ? "REGENERATE" : "EXPAND", expectedProposalVersion: precheck.status === "DONE" ? version : undefined }); } catch (e) { return mapProposalError(e); }
+    try { claim = await proposals.claimEpic({ proposalId, index, actorId: caller.userId, now: clock.now(), mode: precheck.status === "DONE" ? "REGENERATE" : "EXPAND", expectedProposalVersion: version }); } catch (e) { return mapProposalError(e); }
     if (claim.kind === "CLAIMED") await expandClaim(i, claim, precheck.status === "DONE");
     return getProposal({ caller, proposalId });
   }

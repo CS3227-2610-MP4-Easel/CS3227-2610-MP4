@@ -17,7 +17,7 @@ export async function claimEpic(db: FilteredDbClient, input: { proposalId: strin
   return db.$transaction(async (tx) => {
     const proposal = await lockProposal(tx, input.proposalId);
     if (!proposal || proposal.createdBy !== input.actorId) throw new ProposalError("NOT_FOUND");
-    if (input.mode === "REGENERATE" && input.expectedProposalVersion !== undefined && proposal.version !== input.expectedProposalVersion) throw new ProposalError("CONFLICT_VERSION");
+    if (input.expectedProposalVersion !== undefined && proposal.version !== input.expectedProposalVersion) throw new ProposalError("CONFLICT_VERSION");
     const count = await tx.proposalEpic.count({ where: { proposalId: input.proposalId } });
     if (!Number.isInteger(input.index) || input.index < 0 || input.index >= count) throw new ProposalError("NOT_FOUND");
     if (proposal.status !== "PENDING") throw new ProposalError("CONFLICT_STATE");
