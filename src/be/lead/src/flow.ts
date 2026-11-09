@@ -4,12 +4,14 @@ import { hashFacts } from "./hash.js";
 import { DigestOutputSchema, type DigestOutput } from "./schemas.js";
 import { LEAD_STATIC_SECTIONS } from "./sections.js";
 import type { LeadGatewayBinding } from "./gateway-binding.js";
+import type { Digest } from "@agile/contracts";
 
 type Db = any;
 type FactService = { target(projectId: string): Promise<Facts>; caller(callerId: string, projectId: string): Promise<Facts> };
 type Caller = { userId: string; role: "DEV_LEAD" };
 type FlowDeps = { db: Db; facts: FactService; binding: LeadGatewayBinding; context?: AiContextWith; now?: () => Date; requireMember?: (userId: string, projectId: string) => Promise<void> };
 const degraded = (facts: Facts, id?: string, flagged = false) => ({ id: id ?? "", projectId: "", facts, explanation: null, degraded: true, flagged, proposalId: null, cached: false, createdAt: new Date().toISOString() });
+const publicDigest = (digest: any, cached: boolean): Digest => ({ id: digest.id, projectId: digest.projectId, facts: digest.facts, explanation: digest.explanation ?? null, degraded: digest.degraded, flagged: digest.flagged, proposalId: digest.proposalId ?? null, cached, createdAt: digest.createdAt instanceof Date ? digest.createdAt.toISOString() : String(digest.createdAt) });
 
 export function createLeadFlow(deps: FlowDeps) {
   const context = deps.context ?? getAiContext(); const now = deps.now ?? (() => new Date());
@@ -53,7 +55,7 @@ export function createLeadFlow(deps: FlowDeps) {
   async function createDigest(caller: { userId: string; role: "DEV_LEAD" }, projectId: string) {
     const facts = await deps.facts.target(projectId); const factsHash = hashFacts(facts);
     const cached = await deps.db.projectDigest.findFirst({ where: { projectId, factsHash, degraded: false }, orderBy: { createdAt: "desc" } });
-    if (cached) return { ...cached, cached: true, proposalId: cached.proposalId ?? null };
+    if (cached) return publicDigest(cached, true);
     let sessionId: string | null = null;
     try { sessionId = await deps.binding.sessions.open({ feature: "LEAD_DIGEST", userId: caller.userId, projectId }); } catch { const saved = await persist(projectId, caller.userId, facts, factsHash, null, null, false, true); return { ...degraded(facts, saved.digest.id), id: saved.digest.id, projectId }; }
     let output: DigestOutput | null = null; let flagged = false; let persistSessionId: string | null = sessionId;
@@ -72,7 +74,7 @@ export function createLeadFlow(deps: FlowDeps) {
     } finally {
       await deps.binding.sessions.close(sessionId, outcome, caller.userId);
     }
-    return output ? { ...saved.digest, id: saved.digest.id, projectId, facts, explanation: output.explanation, degraded: false, flagged, proposalId: saved.proposalId, cached: false, createdAt: saved.digest.createdAt.toISOString?.() ?? String(saved.digest.createdAt) } : { ...degraded(facts, saved.digest.id, flagged), id: saved.digest.id, projectId };
+    return output ? publicDigest({ ...saved.digest, projectId, facts, explanation: output.explanation, degraded: false, flagged, proposalId: saved.proposalId }, false) : { ...degraded(facts, saved.digest.id, flagged), id: saved.digest.id, projectId };
   }
   return {
     facts: (projectId: string, callerId?: string) => callerId ? deps.facts.caller(callerId, projectId) : deps.facts.target(projectId),
@@ -83,7 +85,7 @@ export function createLeadFlow(deps: FlowDeps) {
       // JSON facts.asOf is not indexable in the current schema; read candidates, then apply the full tie-break order.
       const rows = await deps.db.projectDigest.findMany({ where: { projectId }, orderBy: [{ createdAt: "desc" }, { id: "desc" }] });
       rows.sort((a: any, b: any) => String(b.facts?.asOf ?? "").localeCompare(String(a.facts?.asOf ?? "")) || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() || String(b.id).localeCompare(String(a.id)));
-      const row = rows[0]; return row ? { ...row, cached: false } : null;
+      const row = rows[0]; return row ? publicDigest(row, false) : null;
     },
   };
 }

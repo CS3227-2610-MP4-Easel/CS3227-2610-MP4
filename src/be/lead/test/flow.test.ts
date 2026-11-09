@@ -23,6 +23,16 @@ test("degraded same-hash rows retry while healthy same-hash rows hit cache", asy
   assert.equal((await healthy.createDigest({ userId: U, role: "DEV_LEAD" }, P)).cached, true);
 });
 
+test("cached and latest digests expose only public DigestSchema fields", async () => {
+  const persisted = { id: "d", projectId: P, facts, factsHash: "private-hash", sessionId: "private-session", explanation: null, degraded: false, flagged: false, proposalId: null, createdAt: new Date("2026-11-09T00:00:00.000Z") };
+  const cachedFlow = createLeadFlow({ db: { projectDigest: { findFirst: async () => persisted } }, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => { throw new Error("unused"); } }, sessions: { open: async () => "unused", close: async () => {} } } });
+  const cached = await cachedFlow.createDigest({ userId: U, role: "DEV_LEAD" }, P);
+  const latestFlow = createLeadFlow({ db: { projectMember: { findFirst: async () => ({ userId: U }) }, projectDigest: { findMany: async () => [persisted] } }, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => { throw new Error("unused"); } }, sessions: { open: async () => "unused", close: async () => {} } }, requireMember: async () => {} });
+  const latest = await latestFlow.latestDigest({ userId: U, role: "DEV_LEAD" }, P);
+  assert.deepEqual(Object.keys(cached).sort(), ["cached", "createdAt", "degraded", "explanation", "facts", "flagged", "id", "projectId", "proposalId"]);
+  assert.deepEqual(Object.keys(latest ?? {}).sort(), ["cached", "createdAt", "degraded", "explanation", "facts", "flagged", "id", "projectId", "proposalId"]);
+});
+
 test("flagged invalid output is persisted as flagged degraded with its admitted session", async () => {
   let persisted: any; let closed = "";
   const db = { projectDigest: { findFirst: async () => null }, task: { findMany: async () => [] }, $transaction: async (fn: (tx: any) => Promise<unknown>) => fn({ projectDigest: { create: async ({ data }: any) => { persisted = data; return { id: "d", createdAt: new Date() }; } } }) };

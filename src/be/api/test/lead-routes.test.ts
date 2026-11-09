@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { createApiApp } from "../src/app.js";
 import { createAppDependencies } from "../src/deps.js";
 import { createLeadRoutes } from "../src/routes/lead.js";
-import { DigestSchema, FactsSchema } from "@agile/contracts";
+import { DigestSchema } from "@agile/contracts";
 
 const projectId = "00000000-0000-4000-8000-000000000001";
 const facts = { asOf: "2026-11-09T00:00:00.000Z", pointsTotal: 0, pointsDone: 0, pointsRemaining: 0, unestimatedTasks: 0, velocity: [], avgVelocity: null, projectedCompletionDate: null, checkpoints: [], overload: [] };
@@ -17,15 +17,22 @@ const auth = (role: "PM" | "DEV_LEAD" | "DEVELOPER" = "DEV_LEAD") => ({
 });
 const routes = (runtime: any) => createLeadRoutes({ runtime: () => runtime });
 
-test("endpoint 42 returns caller-member facts and endpoint 45 forces cached false", async () => {
-  const runtime = { facts: async (_id: string, callerId?: string) => { assert.equal(callerId, "00000000-0000-4000-8000-000000000003"); return facts; }, createDigest: async () => digest, latestDigest: async () => ({ ...digest, cached: true }) };
+test("endpoint 42 returns target-only facts without invoking caller-wide facts", async () => {
+  let callerFactsCalls = 0;
+  const targetFacts = { ...facts, pointsTotal: 8 };
+  const runtime = {
+    facts: async (_id: string, callerId?: string) => {
+      if (callerId) { callerFactsCalls += 1; return { ...facts, pointsTotal: 999 }; }
+      return targetFacts;
+    },
+    createDigest: async () => digest,
+    latestDigest: async () => ({ ...digest, cached: true }),
+  };
   const app = createApiApp(createAppDependencies(auth(), { resolveResource: async () => ({ kind: "PROJECT", projectId, state: "ACTIVE" }), requireMember: async () => {} }), routes(runtime));
   const factsResponse = await app.request(`http://localhost/api/projects/${projectId}/facts`, { headers: { authorization: "Bearer token" } });
-  const latestResponse = await app.request(`http://localhost/api/lead/projects/${projectId}/digests/latest`, { headers: { authorization: "Bearer token" } });
   assert.equal(factsResponse.status, 200);
-  assert.equal(FactsSchema.safeParse(await factsResponse.json()).success, true);
-  assert.equal(latestResponse.status, 200);
-  assert.equal((await latestResponse.json()).cached, false);
+  assert.deepEqual(await factsResponse.json(), targetFacts);
+  assert.equal(callerFactsCalls, 0);
 });
 
 test("endpoint 44 accepts only JSON {} and maps typed AI_BUSY with Retry-After", async () => {

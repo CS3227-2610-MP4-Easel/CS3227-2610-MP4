@@ -7,9 +7,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w8-dev-lead-facts-digest (from `INT` at `b95546f`)
 - **Base:** b95546f
 - **Owner:** project operator
-- **Status:** In review
+- **Status:** Building
 - **Approved:** Gate 1 spec, Gate 2 plan, and Gate 3 branch review — project operator, 2026-11-09
-- **Last updated:** 2026-11-09 by Codex — operator authorized auth/parser compatibility correction
+- **Last updated:** 2026-11-09 by Codex — operator authorized PM-scope and digest-response blocker fixes
 
 **Untouched:** Architecture, Conventions, Known Gaps, Decisions, Deviations
 
@@ -32,6 +32,9 @@ sources, and their guarded gateway integration.
 | S4 | 2026-11-09 | Codex (orchestrator) | W8 | Active | T1 complete bounded aggregation repair | Validate handover and repeat Wave 1 review | 2026-11-09 |
 | S5 | 2026-11-09 | Codex (orchestrator) | W8 | Active | T2 Context sources and digest flow (Wave 2) | Validate T2 handover; full review and wave check | 2026-11-09 |
 | S6 | 2026-11-09 | Codex (orchestrator) | W8 | Paused | Two post-review lead digest blockers fixed and verified | Owner review of commit | 2026-11-09 |
+| S7 | 2026-11-09 | Codex (orchestrator) | W8 | Paused | Fresh T2 tester-lens review of 0003ed6..9d53fa3 | Owner fixes the two reported blockers, then reruns the focused and full tests | 2026-11-09 |
+| S8 | 2026-11-09 | Codex (orchestrator) | W8 | Blocked — needs human | Latest digest requires indexed persisted ordering | Approve a ProjectDigest factsAsOf migration, or choose a different durable latest-pointer design | 2026-11-09 |
+| S9 | 2026-11-09 | Codex (orchestrator) | W8 | Active | Fixes verified; preparing W8 blocker commit | Update branch state, commit, and hand off hash | 2026-11-09 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human` (name the question).
 
@@ -47,7 +50,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human` (name the ques
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W8 | Dev Lead facts and digest | In review | [spec](../../specs/2026-11-09-w8-dev-lead-facts-digest-design.md) (approved 2026-11-09) | [plan](../../plans/2026-11-09-w8-dev-lead-facts-digest/plan.md) (approved 2026-11-09) | Auth/parser compatibility correction complete; verification passed | lead API routes; guide update after merge |
+| W8 | Dev Lead facts and digest | Building | [spec](../../specs/2026-11-09-w8-dev-lead-facts-digest-design.md) (approved 2026-11-09) | [plan](../../plans/2026-11-09-w8-dev-lead-facts-digest/plan.md) (approved 2026-11-09) | PM facts scope and public digest response fixes in progress; schema decision remains separate | lead API routes; guide update after merge |
 
 ## 3. Changes
 
@@ -65,6 +68,7 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-09 | Preserved auth parser 400 mappings and made strict 415/422 body parsing opt-in for W8 lead routes; focused and full verification passed | W8 | pending task commit |
 | 2026-11-09 | Started post-review blocker repair: latest digest selection and admitted-session degraded close semantics | W8 | this commit |
 | 2026-11-09 | Added regressions and minimal fixes for complete latest-digest selection and gateway-exception session persistence | W8 | this commit |
+| 2026-11-09 | Added red regressions and minimal fixes so endpoint 42 uses target-only facts and cached/latest digests expose only public fields | W8 | pending task commit |
 
 ## 4. Deviations
 
@@ -76,6 +80,7 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-09 | Operator chose complete aggregation with bounded concurrency and incremental pagination; no silent omission or new response behavior | W8 | pending follow-up commit |
 | D~4 | No real lead database fixture exists for transaction/concurrency integration tests. | Deterministic transaction fixtures cover control flow, but Prisma rollback/schema/concurrent visibility remain unverified locally. | Carry as a close-out deviation; add a database-backed fixture when the repository integration database is available. |
 | D~5 | W8 changed the shared JSON parser to return 415/422 for lead-route semantics, while existing auth tests expect 400. | Four auth-route assertions fail; the behavior change is a cross-route compatibility issue, not an unrelated failure. | Resolved 2026-11-09: parser defaults to auth's legacy 400 mappings; W8 lead routes explicitly opt into 415/422. |
+| D~6 | Latest-digest correctness requires durable ordering by `facts.asOf`, but JSON facts are not indexable in the current schema and bounded createdAt candidates can be wrong. | Endpoint 45 currently scans all project digests; fixing this correctly requires a `factsAsOf` scalar/index or equivalent latest pointer, outside the approved no-migration scope. | Operator decision required before implementation. |
 
 ## 5. Close-out evidence
 
