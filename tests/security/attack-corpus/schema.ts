@@ -35,13 +35,18 @@ export type Fixture = InputTextFixture | OutputTextFixture | OutputJsonFixture |
 export type Criterion =
   | { type: "REDACTED"; field: string; absent: string[]; flagged: boolean }
   | { type: "ABSENT"; field: string; absent: string[] }
-  | { type: "REJECTED"; status: number; code: string; reason: string }
-  | { type: "HTTP_ERROR"; status: number; code: string; headers?: Record<string, string> }
+  | { type: "REJECTED"; status: 422; code: "SCHEMA_FAIL" | "REQUEST_REFUSED"; reason: OutputReason; noLoggedSecrets?: string[] }
+  | { type: "HTTP_ERROR"; status: 403 | 409 | 429; code: "REGISTRATION_CODE_INVALID" | "ALREADY_REGISTERED" | "RATE_LIMITED"; headers?: Record<string, string>; noLoggedSecrets?: string[] }
   | { type: "FLAGGED"; field: string; equals: boolean }
   | { type: "NO_LOGGED_SECRET"; forbidden: string[] }
-  | { type: "RATE_LIMITED"; status: 429; code: "RATE_LIMITED"; retryAfterSeconds: number }
+  | { type: "RATE_LIMITED"; status: 429; code: "RATE_LIMITED"; retryAfterSeconds: number; noLoggedSecrets?: string[] }
   | { type: "NO_EXECUTION"; forbiddenPrimitives: ("network" | "process" | "filesystem")[] }
   | { type: "TEXT_ONLY"; field: string; escaped: boolean };
+
+export type OutputReason = "REFUSAL" | "LINK" | "HTML" | "MARKDOWN_LINK" | "BOUNDARY" | "SECRET";
+const OUTPUT_REASONS = ["REFUSAL", "LINK", "HTML", "MARKDOWN_LINK", "BOUNDARY", "SECRET"] as const;
+const ERROR_CODES = ["REGISTRATION_CODE_INVALID", "ALREADY_REGISTERED", "RATE_LIMITED"] as const;
+const HTTP_STATUSES = [403, 409, 429] as const;
 
 export type CorpusCase = {
   id: string;
@@ -75,8 +80,8 @@ function object(value: unknown, path: string): Record<string, unknown> {
 function keys(value: Record<string, unknown>, allowed: readonly string[], path: string): void {
   const accepted = new Set(allowed);
   for (const key of Object.keys(value)) {
-    if (!accepted.has(key)) fail(`${path}.${key}`, "unknown field");
-    if ([...key].length > MAX_KEY) fail(`${path}.${key}`, `key exceeds ${MAX_KEY} characters`);
+    if (!accepted.has(key)) fail(path, "unknown field");
+    if ([...key].length > MAX_KEY) fail(path, "key exceeds maximum length");
   }
 }
 
@@ -91,6 +96,28 @@ function oneOf<T extends string>(value: unknown, values: readonly T[], path: str
   return value as T;
 }
 
+function integer(value: unknown, path: string, min: number, max: number): number {
+  if (!Number.isInteger(value) || Number(value) < min || Number(value) > max) fail(path, `must be an integer from ${min} to ${max}`);
+  return Number(value);
+}
+
+function boolean(value: unknown, path: string): boolean {
+  if (typeof value !== "boolean") fail(path, "expected boolean");
+  return value;
+}
+
+function stringArray(value: unknown, path: string): string[] {
+  if (!Array.isArray(value) || value.length > MAX_ARRAY) fail(path, `must contain at most ${MAX_ARRAY} strings`);
+  return value.map((item, index) => string(item, `${path}[${index}]`));
+}
+
+function stringMap(value: unknown, path: string): Record<string, string> {
+  const map = object(value, path);
+  keys(map, Object.keys(map), path);
+  for (const [key, item] of Object.entries(map)) string(item, `${path}.${key}`, 256);
+  return map as Record<string, string>;
+}
+
 function bounded(value: unknown, path: string, depth: number, seen: Set<unknown>): void {
   if (depth > MAX_DEPTH) fail(path, `nesting exceeds ${MAX_DEPTH}`);
   if (typeof value === "string") { string(value, path); return; }
@@ -103,7 +130,7 @@ function bounded(value: unknown, path: string, depth: number, seen: Set<unknown>
   } else {
     const record = value as Record<string, unknown>;
     keys(record, Object.keys(record), path);
-    for (const [key, item] of Object.entries(record)) bounded(item, `${path}.${key}`, depth + 1, seen);
+    for (const item of Object.values(record)) bounded(item, `${path}.<key>`, depth + 1, seen);
   }
   seen.delete(value);
 }
@@ -160,26 +187,78 @@ function validateCriterion(value: unknown, path: string): Criterion {
   const criterion = object(value, path);
   const type = oneOf(criterion.type, [...CRITERION_TYPES] as string[], `${path}.type`);
   switch (type) {
-    case "REDACTED": keys(criterion, ["type", "field", "absent", "flagged"], path); break;
-    case "ABSENT": keys(criterion, ["type", "field", "absent"], path); break;
-    case "REJECTED": keys(criterion, ["type", "status", "code", "reason"], path); break;
-    case "HTTP_ERROR": keys(criterion, ["type", "status", "code", "headers"], path); break;
-    case "FLAGGED": keys(criterion, ["type", "field", "equals"], path); break;
-    case "NO_LOGGED_SECRET": keys(criterion, ["type", "forbidden"], path); break;
-    case "RATE_LIMITED": keys(criterion, ["type", "status", "code", "retryAfterSeconds"], path); break;
-    case "NO_EXECUTION": keys(criterion, ["type", "forbiddenPrimitives"], path); break;
-    case "TEXT_ONLY": keys(criterion, ["type", "field", "escaped"], path); break;
+    case "REDACTED":
+      keys(criterion, ["type", "field", "absent", "flagged"], path);
+      string(criterion.field, `${path}.field`, 128);
+      stringArray(criterion.absent, `${path}.absent`);
+      boolean(criterion.flagged, `${path}.flagged`);
+      break;
+    case "ABSENT":
+      keys(criterion, ["type", "field", "absent"], path);
+      string(criterion.field, `${path}.field`, 128);
+      stringArray(criterion.absent, `${path}.absent`);
+      break;
+    case "REJECTED":
+      keys(criterion, ["type", "status", "code", "reason", "noLoggedSecrets"], path);
+      if (integer(criterion.status, `${path}.status`, 422, 422) !== 422) fail(`${path}.status`, "must be 422");
+      oneOf(criterion.code, ["SCHEMA_FAIL", "REQUEST_REFUSED"], `${path}.code`);
+      oneOf(criterion.reason, OUTPUT_REASONS, `${path}.reason`);
+      if (criterion.code === "REQUEST_REFUSED" && criterion.reason !== "REFUSAL") fail(path, "REQUEST_REFUSED requires REFUSAL");
+      if (criterion.code === "SCHEMA_FAIL" && criterion.reason === "REFUSAL") fail(path, "SCHEMA_FAIL cannot use REFUSAL");
+      if (criterion.noLoggedSecrets !== undefined) stringArray(criterion.noLoggedSecrets, `${path}.noLoggedSecrets`);
+      break;
+    case "HTTP_ERROR":
+      keys(criterion, ["type", "status", "code", "headers", "noLoggedSecrets"], path);
+      integer(criterion.status, `${path}.status`, 403, 429);
+      oneOf(criterion.code, ERROR_CODES, `${path}.code`);
+      if (criterion.status === 403 && criterion.code !== "REGISTRATION_CODE_INVALID") fail(path, "403 requires REGISTRATION_CODE_INVALID");
+      if (criterion.status === 409 && criterion.code !== "ALREADY_REGISTERED") fail(path, "409 requires ALREADY_REGISTERED");
+      if (criterion.status === 429 && criterion.code !== "RATE_LIMITED") fail(path, "429 requires RATE_LIMITED");
+      if (criterion.headers !== undefined) stringMap(criterion.headers, `${path}.headers`);
+      if (criterion.noLoggedSecrets !== undefined) stringArray(criterion.noLoggedSecrets, `${path}.noLoggedSecrets`);
+      break;
+    case "FLAGGED":
+      keys(criterion, ["type", "field", "equals"], path);
+      string(criterion.field, `${path}.field`, 128);
+      boolean(criterion.equals, `${path}.equals`);
+      break;
+    case "NO_LOGGED_SECRET":
+      keys(criterion, ["type", "forbidden"], path);
+      stringArray(criterion.forbidden, `${path}.forbidden`);
+      break;
+    case "RATE_LIMITED":
+      keys(criterion, ["type", "status", "code", "retryAfterSeconds", "noLoggedSecrets"], path);
+      if (integer(criterion.status, `${path}.status`, 429, 429) !== 429) fail(`${path}.status`, "must be 429");
+      if (criterion.code !== "RATE_LIMITED") fail(`${path}.code`, "must be RATE_LIMITED");
+      if (!Number.isInteger(criterion.retryAfterSeconds) || Number(criterion.retryAfterSeconds) <= 0) fail(`${path}.retryAfterSeconds`, "must be positive");
+      if (criterion.noLoggedSecrets !== undefined) stringArray(criterion.noLoggedSecrets, `${path}.noLoggedSecrets`);
+      break;
+    case "NO_EXECUTION":
+      keys(criterion, ["type", "forbiddenPrimitives"], path);
+      if (!Array.isArray(criterion.forbiddenPrimitives) || criterion.forbiddenPrimitives.length === 0 || criterion.forbiddenPrimitives.length > 3) fail(`${path}.forbiddenPrimitives`, "must contain 1 to 3 primitives");
+      criterion.forbiddenPrimitives.forEach((primitive, index) => oneOf(primitive, ["network", "process", "filesystem"], `${path}.forbiddenPrimitives[${index}]`));
+      break;
+    case "TEXT_ONLY":
+      keys(criterion, ["type", "field", "escaped"], path);
+      string(criterion.field, `${path}.field`, 128);
+      boolean(criterion.escaped, `${path}.escaped`);
+      break;
   }
   bounded(criterion, path, 0, new Set());
-  if (type === "RATE_LIMITED" && (!Number.isInteger(criterion.retryAfterSeconds) || Number(criterion.retryAfterSeconds) <= 0)) fail(`${path}.retryAfterSeconds`, "must be positive");
   return criterion as Criterion;
 }
 
 export function validateCorpus(value: unknown): CorpusCase[] {
   if (!Array.isArray(value)) fail("$", "manifest must be an array");
   if (value.length === 0) fail("$", "manifest must not be empty");
-  const serialized = JSON.stringify(value);
-  if (serialized.length > MAX_BYTES) fail("$", `serialized manifest exceeds ${MAX_BYTES} bytes`);
+  bounded(value, "$", 0, new Set());
+  let serialized: string;
+  try {
+    serialized = JSON.stringify(value);
+  } catch {
+    fail("$", "manifest is not safely serializable");
+  }
+  if (Buffer.byteLength(serialized, "utf8") > MAX_BYTES) fail("$", `serialized manifest exceeds ${MAX_BYTES} bytes`);
   const ids = new Set<string>();
   const threats = new Set<Threat>();
   const cases = value.map((item, index) => {
@@ -187,7 +266,7 @@ export function validateCorpus(value: unknown): CorpusCase[] {
     const record = object(item, path);
     keys(record, [...CASE_KEYS], path);
     const id = string(record.id, `${path}.id`, 128);
-    if (ids.has(id)) fail(`${path}.id`, `duplicate ID ${id}`);
+    if (ids.has(id)) fail(`${path}.id`, "duplicate ID");
     ids.add(id);
     const threat = oneOf(record.threat, THREATS, `${path}.threat`);
     threats.add(threat);

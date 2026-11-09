@@ -1,8 +1,8 @@
 {
   "task": "T1",
   "status": "done",
-  "summary": "Added a strict version-1 security corpus validator and 16 synthetic cases covering all T1-T11 threats.",
-  "commit": "956a389f43cf6bc7a5c3e75852bda8d8c6f031d9",
+  "summary": "Added log-absence criteria to both registration-code cases and hardened closed criterion validation, UTF-8 bounds, and safe diagnostics.",
+  "commit": "3a0530389a9de154ce7f3b5eac82ff1034ca80d7",
   "produces": [
     {"kind":"symbol","name":"loadCorpus","where":"tests/security/attack-corpus/schema.ts","note":"Loads and validates cases.json into CorpusCase[]"},
     {"kind":"symbol","name":"validateCorpus","where":"tests/security/attack-corpus/schema.ts","note":"Rejects unknown fields, duplicate IDs, missing threats, and oversized recursive fixtures"},
@@ -11,5 +11,5 @@
   "next": "T2 should import loadCorpus/validateCorpus and preserve the fixture text and criterion unions exactly.",
   "deviations": [],
   "edge_cases": ["E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9", "E11", "E12", "E20"],
-  "checks": {"build":"pass", "tests":"inline validator assertions pass; persistent corpus test unavailable because T2 owns it", "lint":"pass"}
+  "checks": {"build":"pass", "tests":"inline strict-validator assertions pass; persistent corpus test unavailable because T2 owns it", "lint":"pass"}
 }
