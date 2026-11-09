@@ -41,9 +41,9 @@ those already contain the frozen W8 shapes.
 
 | Task | File | Depends on | Concurrent with | Wave | Weight | Review | Status |
 |---|---|---|---|---|---|---|---|
-| T1 Facts package and deterministic forecast | `tasks/T1.md` | - | - | 1 | complex | full | Not started |
-| T2 Context sources and digest flow | `tasks/T2.md` | T1 | - | 2 | complex | full | Not started |
-| T3 Lead routes and API composition | `tasks/T3.md` | T1, T2 | - | 3 | complex | full | Not started |
+| T1 Facts package and deterministic forecast | `tasks/T1.md` | - | - | 1 | complex | full | Done |
+| T2 Context sources and digest flow | `tasks/T2.md` | T1 | - | 2 | complex | full | Done |
+| T3 Lead routes and API composition | `tasks/T3.md` | T1, T2 | - | 3 | complex | full | Done |
 
 Bundles: none.
 

@@ -7,9 +7,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w8-dev-lead-facts-digest (from `INT` at `b95546f`)
 - **Base:** b95546f
 - **Owner:** project operator
-- **Status:** Planned
+- **Status:** In review
 - **Approved:** Gate 1 spec and Gate 2 plan — project operator, 2026-11-09
-- **Last updated:** 2026-11-09 by Codex — Gate 2 plan approval recorded; execution baseline next
+- **Last updated:** 2026-11-09 by Codex — close-out checks complete; Gate 3 review requested
 
 **Untouched:** Architecture, Conventions, Known Gaps, Decisions, Deviations
 
@@ -26,7 +26,12 @@ sources, and their guarded gateway integration.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-09 | Codex (orchestrator) | W8 | Active | Orchestrating approved W8 plan | Establish baseline, then dispatch T1 | 2026-11-09 |
+| S1 | 2026-11-09 | Codex (orchestrator) | W8 | Active | T1 Facts package and deterministic forecast (Wave 1) | Validate T1 handover; full review and wave check | 2026-11-09 |
+| S2 | 2026-11-09 | Codex (orchestrator) | W8 | Active | T1 deterministic-pagination follow-up | Validate repaired handover and repeat targeted review | 2026-11-09 |
+| S3 | 2026-11-09 | Codex (orchestrator) | W8 | Blocked — needs human | T1 attacker review found unbounded endpoint-42 caller scope | Decide complete aggregation versus an explicit endpoint-42 resource budget | 2026-11-09 |
+| S4 | 2026-11-09 | Codex (orchestrator) | W8 | Active | T1 complete bounded aggregation repair | Validate handover and repeat Wave 1 review | 2026-11-09 |
+| S5 | 2026-11-09 | Codex (orchestrator) | W8 | Active | T2 Context sources and digest flow (Wave 2) | Validate T2 handover; full review and wave check | 2026-11-09 |
+| S6 | 2026-11-09 | Codex (orchestrator) | W8 | Active | W8 close-out complete | Await Gate 3 branch review; do not push or merge | 2026-11-09 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human` (name the question).
 
@@ -42,7 +47,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human` (name the ques
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W8 | Dev Lead facts and digest | Planned | [spec](../../specs/2026-11-09-w8-dev-lead-facts-digest-design.md) (approved 2026-11-09) | [plan](../../plans/2026-11-09-w8-dev-lead-facts-digest/plan.md) (approved 2026-11-09) | Gate 2 approved; execution baseline next | — |
+| W8 | Dev Lead facts and digest | In review | [spec](../../specs/2026-11-09-w8-dev-lead-facts-digest-design.md) (approved 2026-11-09) | [plan](../../plans/2026-11-09-w8-dev-lead-facts-digest/plan.md) (approved 2026-11-09) | T1-T3 complete; close-out checks/reviews recorded; Gate 3 requested | lead API routes; guide update after merge |
 
 ## 3. Changes
 
@@ -54,4 +59,27 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-09 | W8 spec approved at Gate 1 by project operator | W8 | this commit |
 | 2026-11-09 | W8 three-task implementation plan drafted, linted, independently reviewed, and tightened for self-contained contracts plus transaction/concurrency evidence | W8 | this commit |
 | 2026-11-09 | Project operator approved the W8 implementation plan at Gate 2 | W8 | this commit |
+| 2026-11-09 | Execution baseline passed: typecheck, lint, contract and 534 tests (28 integration skips); T1 started under S2 | W8 | pending task commit |
+| 2026-11-09 | T1 repair cycle fixed membership, cross-project velocity, deterministic ordering, and hash tests; review still requires bounded facts reads and a short-history regression | W8 | pending operator direction |
+| 2026-11-09 | Project operator chose deterministic pagination and a short-history regression test over accepting a bounded-read limitation | W8 | pending follow-up commit |
+
+## 4. Deviations
+
+| ID | What diverged | Consequence | Action / decision needed |
+|---|---|---|---|
+| D~1 | Complete facts retrieval removed silent query caps, leaving large-project reads unbounded; second review also found the missing one/two-sprint regression. | A large tenant can cause excessive memory/work; a short nonzero history regression remains unguarded. | Operator authorized repair. Pagination was insufficient because it still retained all history; final repair fetches only the newest three closed sprints per included project and strengthens its regression tests. |
+| D~2 | Endpoint-42 caller facts aggregate every active member project and assigned task while the approved contract requires complete caller-member coverage. | A caller with many projects/tasks can cause unbounded total work; adding a cap would silently omit facts and alter digest/hash semantics. | Resolved 2026-11-09: operator chose complete aggregation with bounded concurrency and incremental pagination; no silent omission or new response behavior. |
+| D~3 | A reviewer requested a hard total-row budget for complete caller aggregation. | A hard budget would omit caller-member facts or introduce a new degraded response not in the approved contract. | Accepted 2026-11-09 under the operator's complete-aggregation decision: pagination bounds peak batch size and concurrency, while total work remains proportional to complete input. Independent checkpoint pagination and active-project filtering are still required. |
+| 2026-11-09 | Operator chose complete aggregation with bounded concurrency and incremental pagination; no silent omission or new response behavior | W8 | pending follow-up commit |
+| D~4 | No real lead database fixture exists for transaction/concurrency integration tests. | Deterministic transaction fixtures cover control flow, but Prisma rollback/schema/concurrent visibility remain unverified locally. | Carry as a close-out deviation; add a database-backed fixture when the repository integration database is available. |
+| D~5 | Whole `npm test` at close-out reports 564 pass, 4 fail, 28 skipped. | The four failures are unrelated auth-route environment failures; focused W8 checks and typecheck/lint/contract pass. | Carry as close-out evidence; investigate outside W8. |
+
+## 5. Close-out evidence
+
+- `npm run typecheck`: pass
+- `npm run lint`: pass
+- `npm run contract`: 7 pass
+- `npm test`: 596 total, 564 pass, 4 fail, 28 skipped; failures are unrelated auth-route environment failures
+- Plan/handover lint: pass
+- Full branch review: Implementer/Tester/Attacker task reviews completed; close-out tenancy finding repaired
 
