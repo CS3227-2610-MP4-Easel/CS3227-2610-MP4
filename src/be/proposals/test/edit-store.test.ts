@@ -84,8 +84,8 @@ test("W7b E57 E58 proposal lock serializes edit and approve", opts, async () => 
  let release!:()=>void, entered!:()=>void; const gate=new Promise<void>(r=>release=r), locked=new Promise<void>(r=>entered=r);
  const deps={db,core:{applyPlan:async()=>{entered(); await gate;}},sessions:{close:async()=>{}}};
  const approval=approveProposal(deps,{proposalId,actorId:pm,version:3}); await locked; const edit=code(editEpic(db,{proposalId,actorId:pm,index:0,version:3,title:"late"}));
- const holders=await base.$queryRaw<{pid:number}[]>`select pid from pg_stat_activity where state = 'idle in transaction' and query ilike '%ai_proposals%' order by xact_start desc limit 1`; assert.equal(holders.length,1); try { await waitForBlocked(base,Number(holders[0].pid),1); } finally { release(); } await approval; assert.equal(await edit,"CONFLICT_STATE");
- });
+ const holders=await base.$queryRaw<{pid:number}[]>`select pid from pg_stat_activity where application_name = ${f.applicationName} and state = 'idle in transaction' and query ilike '%ai_proposals%'`; assert.equal(holders.length,1); try { await waitForBlocked(base,Number(holders[0].pid),1); } finally { release(); } await approval; assert.equal(await edit,"CONFLICT_STATE");
+ }, 30000);
  await withIntegrationDb(async (base,f) => {
   const {db,proposalId,pm}=await seed(base,f); const task={title:"t",description:"",acceptanceCriteria:[],storyPoints:1 as const};
   await editEpic(db,{proposalId,actorId:pm,index:0,version:1,tasks:[task]}); await editEpic(db,{proposalId,actorId:pm,index:1,version:2,tasks:[task]});
@@ -93,17 +93,17 @@ test("W7b E57 E58 proposal lock serializes edit and approve", opts, async () => 
   let approval: Promise<string> | undefined;
   try {
    await pause.locked;
-   const holders=await base.$queryRaw<{pid:number}[]>`select pid from pg_stat_activity where state = 'idle in transaction' and query ilike '%proposal_epics%' order by xact_start desc limit 1`;
+   const holders=await base.$queryRaw<{pid:number}[]>`select pid from pg_stat_activity where application_name = ${f.applicationName} and state = 'idle in transaction' and query ilike '%proposal_epics%'`;
    assert.equal(holders.length,1);
    approval=code(approveProposal({db,core:{applyPlan:async()=>{}},sessions:{close:async()=>{}}},{proposalId,actorId:pm,version:3}));
    await waitForBlocked(base,Number(holders[0].pid),1);
   } finally { pause.release(); }
   await edit; assert.equal(await approval,"CONFLICT_VERSION");
- });
+ }, 30000);
 });
 
 test("W7b E58 edits to different epics complete without deadlock", opts, async () => {
- await withIntegrationDb(async (base,f) => { const {db,proposalId,pm}=await seed(base,f); const hold=holdProposalLock(base,proposalId); await hold.locked; const first=code(editEpic(db,{proposalId,actorId:pm,index:0,version:1,title:"first"})); const second=code(editEpic(db,{proposalId,actorId:pm,index:1,version:1,title:"second"})); try { await waitForBlocked(base,hold.holder.pid,2); } finally { hold.release(); } await hold.done; assert.deepEqual((await Promise.all([first,second])).sort(),["CONFLICT_VERSION","OK"]); });
+ await withIntegrationDb(async (base,f) => { const {db,proposalId,pm}=await seed(base,f); const hold=holdProposalLock(base,proposalId); await hold.locked; const first=code(editEpic(db,{proposalId,actorId:pm,index:0,version:1,title:"first"})); const second=code(editEpic(db,{proposalId,actorId:pm,index:1,version:1,title:"second"})); try { await waitForBlocked(base,hold.holder.pid,2); } finally { hold.release(); } await hold.done; assert.deepEqual((await Promise.all([first,second])).sort(),["CONFLICT_VERSION","OK"]); }, 30000);
 });
 
 test("W7b E59 thirty edit sequences leave a valid completed plan", opts, async () => {
@@ -123,5 +123,5 @@ test("W7b E20 E21 E23 failed and expired edits preserve expansion state", opts, 
 });
 
 test("W7b E58 store and edit different epics complete after lock release", opts, async () => {
- await withIntegrationDb(async (base,f) => { const {db,proposalId,pm}=await seed(base,f); const claim=await claimEpic(db,{proposalId,actorId:pm,index:0}); if(claim.kind!=="CLAIMED") throw Error("claim"); const hold=holdProposalLock(base,proposalId); await hold.locked; const store=storeEpic(db,{proposalId,index:0,claimedVersion:claim.claimedVersion,tasks:[{title:"t",description:"",acceptanceCriteria:[],storyPoints:1}],flagged:false}); const edit=editEpic(db,{proposalId,actorId:pm,index:1,version:1,title:"edited"}); try { await waitForBlocked(base,hold.holder.pid,2); } finally { hold.release(); } await hold.done; await Promise.all([store,edit]); const rows=await base.proposalEpic.findMany({where:{proposalId},orderBy:{index:"asc"}}); assert.equal(rows[0].expansionStatus,"DONE"); assert.equal(rows[1].title,"edited"); });
+ await withIntegrationDb(async (base,f) => { const {db,proposalId,pm}=await seed(base,f); const claim=await claimEpic(db,{proposalId,actorId:pm,index:0}); if(claim.kind!=="CLAIMED") throw Error("claim"); const hold=holdProposalLock(base,proposalId); await hold.locked; const store=storeEpic(db,{proposalId,index:0,claimedVersion:claim.claimedVersion,tasks:[{title:"t",description:"",acceptanceCriteria:[],storyPoints:1}],flagged:false}); const edit=editEpic(db,{proposalId,actorId:pm,index:1,version:1,title:"edited"}); try { await waitForBlocked(base,hold.holder.pid,2); } finally { hold.release(); } await hold.done; await Promise.all([store,edit]); const rows=await base.proposalEpic.findMany({where:{proposalId},orderBy:{index:"asc"}}); assert.equal(rows[0].expansionStatus,"DONE"); assert.equal(rows[1].title,"edited"); }, 30000);
 });
