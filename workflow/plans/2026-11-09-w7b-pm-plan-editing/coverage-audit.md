@@ -13,7 +13,7 @@ Audit of test assertions, 2026-11-09. A listed test is evidence for the row, not
 | F5 | regenerate-store.test.ts, plan-flow.test.ts | Covered: persisted count and replacement verified |
 | F6 | list.test.ts, pm-edit-routes.test.ts, pm-edit-e2e.test.ts | Covered |
 | F7 | decide.test.ts, pm-edit-e2e.test.ts | Covered: regeneration-only approval tested |
-| F8 | edit-store.test.ts, pm-edit-e2e.test.ts | Thirty random sequences approved at store level; max-size plan approved through HTTP |
+| F8 | edit-store.test.ts, pm-edit-e2e.test.ts | Thirty varied edit sequences and maximum-size plan approved through HTTP |
 | N1 | plan-flow.test.ts (E38/E39 and N1) | Covered |
 | N2 | edit-store.test.ts (E57/E58) | E57 isolation improved; awaiting full-suite rerun |
 | N3 | list.test.ts (N3 query count) | Covered |
@@ -81,7 +81,7 @@ Audit of test assertions, 2026-11-09. A listed test is evidence for the row, not
 | E56 | decide.test.ts | Named coverage; no gap identified in this audit |
 | E57 | decide.test.ts, edit-store.test.ts | Both lock orders tested; holder isolation and transaction timeout improved after earlier suite timeouts. Full-suite rerun pending. |
 | E58 | edit-store.test.ts, epic-list.test.ts | Named coverage; no gap identified in this audit |
-| E59 | pm-edit-e2e.test.ts, edit-store.test.ts | Thirty seeded sequences of title/checkpoint edits and task replacements validate and approve through the proposal store; the maximum-size plan approves through HTTP. Random sequences do not include every edit operation and are not each exercised over HTTP. |
+| E59 | pm-edit-e2e.test.ts, edit-store.test.ts | Thirty seeded HTTP sequences vary title, checkpoint, add and delete edits and replace all tasks before approval; the maximum-size plan also approves over HTTP. |
 | E60 | edit-store.test.ts, epic-list.test.ts, regenerate-store.test.ts | Named coverage; no gap identified in this audit |
 
 ## Threats
@@ -98,4 +98,4 @@ Audit of test assertions, 2026-11-09. A listed test is evidence for the row, not
 | T8 | E33 | Covered |
 | T9 | Accepted in spec | Accepted |
 | T10 | E48, N3 | Covered |
-| T11 | E59 | Randomized approvals tested at store level; maximum-size approval tested over HTTP |
+| T11 | E59 | Thirty varied sequences and maximum-size plan approved through HTTP |

@@ -137,3 +137,40 @@ test("W7b E1 stale versions reject each editing endpoint without changes or mode
   assert.equal(h.prompts.length, calls);
  }));
 });
+
+test("W7b E59 thirty varied edit sequences approve over HTTP", opts, async () => {
+ await withIntegrationDb(async (base, f) => harness(base, async h => {
+  let randomState = 0x5a17c9; const rand = () => { randomState = (Math.imul(randomState, 1664525) + 1013904223) >>> 0; return randomState >>> 8; };
+  const seen = new Set<string>();
+  for (let sequence = 0; sequence < 30; sequence++) {
+   const a = await actor(h, f);
+   const sessionId = await h.sessions.open({ feature: "PM_PLAN_OUTLINE", userId: a.userId, projectId: a.projectId });
+   const id = await h.proposals.createProposal({ projectId: a.projectId, creatorId: a.userId, sessionId, flagged: false, approach: "Plan", checkpoints: [], retrieved: [], epics: [{ title: "One", description: "d", checkpointName: null }, { title: "Two", description: "d", checkpointName: null }] });
+   const root = `/api/pm/proposals/${id}`; let version = 1; let epics = 2;
+   for (let step = 0; step < 6; step++) {
+    const choice = rand() % 4; let response: Response;
+    if (choice === 0) {
+     seen.add("title"); response = await h.request(a.userId, "PATCH", `${root}/epics/${rand() % epics}`, { version, title: `Edited ${sequence}-${step}` });
+    } else if (choice === 1) {
+     seen.add("checkpoints"); response = await h.request(a.userId, "PATCH", `${root}/checkpoints`, { version, checkpoints: [{ name: `Checkpoint ${step}`, targetDate: "2027-01-01" }] });
+    } else if (choice === 2 || epics === 1) {
+     seen.add("add"); response = await h.request(a.userId, "POST", `${root}/epics`, { version, title: `Added ${sequence}-${step}`, description: "d", checkpointName: null });
+     assert.equal(response.status, 201, await response.clone().text()); epics++;
+    } else {
+     seen.add("delete"); response = await h.request(a.userId, "DELETE", `${root}/epics/${rand() % epics}?version=${version}`);
+     epics--;
+    }
+    assert.ok(response.status === 200 || response.status === 201, await response.clone().text());
+    version = (await response.json() as { version: number }).version;
+   }
+   for (let index = 0; index < epics; index++) {
+    const response = await h.request(a.userId, "PATCH", `${root}/epics/${index}`, { version, tasks: [{ title: `Task ${index}`, description: "d", acceptanceCriteria: ["done"], storyPoints: 3 }] });
+    assert.equal(response.status, 200, await response.clone().text()); version = (await response.json() as { version: number }).version;
+   }
+   const approved = await h.request(a.userId, "POST", `${root}/approve`, { version });
+   assert.equal(approved.status, 200, `sequence ${sequence}: ${await approved.clone().text()}`);
+   assert.equal((await approved.json() as { status: string }).status, "APPROVED");
+  }
+  assert.deepEqual([...seen].sort(), ["add", "checkpoints", "delete", "title"]);
+ }));
+});
