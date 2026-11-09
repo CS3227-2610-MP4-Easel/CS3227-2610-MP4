@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test from "node:test";
 import { approveProposal, editEpic, replaceCheckpoints, claimEpic, storeEpic, failEpic, EXPAND_LEASE_MS, ProposalError } from "../src/index.js";
 import { integrationUrl, withIntegrationDb } from "./fakes.js";
@@ -124,4 +125,32 @@ test("W7b E20 E21 E23 failed and expired edits preserve expansion state", opts, 
 
 test("W7b E58 store and edit different epics complete after lock release", opts, async () => {
  await withIntegrationDb(async (base,f) => { const {db,proposalId,pm}=await seed(base,f); const claim=await claimEpic(db,{proposalId,actorId:pm,index:0}); if(claim.kind!=="CLAIMED") throw Error("claim"); const hold=holdProposalLock(base,proposalId); await hold.locked; const store=storeEpic(db,{proposalId,index:0,claimedVersion:claim.claimedVersion,tasks:[{title:"t",description:"",acceptanceCriteria:[],storyPoints:1}],flagged:false}); const edit=editEpic(db,{proposalId,actorId:pm,index:1,version:1,title:"edited"}); try { await waitForBlocked(base,hold.holder.pid,2); } finally { hold.release(); } await hold.done; await Promise.all([store,edit]); const rows=await base.proposalEpic.findMany({where:{proposalId},orderBy:{index:"asc"}}); assert.equal(rows[0].expansionStatus,"DONE"); assert.equal(rows[1].title,"edited"); }, 30000);
+});
+
+
+test("W7b E10 E15 E16 checkpoint chain updates hashes and date-only edit preserves epics", opts, async () => {
+ await withIntegrationDb(async (base, f) => {
+  const { db, proposalId, pm } = await seed(base, f);
+  const date = "2026-12-01";
+  await replaceCheckpoints(db, { proposalId, actorId: pm, version: 1, checkpoints: [{ name: "A", targetDate: date }, { name: "B", targetDate: date }] });
+  await editEpic(db, { proposalId, actorId: pm, version: 2, index: 0, checkpointName: "A" });
+  await editEpic(db, { proposalId, actorId: pm, version: 3, index: 1, checkpointName: "B" });
+  const before = await base.proposalEpic.findMany({ where: { proposalId }, orderBy: { index: "asc" } });
+  const renamed = await replaceCheckpoints(db, { proposalId, actorId: pm, version: 4, checkpoints: [{ name: "B", previousName: "A", targetDate: date }, { name: "C", previousName: "B", targetDate: date }] });
+  assert.deepEqual(renamed.epics.map(epic => epic.checkpointName), ["B", "C"]);
+  const after = await base.proposalEpic.findMany({ where: { proposalId }, orderBy: { index: "asc" } });
+  for (let i = 0; i < after.length; i++) {
+   assert.equal(after[i].version, before[i].version);
+   assert.notEqual(after[i].contentHash, before[i].contentHash);
+   assert.equal(after[i].contentHash, createHash("sha256").update(`${after[i].title}\n${after[i].description}\n${after[i].checkpointName}`).digest("hex"));
+  }
+  const proposal = await base.aiProposal.findUniqueOrThrow({ where: { id: proposalId } });
+  await base.aiProposal.update({ where: { id: proposalId }, data: { payload: { ...(proposal.payload as object), edited: false } } });
+  const result = await replaceCheckpoints(db, { proposalId, actorId: pm, version: 5, checkpoints: [{ name: "B", targetDate: "2026-12-02" }, { name: "C", targetDate: date }] });
+  assert.equal(result.version, 6);
+  const withoutLockTimestamp = (rows: typeof after) => rows.map(({ updatedAt, ...rest }) => rest);
+  assert.deepEqual(withoutLockTimestamp(await base.proposalEpic.findMany({ where: { proposalId }, orderBy: { index: "asc" } })), withoutLockTimestamp(after));
+  const saved = await base.aiProposal.findUniqueOrThrow({ where: { id: proposalId } });
+  assert.equal((saved.payload as { edited: boolean }).edited, true);
+ });
 });
