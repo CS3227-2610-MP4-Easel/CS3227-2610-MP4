@@ -31,7 +31,7 @@ sources, and their guarded gateway integration.
 | S3 | 2026-11-09 | Codex (orchestrator) | W8 | Blocked — needs human | T1 attacker review found unbounded endpoint-42 caller scope | Decide complete aggregation versus an explicit endpoint-42 resource budget | 2026-11-09 |
 | S4 | 2026-11-09 | Codex (orchestrator) | W8 | Active | T1 complete bounded aggregation repair | Validate handover and repeat Wave 1 review | 2026-11-09 |
 | S5 | 2026-11-09 | Codex (orchestrator) | W8 | Active | T2 Context sources and digest flow (Wave 2) | Validate T2 handover; full review and wave check | 2026-11-09 |
-| S6 | 2026-11-09 | Codex (orchestrator) | W8 | Active | W8 close-out complete | Await Gate 3 branch review; do not push or merge | 2026-11-09 |
+| S6 | 2026-11-09 | Codex (orchestrator) | W8 | Paused | Two post-review lead digest blockers fixed and verified | Owner review of commit | 2026-11-09 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human` (name the question).
 
@@ -63,6 +63,8 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-09 | T1 repair cycle fixed membership, cross-project velocity, deterministic ordering, and hash tests; review still requires bounded facts reads and a short-history regression | W8 | pending operator direction |
 | 2026-11-09 | Project operator chose deterministic pagination and a short-history regression test over accepting a bounded-read limitation | W8 | pending follow-up commit |
 | 2026-11-09 | Preserved auth parser 400 mappings and made strict 415/422 body parsing opt-in for W8 lead routes; focused and full verification passed | W8 | pending task commit |
+| 2026-11-09 | Started post-review blocker repair: latest digest selection and admitted-session degraded close semantics | W8 | this commit |
+| 2026-11-09 | Added regressions and minimal fixes for complete latest-digest selection and gateway-exception session persistence | W8 | this commit |
 
 ## 4. Deviations
 

@@ -63,7 +63,7 @@ export function createLeadFlow(deps: FlowDeps) {
       flagged = Boolean((result as { flagged?: unknown }).flagged);
       if (!result.ok && !(result as { callId?: unknown }).callId) persistSessionId = null;
       if (result.ok) { const parsed = DigestOutputSchema.safeParse(result.value); if (parsed.success && await validOutput(parsed.data, facts, projectId)) output = parsed.data; }
-    } catch { persistSessionId = null; /* failure is represented by the degraded digest below */ }
+    } catch { /* failure is represented by the degraded digest below */ }
     let saved: Awaited<ReturnType<typeof persist>>;
     let outcome: "ACCEPTED" | "REJECTED" = "REJECTED";
     try {
@@ -80,8 +80,8 @@ export function createLeadFlow(deps: FlowDeps) {
     async latestDigest(caller: Caller, projectId: string) {
       if (deps.requireMember) await deps.requireMember(caller.userId, projectId);
       else if (!(await deps.db.projectMember?.findFirst?.({ where: { projectId, userId: caller.userId }, select: { userId: true } }))) throw new Error("NOT_MEMBER");
-      // JSON facts.asOf is not indexable in the current schema; bound the candidate read, then apply the full tie-break order.
-      const rows = await deps.db.projectDigest.findMany({ where: { projectId }, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 100 });
+      // JSON facts.asOf is not indexable in the current schema; read candidates, then apply the full tie-break order.
+      const rows = await deps.db.projectDigest.findMany({ where: { projectId }, orderBy: [{ createdAt: "desc" }, { id: "desc" }] });
       rows.sort((a: any, b: any) => String(b.facts?.asOf ?? "").localeCompare(String(a.facts?.asOf ?? "")) || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() || String(b.id).localeCompare(String(a.id)));
       const row = rows[0]; return row ? { ...row, cached: false } : null;
     },

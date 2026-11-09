@@ -51,7 +51,30 @@ test("latest digest is caller-authorized and ordered by facts asOf, then created
   ];
   const flow = createLeadFlow({ db: { projectDigest: { findMany: async (args: unknown) => { calls.push(args); return rows; }, findFirst: async () => null } }, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => { throw new Error("unused"); } }, sessions: { open: async () => "s", close: async () => {} } }, requireMember: async () => {} });
   assert.equal((await flow.latestDigest({ userId: U, role: "DEV_LEAD" }, P)).id, "b");
-  assert.deepEqual(calls, [{ where: { projectId: P }, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 100 }]);
+  assert.deepEqual(calls, [{ where: { projectId: P }, orderBy: [{ createdAt: "desc" }, { id: "desc" }] }]);
+});
+
+test("latest digest finds the greatest facts asOf beyond the first 100 createdAt rows", async () => {
+  const rows = Array.from({ length: 101 }, (_, index) => ({
+    id: `d${index}`,
+    projectId: P,
+    facts: { asOf: "2026-11-08T00:00:00.000Z" },
+    createdAt: new Date(Date.UTC(2026, 10, 10, 0, 0, 101 - index)),
+  }));
+  rows[100] = { ...rows[100], id: "latest", facts: { asOf: "2026-11-09T00:00:00.000Z" }, createdAt: new Date("2026-11-01T00:00:00.000Z") };
+  const flow = createLeadFlow({ db: { projectDigest: { findMany: async (args: any) => args.take ? rows.slice(0, args.take) : rows } }, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => { throw new Error("unused"); } }, sessions: { open: async () => "s", close: async () => {} } }, requireMember: async () => {} });
+  assert.equal((await flow.latestDigest({ userId: U, role: "DEV_LEAD" }, P)).id, "latest");
+});
+
+test("gateway exception after session admission persists that session on the rejected degraded digest", async () => {
+  let persisted: any;
+  let closed = "";
+  const db = { projectDigest: { findFirst: async () => null }, $transaction: async (fn: (tx: any) => Promise<unknown>) => fn({ projectDigest: { create: async ({ data }: any) => { persisted = data; return { id: "d", createdAt: new Date() }; } } }) };
+  const flow = createLeadFlow({ db, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => { throw new Error("gateway failed"); } }, sessions: { open: async () => "admitted", close: async (_id, outcome) => { closed = outcome; } } }, context: { assembleWith: async () => ({ sections: [], provenance: [] }) } as any });
+  const result = await flow.createDigest({ userId: U, role: "DEV_LEAD" }, P);
+  assert.equal(result.degraded, true);
+  assert.equal(persisted.sessionId, "admitted");
+  assert.equal(closed, "REJECTED");
 });
 
 test("createDigest uses target-only facts and accepts a valid proposal", async () => {
