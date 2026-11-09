@@ -150,5 +150,30 @@ test("E75 openOrReuse keeps the daily cap when nothing is reusable", { skip }, (
   const owner = await user();
   const projectId = await project(owner);
   for (let i = 0; i < 20; i++) await sessions.close(await sessions.open({ feature: "LEAD_DIGEST", userId: owner, projectId: null }), "ACCEPTED", owner);
-  await assert.rejects(sessions.openOrReuse({ feature: "DEV_SUMMARY", userId: owner, projectId }), (error) => error instanceof SessionCapReached);
+  const toMidnight = (new Date("2026-11-05T16:00:00.000Z").getTime() - new Date(START).getTime()) / 1000;
+  await assert.rejects(sessions.openOrReuse({ feature: "DEV_SUMMARY", userId: owner, projectId }), capReached(toMidnight));
+  assert.equal(await base.aiSession.count({ where: { userId: owner } }), 20, "no new row");
+}));
+
+test("E75 openOrReuse with three open sessions on other projects hits the open cap", { skip }, () => withIntegrationDb(async (base, { user, project }) => {
+  const { sessions, clock } = setup(base);
+  const owner = await user();
+  await sessions.openOrReuse({ feature: "DEV_SUMMARY", userId: owner, projectId: await project(owner) });
+  clock.advance(10 * MIN);
+  await sessions.openOrReuse({ feature: "DEV_SUMMARY", userId: owner, projectId: await project(owner) });
+  await sessions.openOrReuse({ feature: "DEV_SUMMARY", userId: owner, projectId: await project(owner) });
+  await assert.rejects(sessions.openOrReuse({ feature: "DEV_SUMMARY", userId: owner, projectId: await project(owner) }), capReached(20 * 60));
+  assert.equal(await base.aiSession.count({ where: { userId: owner } }), 3);
+}));
+
+test("E75 openOrReuse returns the newer of two open sessions for the same key", { skip }, () => withIntegrationDb(async (base, { user, project }) => {
+  const { sessions, clock } = setup(base);
+  const owner = await user();
+  const projectId = await project(owner);
+  const older = await sessions.open({ feature: "DEV_SUMMARY", userId: owner, projectId });
+  clock.advance(5 * MIN);
+  const newer = await sessions.open({ feature: "DEV_SUMMARY", userId: owner, projectId });
+  clock.advance(5 * MIN);
+  assert.equal(await sessions.openOrReuse({ feature: "DEV_SUMMARY", userId: owner, projectId }), newer);
+  assert.notEqual(older, newer);
 }));

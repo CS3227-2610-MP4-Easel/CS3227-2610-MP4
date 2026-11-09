@@ -60,9 +60,12 @@ export function createSessions({ db, settings, clock = systemClock }: { db: Pris
     open,
 
     async openOrReuse({ feature, userId, projectId }) {
-      const candidates = await db.aiSession.findMany({ where: { userId, env, feature, projectId, outcome: "OPEN" }, orderBy: { lastActivityAt: "desc" }, select: { id: true } });
+      const candidates = await db.aiSession.findMany({ where: { userId, env, feature, projectId: projectId ?? null, outcome: "OPEN" }, orderBy: { lastActivityAt: "desc" }, select: { id: true } });
       for (const { id } of candidates) {
-        try { await assertUsable(id, userId, feature); return id; } catch { /* idle or closed meanwhile: try the next */ }
+        try { await assertUsable(id, userId, feature); return id; } catch (error) {
+          // Only "gone or idle meanwhile" means look at the next; anything else is a real failure.
+          if (!(error instanceof Error && (error.message === "NOT_FOUND" || error.message === "CONFLICT_STATE"))) throw error;
+        }
       }
       return open({ feature, userId, projectId });
     },

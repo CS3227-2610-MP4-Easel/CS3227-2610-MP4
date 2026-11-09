@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
-import type { Feature, UsageSession, UsageSummary, UserRole } from "@agile/contracts";
+import { UserRoleSchema, type Feature, type UsageSession, type UsageSummary, type UserRole } from "@agile/contracts";
 import { systemClock, type Clock } from "./clock.js";
 import { modelFor, type AppTier, type GatewaySettings } from "./settings.js";
 
@@ -9,6 +9,12 @@ export type CacheHitInput = { feature: Feature; caller: { userId: string; role: 
 export function createCacheHits({ db, settings, clock = systemClock }: { db: PrismaClient; settings: Pick<GatewaySettings, "tier" | "llmMode" | "modelOverrides">; clock?: Clock }) {
   return {
     async recordCacheHit(input: CacheHitInput): Promise<void> {
+      const hex = /^[0-9a-f]{1,128}$/;
+      if (!UUID.test(input.caller.userId) || (input.projectId !== null && !UUID.test(input.projectId)) || !UserRoleSchema.safeParse(input.caller.role).success || !hex.test(input.inputHash) || !hex.test(input.promptVersion)) throw new Error("INVALID_CACHE_HIT");
+      if (input.sessionId !== null) {
+        const session = UUID.test(input.sessionId) ? await db.aiSession.findUnique({ where: { id: input.sessionId }, select: { env: true, userId: true, feature: true } }) : null;
+        if (!session || session.env !== settings.tier || session.userId !== input.caller.userId || session.feature !== input.feature) throw new Error("NOT_FOUND");
+      }
       await db.llmCall.create({
         data: {
           status: "CACHE_HIT", sessionId: input.sessionId, userId: input.caller.userId, role: input.caller.role, projectId: input.projectId, env: settings.tier,

@@ -39,7 +39,7 @@ export function createLlmGatewayRuntime(env: Record<string, string | undefined>,
   // Only the SoCLaaS provider holds the key; the gateway's copy of the settings does not, so it cannot be logged by accident.
   // The output guard gets it separately, to reject an answer that echoes it.
   const secrets = gatewaySecrets(settings);
-  return { sessions, cacheHits: createCacheHits({ db, settings }), gateway: createLlmGateway({ settings: { ...settings, apiKey: null }, db, hit: overrides.hit ?? getAuthRuntime().hit, sessions, provider, secrets }) };
+  return { sessions, cacheHits: createCacheHits({ db, settings: { tier: settings.tier, llmMode: settings.llmMode, modelOverrides: settings.modelOverrides } }), gateway: createLlmGateway({ settings: { ...settings, apiKey: null }, db, hit: overrides.hit ?? getAuthRuntime().hit, sessions, provider, secrets }) };
 }
 
 function runtime() {
