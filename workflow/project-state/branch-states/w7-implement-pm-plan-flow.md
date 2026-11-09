@@ -63,6 +63,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-09 | W7b T7 PM flows implemented; 49 PM tests pass; review race fixed with 31 affected tests passing | W7b | fda7e9e, 5da505a |
 | 2026-11-09 | W7b T8 routes and real database E2E implemented; full review clean; full suite failures tracked D~10 | W7b | b6ee74c |
 | 2026-11-09 | Close-out: full branch review clean, coverage gaps addressed including 30 HTTP approvals; final suite 721/728 passes, D~10; typecheck, lint, schema and contracts pass | W7b | 82dbcba |
+| 2026-11-09 | Reran the seven failing cases serially at operator request: two pass, five fail; see D~10 | W7b | working tree |
 | 2026-11-07 | Branch created from `development` at `7caa23d`; branch state written | W7 | this commit |
 | 2026-11-07 | Fast-forwarded to `INT` `faa1c08` (PR #21 folded W2, W3, W4, W6, W12 into `STATE.md`); no overlap, Base moved; dependency status recorded (W5 still Not started) | W7 | this commit |
 | 2026-11-07 | W7 spec written (Big, High tier; 56 edge cases, 12 threats) and reviewed by Implementer, Tester, Maintainer and Attacker lenses; findings folded; lint clean | W7 | this commit |
@@ -156,7 +157,7 @@ pm install removes the generated Prisma client, so 	sc -b fails until `prisma:ge
 
 - **D~11 Date-only checkpoint update** — E16 coverage found date-only edits update epic timestamps because the required lockEpic takes a row lock by updating updatedAt. Business fields and versions remain unchanged; test covers them. Timestamp side effect retained to honor locking contract.
 
-- **D~10 T8 full suite failures** — final discover-tests run: 728 total, 721 pass, 7 fail, 0 skipped. W7b tests passed; failures were transaction-marker start timeout, sanitizer timing, W13 migration checksum mismatch, and four agent-hook F8 tests. Transaction-marker and sanitizer passed together in isolation (23/23). Earlier W7b lock timeouts prompted fixture isolation and longer test-only deadlines (c6fae04); exact original cause unproven.
+- **D~10 T8 full suite failures** — final discover-tests run: 728 total, 721 pass, 7 fail, 0 skipped. W7b tests passed; failures were transaction-marker start timeout, sanitizer timing, W13 migration checksum mismatch, and four agent-hook F8 tests. The operator requested a targeted rerun: transaction-marker and sanitizer passed; migration checksum and all four agent-hook tests still failed (2/7 pass, 5/7 fail, 0 skipped). Earlier W7b lock timeouts prompted fixture isolation and longer test-only deadlines (c6fae04); exact original cause unproven.
 
 - **D~9 Malformed JSON response** — T8 reports task E7 expects 422 while existing endpoint 34 returns 400 BAD_REQUEST; spec E7 explicitly requires 422 on W7b routes; its claim that endpoint 34 already does so is incorrect. Implement scoped mapping and retain existing endpoint behavior.
 
