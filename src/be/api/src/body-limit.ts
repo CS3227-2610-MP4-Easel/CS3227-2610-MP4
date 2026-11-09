@@ -19,7 +19,7 @@ export async function readLimitedBody(request: Request, maxBytes: number): Promi
     if (total > maxBytes) { reader.cancel().catch(() => {}); return { tooLarge: true }; }
     chunks.push(value);
   }
-  return { tooLarge: false, text: Buffer.concat(chunks).toString("utf8") };
+  return { tooLarge: false, text: new TextDecoder("utf-8").decode(Buffer.concat(chunks)) };
 }
 
 /** Same count over a clone, for `before` hooks that must leave the body for later parsing. */

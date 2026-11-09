@@ -13,9 +13,9 @@ const honoPath = (path: string) => path.replace(/\{(\w+)\}/g, ":$1");
 
 /** Body read with a byte cap (413), then the same content-type and JSON rules as `parseJsonBody`. */
 async function parseLimitedJson(request: Request, maxBytes: number): Promise<unknown> {
+  if (!(request.headers.get("content-type") ?? "").toLowerCase().startsWith("application/json")) throw new HttpError("BAD_REQUEST", 400, "Request content type must be application/json.");
   const read = await readLimitedBody(request, maxBytes);
   if (read.tooLarge) throw new HttpError("PAYLOAD_TOO_LARGE", 413, "The request body is too large.");
-  if (!(request.headers.get("content-type") ?? "").toLowerCase().startsWith("application/json")) throw new HttpError("BAD_REQUEST", 400, "Request content type must be application/json.");
   try { return JSON.parse(read.text); } catch { throw new HttpError("BAD_REQUEST", 400, "Request body is not valid JSON."); }
 }
 
