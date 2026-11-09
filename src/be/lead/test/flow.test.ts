@@ -27,7 +27,7 @@ test("cached and latest digests expose only public DigestSchema fields", async (
   const persisted = { id: "d", projectId: P, facts, factsHash: "private-hash", sessionId: "private-session", explanation: null, degraded: false, flagged: false, proposalId: null, createdAt: new Date("2026-11-09T00:00:00.000Z") };
   const cachedFlow = createLeadFlow({ db: { projectDigest: { findFirst: async () => persisted } }, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => { throw new Error("unused"); } }, sessions: { open: async () => "unused", close: async () => {} } } });
   const cached = await cachedFlow.createDigest({ userId: U, role: "DEV_LEAD" }, P);
-  const latestFlow = createLeadFlow({ db: { projectMember: { findFirst: async () => ({ userId: U }) }, projectDigest: { findMany: async () => [persisted] } }, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => { throw new Error("unused"); } }, sessions: { open: async () => "unused", close: async () => {} } }, requireMember: async () => {} });
+  const latestFlow = createLeadFlow({ db: { projectMember: { findFirst: async () => ({ userId: U }) }, projectDigest: { findFirst: async () => persisted } }, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => { throw new Error("unused"); } }, sessions: { open: async () => "unused", close: async () => {} } }, requireMember: async () => {} });
   const latest = await latestFlow.latestDigest({ userId: U, role: "DEV_LEAD" }, P);
   assert.deepEqual(Object.keys(cached).sort(), ["cached", "createdAt", "degraded", "explanation", "facts", "flagged", "id", "projectId", "proposalId"]);
   assert.deepEqual(Object.keys(latest ?? {}).sort(), ["cached", "createdAt", "degraded", "explanation", "facts", "flagged", "id", "projectId", "proposalId"]);
@@ -48,7 +48,7 @@ test("disabled AI persists null sessionId while admitted failures retain it", as
     const flow = createLeadFlow({ db, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => gatewayResult }, sessions: { open: async () => "opened", close: async (_id, outcome) => { closed = outcome; } } }, context: { assembleWith: async () => ({ sections: [], provenance: [] }) } as any });
     await flow.createDigest({ userId: U, role: "DEV_LEAD" }, P); return { persisted, closed };
   };
-  assert.deepEqual(await run({ ok: false, code: "AI_DISABLED", flagged: true }), { persisted: { projectId: P, facts, factsHash: hashFacts(facts), explanation: null, degraded: true, flagged: true, sessionId: null }, closed: "REJECTED" });
+  assert.deepEqual(await run({ ok: false, code: "AI_DISABLED", flagged: true }), { persisted: { projectId: P, facts, factsAsOf: new Date(facts.asOf), factsHash: hashFacts(facts), explanation: null, degraded: true, flagged: true, sessionId: null }, closed: "REJECTED" });
   const admitted = await run({ ok: false, code: "BLOCKED_INPUT", callId: U, flagged: true });
   assert.equal(admitted.persisted.sessionId, "opened"); assert.equal(admitted.persisted.flagged, true); assert.equal(admitted.closed, "REJECTED");
 });
@@ -56,15 +56,15 @@ test("disabled AI persists null sessionId while admitted failures retain it", as
 test("latest digest is caller-authorized and ordered by facts asOf, then createdAt, then id", async () => {
   const calls: unknown[] = [];
   const rows = [
-    { id: "a", projectId: P, facts: { asOf: "2026-11-08T00:00:00.000Z" }, createdAt: new Date("2026-11-10T00:00:00.000Z") },
-    { id: "b", projectId: P, facts: { asOf: "2026-11-09T00:00:00.000Z" }, createdAt: new Date("2026-11-09T00:00:00.000Z") },
+    { id: "a", projectId: P, facts: { asOf: "2026-11-08T00:00:00.000Z" }, factsAsOf: new Date("2026-11-08T00:00:00.000Z"), createdAt: new Date("2026-11-10T00:00:00.000Z") },
+    { id: "b", projectId: P, facts: { asOf: "2026-11-09T00:00:00.000Z" }, factsAsOf: new Date("2026-11-09T00:00:00.000Z"), createdAt: new Date("2026-11-09T00:00:00.000Z") },
   ];
-  const flow = createLeadFlow({ db: { projectDigest: { findMany: async (args: unknown) => { calls.push(args); return rows; }, findFirst: async () => null } }, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => { throw new Error("unused"); } }, sessions: { open: async () => "s", close: async () => {} } }, requireMember: async () => {} });
+  const flow = createLeadFlow({ db: { projectDigest: { findFirst: async (args: unknown) => { calls.push(args); return rows[1]; } } }, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => { throw new Error("unused"); } }, sessions: { open: async () => "s", close: async () => {} } }, requireMember: async () => {} });
   assert.equal((await flow.latestDigest({ userId: U, role: "DEV_LEAD" }, P)).id, "b");
-  assert.deepEqual(calls, [{ where: { projectId: P }, orderBy: [{ createdAt: "desc" }, { id: "desc" }] }]);
+  assert.deepEqual(calls, [{ where: { projectId: P }, orderBy: [{ factsAsOf: "desc" }, { createdAt: "desc" }, { id: "desc" }], take: 1 }]);
 });
 
-test("latest digest finds the greatest facts asOf beyond the first 100 createdAt rows", async () => {
+test("latest digest uses the bounded factsAsOf query rather than a full-history scan", async () => {
   const rows = Array.from({ length: 101 }, (_, index) => ({
     id: `d${index}`,
     projectId: P,
@@ -72,8 +72,10 @@ test("latest digest finds the greatest facts asOf beyond the first 100 createdAt
     createdAt: new Date(Date.UTC(2026, 10, 10, 0, 0, 101 - index)),
   }));
   rows[100] = { ...rows[100], id: "latest", facts: { asOf: "2026-11-09T00:00:00.000Z" }, createdAt: new Date("2026-11-01T00:00:00.000Z") };
-  const flow = createLeadFlow({ db: { projectDigest: { findMany: async (args: any) => args.take ? rows.slice(0, args.take) : rows } }, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => { throw new Error("unused"); } }, sessions: { open: async () => "s", close: async () => {} } }, requireMember: async () => {} });
+  let query: any;
+  const flow = createLeadFlow({ db: { projectDigest: { findFirst: async (args: any) => { query = args; return rows[100]; } } }, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => { throw new Error("unused"); } }, sessions: { open: async () => "s", close: async () => {} } }, requireMember: async () => {} });
   assert.equal((await flow.latestDigest({ userId: U, role: "DEV_LEAD" }, P)).id, "latest");
+  assert.deepEqual(query, { where: { projectId: P }, orderBy: [{ factsAsOf: "desc" }, { createdAt: "desc" }, { id: "desc" }], take: 1 });
 });
 
 test("gateway exception after session admission persists that session on the rejected degraded digest", async () => {
@@ -127,4 +129,10 @@ test("persistence failure still rejects the admitted session", async () => {
   const flow = createLeadFlow({ db: { projectDigest: { findFirst: async () => null }, $transaction: async () => { throw new Error("write failed"); } }, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => ({ ok: true, value: { explanation: "ok", suggestions: [] }, callId: U, flagged: false, truncated: false, cacheHit: false, promptTokens: 0, completionTokens: 0, costMicroUsd: 0 }) }, sessions: { open: async () => "s", close: async (_id, outcome) => { closed.push(outcome); } } }, context: { assembleWith: async () => ({ sections: [], provenance: [] }) } as any });
   await assert.rejects(flow.createDigest({ userId: U, role: "DEV_LEAD" }, P), /write failed/);
   assert.deepEqual(closed, ["REJECTED"]);
+});
+
+test("session-cap refusal is surfaced as AI_BUSY instead of a degraded success", async () => {
+  const error = Object.assign(new Error("RATE_LIMITED"), { name: "SessionCapReached", retryAfterSeconds: 37 });
+  const flow = createLeadFlow({ db: { projectDigest: { findFirst: async () => null } }, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => { throw new Error("unused"); } }, sessions: { open: async () => { throw error; }, close: async () => {} } } });
+  await assert.rejects(flow.createDigest({ userId: U, role: "DEV_LEAD" }, P), (actual: any) => actual.code === "AI_BUSY" && actual.retryAfterSeconds === 37);
 });

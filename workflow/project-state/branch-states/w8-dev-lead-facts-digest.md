@@ -7,9 +7,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w8-dev-lead-facts-digest (from `INT` at `b95546f`)
 - **Base:** b95546f
 - **Owner:** project operator
-- **Status:** Building
+- **Status:** In review
 - **Approved:** Gate 1 spec, Gate 2 plan, and Gate 3 branch review — project operator, 2026-11-09
-- **Last updated:** 2026-11-09 by Codex — operator authorized PM-scope and digest-response blocker fixes
+- **Last updated:** 2026-11-09 by Codex — implemented and verified the `factsAsOf` migration and final blocker repairs
 
 **Untouched:** Architecture, Conventions, Known Gaps, Decisions, Deviations
 
@@ -26,15 +26,17 @@ sources, and their guarded gateway integration.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-09 | Codex (orchestrator) | W8 | Active | T1 Facts package and deterministic forecast (Wave 1) | Validate T1 handover; full review and wave check | 2026-11-09 |
-| S2 | 2026-11-09 | Codex (orchestrator) | W8 | Active | T1 deterministic-pagination follow-up | Validate repaired handover and repeat targeted review | 2026-11-09 |
-| S3 | 2026-11-09 | Codex (orchestrator) | W8 | Blocked — needs human | T1 attacker review found unbounded endpoint-42 caller scope | Decide complete aggregation versus an explicit endpoint-42 resource budget | 2026-11-09 |
-| S4 | 2026-11-09 | Codex (orchestrator) | W8 | Active | T1 complete bounded aggregation repair | Validate handover and repeat Wave 1 review | 2026-11-09 |
-| S5 | 2026-11-09 | Codex (orchestrator) | W8 | Active | T2 Context sources and digest flow (Wave 2) | Validate T2 handover; full review and wave check | 2026-11-09 |
-| S6 | 2026-11-09 | Codex (orchestrator) | W8 | Paused | Two post-review lead digest blockers fixed and verified | Owner review of commit | 2026-11-09 |
-| S7 | 2026-11-09 | Codex (orchestrator) | W8 | Paused | Fresh T2 tester-lens review of 0003ed6..9d53fa3 | Owner fixes the two reported blockers, then reruns the focused and full tests | 2026-11-09 |
-| S8 | 2026-11-09 | Codex (orchestrator) | W8 | Blocked — needs human | Latest digest requires indexed persisted ordering | Approve a ProjectDigest factsAsOf migration, or choose a different durable latest-pointer design | 2026-11-09 |
-| S9 | 2026-11-09 | Codex (orchestrator) | W8 | Active | Fixes verified; preparing W8 blocker commit | Update branch state, commit, and hand off hash | 2026-11-09 |
+| S1 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | T1 Facts package and deterministic forecast (Wave 1) | — | 2026-11-09 |
+| S2 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | T1 deterministic-pagination follow-up | — | 2026-11-09 |
+| S3 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | T1 attacker review found unbounded endpoint-42 caller scope; operator chose complete aggregation | — | 2026-11-09 |
+| S4 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | T1 complete bounded aggregation repair | — | 2026-11-09 |
+| S5 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | T2 Context sources and digest flow (Wave 2) | — | 2026-11-09 |
+| S6 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | Two post-review lead digest blockers fixed and verified | — | 2026-11-09 |
+| S7 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | Fresh T2 tester-lens review and blocker repair | — | 2026-11-09 |
+| S8 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | Latest digest requires indexed persisted ordering | Record the approved migration and amend the spec/plan | 2026-11-09 |
+| S9 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | Amended W8 for durable `factsAsOf` ordering and migration | Owner review of the uncommitted change set | 2026-11-09 |
+| S10 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | Implementer, tester, and attacker reviews of schema, migrations, and digest flow | — | 2026-11-09 |
+| S11 | 2026-11-10 | Codex (orchestrator) | W8 | Complete | Final verification and owner handover | Commit the uncommitted change set, push if authorized, then request Gate 3 review | 2026-11-10 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human` (name the question).
 
@@ -42,7 +44,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human` (name the ques
 
 - [x] Write and review the W8 design spec; obtain Gate 1 approval.
 - [x] Obtain Gate 2 approval of the W8 implementation plan before coding.
-- [ ] Execute T1-T3 with task reviews and wave checks.
+- [x] Execute T1-T3 with task reviews and wave checks.
 
 ---
 
@@ -50,7 +52,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human` (name the ques
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W8 | Dev Lead facts and digest | Building | [spec](../../specs/2026-11-09-w8-dev-lead-facts-digest-design.md) (approved 2026-11-09) | [plan](../../plans/2026-11-09-w8-dev-lead-facts-digest/plan.md) (approved 2026-11-09) | PM facts scope and public digest response fixes in progress; schema decision remains separate | lead API routes; guide update after merge |
+| W8 | Dev Lead facts and digest | In review | [spec](../../specs/2026-11-09-w8-dev-lead-facts-digest-design.md) (approved/amended 2026-11-09) | [plan](../../plans/2026-11-09-w8-dev-lead-facts-digest/plan.md) (approved/amended 2026-11-09) | `factsAsOf` migration, bounded ordering, `previousDigest`, session-cap mapping, compatibility trigger, and final verification complete | owner review; commit/push from a checkout with Git index write access |
 
 ## 3. Changes
 
@@ -69,6 +71,10 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-09 | Started post-review blocker repair: latest digest selection and admitted-session degraded close semantics | W8 | this commit |
 | 2026-11-09 | Added regressions and minimal fixes for complete latest-digest selection and gateway-exception session persistence | W8 | this commit |
 | 2026-11-09 | Added red regressions and minimal fixes so endpoint 42 uses target-only facts and cached/latest digests expose only public fields | W8 | pending task commit |
+| 2026-11-09 | Operator approved amending W8 to persist `Facts.asOf` as `ProjectDigest.factsAsOf` with a composite latest-order index; spec and T2 plan are being regenerated before implementation | W8 | pending task commit |
+| 2026-11-09 | Implementer/tester/attacker lenses found rollout, invalid-backfill, rollback, and bounded-query gaps; spec and T2 were amended with expand/contract phases and explicit regression requirements | W8 | pending task commit |
+| 2026-11-09 | Attacker review found the two migration phases still deploy together before the new writer and the documented production path has no down migration; query bounds, tenant scoping, and session-cap mapping otherwise passed | W8 | pending task commit |
+| 2026-11-09 | Resolved review findings with compatibility-triggered expand/contract migration, forward-only restore recovery, offset-bearing backfill validation, final non-null Prisma shape, migration manifest updates, and a CI-gated PostgreSQL migration regression; full suite passed | W8 | pending task commit |
 
 ## 4. Deviations
 
@@ -80,17 +86,24 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-09 | Operator chose complete aggregation with bounded concurrency and incremental pagination; no silent omission or new response behavior | W8 | pending follow-up commit |
 | D~4 | No real lead database fixture exists for transaction/concurrency integration tests. | Deterministic transaction fixtures cover control flow, but Prisma rollback/schema/concurrent visibility remain unverified locally. | Carry as a close-out deviation; add a database-backed fixture when the repository integration database is available. |
 | D~5 | W8 changed the shared JSON parser to return 415/422 for lead-route semantics, while existing auth tests expect 400. | Four auth-route assertions fail; the behavior change is a cross-route compatibility issue, not an unrelated failure. | Resolved 2026-11-09: parser defaults to auth's legacy 400 mappings; W8 lead routes explicitly opt into 415/422. |
-| D~6 | Latest-digest correctness requires durable ordering by `facts.asOf`, but JSON facts are not indexable in the current schema and bounded createdAt candidates can be wrong. | Endpoint 45 currently scans all project digests; fixing this correctly requires a `factsAsOf` scalar/index or equivalent latest pointer, outside the approved no-migration scope. | Operator decision required before implementation. |
+| D~6 | Latest-digest correctness requires durable ordering by `facts.asOf`, but JSON facts are not indexable in the current schema and bounded createdAt candidates can be wrong. | Endpoint 45 currently scans all project digests; fixing this correctly requires a `factsAsOf` scalar/index or equivalent latest pointer, outside the original no-migration scope. | Resolved 2026-11-09: operator approved the expand/contract `factsAsOf` field, validated backfill, and composite index; spec and T2 plan amended before implementation. |
+
+## 4a. Decisions recorded on this branch
+
+| ID | Decision | Why | Rejected | Who / when |
+|---|---|---|---|---|
+| C~1 | Persist `Facts.asOf` in `ProjectDigest.factsAsOf` and index `(projectId, factsAsOf DESC, createdAt DESC, id DESC)` | Endpoint 45 must return the newest facts snapshot without scanning unbounded append-only history; `createdAt` is not a safe proxy | In-memory full-history sorting, a bounded `createdAt` candidate window, or an unindexed latest pointer | project operator, 2026-11-09 |
 
 ## 5. Close-out evidence
 
 - `npm run typecheck`: pass
 - `npm run lint`: pass
 - `npm run contract`: 7 pass
-- `npm test`: 597 total, 569 pass, 28 skipped, 0 fail
+- `npm test`: 604 total, 575 pass, 29 skipped, 0 fail
 - Focused auth/lead/input-parser tests: 41 pass
 - Plan/handover lint: pass
 - Full branch review: Implementer/Tester/Attacker task reviews completed; close-out tenancy finding repaired
+- CI-gated migration regression: skips without `W1_INTEGRATION_DATABASE_URL`; executes the expand/contract backfill, rollback, index, and `NOT NULL` checks when Postgres is configured
 
 ## 6. Handover items
 

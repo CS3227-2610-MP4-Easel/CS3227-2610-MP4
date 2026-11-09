@@ -35,7 +35,7 @@ export function createLeadSources(db: LeadSourceDb, getFacts: (projectId: string
     return rows.map((event) => row(projectId, "TASK_EVENT", String(event.id), `${new Date(event.at).toISOString()} ${clean(event.type, 40)} ${clean(event.taskId, 36)} ${clean(event.fromValue, 120)} -> ${clean(event.toValue, 120)}`));
   };
   const previousDigest: ContextSource = async ({ projectId }) => {
-    const [digest] = await db.projectDigest?.findMany({ where: { projectId }, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 1, select: { id: true, explanation: true } }) ?? [];
+    const [digest] = await db.projectDigest?.findMany({ where: { projectId }, orderBy: [{ factsAsOf: "desc" }, { createdAt: "desc" }, { id: "desc" }], take: 1, select: { id: true, explanation: true } }) ?? [];
     const explanation = clean(digest?.explanation, 4000);
     return explanation ? [row(projectId, "DIGEST", String(digest.id), explanation)] : [];
   };

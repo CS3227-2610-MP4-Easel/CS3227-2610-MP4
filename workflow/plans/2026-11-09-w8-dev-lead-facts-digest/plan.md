@@ -2,7 +2,7 @@
 
 - **Status:** Approved (project operator, 2026-11-09)
 - **Format:** v2
-- **Spec:** [W8 design](../../specs/2026-11-09-w8-dev-lead-facts-digest-design.md) | **Spec hash:** e91d703e0378
+- **Spec:** [W8 design](../../specs/2026-11-09-w8-dev-lead-facts-digest-design.md) | **Spec hash:** a82380b2d04d
 - **Workstream:** W8
 - **Review:** Independent plan review completed 2026-11-09; four findings incorporated before Gate 2.
 
@@ -13,7 +13,7 @@
 
 **Goal:** Deliver backend facts and safe Dev Lead digest generation for endpoints 42, 44 and 45.
 **In scope:** F1-F8, N1-N4, E1-E30.
-**Non-goals:** endpoint 43, endpoints 46-48, UI, migrations, scheduled work, and applying suggestions.
+**Non-goals:** endpoint 43, endpoints 46-48, UI, scheduled work, and applying suggestions. W8 includes the expand/contract `ProjectDigest.factsAsOf` migrations required by the amended spec.
 **Risk tier:** High - authorization, project tenancy, untrusted model text and persisted AI output require full reviews.
 
 ## Shared context
@@ -31,11 +31,10 @@
 - AD-25/W3: user or model text is untrusted; STATIC sections are literal/trusted; never log prompt or response text.
 - W6: call `assembleWith`; source rows are target-scoped and bounded; gateway-calling files do not import `@agile/db`.
 - AD-22/SD5: endpoint 42 overload uses caller-member projects; persisted digest overload is target-project-only.
-- No model call may run in a database transaction. No raw/typed SQL.
+- No model call may run in a database transaction. No raw/typed SQL in application code. Migration SQL must preflight valid offset-bearing instants, abort atomically with affected IDs on invalid historical rows, preserve all rows, and use expand/contract ordering so old writers remain usable until dual-write code is deployed.
 - Commit only the task's files with `Workstream: W8` and its `Task:` trailer.
 
-**Boundaries.** Do not read project state or the W8 spec. Do not edit contracts, Prisma schema, or UI;
-those already contain the frozen W8 shapes.
+**Boundaries.** Do not read project state or the W8 spec. Do not edit API contracts or UI. T2 owns the approved additive Prisma schema/migration change for `ProjectDigest.factsAsOf`.
 
 ## Task order
 

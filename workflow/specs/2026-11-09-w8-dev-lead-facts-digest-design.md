@@ -1,6 +1,7 @@
 # W8 Dev Lead Facts and Digest Design
 
-- **Status:** Approved (project operator, 2026-11-09)
+- **Status:** Approved (project operator, 2026-11-09; amended for C~1)
+- **Amended 2026-11-09:** see branch-state decision C~1
 - **Format:** v2
 - **Risk tier:** High - role authorization, cross-project tenancy, untrusted model input, and persisted AI output
 - **Workstream:** W8 | **Plan:** —
@@ -43,7 +44,7 @@ feature flow, stores `ProjectDigest` rows, and leaves proposal approval to W14 e
 - Endpoint 43 lead overview - it is a separate contract surface and is not in the W8 slice.
 - Endpoints 46-48 proposal listing, approval, and rejection - W14 owns their transport and transactional application.
 - UI changes - the existing UI contract will consume these endpoints later.
-- New Prisma tables or migrations - `ProjectDigest`, `AiProposal`, `AiSession`, tasks, sprints, checkpoints and memberships already exist.
+- New Prisma tables - `ProjectDigest`, `AiProposal`, `AiSession`, tasks, sprints, checkpoints and memberships already exist. W8 now includes one additive `ProjectDigest.factsAsOf` field and index migration for bounded latest selection.
 - Automatic refresh, scheduled jobs, queues, streaming, or background workers - prohibited by AD-06.
 - Applying re-plan suggestions during digest generation - AD-22 requires explicit later approval.
 
@@ -63,8 +64,20 @@ separate facts and digest packages add an unnecessary boundary before any indepe
 
 ### 4.2 Data model
 
-No schema migration. `ProjectDigest` remains append-only with `facts`, `factsHash`, nullable
-`explanation`, `degraded`, `flagged`, nullable `proposalId` and `sessionId`, and `createdAt`.
+`ProjectDigest` remains append-only with `facts`, `factsHash`, required `factsAsOf` (the captured
+`Facts.asOf` instant, mapped to PostgreSQL `timestamptz` / Prisma `DateTime`), nullable `explanation`,
+`degraded`, `flagged`, nullable `proposalId` and `sessionId`, and `createdAt`. Rollout is expand/contract:
+the expand migration adds nullable `facts_as_of`, atomically preflights every existing row, extracts an
+offset-bearing ISO instant from `facts.asOf`, aborts with the affected digest IDs if any row is missing,
+non-string, or not a valid instant, then backfills without deleting rows and creates the composite index
+`(projectId, factsAsOf DESC, createdAt DESC, id DESC)`. The application is deployed with dual-write
+support before the contract migration makes the column `NOT NULL`; the expand migration also installs
+a compatibility trigger that derives the scalar for old writers during a rolling deployment. Only
+after that validation may the old JSON-ordering code be retired. After the contract phase, recovery is forward-only: restore the last known-good
+backup or apply a corrective forward migration, then deploy a compatible writer; no down migration
+drops the index or column. Each migration phase is transactional where PostgreSQL allows it; a failed
+preflight/backfill/index build rolls back its phase and leaves the prior schema and writers usable. No
+digest rows are deleted or quarantined.
 `AiProposal.kind` is `REPLAN`; its payload contains the validated explanation and closed suggestions.
 
 Facts invariants follow architecture §11/A-19 exactly: `pointsTotal` is the story points of live tasks
@@ -114,7 +127,7 @@ after an admitted model, guard, or output-validation failure; an AI-disabled or 
 has `sessionId` null. A degraded row has `explanation` and `proposalId` null and `flagged` false
 unless the gateway returned a flagged result. Concurrent changed-hash requests may each call and
 persist one digest, bounded by the existing per-user/global gateway limits; latest selection is
-`facts.asOf DESC, createdAt DESC, id DESC`, and each row's facts, hash, session and proposal are
+`factsAsOf DESC, createdAt DESC, id DESC` through a project-scoped indexed `take: 1` query, and each row's facts, hash, session and proposal are
 internally consistent.
 
 ### 4.3 Interfaces
@@ -164,9 +177,9 @@ with its test.
 W5's `requireMember`, filtered client and core composition must be available before W8 runtime
 wiring. Contract schemas and policy entries already exist and must remain compatible. Context-source
 registration must occur after the W6 registry is available and must be duplicate-safe in tests. The
-facts hash must be computed before checking the latest digest; model calls must occur outside the
-digest persistence transaction; W14 must consume the stored REPLAN proposal shape without changing
-W8's write contract.
+facts hash must be computed before checking the latest digest; `factsAsOf` must be written from the
+same captured `Facts.asOf`; model calls must occur outside the digest persistence transaction; W14
+must consume the stored REPLAN proposal shape without changing W8's write contract.
 
 ## 5. Edge cases
 
@@ -243,6 +256,7 @@ specified digest/proposal fields.
 | SD3 | Return degraded 200 for every model-attributable digest failure while retaining computed facts | AD-34 makes facts deterministic and available during AI failure; rejected propagating model failures as endpoint errors | operator |
 | SD4 | Store REPLAN proposals during digest generation but never apply them | AD-22 requires explicit approval and W14 owns endpoints 46-48 | operator |
 | SD5 | Endpoint 42 retains caller-project overload, but a persisted digest computes overload within its target project only | The shared `ProjectDigest` row is readable by other target-project members; storing caller-specific cross-project workload would leak another project. Rejected: adding caller identity to the digest key/schema during the feature freeze | operator, 2026-11-09 |
+| SD6 | Persist `Facts.asOf` as `ProjectDigest.factsAsOf` and index it with project/createdAt/id for latest selection; ship it through expand/contract migration phases | JSON facts ordering cannot be indexed reliably; bounded createdAt candidates can return the wrong row and full-history scans do not hold under append-only growth. Rejected: using createdAt as a proxy, retaining an in-memory full-history scan, or adding a required column before dual-write compatibility exists | operator, 2026-11-09 |
 
 ## 9. Review record
 

@@ -15,3 +15,10 @@ test("prior explanations over 4000 characters are omitted", async () => {
   const sources = createLeadSources({ projectDigest: { findMany: async () => [{ id: "d", explanation: "x".repeat(4001) }] } }, async () => facts);
   assert.deepEqual(await sources.previousDigest({ projectId: P, caller: { userId: U, role: "DEV_LEAD" }, options: {} }), []);
 });
+
+test("previousDigest is project-scoped and bounded by the indexed factsAsOf order", async () => {
+  let query: unknown;
+  const sources = createLeadSources({ projectDigest: { findMany: async (args: unknown) => { query = args; return [{ id: "d", explanation: "latest" }]; } } }, async () => facts);
+  assert.deepEqual(await sources.previousDigest({ projectId: P, caller: { userId: U, role: "DEV_LEAD" }, options: {} }), [{ projectId: P, ref: { type: "DIGEST", id: "d" }, text: "latest" }]);
+  assert.deepEqual(query, { where: { projectId: P }, orderBy: [{ factsAsOf: "desc" }, { createdAt: "desc" }, { id: "desc" }], take: 1, select: { id: true, explanation: true } });
+});

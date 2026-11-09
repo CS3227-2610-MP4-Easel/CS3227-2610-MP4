@@ -17,7 +17,7 @@ export function createLeadFlow(deps: FlowDeps) {
   const context = deps.context ?? getAiContext(); const now = deps.now ?? (() => new Date());
   async function persist(projectId: string, actorId: string, facts: Facts, factsHash: string, output: DigestOutput | null, sessionId: string | null, flagged: boolean, degradedFlag: boolean) {
     return deps.db.$transaction(async (tx: Db) => {
-      const digest = await tx.projectDigest.create({ data: { projectId, facts, factsHash, explanation: output?.explanation ?? null, degraded: degradedFlag, flagged, sessionId } });
+      const digest = await tx.projectDigest.create({ data: { projectId, facts, factsAsOf: new Date(facts.asOf), factsHash, explanation: output?.explanation ?? null, degraded: degradedFlag, flagged, sessionId } });
       let proposalId: string | null = null;
       if (output && output.suggestions.length) {
         const proposal = await tx.aiProposal.create({ data: { projectId, kind: "REPLAN", status: "PENDING", payload: { suggestions: output.suggestions, explanation: output.explanation }, sessionId, createdBy: actorId, flagged }, select: { id: true } });
@@ -54,10 +54,15 @@ export function createLeadFlow(deps: FlowDeps) {
   async function factsFor(callerId: string | undefined, projectId: string) { return callerId ? deps.facts.caller(callerId, projectId) : deps.facts.target(projectId); }
   async function createDigest(caller: { userId: string; role: "DEV_LEAD" }, projectId: string) {
     const facts = await deps.facts.target(projectId); const factsHash = hashFacts(facts);
-    const cached = await deps.db.projectDigest.findFirst({ where: { projectId, factsHash, degraded: false }, orderBy: { createdAt: "desc" } });
+    const cached = await deps.db.projectDigest.findFirst({ where: { projectId, factsHash, degraded: false }, orderBy: [{ factsAsOf: "desc" }, { createdAt: "desc" }, { id: "desc" }], take: 1 });
     if (cached) return publicDigest(cached, true);
     let sessionId: string | null = null;
-    try { sessionId = await deps.binding.sessions.open({ feature: "LEAD_DIGEST", userId: caller.userId, projectId }); } catch { const saved = await persist(projectId, caller.userId, facts, factsHash, null, null, false, true); return { ...degraded(facts, saved.digest.id), id: saved.digest.id, projectId }; }
+    try { sessionId = await deps.binding.sessions.open({ feature: "LEAD_DIGEST", userId: caller.userId, projectId }); } catch (error) {
+      if (error instanceof Error && (error.name === "SessionCapReached" || error.message === "RATE_LIMITED")) {
+        throw Object.assign(new Error("AI_BUSY"), { code: "AI_BUSY", retryAfterSeconds: (error as Error & { retryAfterSeconds?: number }).retryAfterSeconds ?? 1 });
+      }
+      const saved = await persist(projectId, caller.userId, facts, factsHash, null, null, false, true); return { ...degraded(facts, saved.digest.id), id: saved.digest.id, projectId };
+    }
     let output: DigestOutput | null = null; let flagged = false; let persistSessionId: string | null = sessionId;
     try {
       const assembled = await context.assembleWith(caller, "LEAD_DIGEST", projectId, {});
@@ -82,10 +87,8 @@ export function createLeadFlow(deps: FlowDeps) {
     async latestDigest(caller: Caller, projectId: string) {
       if (deps.requireMember) await deps.requireMember(caller.userId, projectId);
       else if (!(await deps.db.projectMember?.findFirst?.({ where: { projectId, userId: caller.userId }, select: { userId: true } }))) throw new Error("NOT_MEMBER");
-      // JSON facts.asOf is not indexable in the current schema; read candidates, then apply the full tie-break order.
-      const rows = await deps.db.projectDigest.findMany({ where: { projectId }, orderBy: [{ createdAt: "desc" }, { id: "desc" }] });
-      rows.sort((a: any, b: any) => String(b.facts?.asOf ?? "").localeCompare(String(a.facts?.asOf ?? "")) || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() || String(b.id).localeCompare(String(a.id)));
-      const row = rows[0]; return row ? publicDigest(row, false) : null;
+      const row = await deps.db.projectDigest.findFirst({ where: { projectId }, orderBy: [{ factsAsOf: "desc" }, { createdAt: "desc" }, { id: "desc" }], take: 1 });
+      return row ? publicDigest(row, false) : null;
     },
   };
 }
