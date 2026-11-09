@@ -25,6 +25,7 @@ test("W8 migration executes an atomic fail-closed backfill and indexed contract"
     await client.query(`INSERT INTO "${table}" (id, project_id, facts) VALUES ($1, $2, $3), ($4, $2, $5)`, [randomUUID(), randomUUID(), { asOf: "2026-11-09T00:00:00.000Z" }, randomUUID(), { asOf: "2026-11-09T00:00:00" }]);
     const expand = scopedSql(await readFile(expandFile, "utf8"), table);
     await assert.rejects(client.query(expand), /valid instant|facts\.asOf/i);
+    await client.query("ROLLBACK");
     const absent = await client.query(`SELECT 1 FROM information_schema.columns WHERE table_name = $1 AND column_name = 'facts_as_of'`, [table]);
     assert.equal(absent.rowCount, 0);
 
