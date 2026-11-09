@@ -6,10 +6,36 @@ import { createDevResolvers } from "../src/store/resolvers.js";
 const P = "11111111-1111-4111-8111-111111111111";
 const U = "22222222-2222-4222-8222-222222222222";
 
-function make(opts: { visible?: boolean; archivedMember?: boolean; member?: boolean } = {}) {
+const seen = { archived: [] as unknown[][], member: [] as unknown[][] };
+
+function make(opts: { visible?: boolean; archivedMember?: boolean; member?: boolean; plainError?: boolean } = {}) {
   const db = { project: { findFirst: async () => (opts.visible === false ? null : { id: P }) } };
-  return createDevResolvers({ db, lookupArchivedMembership: async () => Boolean(opts.archivedMember), requireMember: async () => { if (opts.member === false) throw new NotMember(U, P); } });
+  seen.archived = []; seen.member = [];
+  return createDevResolvers({
+    db,
+    lookupArchivedMembership: async (...a) => { seen.archived.push(a); return Boolean(opts.archivedMember); },
+    requireMember: async (...a) => { seen.member.push(a); if (opts.plainError) throw new Error("boom"); if (opts.member === false) throw new NotMember(U, P); },
+  });
 }
+
+test("E40 hidden project with archivedMember but no userId resolves null without a lookup", async () => {
+  const r = make({ visible: false, archivedMember: true });
+  assert.equal(await r.DEV_UPLOAD_CREATE!({ params: { id: P } }), null);
+  assert.equal(seen.archived.length, 0);
+});
+
+test("E40 archived lookup and E36 requireMember receive (userId, projectId)", async () => {
+  const r = make({ visible: false, archivedMember: true });
+  await r.DEV_SUMMARY_CREATE!({ params: { id: P }, userId: U });
+  assert.deepEqual(seen.archived, [[U, P]]);
+  const m = make();
+  await m.DEV_STANDUP_MINE_READ!({ params: { id: P }, userId: U });
+  assert.deepEqual(seen.member, [[U, P]]);
+});
+
+test("E36 requireMember throwing a plain Error resolves null", async () => {
+  assert.equal(await make({ plainError: true }).DEV_STANDUP_MINE_READ!({ params: { id: P }, userId: U }), null);
+});
 
 test("E40 visible project resolves ACTIVE for operations 49-51", async () => {
   const r = make();

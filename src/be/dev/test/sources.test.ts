@@ -9,6 +9,7 @@ type Sum = { id: string; itemId: string; contentHash: string; guardVersion: stri
 
 const item = (id: string, over: Partial<Item> = {}): Item => ({ id, uploadedBy: "u1", projectId: P, itemType: "COMMIT", repo: "", title: `t-${id}`, body: null, files: [], occurredAt: new Date("2026-11-09T00:00:00Z"), contentHash: `h-${id}`, ...over });
 
+const calls: any[] = [];
 function fake(items: Item[], sums: Sum[] = []) {
   const match = (row: Record<string, unknown>, where: Record<string, any>) => Object.entries(where).every(([k, c]) => {
     const v = row[k];
@@ -19,7 +20,7 @@ function fake(items: Item[], sums: Sum[] = []) {
     return v === c;
   });
   return {
-    activityItem: { findMany: async ({ where }: any) => items.filter((r) => match(r, where)) },
+    activityItem: { findMany: async (a: any) => { calls.push(a); const r = items.filter((x) => match(x, a.where)); if (a.orderBy) r.sort((x, y) => y.occurredAt.getTime() - x.occurredAt.getTime() || (x.id < y.id ? -1 : x.id > y.id ? 1 : 0)); return a.take ? r.slice(0, a.take) : r; } },
     itemSummary: { findMany: async ({ where }: any) => sums.filter((r) => match(r, where)) },
   };
 }
@@ -77,8 +78,48 @@ test("E42 itemSummaries caps at 100 and makes one-liners one line", async () => 
   assert.equal(rows[0]!.text, "a b");
 });
 
-test("registerDevContextSources registers both ids", () => {
-  const seen: string[] = [];
-  registerDevContextSources(fake([]), key, ((id: string) => { seen.push(id); }) as never);
-  assert.deepEqual(seen, ["dev.activityItems", "dev.itemSummaries"]);
+const wide = { window: { from: new Date(0), to: new Date("2027-01-01T00:00:00Z") } };
+
+test("E42 itemSummaries omits an in-window current summary of another project", async () => {
+  const a = item("a", { projectId: "other" }), b = item("b");
+  const rows = await createDevContextSources(fake([a, b], [sum("sa", a), sum("sb", b)]), key).itemSummaries({ caller, projectId: P, options: wide });
+  assert.deepEqual(rows.map((r) => r.ref.id), ["sb"]);
+});
+
+test("E42 itemSummaries orders equal occurredAt ties by item id ascending", async () => {
+  const items = [item("c"), item("a"), item("b")];
+  const rows = await createDevContextSources(fake(items, items.map((it) => sum(`s-${it.id}`, it))), key).itemSummaries({ caller, projectId: P, options: wide });
+  assert.deepEqual(rows.map((r) => r.ref.id), ["s-a", "s-b", "s-c"]);
+});
+
+test("E42 itemSummaries scan is ordered newest first and capped at 500", async () => {
+  calls.length = 0;
+  await createDevContextSources(fake([]), key).itemSummaries({ caller, projectId: P, options: wide });
+  assert.deepEqual(calls[0].orderBy, [{ occurredAt: "desc" }, { id: "asc" }]);
+  assert.equal(calls[0].take, 500);
+});
+
+test("E43 uppercase ids in itemIds still yield rows in request order", async () => {
+  const rows = await createDevContextSources(fake([item("a"), item("b")]), key).activityItems({ caller, projectId: P, options: { itemIds: ["B", "A"] } });
+  assert.deepEqual(rows.map((r) => r.ref.id), ["b", "a"]);
+  assert.match(rows[0]!.text, /^n=1 /);
+  assert.match(rows[1]!.text, /^n=2 /);
+});
+
+test("one-line rows also replace VT, FF and NEL", async () => {
+  const body = ["x", "y", "z", "w"].join("\v").replace("z", "z" + String.fromCharCode(0x85) + "q").replace("y", "y\f");
+  const [row] = await createDevContextSources(fake([item("a", { body })]), key).activityItems({ caller, projectId: P, options: { itemIds: ["a"] } });
+  assert.equal(row!.text, "n=1 COMMIT - t-a | x y  z q w");
+});
+
+test("registerDevContextSources binds each function to the right id", async () => {
+  const seen = new Map<string, any>();
+  registerDevContextSources(fake([]), key, ((id: string, fn: unknown) => { seen.set(id, fn); }) as never);
+  assert.deepEqual([...seen.keys()], ["dev.activityItems", "dev.itemSummaries"]);
+  calls.length = 0;
+  await seen.get("dev.itemSummaries")({ caller, projectId: P, options: wide });
+  assert.equal(calls[0].take, 500);
+  calls.length = 0;
+  await seen.get("dev.activityItems")({ caller, projectId: P, options: { itemIds: ["a"] } });
+  assert.equal(calls[0].take, undefined);
 });

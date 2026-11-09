@@ -14,6 +14,7 @@ const sums = [
   { id: "s2", itemId: "d", contentHash: "old", guardVersion: "g1", promptVersion: "v1", oneLiner: "y", flagged: true },
   { id: "s3", itemId: "b", contentHash: "hb", guardVersion: "g1", promptVersion: "v1", oneLiner: "z", flagged: true },
   { id: "s4", itemId: "a", contentHash: "ha", guardVersion: "g0", promptVersion: "v1", oneLiner: "w", flagged: true },
+  { id: "s5", itemId: "a", contentHash: "ha", guardVersion: "g1", promptVersion: "v0", oneLiner: "v", flagged: true },
 ];
 const inSet = (v: unknown, c: any) => (c && typeof c === "object" && "in" in c ? c.in.includes(v) : v === c);
 const db = {
@@ -47,6 +48,7 @@ test("insertSummaries writes createMany with skipDuplicates and the key through 
   const calls: any[] = [];
   const tx = {
     project: { update: async () => ({}), findFirst: async () => ({ status: "ACTIVE" }) },
+    activityItem: db.activityItem,
     itemSummary: { createMany: async (a: unknown) => { calls.push(a); } },
   };
   const deps = { db: { $transaction: async (fn: any) => fn(tx) } as never, requireMember: async () => {} };
@@ -62,4 +64,38 @@ test("insertSummaries on an archived project rejects CONFLICT_STATE without writ
   const deps = { db: { $transaction: async (fn: any) => fn(tx) } as never, requireMember: async () => {} };
   await assert.rejects(insertSummaries(deps, "u1", "p", [{ itemId: "a", contentHash: "ha", oneLiner: "x", flagged: false, callId: "c1" }], key), { message: "CONFLICT_STATE" });
   assert.equal(wrote, 0);
+});
+
+function writeDeps(createMany: (a: unknown) => void) {
+  const tx = { project: { update: async () => ({}), findFirst: async () => ({ status: "ACTIVE" }) }, activityItem: db.activityItem, itemSummary: { createMany: async (a: unknown) => { createMany(a); } } };
+  return { db: { $transaction: async (fn: any) => fn(tx) } as never, requireMember: async () => {} };
+}
+const one = (itemId: string) => ({ itemId, contentHash: "h", oneLiner: "x", flagged: false, callId: "c1" });
+
+test("currentSummaries ignores a same-hash summary that differs only in promptVersion", async () => {
+  const m = await currentSummaries(db, [{ id: "a", contentHash: "ha" }], key);
+  assert.equal(m.get("a")?.id, "s1");
+});
+
+test("insertSummaries with another user's or another project's item rejects NOT_FOUND and writes nothing", async () => {
+  let wrote = 0;
+  const deps = writeDeps(() => { wrote++; });
+  for (const id of ["b", "c", "zzz"]) await assert.rejects(insertSummaries(deps, "u1", "p", [one("a"), one(id)], key), { message: "NOT_FOUND" });
+  assert.equal(wrote, 0);
+});
+
+test("insertSummaries with no rows is a no-op without a transaction", async () => {
+  let began = 0;
+  await insertSummaries({ db: { $transaction: async () => { began++; } } as never, requireMember: async () => {} }, "u1", "p", [], key);
+  assert.equal(began, 0);
+});
+
+test("loadOwnItems resolves uppercase ids in request order", async () => {
+  const rows = await loadOwnItems(db, "u1", "p", ["D", "A"]);
+  assert.deepEqual(rows.map((r) => r.id), ["d", "a"]);
+});
+
+test("summaryFlagged is false for an unknown id and for foreign-flagged plus own-unflagged", async () => {
+  assert.equal(await summaryFlagged(db, "u1", ["nope"]), false);
+  assert.equal(await summaryFlagged(db, "u1", ["s3", "s1"]), false);
 });

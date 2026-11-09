@@ -8,9 +8,9 @@ type Read = { findMany(args: unknown): Promise<any[]> };
 type SummaryDb = { activityItem: Read; itemSummary: Read };
 
 export async function loadOwnItems(db: unknown, userId: string, projectId: string, itemIds: string[]): Promise<OwnItem[]> {
-  const rows: OwnItem[] = await (db as SummaryDb).activityItem.findMany({ where: { id: { in: itemIds }, projectId, uploadedBy: userId }, select: { id: true, contentHash: true, flagged: true, occurredAt: true } });
-  const byId = new Map(rows.map((r) => [r.id, r]));
-  return itemIds.map((id) => { const row = byId.get(id); if (!row) throw new Error("NOT_FOUND"); return row; });
+  const rows: OwnItem[] = await (db as SummaryDb).activityItem.findMany({ where: { id: { in: itemIds.map((id) => id.toLowerCase()) }, projectId, uploadedBy: userId }, select: { id: true, contentHash: true, flagged: true, occurredAt: true } });
+  const byId = new Map(rows.map((r) => [r.id.toLowerCase(), r]));
+  return itemIds.map((id) => { const row = byId.get(id.toLowerCase()); if (!row) throw new Error("NOT_FOUND"); return row; });
 }
 
 export async function currentSummaries(db: unknown, items: { id: string; contentHash: string }[], key: Key): Promise<Map<string, { id: string; oneLiner: string; flagged: boolean }>> {
@@ -28,6 +28,9 @@ export async function currentSummaries(db: unknown, items: { id: string; content
 export async function insertSummaries(deps: DevWriteDeps, userId: string, projectId: string, rows: SummaryRow[], key: Key): Promise<void> {
   if (!rows.length) return;
   await inDevWrite(deps, userId, projectId, async (tx) => {
+    const ids = [...new Set(rows.map((r) => r.itemId))];
+    const own: unknown[] = await (tx as { activityItem: Read }).activityItem.findMany({ where: { id: { in: ids }, projectId, uploadedBy: userId }, select: { id: true } });
+    if (own.length !== ids.length) throw new Error("NOT_FOUND");
     const data = rows.map((r) => ({ itemId: r.itemId, contentHash: r.contentHash, oneLiner: r.oneLiner, flagged: r.flagged, callId: r.callId, guardVersion: key.guardVersion, promptVersion: key.promptVersion }));
     await (tx as { itemSummary: { createMany(args: unknown): Promise<unknown> } }).itemSummary.createMany({ data, skipDuplicates: true });
   });
