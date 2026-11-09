@@ -33,7 +33,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] Check PR #23 fixes 3 and 4 against the spec (2026-11-09): fix 3 matches; fix 4 shipped `inMutationTransaction`, so § 4.6 and SD16 are amended (C~7).
 - [x] Re-approval of the 2026-11-09 spec amendments (§ 4.1, § 4.6, F8, SD11, SD16): approved by ludannnn on 2026-11-09.
 - [ ] Gate 2: W9 plan.
-- [ ] **Handover:** to the Dev Lead (W5): `lockProjectForMutation`'s no-op `version: { increment: 0 }` update also bumps `projects.updated_at` (`@updatedAt`) on every task, checkpoint and membership write.
+- [ ] **Handover:** to the Dev Lead (W5): W9 adds an export of `lockProjectForMutation` to `src/be/core/src/index.ts` (C~8); its no-op `version: { increment: 0 }` update bumps `projects.updated_at` (`@updatedAt`) on every task, checkpoint, membership and now W9 write.
 - [ ] **Handover:** contracts.md rows 50 and 51 list fewer errors than W9 returns (`RATE_LIMITED`, `AI_DISABLED`, 422 for `BLOCKED_INPUT`, 404, 409); add them as a clarification (they follow architecture §8 and the W3 handover).
 - [ ] **Handover:** tell W17 that `CACHE_HIT` rows now exist for DEV_SUMMARY and DEV_STANDUP (spec SD13); summary hits have a null `session_id`.
 - [ ] **Handover:** S20 (Upload and standup) and S18 (Team standups) wiring to the live API is a Medium follow-up spec (C~1); the browser must cut bodies over 2000 characters instead of rejecting them (spec SD on truncation).
@@ -54,7 +54,8 @@ describes `INT`; read it for context and write here instead of editing it.
 |---|---|---|---|
 | 2026-11-08 | Branch state created; W9 spec written, reviewed (four lenses) and approved | W9 | `6148492` |
 | 2026-11-09 | Merged `development` at `3519ff0` (W5 PR #23, W4 sign-in PR #25), no conflicts; Base moved | W9 | `6334f78` |
-| 2026-11-09 | Spec checked against W5's merged code and amended: writes run in `inMutationTransaction` with W9's own `FOR SHARE` lock (SD16); wiring is two lines in `app.ts` (SD11); F8's boot test also covers the core sources; W7 runtime reference dropped (C~7) | W9 | this commit |
+| 2026-11-09 | Spec checked against W5's merged code and amended: writes run in `inMutationTransaction` with W9's own `FOR SHARE` lock (SD16); wiring is two lines in `app.ts` (SD11); F8's boot test also covers the core sources; W7 runtime reference dropped (C~7) | W9 | `365f001` |
+| 2026-11-09 | Plan path check found the filtered client drops raw SQL, so the `FOR SHARE` lock cannot run; SD16 and § 4.6 amended to W5's exported `lockProjectForMutation` (C~8, L~1) | W9 | this commit |
 
 ---
 
@@ -111,3 +112,21 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Decision:** W9 writes use W5's `inMutationTransaction` with W9's own `FOR SHARE` lock; the dev wiring changes the two `getCoreComposition` lines in `app.ts`; F8's boot test also asserts the core sources and core.
 - **Why:** W5's fix 4 shipped a retrying transaction helper (the case § 4.6 anticipated); its own lock is not exported and bumps `projects.updated_at`.
 - **Rejected:** W5's `lockProjectForMutation`; keeping a bare `$transaction` without the retry.
+- **Superseded in part by C~8:** the `FOR SHARE` lock cannot run through the filtered client.
+
+### C~8 W9 writes lock with W5's exported `lockProjectForMutation`
+- **Date:** 2026-11-09 · **Asked by:** ludannnn (operator): "lets amend it with the recommended option i think the queue is negligible"
+- **Decision:** `@agile/core`'s `index.ts` gains one export line for `lockProjectForMutation`; W9 calls it as the `lock` step of `inMutationTransaction` and maps its `P2025` to `CONFLICT_STATE` (spec SD16, § 4.6).
+- **Why:** the filtered client and its transactions drop raw SQL (`src/be/db/src/client.ts`), so C~7's `FOR SHARE` query is impossible; reusing W5's lock keeps one lock that archive and every write contend on.
+- **Rejected:** copying the no-op update into `@agile/dev` (two copies of one lock).
+- **Accepted cost:** each W9 write bumps `projects.updated_at`, and writes to one project queue for one short transaction.
+
+## Lessons
+
+### L~1 — Check the filtered client before specifying a query
+
+- **Date:** 2026-11-09
+- **Cause:** The W9 spec and its 2026-11-09 amendment assumed a parameterised FOR SHARE query through tx; nobody opened the filtered client
+- **Rule:** Before a spec names a Prisma call on the request client (raw SQL, $transaction options, unique reads), check src/be/db/src/client.ts: the filtered client and its transactions drop $queryRaw and $executeRaw
+- **Scope:** project
+- **Found by:** Claude Opus 5.5 (self), while verifying paths for the W9 plan
