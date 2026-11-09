@@ -1,0 +1,13 @@
+{
+  "task": "T7",
+  "status": "done",
+  "summary": "Added PM edit, list and regeneration flows with shared model handling and runtime bindings.",
+  "commit": "pending",
+  "produces": [
+    { "kind": "symbol", "name": "PlanFlow.editEpic, replaceCheckpoints, addEpic, deleteEpic, regenerateEpic, listProposals", "where": "src/be/pm/src/plan-flow.ts", "note": "All take caller and return proposal or page; validation maps to 422 and cap to 429." }
+  ],
+  "next": "T8 calls each method with caller { userId, role: PM }; addEpic returns 201, other successes 200. PlanFlowError maps validation details and retry seconds.",
+  "deviations": [],
+  "edge_cases": ["E1", "E3", "E29", "E38", "E39", "E40", "E41", "E42", "E43", "E44", "E45", "E47"],
+  "checks": { "build": "pass", "tests": "49 PM tests passed serially, 0 failed, 0 skipped; 4 enhanced focused tests passed afterward", "lint": "handover lint pass; full lint not run" }
+}
