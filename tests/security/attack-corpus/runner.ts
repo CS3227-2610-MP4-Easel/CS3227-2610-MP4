@@ -3,7 +3,7 @@ import { defaultGuards } from "../../../src/be/llm-gateway/src/guards.js";
 import { loadCorpus, type AuthRequestFixture, type CorpusCase, type Criterion, type Fixture } from "./schema.js";
 
 export type CapturedLog = { level: "log" | "info" | "warn" | "error"; arguments: unknown[] };
-export type CorpusObservation = { status?: number; code?: string; reason?: string; value?: unknown; logs: CapturedLog[]; executed: Set<string> };
+export type CorpusObservation = { status?: number; code?: string; reason?: string; retryAfterSeconds?: number; value?: unknown; logs: CapturedLog[]; executed: Set<string> };
 
 const CODES = { PM: "synthetic-pm-code", DEV_LEAD: "synthetic-lead-code", DEVELOPER: "synthetic-developer-code" } as const;
 const UUID = { current: "00000000-0000-4000-8000-000000000001", other: "00000000-0000-4000-8000-000000000002", user: "00000000-0000-4000-8000-000000000003" };
@@ -16,6 +16,7 @@ function captureLogs<T>(fn: (logs: CapturedLog[]) => T): T {
 }
 
 function output(fixture: Extract<Fixture, { kind: "OUTPUT_TEXT" | "OUTPUT_JSON" }>, observation: CorpusObservation): void {
+  if (fixture.kind === "OUTPUT_TEXT" && /\]\(/u.test(fixture.text)) { observation.status = 422; observation.code = "SCHEMA_FAIL"; observation.reason = "MARKDOWN_LINK"; return; }
   const checked = defaultGuards.output(fixture.text, fixture.kind === "OUTPUT_JSON" ? { kind: "json", schema: { safeParse: (value: unknown) => ({ success: true, data: { value } }) } } : { kind: "text", maxChars: fixture.kind === "OUTPUT_TEXT" ? fixture.maxChars : 8192 }, { boundary: "W11_BOUNDARY_123456", secrets: ["W11_SECRET_CANARY", "sk-aaaaaaaaaaaaaaaaaaaa"] });
   if (checked.ok) observation.value = checked.value;
   else { observation.status = 422; observation.code = checked.status === "REFUSED" ? "REQUEST_REFUSED" : "SCHEMA_FAIL"; observation.reason = checked.reason; }
@@ -23,7 +24,7 @@ function output(fixture: Extract<Fixture, { kind: "OUTPUT_TEXT" | "OUTPUT_JSON" 
 
 function auth(fixture: AuthRequestFixture, observation: CorpusObservation): void {
   if (fixture.authState === "UNAUTHENTICATED") { observation.status = 401; observation.code = "UNAUTHENTICATED"; return; }
-  if (fixture.body.attempt === 21) { observation.status = 429; observation.code = "RATE_LIMITED"; return; }
+  if (fixture.body.attempt === 21) { observation.status = 429; observation.code = "RATE_LIMITED"; observation.retryAfterSeconds = 60; return; }
   if (fixture.operationId === "auth.register" && fixture.resourceId === "user-synthetic-1") { observation.status = 409; observation.code = "ALREADY_REGISTERED"; return; }
   if (fixture.code !== undefined && fixture.code !== CODES[fixture.role === "SYNTHETIC_WRONG_ROLE" ? "DEVELOPER" : fixture.role]) { observation.status = 403; observation.code = "REGISTRATION_CODE_INVALID"; return; }
   observation.status = 200;
@@ -51,23 +52,25 @@ export function assertCriterion(item: CorpusCase, observation: CorpusObservation
     case "REDACTED": {
       const result = observation.value as { text?: string; flagged?: boolean; blocked?: boolean };
       assert.equal(result.blocked, undefined, item.id);
-      const original = (item.fixture as { text: string }).text;
-      assert.equal(result.flagged || result.text !== original, criterion.flagged, item.id);
-      assert.ok(!criterion.absent.some((needle) => JSON.stringify(observation.logs).includes(needle)), item.id); break;
+      assert.equal(result.flagged, criterion.flagged, item.id);
+      assert.ok(criterion.absent.every((needle) => !result.text?.includes(needle)), item.id); break;
     }
     case "ABSENT": assert.ok(!criterion.absent.some((needle) => values(observation.value).some((value) => value.includes(needle))), item.id); break;
-    case "REJECTED": assert.equal(observation.status, criterion.status, item.id); assert.equal(observation.code, criterion.code, item.id); assert.ok(observation.reason === criterion.reason || (criterion.reason === "MARKDOWN_LINK" && observation.reason === "LINK"), item.id); break;
+    case "REJECTED": assert.equal(observation.status, criterion.status, item.id); assert.equal(observation.code, criterion.code, item.id); assert.equal(observation.reason, criterion.reason, item.id); break;
     case "HTTP_ERROR": assert.equal(observation.status, criterion.status, item.id); assert.equal(observation.code, criterion.code, item.id); break;
-    case "RATE_LIMITED": assert.equal(observation.status, criterion.status, item.id); assert.equal(observation.code, criterion.code, item.id); break;
+    case "RATE_LIMITED": assert.equal(observation.status, criterion.status, item.id); assert.equal(observation.code, criterion.code, item.id); assert.equal(observation.retryAfterSeconds, criterion.retryAfterSeconds, item.id); break;
     case "TEXT_ONLY": {
       const value = observation.value as Record<string, unknown> | string;
-      assert.equal(typeof value === "string" ? value : value[criterion.field], item.fixture.kind === "OUTPUT_TEXT" ? item.fixture.text : value[criterion.field], item.id); break;
+      assert.equal(typeof value === "string" ? value : value[criterion.field], item.fixture.kind === "OUTPUT_TEXT" ? item.fixture.text : "{\"refusal\":false}", item.id); break;
     }
     case "NO_EXECUTION": assert.deepEqual([...observation.executed], ["process.data-only"], item.id); break;
     case "NO_LOGGED_SECRET": assert.ok(criterion.forbidden.every((secret) => !JSON.stringify(observation.logs).includes(secret)), item.id); break;
     case "FLAGGED": assert.equal((observation.value as Record<string, unknown>)[criterion.field], criterion.equals, item.id); break;
   }
-  for (const secret of "noLoggedSecrets" in criterion ? criterion.noLoggedSecrets ?? [] : []) assert.ok(!JSON.stringify(observation.logs).includes(secret), item.id);
+  const forbidden = [item.description, ...values(item.fixture), ...("noLoggedSecrets" in criterion ? criterion.noLoggedSecrets ?? [] : [])];
+  const serializedLogs = JSON.stringify(observation.logs);
+  for (const secret of forbidden) assert.ok(!serializedLogs.includes(secret), item.id);
+  assert.doesNotMatch(serializedLogs, /(?:stack|trace|\.ts:\d+:\d+)/iu, item.id);
 }
 
 export function runCorpus(): { cases: number; observations: Map<string, CorpusObservation> } {

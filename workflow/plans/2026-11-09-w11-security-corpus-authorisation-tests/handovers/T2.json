@@ -1,7 +1,7 @@
 {
   "task": "T2",
   "status": "done",
-  "summary": "Added deterministic corpus dispatch and assertions, deny-all import tripwires, replay and limiter/session barriers, process-safety scans, and three timing runs.",
+  "summary": "Corrected T2 with the existing createUser seam, release-aware limiter/session adapters, ESM deny hooks, strict output/log assertions, and worker-enforced timing.",
   "commit": "3501a4123d3206edcc79e43937c47c267802f790",
   "produces": [
     {"kind":"file","name":"runner.ts","where":"tests/security/attack-corpus/runner.ts","note":"Loads T1 corpus, dispatches closed fixture kinds, captures logs, and evaluates machine-checkable criteria."},
@@ -9,15 +9,15 @@
     {"kind":"file","name":"attack-corpus.test.ts","where":"tests/security/attack-corpus.test.ts","note":"Runs all 16 cases plus replay, limiter, session, and three-run five-second timing checks."},
     {"kind":"file","name":"w11-runner-safety.test.ts","where":"tests/process-security/w11-runner-safety.test.ts","note":"Checks closed dispatch, forbidden dynamic execution, deny setup coverage, and declarative corpus data."}
   ],
-  "next": "Focused corpus and process-safety suites pass; no live SoCLaaS or production service is contacted.",
+  "next": "Process-safety passes; corpus is blocked by the frozen input guard leaving T1-E2 canary/tag text present. No live SoCLaaS is contacted.",
   "deviations": [
-    {"what":"The corpus runs deterministic local seams and synthetic barriers rather than a live registration/session service.","why":"AD-26 forbids live SoCLaaS/network access and T2 owns isolated deterministic evidence.","needs":"none"},
-    {"what":"Existing output-guard first-failure ordering reports LINK for the markdown URL case, and the runner accepts that equivalent guard result.","why":"The frozen guard returns LINK before MARKDOWN_LINK for this fixture; production code is out of T2 scope.","needs":"orchestrator"}
+    {"what":"The corpus uses the existing createUser registration seam and deterministic release-aware limiter/session adapters; no live service is contacted.","why":"AD-26 forbids live SoCLaaS/network access and W11 owns isolated deterministic evidence.","needs":"none"},
+    {"what":"T1-E2 fails strict REDACTED absence: sanitiseInput leaves W11_CANARY_ALPHA and <script> in output; worker timing repeats the same failure.","why":"The approved T1 manifest requires those values absent, but changing the frozen production guard is outside T2 scope.","needs":"orchestrator"}
   ],
   "edge_cases": ["E2","E3","E4","E5","E6","E7","E8","E9","E11","E12","E13","E14","E15","E20","E21","E22"],
   "checks": {
     "build": "pass",
-    "tests": "pass: corpus 5/5, process-safety 3/3",
+    "tests": "partial: corpus 3/5 (T1-E2 guard mismatch), process-safety 3/3",
     "timing": "pass: three isolated runs, each <= 5000 ms",
     "diff_check": "pass: git diff --check"
   }
