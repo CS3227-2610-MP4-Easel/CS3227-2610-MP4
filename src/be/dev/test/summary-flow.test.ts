@@ -368,3 +368,16 @@ test("E73 ten items with 2000-character bodies are cut to 900 points, one run, n
   assert.equal(r.w.state.transactions, 1);
 });
 
+test("preview tier: AI_NOT_CONFIGURED from openOrReuse gives AI_DISABLED 503 with no run", async () => {
+  const w = world([item(1)]);
+  const { deps, log } = stubs(w, { sessions: { openOrReuse: async () => { throw new Error("AI_NOT_CONFIGURED"); } } });
+  await assert.rejects(generateSummaries(deps, caller, P, [id(1)]), (e: any) => e instanceof DevError && e.code === "AI_DISABLED" && e.status === 503);
+  assert.deepEqual([log.runs.length, w.state.transactions], [0, 0]);
+});
+
+test("preview tier: AI_NOT_CONFIGURED from the all-cached recordCacheHit gives AI_DISABLED 503", async () => {
+  const w = world([item(1)], [sum(1)]);
+  const { deps } = stubs(w, { recordCacheHit: async () => { throw new Error("AI_NOT_CONFIGURED"); } });
+  await assert.rejects(generateSummaries(deps, caller, P, [id(1)]), (e: any) => e instanceof DevError && e.code === "AI_DISABLED" && e.status === 503);
+});
+

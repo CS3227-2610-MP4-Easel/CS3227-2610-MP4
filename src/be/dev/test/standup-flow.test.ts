@@ -19,7 +19,7 @@ const named = (name: string, extra: object = {}) => Object.assign(new Error(name
 
 type Opts = {
   sections?: ContextSections; provenance?: { section: string; type: string; id: string; projectId: string }[]; row?: any; now?: Date; date?: string;
-  run?: (call: any) => Promise<LlmResult>; regenerate?: () => Promise<void>; open?: () => Promise<string>; member?: boolean; upsertError?: Error; assembleError?: Error; flaggedSummary?: boolean; sanitiseFlag?: boolean;
+  run?: (call: any) => Promise<LlmResult>; regenerate?: () => Promise<void>; open?: () => Promise<string>; hit?: () => Promise<void>; member?: boolean; upsertError?: Error; assembleError?: Error; flaggedSummary?: boolean; sanitiseFlag?: boolean;
 };
 
 function harness(o: Opts = {}) {
@@ -52,7 +52,7 @@ function harness(o: Opts = {}) {
       open: async (i) => { log.opens++; log.openArgs.push(i); return o.open ? o.open() : `new-${log.opens}`; },
       regenerate: async (id, uid) => { log.regens++; log.regenArgs.push([id, uid]); if (o.regenerate) await o.regenerate(); },
     },
-    recordCacheHit: async (i) => { log.hits.push(i); }, sanitiseFlag: () => o.sanitiseFlag ?? false, checkLine,
+    recordCacheHit: async (i) => { log.hits.push(i); if (o.hit) await o.hit(); }, sanitiseFlag: () => o.sanitiseFlag ?? false, checkLine,
   };
   return { deps, log, stored: () => stored, call: () => generateStandup(deps, { userId: U, role: "DEVELOPER" }, P, o.date ?? DATE) };
 }
@@ -71,6 +71,25 @@ test("E26 unchanged input returns the stored row cached with one cache hit and n
   assert.equal(s.version, 3);
   assert.deepEqual([h.log.runs, h.log.regens, h.log.opens, h.log.hits.length], [0, 0, 0, 1]);
   assert.deepEqual(h.log.hits[0], { feature: "DEV_STANDUP", caller: { userId: U, role: "DEVELOPER" }, sessionId: "sess", projectId: P, inputHash: hashOf(sections), promptVersion: STANDUP_PROMPT_VERSION });
+});
+
+test("E26 a failing recordCacheHit does not fail an unchanged-hash request", async () => {
+  const sections = [sec("task-events", "line a")];
+  const h = harness({ sections, row: rowFor(sections), hit: async () => { throw new Error("hit store down"); } });
+  const s = await h.call();
+  assert.deepEqual([s.cached, s.version, h.log.upserts, h.log.runs], [true, 3, 0, 0]);
+});
+
+test("preview tier: AI_NOT_CONFIGURED from open or regenerate gives AI_DISABLED 503 and stores nothing", async () => {
+  const notConfigured = async (): Promise<never> => { throw new Error("AI_NOT_CONFIGURED"); };
+  const isDisabled = (e: any) => e instanceof DevError && e.code === "AI_DISABLED" && e.status === 503;
+  const h = harness({ open: notConfigured });
+  await assert.rejects(h.call(), isDisabled);
+  assert.deepEqual([h.stored(), h.log.runs, h.log.upserts], [null, 0, 0]);
+  const row = rowFor([sec("task-events", "old")]);
+  const g = harness({ row, regenerate: notConfigured });
+  await assert.rejects(g.call(), isDisabled);
+  assert.deepEqual([g.stored(), g.log.runs, g.log.opens], [row, 0, 0]);
 });
 
 test("E32 stored degraded row with unchanged input is returned cached without a run", async () => {

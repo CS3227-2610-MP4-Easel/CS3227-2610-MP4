@@ -47,7 +47,7 @@ export async function generateStandup(deps: StandupFlowDeps, caller: { userId: s
   const inputHash = standupInputHash(day, assembled.sections, assembled.provenance);
   const row = await findStandup(deps.db, projectId, caller.userId, day);
   if (row && row.inputHash === inputHash) {
-    await deps.recordCacheHit({ feature: "DEV_STANDUP", caller, sessionId: row.sessionId, projectId, inputHash, promptVersion: STANDUP_PROMPT_VERSION });
+    try { await deps.recordCacheHit({ feature: "DEV_STANDUP", caller, sessionId: row.sessionId, projectId, inputHash, promptVersion: STANDUP_PROMPT_VERSION }); } catch { /* the stored row stands; not logged: no detail may leak */ }
     return toStandup(row, true);
   }
 
@@ -63,6 +63,7 @@ export async function generateStandup(deps: StandupFlowDeps, caller: { userId: s
       }
     }
   } catch (error) {
+    if (error instanceof Error && error.message === "AI_NOT_CONFIGURED") throw new DevError("AI_DISABLED", 503);
     if (isCap(error)) throw capError(error);
     throw error;
   }

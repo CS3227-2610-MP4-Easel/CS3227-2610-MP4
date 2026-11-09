@@ -35,12 +35,18 @@ export async function generateSummaries(deps: SummaryFlowDeps, caller: { userId:
   });
 
   if (!left.length) {
-    if (cached.length) await cacheHit();
+    if (cached.length) {
+      try { await cacheHit(); } catch (error) {
+        if (error instanceof Error && error.message === "AI_NOT_CONFIGURED") throw new DevError("AI_DISABLED", 503);
+        throw error;
+      }
+    }
     return finish();
   }
 
   let sessionId: string;
   try { sessionId = await deps.sessions.openOrReuse({ feature: "DEV_SUMMARY", userId: caller.userId, projectId }); } catch (error) {
+    if (error instanceof Error && error.message === "AI_NOT_CONFIGURED") throw new DevError("AI_DISABLED", 503);
     if (error instanceof Error && error.name === "SessionCapReached") throw new DevError("RATE_LIMITED", 429, (error as { retryAfterSeconds?: number }).retryAfterSeconds);
     throw error;
   }
