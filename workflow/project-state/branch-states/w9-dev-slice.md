@@ -33,7 +33,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] Re-approval of the 2026-11-09 spec amendments (§ 4.1, § 4.6, F8, SD11, SD16): approved by ludannnn on 2026-11-09.
 - [x] Gate 2: W9 plan approved by ludannnn on 2026-11-09 (10 tasks, 6 waves, full review each).
 - [ ] **Handover:** to the Dev Lead (W5): W9 adds an export of `lockProjectForMutation` to `src/be/core/src/index.ts` (C~8); its no-op `version: { increment: 0 }` update bumps `projects.updated_at` (`@updatedAt`) on every task, checkpoint, membership and now W9 write. When member removal (endpoint 11) and project archive are built, they must update the project row (`lockProjectForMutation`) so they serialise with W9's writes; W9's seam reads membership through core's `requireMember`, which does not take the transaction.
-- [ ] **Handover:** contracts.md rows 50 and 51 list fewer errors than W9 returns (`RATE_LIMITED`, `AI_DISABLED`, 422 for `BLOCKED_INPUT`, 404, 409); add them as a clarification (they follow architecture §8 and the W3 handover).
+- [ ] **Handover:** contracts.md rows 50 and 51 list fewer errors than W9 returns (`RATE_LIMITED`, `AI_DISABLED`, 422 for `BLOCKED_INPUT`, 404, 409); add them as a clarification (they follow architecture §8 and the W3 handover). Rows 49-51 also gain 429 `RATE_LIMITED` with `Retry-After: 1` when concurrent writes to one project exhaust the retries (C~9).
 - [ ] **Handover:** tell W17 that `CACHE_HIT` rows now exist for DEV_SUMMARY and DEV_STANDUP (spec SD13); summary hits have a null `session_id`.
 - [ ] **Handover:** S20 (Upload and standup) and S18 (Team standups) wiring to the live API is a Medium follow-up spec (C~1); the browser must cut bodies over 2000 characters instead of rejecting them (spec SD4), send `{}` (not an empty body) to endpoint 51, and render summaries and standup lines as plain text only.
 - [x] Build T1-T10 and close-out: plan lint `--closeout` clean; typecheck, lint, `prisma:validate` green; `npm test` 808/808 (0 skipped, Postgres ran) + fe 149/149; audit passes at high; whole-branch code review (high) with two fixes (`e2e1e00`).
@@ -86,6 +86,8 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-09 | P6 measured: 5 concurrent uploads to one project → 2 fail with a serialization error (P2034/40001) on every run, no partial writes; they surface as 500 | W9 | `127daca` |
 | 2026-11-09 | Close-out checks: typecheck, lint, `prisma:validate` green; `npm test` 804/804 (0 skipped) + fe 149/149; audit passes at high (8 moderate, pre-existing; this branch only adds the `@agile/dev` workspace link to the lockfile); plan lint `--closeout` clean | W9 | `f975ca5` |
 | 2026-11-09 | Close-out code review (high, whole branch): 10 findings. Fixing: preview tier makes 50/51 return 500 (session proxy throws AI_NOT_CONFIGURED; map to 503 AI_DISABLED), and a failing usage row on a standup cache hit fails the request (swallow it, like summaries). Recorded, not fixed: summary session opened before assembly (spec order; self-only cap use), dev resolvers ignore the authorization tx (production supplies none, spec § 4.6), a body-less POST to 51 is 400 (same as every bodySchema route; the S20 follow-up must send `{}`), and maintainability nits (limit declared twice per route, repeated helpers and CacheHitInput copy, second core instance in dev-composition, N+1 reads in openOrReuse, repeated id dedupe, duplicated window body) | W9 | close-out |
+| 2026-11-09 | Close-out fixes: preview tier now gives 503 AI_DISABLED on 50/51, and a failing usage row on a standup cache hit is ignored; checks green | W9 | `e2e1e00` |
+| 2026-11-09 | Gate 3 asked; the operator asked for the concurrency fix first (C~9): `inDevWrite` maps exhausted serialization retries to 429 `RATE_LIMITED` with `Retry-After: 1`; unit, route and Postgres tests updated. Checks: typecheck green, `npm test` 811/811 (0 skipped) + fe 149/149 | W9 | `1a38dcd` |
 
 ---
 
@@ -93,7 +95,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 - **Upload storage is unbounded** — endpoint 49 has no per-user rate limit or row cap and activity items are never deleted; spend is bounded by the session caps and AI windows, storage is not.
 - **A regeneration or summary retry can spend a session without storing anything** — `regenerate` counts before `run`, so a busy or refused standup call uses one of the five regenerations and stores nothing.
-- **Concurrent W9 writes to one project can exhaust the transaction retries** — writes queue on the project-row lock and each waiter is retried after a serialization error; `inMutationTransaction` allows 3 attempts, so four or more simultaneous uploads, summary inserts or standup writes on one project can return 500 (plan P6). Measured on Postgres: 5 concurrent uploads → 2 fail with a serialization error on every run, no partial writes.
+- **Concurrent W9 writes to one project can exhaust the transaction retries** — writes queue on the project-row lock and each waiter is retried after a serialization error; `inMutationTransaction` allows 3 attempts, so four or more simultaneous uploads, summary inserts or standup writes on one project can fail (plan P6). Measured on Postgres: 5 concurrent uploads → 2 fail on every run, no partial writes; since C~9 they get 429 `RATE_LIMITED` with `Retry-After: 1` instead of 500.
 - **An oversize `Content-Length` gets 413 before authentication** — endpoints 49-51 check the header (only the header; no body is read) before the token, so an unauthenticated client sees 413 instead of 401.
 - **A summary session is opened before context assembly** — if assembly fails (membership removed, a source error), the opened DEV_SUMMARY session stays OPEN and counts toward the caller's own caps.
 - **A Developer on four or more projects can hit the 3-open DEV_STANDUP cap** — W9 leaves standup sessions open for W16's edit and accept (53, 54), so a fourth standup within 30 minutes gets 429 `RATE_LIMITED`.
@@ -153,6 +155,12 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Why:** the filtered client and its transactions drop raw SQL (`src/be/db/src/client.ts`), so C~7's `FOR SHARE` query is impossible; reusing W5's lock keeps one lock that archive and every write contend on.
 - **Rejected:** copying the no-op update into `@agile/dev` (two copies of one lock).
 - **Accepted cost:** each W9 write bumps `projects.updated_at`, and writes to one project queue for one short transaction.
+
+### C~9 An exhausted write retry returns 429, not 500
+- **Date:** 2026-11-09 · **Asked by:** ludannnn (operator), at Gate 3: "yes fix it first"
+- **Decision:** when `inDevWrite` still fails with a serialization error (`P2034`/`40001`) after `inMutationTransaction`'s 3 attempts, it throws `DevError("RATE_LIMITED", 429, 1)`; the routes send `Retry-After: 1`. Endpoints 49-51 gain this 429.
+- **Why:** T10 measured 2 of 5 simultaneous uploads to one project failing every run; a retryable "busy" answer is honest, a 500 is not.
+- **Rejected:** a larger retry budget in W5's helper (shared code, more lock waiting); leaving the 500.
 
 ## Lessons
 
