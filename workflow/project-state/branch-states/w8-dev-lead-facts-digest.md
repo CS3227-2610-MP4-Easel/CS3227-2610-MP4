@@ -7,9 +7,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w8-dev-lead-facts-digest (from `INT` at `b95546f`)
 - **Base:** b95546f
 - **Owner:** project operator
-- **Status:** In review
-- **Approved:** Gate 1 spec and Gate 2 plan — project operator, 2026-11-09
-- **Last updated:** 2026-11-09 by Codex — close-out checks complete; Gate 3 review requested
+- **Status:** Approved
+- **Approved:** Gate 1 spec, Gate 2 plan, and Gate 3 branch review — project operator, 2026-11-09
+- **Last updated:** 2026-11-09 by Codex — Gate 3 approved; preparing PR
 
 **Untouched:** Architecture, Conventions, Known Gaps, Decisions, Deviations
 
@@ -47,7 +47,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human` (name the ques
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W8 | Dev Lead facts and digest | In review | [spec](../../specs/2026-11-09-w8-dev-lead-facts-digest-design.md) (approved 2026-11-09) | [plan](../../plans/2026-11-09-w8-dev-lead-facts-digest/plan.md) (approved 2026-11-09) | T1-T3 complete; close-out checks/reviews recorded; Gate 3 requested | lead API routes; guide update after merge |
+| W8 | Dev Lead facts and digest | Approved | [spec](../../specs/2026-11-09-w8-dev-lead-facts-digest-design.md) (approved 2026-11-09) | [plan](../../plans/2026-11-09-w8-dev-lead-facts-digest/plan.md) (approved 2026-11-09) | T1-T3 complete; Gate 3 approved; preparing PR | lead API routes; guide update after merge |
 
 ## 3. Changes
 
