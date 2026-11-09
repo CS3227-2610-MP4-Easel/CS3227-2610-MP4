@@ -9,8 +9,8 @@ export class HttpError extends Error {
 
 export async function parseJsonBody(request: Request): Promise<unknown> {
   const contentType = request.headers.get("content-type") ?? "";
-  if (!contentType.toLowerCase().startsWith("application/json")) throw new HttpError("BAD_REQUEST", 400, "Request content type must be application/json.");
-  try { return await request.json(); } catch { throw new HttpError("BAD_REQUEST", 400, "Request body is not valid JSON."); }
+  if (!contentType.toLowerCase().startsWith("application/json")) throw new HttpError("BAD_REQUEST", 415, "Request content type must be application/json.");
+  try { return await request.json(); } catch { throw new HttpError("BAD_REQUEST", 422, "Request body is not valid JSON."); }
 }
 
 export function parseInput<T extends z.ZodTypeAny>(schema: T, input: unknown): z.infer<T> {
