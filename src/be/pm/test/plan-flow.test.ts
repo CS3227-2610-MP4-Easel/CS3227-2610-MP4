@@ -101,7 +101,7 @@ const withHarness = (o: Parameters<typeof harness>[2], run: (h: Harness, f: Fixt
     try { await run(h, fixtures, base); } finally { await h.cleanup(); }
   });
 
-test("W7b E38 E39 E1 E3 E44 regeneration checks versions, caps and session state", opts, withHarness({}, async (h) => {
+test("W7b E38 E39 E42 E1 E3 E44 regeneration checks versions, caps and session state", opts, withHarness({}, async (h) => {
   const a = await h.actor();
   const plan = await create(h, a);
   await h.flow.expandEpic({ caller: a.caller, proposalId: plan.id, index: 0 });
@@ -109,15 +109,27 @@ test("W7b E38 E39 E1 E3 E44 regeneration checks versions, caps and session state
   const stale = await flowError(h.flow.regenerateEpic({ caller: a.caller, proposalId: plan.id, index: 0, version: plan.version + 1 }));
   assert.equal(stale.code, "CONFLICT_VERSION");
   assert.equal(h.runs.length, before);
+  const sessionId = h.runs[0].sessionId;
+  const count = async () => (await h.base.aiSession.findUniqueOrThrow({ where: { id: sessionId } })).regenerateCount;
+  assert.equal(await count(), 0);
+  h.state.script = () => okResult({ tasks: [{ title: "Replacement", description: "d", acceptanceCriteria: ["done"], storyPoints: 3 }] });
   let current = plan;
   for (let n = 1; n <= 5; n++) {
     current = await h.flow.regenerateEpic({ caller: a.caller, proposalId: plan.id, index: 0, version: current.version });
     assert.equal(current.version, plan.version + n);
+    assert.equal(current.epics[0].expansion.tasks?.[0].title, "Replacement");
+    assert.equal(await count(), n);
+    if (n === 1) {
+      assert.equal((await flowError(h.flow.regenerateEpic({ caller: a.caller, proposalId: plan.id, index: 0, version: plan.version }))).code, "CONFLICT_VERSION");
+      assert.equal(await count(), 1);
+      assert.equal(h.runs.length, before + 1);
+    }
   }
   const cap = await flowError(h.flow.regenerateEpic({ caller: a.caller, proposalId: plan.id, index: 0, version: current.version }));
   assert.equal(cap.code, "RATE_LIMITED");
   assert.ok(cap.retryAfterSeconds);
   assert.equal(h.runs.length, before + 5);
+  assert.equal(await count(), 5);
   assert.ok(h.inTx.every((v) => !v));
   await h.sessions.close(h.runs[0].sessionId, "ABANDONED", a.userId);
   const expired = await flowError(h.flow.regenerateEpic({ caller: a.caller, proposalId: plan.id, index: 0, version: current.version }));
@@ -166,6 +178,7 @@ test("W7b E40 E41 E43 E47 regenerate pending, failed and edited epics", opts, wi
   const recovered = await h.flow.regenerateEpic({ caller: a.caller, proposalId: plan.id, index: 0, version: failed.version });
   assert.equal(recovered.version, failed.version);
   assert.equal(recovered.epics[0].expansion.tasks?.[0].title, "Task 0");
+  assert.equal((await h.base.aiSession.findUniqueOrThrow({ where: { id: h.runs[0].sessionId } })).regenerateCount, 1);
   await h.proposals.claimEpic({ proposalId: plan.id, index: 1, actorId: a.userId, now: h.clock.now() });
   const runs = h.runs.length;
   assert.equal((await flowError(h.flow.regenerateEpic({ caller: a.caller, proposalId: plan.id, index: 1, version: recovered.version }))).code, "CONFLICT_STATE");

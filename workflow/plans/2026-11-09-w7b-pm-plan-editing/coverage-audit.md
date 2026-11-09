@@ -10,7 +10,7 @@ Audit of test assertions, 2026-11-09. A listed test is evidence for the row, not
 | F2 | edit-store.test.ts | Partial: E10, E13, E15, E16 |
 | F3 | edit-store.test.ts, pm-edit-schemas.test.ts, pm-edit-routes.test.ts | Partial: E20, E21 |
 | F4 | epic-list.test.ts, pm-edit-e2e.test.ts | Covered |
-| F5 | regenerate-store.test.ts, plan-flow.test.ts | Partial: E38–E40, E42 |
+| F5 | regenerate-store.test.ts, plan-flow.test.ts | Covered: persisted count and replacement verified |
 | F6 | list.test.ts, pm-edit-routes.test.ts, pm-edit-e2e.test.ts | Covered |
 | F7 | decide.test.ts, pm-edit-e2e.test.ts | Covered: regeneration-only approval tested |
 | F8 | edit-store.test.ts, pm-edit-e2e.test.ts | Partial: E59 |
@@ -60,11 +60,11 @@ Audit of test assertions, 2026-11-09. A listed test is evidence for the row, not
 | E35 | epic-list.test.ts | Named coverage; no gap identified in this audit |
 | E36 | pm-edit-routes.test.ts | Named coverage; no gap identified in this audit |
 | E37 | epic-list.test.ts | Named coverage; no gap identified in this audit |
-| E38 | plan-flow.test.ts, regenerate-store.test.ts | Task replacement and version covered; session count increment is not asserted after DONE regeneration. |
-| E39 | plan-flow.test.ts | Sixth call is refused with no model call; final stored count is not asserted. |
-| E40 | plan-flow.test.ts | Pending and failed paths run; failed-path session count is not explicitly checked. |
+| E38 | plan-flow.test.ts, regenerate-store.test.ts | Replacement tasks, proposal version and each persisted session-count increment asserted. |
+| E39 | plan-flow.test.ts | Sixth call is refused without model call and count remains 5. |
+| E40 | plan-flow.test.ts | Pending and failed paths preserve proposal version and regeneration count. |
 | E41 | plan-flow.test.ts, regenerate-store.test.ts | Failure preserves tasks, increments count and blocks approval. |
-| E42 | regenerate-store.test.ts | Stale version and no model call checked; unchanged session count not explicitly asserted. |
+| E42 | regenerate-store.test.ts, plan-flow.test.ts | Stale version causes no model call and leaves session count unchanged. |
 | E43 | plan-flow.test.ts, regenerate-store.test.ts | Named coverage; no gap identified in this audit |
 | E44 | plan-flow.test.ts | Closed and idle-expired sessions covered. |
 | E45 | plan-flow.test.ts | Named coverage; no gap identified in this audit |
@@ -89,11 +89,11 @@ Audit of test assertions, 2026-11-09. A listed test is evidence for the row, not
 | ID | Evidence | Audit |
 |---|---|---|
 | T1 | E4 | Covered |
-| T2 | E1, E2, E42 | Partial: E1 and E42 |
+| T2 | E1, E2, E42 | Partial: E1 |
 | T3 | E57 | Partial: suite-timeout flake |
 | T4 | E28, E29, E35, E37 | Covered |
 | T5 | E9 | Covered |
-| T6 | E39, E42 | Partial: persisted counts not asserted |
+| T6 | E39, E42 | Covered: stale/capped calls preserve persisted counts |
 | T7 | Accepted in spec | Accepted |
 | T8 | E33 | Covered |
 | T9 | Accepted in spec | Accepted |
