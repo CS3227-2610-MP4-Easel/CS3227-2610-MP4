@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** Dev Lead
 - **Status:** In review
 - **Approved:** — (project owner only)
-- **Last updated:** 2026-11-09 by Codex — W11 implementation and verification complete; awaiting Gate 3 branch review
+- **Last updated:** 2026-11-09 by Codex — PR #27 opened against development after Gate 3 approval
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -85,4 +85,4 @@ One line per change on this branch: what changed and why, with a commit as the r
 
 ## 6. Remaining / Handover
 
-Gate 3: owner branch review is required before merge or push. No merge or push has been performed.
+Gate 3: approved by operator. PR [#27](https://github.com/CS3227-2610-MP4-Easel/CS3227-2610-MP4/pull/27) is open against `development`; no merge has been performed.
