@@ -1,6 +1,6 @@
 # W9 Developer Upload, Summaries and Standup Design
 
-- **Status:** Approved (ludannnn, 2026-11-08)
+- **Status:** Approved (ludannnn, 2026-11-08); amended 2026-11-09 after W5 merged (§ 4.1, § 4.6, F8, SD11, SD16), re-approval pending
 - **Format:** v2
 - **Risk tier:** High - untrusted uploaded text reaches the model, every row is owned by one developer, the Dev Lead reads other users' standups, and each endpoint relies on project membership.
 - **Workstream:** W9 | **Plan:** —
@@ -22,7 +22,7 @@ Desired: a `src/be/dev` workspace package (C51) that stores uploaded items for t
 - F5 On model failure the standup is code-built and marked `degraded: true`. - Accept: with the mock returning invalid JSON and two task-event lines in the window, the response is 200, `degraded: true`, `yesterday` = those two lines.
 - F6 A Developer reads their own standup for a date (52). - Accept: 200 for the stored date; 404 for a date with none.
 - F7 A Dev Lead pages the project's standups of current developer members (55). - Accept: with two current developers and one removed developer each holding one standup, `items` has 2 rows and `total` is 2.
-- F8 The context sources `dev.activityItems` and `dev.itemSummaries` are registered at boot and return only the caller's rows. - Accept: after the API composition boots, both ids are in the ai-context source registry.
+- F8 The context sources `dev.activityItems` and `dev.itemSummaries` are registered at boot and return only the caller's rows. - Accept: after the API composition boots, both ids, the core context sources (including `core.projectBrief`, `core.checkpoints`, `core.taskEvents`, `core.blockedTasks`) and the registered core are in the ai-context registry (this boot test also closes the W6 handover "W5 `requireMember` placement and boot test").
 - F9 Every summary and standup cache hit writes one `llm_calls` row with status `CACHE_HIT` (AD-18). - Accept: E16 and E26 each add exactly one `CACHE_HIT` row with the feature, caller, project and `inputHash`, and no other `llm_calls` row.
 
 **Non-functional**
@@ -49,7 +49,7 @@ Desired: a `src/be/dev` workspace package (C51) that stores uploaded items for t
 - **gateway binding** (`gateway-binding.ts`): the only file that imports `@agile/llm-gateway`; re-exports `getLlmGateway`, `getSessions`, `sanitiseInput`, `checkOutput`, `GUARD_VERSION`, `recordCacheHit`, `registerMockResponse`; imports nothing else from `@agile/*` except contracts and ai-context.
 - **ai** files: section rules, output schemas, mocks, prompt versions, the `run` call shapes; import only contracts, ai-context and the binding.
 - **store** files: Prisma reads and writes through the filtered client, resolvers, the two context sources.
-- **runtime** (`runtime.ts`): builds the flow from the store, the binding and `getAiContext()`, registers the sources and the mocks once (like W7's `src/be/pm/src/runtime.ts`); it never calls `run` itself.
+- **runtime** (`runtime.ts`): builds the flow from the store, the binding and `getAiContext()`, registers the sources and the mocks once per process (guarded like `getCoreComposition`, so repeated app construction in tests does not register twice); it never calls `run` itself.
 The API composition root imports only `@agile/dev` (and W5's `@agile/core` services it injects), never `@agile/llm-gateway`. Routes live in `src/be/api/src/routes/dev.ts`. Text is stored raw; only `run` sanitises what reaches the model (AD-25). Rejected options are in § 8.
 
 ### 4.2 Data model
@@ -118,10 +118,10 @@ None: backend only (C~1). The follow-up wires S20 and S18 (W10 spec screens-dev.
 - Route bodies and queries use zod/v3 like `routes/register.ts`; W9 does not import `OPTION_SCHEMAS`.
 
 ### 4.6 Sequencing constraints
-- W5 (PR #23) merges first: W9 needs `request.userId`, the archived-membership probe, `ProjectsService.members`, the core sources with review fix 3, and W5's composition files.
-- Writable seam: `assertDevWriteAllowed(tx, userId, projectId)` runs first in each W9 write transaction: `SELECT status FROM projects WHERE id = $1 FOR SHARE` through `tx` (parameterised with the project id only), `CONFLICT_STATE` unless `ACTIVE`, then `requireMember(userId, projectId)`. The share lock makes a concurrent archive wait for the W9 commit (E47). If W5's review fix 4 ships a transaction-aware `assertWritable` or lock helper, the helper calls that instead; only its body changes (amend per the skill).
+- W5 (PR #23) merged on 2026-11-08: W9 uses `request.userId`, the archived-membership probe (`AuthRuntime.lookupArchivedMembership`), `ProjectsService.members`, the core sources with review fix 3 (they check active membership), and W5's composition in `src/be/api/src/core-composition.ts`.
+- Writable seam: every W9 write runs through W5's `inMutationTransaction(db, lock, recheck, mutate)` from `@agile/db` (RepeatableRead, retried on `P2034`/`40001`, inside the transaction scope the gateway's `LLM_CALL_IN_TRANSACTION` check reads). `lock` = `SELECT status FROM projects WHERE id = $1 FOR SHARE` through `tx` (parameterised with the project id only); `recheck` = `assertDevWriteAllowed(tx, userId, projectId)`: `CONFLICT_STATE` unless the locked row is `ACTIVE`, then `requireMember(userId, projectId)`. The share lock makes a concurrent archive wait for the W9 commit; an archive that commits after the snapshot fails the lock with a serialization error, the helper retries, and the retry sees `ARCHIVED` (E47). W5's `lockProjectForMutation` is not used: it is not exported from `@agile/core`, and its no-op update bumps `projects.updated_at` and makes developers' writes wait on each other (SD16).
 - `registerRoute` keeps an authorisation transaction open across the handler when `beginTransaction` is supplied (`routes/register.ts`); W5 does not supply it in production. If any deployment supplies it, 50 and 51 must be registered without it, or every call fails with `LLM_CALL_IN_TRANSACTION`.
-- Shared files: W9 adds `src/be/api/src/dev-composition.ts` and changes exactly one line where W5's composition result is merged into the app dependencies and routes (after W5 merges: the file that calls `getCoreComposition`), plus the export list in `src/be/api/src/routes/index.ts`. W5 and W7 edit both files; merge order decides who rebases.
+- Shared files: W9 adds `src/be/api/src/dev-composition.ts` and changes the two lines in `src/be/api/src/app.ts` that use `getCoreComposition`: the dependencies get a `resolveResource` that tries the dev resolvers first and falls back to core's (core returns `null` for the W9 operations), and the route list appends the dev routes. It also adds the dev routes' export to `src/be/api/src/routes/index.ts`. W7 edits both files; merge order decides who rebases.
 - The DEV mocks and the two sources register before any route test calls `run`.
 
 ## 5. Edge cases
@@ -268,11 +268,11 @@ Known Gaps added: **Upload storage is unbounded** (no per-user rate limit or row
 | SD8 | Code-built content uses only the task-event and blocked-task lines; `today` is empty; unsafe lines are hidden | W10 E22 "Built from your task activity only". Rejected: inventing `today` | spec |
 | SD9 | Item rows are one line each, numbered `n=<k>`; the model answers by `n` | guard-safe ids; a body cannot forge a row. Rejected: echoing item UUIDs | spec, after review |
 | SD10 | `AI_BUSY` on 51 is a 429, not a degraded standup | contracts row 51 lists 429. Rejected: degrade on every failure | spec |
-| SD11 | W9 wiring lives in `dev-composition.ts` with a one-line chain | keeps W5's files nearly untouched while PR #23 changes. Rejected: editing W5's resolver code | spec |
+| SD11 | W9 wiring lives in `dev-composition.ts`, chained in the two `app.ts` lines that use `getCoreComposition` | keeps W5's files untouched. Rejected: editing W5's resolver code | spec, amended 2026-11-09 |
 | SD12 | Only `src/be/dev/src/gateway-binding.ts` imports the gateway; `runtime.ts` binds it to the store | source-scan rule 1 covers `src/be/api/src` too. Rejected: injecting from the API composition root | spec, after review |
 | SD13 | W9 adds `recordCacheHit` and `openOrReuse` to the gateway | AD-18 requires `CACHE_HIT` rows; SD6 needs reuse; the operator owns W2. Rejected: deferring `CACHE_HIT` to W17 | operator (C~6) |
 | SD14 | Rows cut to 900 code points | 10 rows fit the 2,500-token section at 4 characters a token, so no row is cut mid-batch by the budget. Rejected: 2,600 | spec, after review |
-| SD16 | W9's write check takes a `FOR SHARE` lock on the project row in its own transaction | does not wait on W5 fix 4; a parameterised project-id query is allowed (guardrails: typed SQL disabled, unsafe raw banned). Rejected: calling today's `assertWritable`, which reads outside the transaction | spec, after review |
+| SD16 | W9's writes run in W5's `inMutationTransaction` with W9's own `FOR SHARE` lock on the project row | the helper's RepeatableRead retry turns an archive race into a clean 409; a parameterised project-id query is allowed (guardrails: typed SQL disabled, unsafe raw banned). Rejected: `assertWritable` (reads outside the transaction); W5's `lockProjectForMutation` (not exported, bumps `projects.updated_at`, serialises every developer's writes) | spec, amended 2026-11-09 |
 | SD15 | 55 gets developer ids from W5's `ProjectsService.members` | modules meet through exported functions (conventions/general.md). Rejected: a join into `project_members` and `users` | spec, after review |
 
 ## 9. Review record

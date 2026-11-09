@@ -5,11 +5,11 @@ describes `INT`; read it for context and write here instead of editing it.
 `sync-project-state` folds this file in after the branch merges.
 
 - **Branch:** w9-dev-slice (from `INT` at `dc3447f`)
-- **Base:** dc3447f
+- **Base:** 3519ff0
 - **Owner:** ludannnn (Developer member)
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-08 by Claude Opus 5.5 — spec approved at Gate 1
+- **Last updated:** 2026-11-09 by Claude Opus 5.5 — merged `development` (W5, W4 sign-in); spec amended, re-approval pending
 
 **Untouched:** Architecture, Conventions, Deviations
 
@@ -25,13 +25,15 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-08 | Claude Opus 5.5 (lead) + 4 read-only reviewers (Explore; the repo `reviewer` agent was not loaded) | W9 | Paused | Spec approved (Gate 1); waiting for PR #23 | When W5 merges: merge `development` into this branch, move Base, re-check § 4.6 against W5's final files (fixes 3 and 4), then run `writing-plans-lite-v2` on the spec | 2026-11-08 |
+| S2 | 2026-11-09 | Claude Opus 5.5 (lead) | W9 | Active | Merged `development`; spec amended against W5's merged code (C~7) | Get the operator's re-approval of the amendments, then run `writing-plans-lite-v2` on the spec | 2026-11-09 |
 
 **Remaining**
 
 - [x] Gate 1: W9 spec approved by ludannnn on 2026-11-08 (one review round, four lenses).
-- [ ] Check PR #23 fixes 3 (membership in `core.taskEvents` / `core.blockedTasks`) and 4 (archive check inside the mutation transaction); if fix 4 changes `assertWritable`, amend the spec's writable seam (SD in § 8).
-- [ ] Gate 2: W9 plan (after W5 merges, rebase onto `development`).
+- [x] Check PR #23 fixes 3 and 4 against the spec (2026-11-09): fix 3 matches; fix 4 shipped `inMutationTransaction`, so § 4.6 and SD16 are amended (C~7).
+- [ ] Re-approval of the 2026-11-09 spec amendments (§ 4.1, § 4.6, F8, SD11, SD16).
+- [ ] Gate 2: W9 plan.
+- [ ] **Handover:** to the Dev Lead (W5): `lockProjectForMutation`'s no-op `version: { increment: 0 }` update also bumps `projects.updated_at` (`@updatedAt`) on every task, checkpoint and membership write.
 - [ ] **Handover:** contracts.md rows 50 and 51 list fewer errors than W9 returns (`RATE_LIMITED`, `AI_DISABLED`, 422 for `BLOCKED_INPUT`, 404, 409); add them as a clarification (they follow architecture §8 and the W3 handover).
 - [ ] **Handover:** tell W17 that `CACHE_HIT` rows now exist for DEV_SUMMARY and DEV_STANDUP (spec SD13); summary hits have a null `session_id`.
 - [ ] **Handover:** S20 (Upload and standup) and S18 (Team standups) wiring to the live API is a Medium follow-up spec (C~1); the browser must cut bodies over 2000 characters instead of rejecting them (spec SD on truncation).
@@ -42,7 +44,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W9 | Developer upload, summaries, standup | Spec'd | [spec](../../specs/2026-11-08-w9-dev-slice-design.md) (approved 2026-11-08) | — | Spec approved; plan waits on W5 merge (C~4) | — |
+| W9 | Developer upload, summaries, standup | Spec'd | [spec](../../specs/2026-11-08-w9-dev-slice-design.md) (approved 2026-11-08) | — | Spec amended after W5 merge (C~7); re-approval pending | — |
 
 ---
 
@@ -50,7 +52,9 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-08 | Branch state created; W9 spec written, reviewed (four lenses) and approved | W9 | this commit |
+| 2026-11-08 | Branch state created; W9 spec written, reviewed (four lenses) and approved | W9 | `6148492` |
+| 2026-11-09 | Merged `development` at `3519ff0` (W5 PR #23, W4 sign-in PR #25), no conflicts; Base moved | W9 | `6334f78` |
+| 2026-11-09 | Spec checked against W5's merged code and amended: writes run in `inMutationTransaction` with W9's own `FOR SHARE` lock (SD16); wiring is two lines in `app.ts` (SD11); F8's boot test also covers the core sources; W7 runtime reference dropped (C~7) | W9 | this commit |
 
 ---
 
@@ -101,3 +105,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Decision:** W9 adds two additive functions to `src/be/llm-gateway`: `recordCacheHit` writes the `CACHE_HIT` rows AD-18 requires; `openOrReuse` lets summary batches share one session.
 - **Why:** `usage.ts` counts `CACHE_HIT` rows but nothing wrote them, and W17 needs hit-rate evidence; one session per batch would use half the daily cap on a 100-item upload.
 - **Rejected:** deferring `CACHE_HIT` to W17 with a Deviation.
+
+### C~7 Amend the spec to W5's merged code before planning
+- **Date:** 2026-11-09 · **Asked by:** ludannnn (operator): "check the current w9 spec and make sure it matches what we have so far before continuing"
+- **Decision:** W9 writes use W5's `inMutationTransaction` with W9's own `FOR SHARE` lock; the dev wiring changes the two `getCoreComposition` lines in `app.ts`; F8's boot test also asserts the core sources and core.
+- **Why:** W5's fix 4 shipped a retrying transaction helper (the case § 4.6 anticipated); its own lock is not exported and bumps `projects.updated_at`.
+- **Rejected:** W5's `lockProjectForMutation`; keeping a bare `$transaction` without the retry.
