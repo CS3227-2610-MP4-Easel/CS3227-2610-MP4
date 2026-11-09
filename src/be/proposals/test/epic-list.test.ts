@@ -82,7 +82,7 @@ test("W7b E1 E3 E4 E60 guards and unknown index", opts, async()=>{
  assert.equal(await code(addEpic(db,input(proposalId,other,1))),"NOT_FOUND"); assert.equal(await code(deleteEpic(db,{proposalId,actorId:other,version:1,index:0})),"NOT_FOUND");
  assert.equal(await code(addEpic(db,input(proposalId,pm,2))),"CONFLICT_VERSION"); assert.equal(await code(deleteEpic(db,{proposalId,actorId:pm,version:2,index:99})),"CONFLICT_VERSION");
  assert.equal(await code(deleteEpic(db,{proposalId,actorId:pm,version:1,index:99})),"NOT_FOUND");
- await base.aiProposal.update({where:{id:proposalId},data:{status:"REJECTED"}}); assert.equal(await code(addEpic(db,input(proposalId,pm,1))),"CONFLICT_STATE"); assert.equal(await code(deleteEpic(db,{proposalId,actorId:pm,version:1,index:0})),"CONFLICT_STATE");
+ for (const status of ["APPROVED", "REJECTED", "SUPERSEDED"] as const) { await base.aiProposal.update({where:{id:proposalId},data:{status}}); assert.equal(await code(addEpic(db,input(proposalId,pm,1))),"CONFLICT_STATE"); assert.equal(await code(deleteEpic(db,{proposalId,actorId:pm,version:1,index:0})),"CONFLICT_STATE"); assert.equal(await code(editEpic(db,{proposalId,actorId:pm,version:1,index:0,title:"changed"})),"CONFLICT_STATE"); assert.equal(await code(replaceCheckpoints(db,{proposalId,actorId:pm,version:1,checkpoints:[]})),"CONFLICT_STATE"); }
  await base.aiProposal.update({where:{id:proposalId},data:{status:"PENDING"}}); await base.project.update({where:{id:project},data:{status:"ARCHIVED"}}); assert.equal(await code(addEpic(db,input(proposalId,pm,1))),"NOT_FOUND"); assert.equal(await code(deleteEpic(db,{proposalId,actorId:pm,version:1,index:0})),"NOT_FOUND");
  });
 });

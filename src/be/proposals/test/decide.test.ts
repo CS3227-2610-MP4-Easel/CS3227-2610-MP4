@@ -444,11 +444,14 @@ test("W7b E54 edited approval closes once and replay creates nothing; E57 edit a
   });
 });
 
-test("W7b E55 unedited approval closes ACCEPTED", opts, async () => {
+test("W7b E55 approval after regeneration alone closes ACCEPTED", opts, async () => {
   await withIntegrationDb(async (base, f) => {
     const { db, pm, proposalId, sessionId } = await seed(base, f);
+    const claim = await claimEpic(db, { proposalId, index: 0, actorId: pm, mode: "REGENERATE", expectedProposalVersion: 1 });
+    if (claim.kind !== "CLAIMED") throw new Error("regeneration claim");
+    await storeEpic(db, { proposalId, index: 0, claimedVersion: claim.claimedVersion, tasks: [task(0)], flagged: false, bumpProposalVersion: true });
     const { calls, sessions } = fakeSessions();
-    await approveProposal({ db, core, sessions }, { proposalId, version: 1, actorId: pm });
+    await approveProposal({ db, core, sessions }, { proposalId, version: 2, actorId: pm });
     assert.deepEqual(calls, [{ sessionId, outcome: "ACCEPTED", actorId: pm }]);
   });
 });

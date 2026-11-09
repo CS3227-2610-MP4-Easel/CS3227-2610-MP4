@@ -126,6 +126,27 @@ test("W7b E38 E39 E1 E3 E44 regeneration checks versions, caps and session state
   assert.equal((await flowError(h.flow.regenerateEpic({ caller: a.caller, proposalId: plan.id, index: 0, version: current.version }))).code, "CONFLICT_STATE");
 }));
 
+test("W7b E55 regeneration alone closes session ACCEPTED on approval", opts, withHarness({}, async (h) => {
+  const a = await h.actor();
+  const plan = await create(h, a);
+  for (const index of [0, 1, 2]) await h.flow.expandEpic({ caller: a.caller, proposalId: plan.id, index });
+  const regenerated = await h.flow.regenerateEpic({ caller: a.caller, proposalId: plan.id, index: 0, version: plan.version });
+  assert.equal((await h.base.aiSession.findUniqueOrThrow({ where: { id: h.runs[0].sessionId } })).regenerateCount, 1);
+  await h.flow.approve({ caller: a.caller, proposalId: plan.id, version: regenerated.version });
+  assert.equal((await h.base.aiSession.findUniqueOrThrow({ where: { id: h.runs[0].sessionId } })).outcome, "ACCEPTED");
+}));
+
+test("W7b E44 idle-expired regeneration returns session conflict without a model call", opts, withHarness({}, async (h) => {
+  const a = await h.actor();
+  const plan = await create(h, a);
+  await h.flow.expandEpic({ caller: a.caller, proposalId: plan.id, index: 0 });
+  const calls = h.runs.length;
+  h.clock.advance(31 * MIN);
+  const error = await flowError(h.flow.regenerateEpic({ caller: a.caller, proposalId: plan.id, index: 0, version: plan.version }));
+  assert.deepEqual([error.status, error.code, error.message], [409, "CONFLICT_STATE", "The AI session expired; start a new plan."]);
+  assert.equal(h.runs.length, calls);
+}));
+
 test("W7b E40 E41 E43 E47 regenerate pending, failed and edited epics", opts, withHarness({}, async (h) => {
   const a = await h.actor();
   const plan = await create(h, a);
@@ -140,6 +161,7 @@ test("W7b E40 E41 E43 E47 regenerate pending, failed and edited epics", opts, wi
   assert.equal(failed.epics[0].expansion.status, "FAILED");
   assert.equal(failed.epics[0].expansion.tasks?.[0].title, "Hand edited");
   assert.equal((await h.base.aiSession.findUniqueOrThrow({ where: { id: h.runs[0].sessionId } })).regenerateCount, 1);
+  assert.equal((await flowError(h.flow.approve({ caller: a.caller, proposalId: plan.id, version: failed.version }))).code, "CONFLICT_STATE");
   h.state.script = defaultScript;
   const recovered = await h.flow.regenerateEpic({ caller: a.caller, proposalId: plan.id, index: 0, version: failed.version });
   assert.equal(recovered.version, failed.version);
