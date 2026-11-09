@@ -1,0 +1,18 @@
+{
+  "task": "T5",
+  "status": "done",
+  "summary": "Live Firebase sign-in form replaces the placeholder; errors shown unchanged, one request at a time, no navigation from the component.",
+  "commit": "b4a56eb",
+  "produces": [
+    {"kind": "symbol", "name": "SignIn", "where": "src/fe/components/live/sign-in.tsx", "note": "default export, no props; imports signIn from lib/auth/firebase; no fetch, location or env use"},
+    {"kind": "file", "name": "sign-in.test.tsx", "where": "src/fe/test/sign-in.test.tsx", "note": "E51, E71, E72, loading-disabled, Show/Hide; uses the real SessionProvider via AuthRoot and AuthGate with a stubbed fetch and Firebase callback"}
+  ],
+  "next": [
+    "T7: sign-in.tsx does not call fetch, location.assign or read process.env."
+  ],
+  "deviations": [
+    {"what": "Edited the T4 test gate.test.tsx E69 assertion from getByText('Sign in') to getByRole('heading', {name: 'Sign in'})", "why": "The real form has both an h1 and a submit button labelled Sign in, so the text query matched twice", "needs": "none"}
+  ],
+  "edge_cases": ["E51", "E71", "E72"],
+  "checks": {"build": "pass", "tests": "pass", "lint": "n/a"}
+}
