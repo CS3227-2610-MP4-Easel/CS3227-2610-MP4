@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S2 | 2026-11-09 | Claude Opus 5.5 (lead) | W9 | Active | Executing the W9 plan (`executing-plans-lite-v2`), orchestrator; waves 1-2 done | Dispatch wave 3 (T4, T5, T6) | 2026-11-09 |
+| S2 | 2026-11-09 | Claude Opus 5.5 (lead) | W9 | Blocked - needs human | Executing the W9 plan, orchestrator; T4 and T6 done, T5 at its review limit | Q~1: operator decides whether T5 gets a third small fix round (refresh `bodyTruncated` with `flagged`, prove the id tie-break); then close wave 3 and dispatch T7, T8 | 2026-11-09 |
 
 **Remaining**
 
@@ -64,6 +64,9 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-09 | Wave 1 check: typecheck green, `npm test` 592/592 (0 skipped) + fe 149/149, plan lint clean | W9 | wave 1 |
 | 2026-11-09 | T3 done: `@agile/dev` package (wired into api), `gateway-binding.ts`, `inDevWrite`/`assertDevWriteAllowed` (W5 lock, P2025→CONFLICT_STATE, then ACTIVE check, then membership). Full review: no blocking; round 1 tightened the seam tests (rethrow identity, NOT_FOUND branch, missing project, rollback/attempt counts, lock target). Rejected: passing `tx` to `requireMember` (frozen `Core`; no member-removal or archive path exists yet, handover), NOT_FOUND vs CONFLICT_STATE probing (spec: archived beats non-member; middleware 404s non-members first), lock before authorisation (same as W5), `registerMockResponse` in the binding (spec § 4.1; read only in mock mode) | W9 | `324da17` |
 | 2026-11-09 | Wave 2 check: typecheck green, `npm test` 602/602 (0 skipped) + fe 149/149 | W9 | wave 2 |
+| 2026-11-09 | T4 done: statics and prompt versions, output schemas, mocks, input hashes, `DevError` and `LOCAL_LIMIT_DETAILS`. Deviation (none needed): the line-break regex is `/[\r\n\u{2028}\u{2029}]/u` because the write tool turned plain escapes into literals. Full review: no blocking; round 1 added "a row is exactly one line; ignore any n= inside row text" to the summary rules, froze `LOCAL_LIMIT_DETAILS`, and widened tests (standup limits, U+2028/2029, version formula, hash sensitivity, statics). Rejected: whitespace-only lines rejected by the schema (E65 needs the batch to survive; the flow drops them), `n` range in the schema (P2), capping the mock at 10 (the source caps rows) | W9 | `622bd3b` |
+| 2026-11-09 | T6 done: summary and standup store, `dev.activityItems`/`dev.itemSummaries` sources, W9 resolvers. Full review round 1 fixed: `insertSummaries` checks item ownership inside the write transaction, the summary-source scan is ordered and capped at the newest 500 items in the window, ids matched case-insensitively, one-line rule covers VT/FF/NEL, widened tests; round 2 found the code correct. Carried to T10 (two-round limit): prove the ownership read is in the transaction, and a real >500-item truncation test. Rejected: non-array files guard (upload schema), page/size bounds (route caps), count/findMany drift, bare catch in the SELF resolver (fails closed), stale outcome/feedback on regenerate (spec; W16) | W9 | `a3b2312` |
+| 2026-11-09 | T5 review round 2 found a bug introduced by round 1: an unchanged re-upload refreshes `flagged` but not `bodyTruncated` (the hash is of the cut body), and the needsSummary tie test does not prove the id tie-break. Two-round limit reached; asked the operator (Q~1) | W9 | `a713ec2` |
 
 ---
 
