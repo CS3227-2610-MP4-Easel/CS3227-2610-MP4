@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
-import { createRequire } from "node:module";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 import { Worker } from "node:worker_threads";
+import { buildSync } from "esbuild";
 import { runCorpus, assertCorpusContract } from "./attack-corpus/runner.js";
 import { createUser } from "../../src/be/auth/src/registration.js";
 
@@ -51,9 +52,9 @@ test("E15 session barrier admits exactly its cap and rejects excess", async () =
 
 test("E22 three isolated runs stay below the five second hard timeout", async () => {
   const runnerUrl = new URL("./attack-corpus/runner.ts", import.meta.url).href;
-  const tsxEntry = createRequire(import.meta.url).resolve("tsx");
+  const runnerSource = buildSync({ entryPoints: [fileURLToPath(runnerUrl)], bundle: true, format: "esm", platform: "node", target: "node20", write: false }).outputFiles[0].text;
   const workerRun = () => new Promise<void>((resolve, reject) => {
-    const worker = new Worker(`import { parentPort } from "node:worker_threads"; import(${JSON.stringify(runnerUrl)}).then(({ runCorpus }) => { runCorpus(); parentPort.postMessage("done"); }).catch((error) => { parentPort.postMessage({ error: String(error) }); });`, { eval: true, type: "module", execArgv: [`--import=${tsxEntry}`], env: { ...process.env, NODE_OPTIONS: "" } });
+    const worker = new Worker(`${runnerSource}\nimport { parentPort } from "node:worker_threads"; runCorpus(); parentPort.postMessage("done");`, { eval: true, type: "module", execArgv: [], env: { ...process.env, NODE_OPTIONS: "" } });
     const timer = setTimeout(() => { void worker.terminate(); reject(new Error("W11_TIMEOUT")); }, 5_000);
     worker.on("message", (message) => { clearTimeout(timer); void worker.terminate(); if (message === "done") resolve(); else reject(new Error(message.error)); });
     worker.on("error", (error) => { clearTimeout(timer); reject(error); });

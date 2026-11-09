@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 export const CORPUS_VERSION = 1 as const;
 
@@ -285,7 +286,7 @@ export function validateCorpus(value: unknown): CorpusCase[] {
 }
 
 export function loadCorpus(): CorpusCase[] {
-  const raw = readFileSync(new URL("./cases.json", import.meta.url), "utf8");
+  const raw = readFileSync(join(process.cwd(), "tests/security/attack-corpus/cases.json"), "utf8");
   return validateCorpus(JSON.parse(raw) as unknown);
 }
 
