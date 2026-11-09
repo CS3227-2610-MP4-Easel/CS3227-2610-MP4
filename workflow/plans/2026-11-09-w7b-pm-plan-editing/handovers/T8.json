@@ -1,0 +1,17 @@
+{
+  "task": "T8",
+  "status": "done",
+  "summary": "Added six PM edit/list routes, authorization resolvers and mock-gateway database end-to-end coverage.",
+  "commit": "pending",
+  "produces": [
+    {"kind":"route","name":"endpoints 36, 38, 39, 58, 59, 60","where":"src/be/api/src/routes/pm.ts","note":"Strict validation, byte limits, index validation and correct 200/201 statuses."},
+    {"kind":"other","name":"W7b coverage","where":"src/be/api/test/pm-edit-routes.test.ts and pm-edit-e2e.test.ts","note":"E4-E7, E9, E27, E36, E49, E53, E54, E59 exercised; composition checks proposal/list resolver mapping."}
+  ],
+  "next": "Close-out must account for full-suite failures and build the requested F/N/E/T coverage matrix; E57/E58 passes in isolation but has timed out twice under suite load.",
+  "deviations": [
+    {"what":"Changed routes/register.ts for malformed JSON mapping","why":"Approved E7 requires 422 on four W7b body routes, while the shared parser returns 400; authorized plan correction D~9 preserves 400 for existing routes and content type errors.","needs":"none"},
+    {"what":"Full discover suite not green: 713 passed, 8 failed, 0 skipped (721 total)","why":"Two database transaction timeouts, one sanitizer timing failure, one known Windows migration checksum failure and four existing F8 agent-hook failures. Serial targeted rerun 33/34 passed; E57/E58 again timed out, then passed alone.","needs":"orchestrator"}
+  ],
+  "edge_cases": ["E4","E5","E6","E7","E9","E27","E36","E49","E53","E54","E59"],
+  "checks": {"build":"pass", "tests":"721 total: 713 pass, 8 fail, 0 skipped; 16 route tests and 2 real-database E2E tests pass; E57/E58 passes alone after suite timeout", "lint":"pass; contract 7 passed"}
+}
