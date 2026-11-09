@@ -72,14 +72,18 @@ One line per change on this branch: what changed and why, with a commit as the r
 | D~3 | A reviewer requested a hard total-row budget for complete caller aggregation. | A hard budget would omit caller-member facts or introduce a new degraded response not in the approved contract. | Accepted 2026-11-09 under the operator's complete-aggregation decision: pagination bounds peak batch size and concurrency, while total work remains proportional to complete input. Independent checkpoint pagination and active-project filtering are still required. |
 | 2026-11-09 | Operator chose complete aggregation with bounded concurrency and incremental pagination; no silent omission or new response behavior | W8 | pending follow-up commit |
 | D~4 | No real lead database fixture exists for transaction/concurrency integration tests. | Deterministic transaction fixtures cover control flow, but Prisma rollback/schema/concurrent visibility remain unverified locally. | Carry as a close-out deviation; add a database-backed fixture when the repository integration database is available. |
-| D~5 | Whole `npm test` at close-out reports 564 pass, 4 fail, 28 skipped. | The four failures are unrelated auth-route environment failures; focused W8 checks and typecheck/lint/contract pass. | Carry as close-out evidence; investigate outside W8. |
+| D~5 | W8 changed the shared JSON parser to return 415/422 for lead-route semantics, while existing auth tests expect 400. | Four auth-route assertions fail; the behavior change is a cross-route compatibility issue, not an unrelated failure. | Handover: standardize body error mappings in a follow-up; keep auth compatibility on this branch. |
 
 ## 5. Close-out evidence
 
 - `npm run typecheck`: pass
 - `npm run lint`: pass
 - `npm run contract`: 7 pass
-- `npm test`: 596 total, 564 pass, 4 fail, 28 skipped; failures are unrelated auth-route environment failures
+- `npm test`: 596 total, 564 pass, 4 fail, 28 skipped; four auth-route assertions expose the shared-parser compatibility issue recorded in D~5
 - Plan/handover lint: pass
 - Full branch review: Implementer/Tester/Attacker task reviews completed; close-out tenancy finding repaired
+
+## 6. Handover items
+
+- Standardize HTTP body error mappings across auth and lead routes (`415` unsupported media type, `400` malformed JSON, `422` semantic validation) in a follow-up contract change; update affected tests and clients together.
 
