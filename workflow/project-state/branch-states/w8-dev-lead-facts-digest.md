@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** project operator
 - **Status:** In review
 - **Approved:** Gate 1 spec, Gate 2 plan, and Gate 3 branch review — project operator, 2026-11-09
-- **Last updated:** 2026-11-09 by Codex — implemented and verified the `factsAsOf` migration and final blocker repairs
+- **Last updated:** 2026-11-10 by Codex — committed and pushed the verified W8 blocker repairs as `9975055`
 
 **Untouched:** Architecture, Conventions, Known Gaps, Decisions, Deviations
 
@@ -36,7 +36,7 @@ sources, and their guarded gateway integration.
 | S8 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | Latest digest requires indexed persisted ordering | Record the approved migration and amend the spec/plan | 2026-11-09 |
 | S9 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | Amended W8 for durable `factsAsOf` ordering and migration | Owner review of the uncommitted change set | 2026-11-09 |
 | S10 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | Implementer, tester, and attacker reviews of schema, migrations, and digest flow | — | 2026-11-09 |
-| S11 | 2026-11-10 | Codex (orchestrator) | W8 | Complete | Final verification and owner handover | Commit the uncommitted change set, push if authorized, then request Gate 3 review | 2026-11-10 |
+| S11 | 2026-11-10 | Codex (orchestrator) | W8 | Complete | Final verification and owner handover | Request final Gate 3 review and monitor PR CI | 2026-11-10 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human` (name the question).
 
@@ -52,7 +52,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human` (name the ques
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W8 | Dev Lead facts and digest | In review | [spec](../../specs/2026-11-09-w8-dev-lead-facts-digest-design.md) (approved/amended 2026-11-09) | [plan](../../plans/2026-11-09-w8-dev-lead-facts-digest/plan.md) (approved/amended 2026-11-09) | `factsAsOf` migration, bounded ordering, `previousDigest`, session-cap mapping, compatibility trigger, and final verification complete | owner review; commit/push from a checkout with Git index write access |
+| W8 | Dev Lead facts and digest | In review | [spec](../../specs/2026-11-09-w8-dev-lead-facts-digest-design.md) (approved/amended 2026-11-09) | [plan](../../plans/2026-11-09-w8-dev-lead-facts-digest/plan.md) (approved/amended 2026-11-09) | `factsAsOf` migration, bounded ordering, `previousDigest`, session-cap mapping, compatibility trigger, and final verification complete | final Gate 3 review and PR CI |
 
 ## 3. Changes
 
@@ -74,7 +74,7 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-09 | Operator approved amending W8 to persist `Facts.asOf` as `ProjectDigest.factsAsOf` with a composite latest-order index; spec and T2 plan are being regenerated before implementation | W8 | pending task commit |
 | 2026-11-09 | Implementer/tester/attacker lenses found rollout, invalid-backfill, rollback, and bounded-query gaps; spec and T2 were amended with expand/contract phases and explicit regression requirements | W8 | pending task commit |
 | 2026-11-09 | Attacker review found the two migration phases still deploy together before the new writer and the documented production path has no down migration; query bounds, tenant scoping, and session-cap mapping otherwise passed | W8 | pending task commit |
-| 2026-11-09 | Resolved review findings with compatibility-triggered expand/contract migration, forward-only restore recovery, offset-bearing backfill validation, final non-null Prisma shape, migration manifest updates, and a CI-gated PostgreSQL migration regression; full suite passed | W8 | pending task commit |
+| 2026-11-09 | Resolved review findings with compatibility-triggered expand/contract migration, forward-only restore recovery, offset-bearing backfill validation, final non-null Prisma shape, migration manifest updates, and a CI-gated PostgreSQL migration regression; full suite passed | W8 | 9975055 |
 
 ## 4. Deviations
 
