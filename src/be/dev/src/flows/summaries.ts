@@ -17,7 +17,8 @@ export type SummaryFlowDeps = {
 
 type Result = { summaries: { itemId: string; oneLiner: string; cached: boolean }[]; failed: string[] };
 
-export async function generateSummaries(deps: SummaryFlowDeps, caller: { userId: string; role: "DEVELOPER" }, projectId: string, itemIds: string[]): Promise<Result> {
+export async function generateSummaries(deps: SummaryFlowDeps, caller: { userId: string; role: "DEVELOPER" }, projectId: string, requested: string[]): Promise<Result> {
+  const itemIds = requested.filter((x, i) => requested.findIndex((y) => y.toLowerCase() === x.toLowerCase()) === i);
   const items = await loadOwnItems(deps.db, caller.userId, projectId, itemIds);
   const current = await currentSummaries(deps.db, items, deps.key);
   const now = deps.now();
@@ -26,7 +27,9 @@ export async function generateSummaries(deps: SummaryFlowDeps, caller: { userId:
   const left = items.filter((i) => !current.has(i.id) && i.occurredAt >= windowStart);
   const fresh = new Map<string, string>();
   const cacheHit = () => deps.recordCacheHit({ feature: "DEV_SUMMARY", caller, sessionId: null, projectId, inputHash: sha256Hex(JSON.stringify(cached.map((i) => [i.id, i.contentHash]))), promptVersion: SUMMARY_PROMPT_VERSION });
-  const finish = (): Result => ({
+  // After a model call the answer is already settled; a failed hit record must not hide it.
+  const quietHit = async () => { try { await cacheHit(); } catch { /* not logged: no detail may leak */ } };
+  const finish =(): Result => ({
     summaries: items.flatMap((i): Result["summaries"] => { const c = current.get(i.id); if (c) return [{ itemId: i.id, oneLiner: c.oneLiner, cached: true }]; const f = fresh.get(i.id); return f === undefined ? [] : [{ itemId: i.id, oneLiner: f, cached: false }]; }),
     failed: items.filter((i) => !current.has(i.id) && !fresh.has(i.id)).map((i) => i.id),
   });
@@ -61,7 +64,8 @@ export async function generateSummaries(deps: SummaryFlowDeps, caller: { userId:
       case "AI_DISABLED": throw new DevError("AI_DISABLED", 503);
       case "BLOCKED_INPUT": throw new DevError("VALIDATION_FAILED", 422);
       case "ROLE_DENIED": throw new DevError("INTERNAL_ERROR", 500);
-      default: return finish();
+      case "REQUEST_REFUSED": if (cached.length) await quietHit(); return finish();
+      default: throw new DevError("INTERNAL_ERROR", 500);
     }
   }
 
@@ -77,6 +81,6 @@ export async function generateSummaries(deps: SummaryFlowDeps, caller: { userId:
     rows.push({ itemId: item.id, contentHash: item.contentHash, oneLiner: text, flagged: item.flagged || deps.sanitiseFlag(text), callId: result.callId });
   }
   await insertSummaries(deps.write, caller.userId, projectId, rows, deps.key);
-  if (cached.length) await cacheHit();
+  if (cached.length) await quietHit();
   return finish();
 }
