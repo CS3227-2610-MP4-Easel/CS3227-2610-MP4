@@ -16,10 +16,21 @@ test("W11 scans exactly the route-handler source set", () => {
 test("W11 route handlers contain no direct role or policy authorization", () => {
   const violations: string[] = [];
   for (const { file, source } of handlerSources) {
-    if (/\b(?:principal|actor|user|identity)\s*(?:\?\.)?\s*role\b|\b(?:principal|actor|user|identity)\s*\[\s*["']role["']\s*\]/m.test(source)) violations.push(`${file}: direct role access`);
-    if (/\b(?:const|let|var)\s*\{[^}]*\brole\s*(?::|[,}])[^}]*\}\s*=\s*(?:principal|actor|user|identity)\b/m.test(source)) violations.push(`${file}: destructured role access`);
-    if (/\bpolicy\s*(?:\?\.)?\s*(?:roles\b|\[\s*["']roles["']\s*\])|\b(?:const|let|var)\s*\{[^}]*\broles\b[^}]*\}\s*=\s*policy\b/m.test(source)) violations.push(`${file}: direct policy-role check`);
-    if (/\b(?:policy\s*(?:\?\.)?\s*)?predicate\s*(?:===|!==|==|!=)|\bpolicy\s*\[\s*["']predicate["']\s*\]|\b(?:const|let|var)\s*\{[^}]*\bpredicate\b[^}]*\}\s*=\s*policy\b/m.test(source)) violations.push(`${file}: direct predicate decision`);
+    const principals = new Set(["principal", "actor", "user", "identity"]);
+    const policies = new Set(["policy"]);
+    for (let pass = 0; pass < 3; pass++) {
+      for (const match of source.matchAll(/\b(?:const|let|var)\s+(\w+)\s*=\s*(\w+)\b/g)) {
+        if (principals.has(match[2])) principals.add(match[1]);
+        if (policies.has(match[2])) policies.add(match[1]);
+      }
+    }
+    const names = (values: Set<string>) => [...values].map((value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+    const principalNames = names(principals);
+    const policyNames = names(policies);
+    if (new RegExp(`\\b(?:${principalNames})\\s*(?:\\?\\.)?\\s*role\\b|\\b(?:${principalNames})\\s*\\[\\s*["']role["']\\s*\\]`, "m").test(source)) violations.push(`${file}: direct role access`);
+    if (new RegExp(`\\b(?:const|let|var)\\s*\\{[^}]*\\brole\\s*(?::|[,}])[^}]*\\}\\s*=\\s*(?:${principalNames})\\b`, "m").test(source)) violations.push(`${file}: destructured role access`);
+    if (new RegExp(`\\b(?:${policyNames})\\s*(?:\\?\\.)?\\s*(?:roles\\b|\\[\\s*["']roles["']\\s*\\])`, "m").test(source) || new RegExp(`\\b(?:const|let|var)\\s*\\{[^}]*\\broles\\b[^}]*\\}\\s*=\\s*(?:${policyNames})\\b`, "m").test(source)) violations.push(`${file}: direct policy-role check`);
+    if (new RegExp(`\\b(?:${policyNames})\\s*(?:\\?\\.)?\\s*predicate\\s*(?:===|!==|==|!=)|\\b(?:${policyNames})\\s*\\[\\s*["']predicate["']\\s*\\]`, "m").test(source) || new RegExp(`\\b(?:const|let|var)\\s*\\{[^}]*\\bpredicate\\b[^}]*\\}\\s*=\\s*(?:${policyNames})\\b`, "m").test(source)) violations.push(`${file}: direct predicate decision`);
   }
   assert.deepEqual(violations, []);
 });

@@ -57,6 +57,14 @@ function depsFor(policy: PolicyEntry, role: Principal["role"], allow = true, cou
 
 const roleFor = (policy: PolicyEntry) => policy.roles[0] ?? "PM";
 const authRequest = (policy: PolicyEntry) => request(policy);
+type DownstreamCallbacks = { parse(): unknown; handle(): unknown };
+let thisState: { parsed: number; handled: number };
+async function authorizeThenPipeline(policy: PolicyEntry, deps: AuthDependencies, authorization: string | undefined, req: ApiRequest, callbacks: DownstreamCallbacks, deferAdder = false) {
+  const scope = await authorizeRequest(policy, deps, authorization, req, deferAdder);
+  callbacks.parse();
+  callbacks.handle();
+  return scope;
+}
 const expectCode = async (run: () => Promise<unknown>, code: string, status: number) => {
   await assert.rejects(run, (error: { code?: string; status?: number }) => error.code === code && error.status === status);
 };
@@ -87,11 +95,38 @@ test("W11 derives one exact authentication row for every policy", async () => {
   }
 });
 
+test("W11 successful auth states expose the expected principal and reach downstream callbacks", async () => {
+  const publicPolicy = getPolicyMap().find((policy) => policy.authState === "PUBLIC");
+  const tokenPolicy = getPolicyMap().find((policy) => policy.authState === "TOKEN");
+  const registeredPolicy = getPolicyMap().find((policy) => policy.authState === "REGISTERED" && policy.predicate === "NONE");
+  assert.ok(publicPolicy && tokenPolicy && registeredPolicy);
+  for (const [policy, authorization] of [[publicPolicy, undefined], [tokenPolicy, "Bearer verified-token"], [registeredPolicy, "Bearer verified-token"]] as const) {
+    thisState = { parsed: 0, handled: 0 };
+    const callbacks = { parse: () => { thisState.parsed++; }, handle: () => { thisState.handled++; } };
+    const scope = await authorizeThenPipeline(policy, depsFor(policy, "PM"), authorization, authRequest(policy), callbacks, policy.predicate === "ADDER");
+    assert.equal(thisState.parsed, 1);
+    assert.equal(thisState.handled, 1);
+    if (policy.authState === "PUBLIC") assert.equal(scope.principal, null);
+    if (policy.authState === "TOKEN") {
+      assert.equal("userId" in scope.principal, false);
+      assert.equal((scope.principal as { firebaseUid: string }).firebaseUid, "firebase-a");
+      assert.equal(scope.resolved, null);
+    }
+    if (policy.authState === "REGISTERED") {
+      assert.equal((scope.principal as Principal).userId, "user-a");
+      assert.equal(scope.resolved, null);
+    }
+  }
+});
+
 test("W11 protected policies reject an absent token before downstream calls", async () => {
   for (const { policy } of derivedRows.filter((row) => row.kind === "AUTH_REQUIRED" && row.policy.authState !== "PUBLIC")) {
     const counts = counters();
-    await expectCode(() => authorizeRequest(policy, depsFor(policy, roleFor(policy), true, counts), undefined, authRequest(policy), policy.predicate === "ADDER"), "UNAUTHENTICATED", 401);
+    thisState = { parsed: 0, handled: 0 };
+    const callbacks = { parse: () => { thisState.parsed++; }, handle: () => { thisState.handled++; } };
+    await expectCode(() => authorizeThenPipeline(policy, depsFor(policy, roleFor(policy), true, counts), undefined, authRequest(policy), callbacks, policy.predicate === "ADDER"), "UNAUTHENTICATED", 401);
     assert.deepEqual(counts, { resolver: 0, membership: 0, predicate: 0 });
+    assert.deepEqual(thisState, { parsed: 0, handled: 0 });
   }
 });
 
@@ -100,8 +135,11 @@ test("W11 registered policies reject a verified token without a registered user"
     const counts = counters();
     const deps = depsFor(policy, roleFor(policy), true, counts);
     deps.lookupRegisteredUser = async () => { throw new Error("USER_NOT_REGISTERED"); };
-    await expectCode(() => authorizeRequest(policy, deps, "Bearer verified-token", authRequest(policy), policy.predicate === "ADDER"), "USER_NOT_REGISTERED", 403);
+    thisState = { parsed: 0, handled: 0 };
+    const callbacks = { parse: () => { thisState.parsed++; }, handle: () => { thisState.handled++; } };
+    await expectCode(() => authorizeThenPipeline(policy, deps, "Bearer verified-token", authRequest(policy), callbacks, policy.predicate === "ADDER"), "USER_NOT_REGISTERED", 403);
     assert.deepEqual(counts, { resolver: 0, membership: 0, predicate: 0 });
+    assert.deepEqual(thisState, { parsed: 0, handled: 0 });
   }
 });
 
@@ -115,10 +153,13 @@ test("W11 restricted policies allow every declared role and deny disjoint AUDITO
     const counts = counters();
     const denied = depsFor(policy, "PM", true, counts);
     denied.lookupRegisteredUser = async () => ({ firebaseUid: "firebase-a", userId: "user-a", role: AUDITOR });
-    await expectCode(() => authorizeRequest(policy, denied, "Bearer synthetic-token", authRequest(policy), policy.predicate === "ADDER"), "FORBIDDEN_ROLE", 403);
+    thisState = { parsed: 0, handled: 0 };
+    const callbacks = { parse: () => { thisState.parsed++; }, handle: () => { thisState.handled++; } };
+    await expectCode(() => authorizeThenPipeline(policy, denied, "Bearer synthetic-token", authRequest(policy), callbacks, policy.predicate === "ADDER"), "FORBIDDEN_ROLE", 403);
     assert.equal(counts.resolver, 0);
     assert.equal(counts.predicate, 0);
     assert.equal(role, AUDITOR);
+    assert.deepEqual(thisState, { parsed: 0, handled: 0 });
   }
 });
 
@@ -142,8 +183,11 @@ test("W11 covers every non-NONE predicate with one allow and one hidden deny", a
     const denyCounts = counters();
     const denyRequest = authRequest(policy);
     if (policy.predicate === "ADDER") denyRequest.body = { role: "DEVELOPER" };
-    await expectCode(() => authorizeRequest(policy, depsFor(policy, role, false, denyCounts), "Bearer synthetic-token", denyRequest, policy.predicate === "ADDER"), "NOT_FOUND", 404);
+    thisState = { parsed: 0, handled: 0 };
+    const callbacks = { parse: () => { thisState.parsed++; }, handle: () => { thisState.handled++; } };
+    await expectCode(() => authorizeThenPipeline(policy, depsFor(policy, role, false, denyCounts), "Bearer synthetic-token", denyRequest, callbacks, policy.predicate === "ADDER"), "NOT_FOUND", 404);
     assert.ok(denyCounts.predicate <= 1, `${policy.operationId} evaluated predicate more than once after denial`);
+    assert.deepEqual(thisState, { parsed: 0, handled: 0 });
   }
   assert.equal(derivedRows.filter((row) => row.kind === "PREDICATE_DENY").length, 51);
 });
@@ -199,6 +243,9 @@ test("W11 malformed protected requests fail before parser and handler", async ()
   const policy = getPolicyMap().find((entry) => entry.operationId === "TASK_UPDATE");
   assert.ok(policy);
   const counts = counters();
-  await expectCode(() => authorizeRequest(policy, depsFor(policy, "PM", true, counts), undefined, authRequest(policy)), "UNAUTHENTICATED", 401);
+  thisState = { parsed: 0, handled: 0 };
+  const callbacks = { parse: () => { thisState.parsed++; }, handle: () => { thisState.handled++; } };
+  await expectCode(() => authorizeThenPipeline(policy, depsFor(policy, "PM", true, counts), undefined, authRequest(policy), callbacks), "UNAUTHENTICATED", 401);
   assert.deepEqual(counts, { resolver: 0, membership: 0, predicate: 0 });
+  assert.deepEqual(thisState, { parsed: 0, handled: 0 });
 });
