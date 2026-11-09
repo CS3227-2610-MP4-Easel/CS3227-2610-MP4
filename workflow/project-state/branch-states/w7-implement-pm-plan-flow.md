@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| Codex | 2026-11-09 | none | W7b | Active | Orchestrating wave 3 | Run checks, then dispatch T7 | 2026-11-09 |
+| Codex | 2026-11-09 | none | W7b | Active | Orchestrating wave 4 | Run checks then dispatch T8 | 2026-11-09 |
 
 **Remaining**
 
@@ -46,7 +46,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
 | W7 | PM plan flow (proposals, pm) | In review | [spec](../../specs/2026-11-07-w7-pm-plan-flow-design.md) | [plan](../../plans/2026-11-07-w7-pm-plan-flow/plan.md) | T1-T11 done; 565 tests, 561 pass, 4 unrelated agent-hook failures | out of date: pm, core, proposals |
-| W7b | PM plan editing (endpoints 36, 38, 39, 58-60; carved from W16) | Building | [spec](../../specs/2026-11-09-w7b-pm-plan-editing-design.md) | [plan](../../plans/2026-11-09-w7b-pm-plan-editing/plan.md) | T3 repair done; wave 3 checks next | not started |
+| W7b | PM plan editing (endpoints 36, 38, 39, 58-60; carved from W16) | Building | [spec](../../specs/2026-11-09-w7b-pm-plan-editing-design.md) | [plan](../../plans/2026-11-09-w7b-pm-plan-editing/plan.md) | T7 done; wave 4 checks next | not started |
 
 ---
 
@@ -61,6 +61,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-09 | T3 first pass committed; review found D~5. Draft spec and plan amendment reviewed, pending owner approval; first suite run had unexplained failure D~4, rerun passed | W7b | 9e30264 |
 | 2026-11-09 | W7b T4 watermark, regeneration claims and precheck implemented; 60 serial database tests pass; full review clean | W7b | a95127e |
 | 2026-11-09 | W7b T3 collision repair complete; 62 serial database tests pass and full review clean | W7b | cae6634 |
+| 2026-11-09 | W7b T7 PM flows implemented; 49 PM tests pass; review race fixed with 31 affected tests passing | W7b | fda7e9e, 5da505a |
 | 2026-11-07 | Branch created from `development` at `7caa23d`; branch state written | W7 | this commit |
 | 2026-11-07 | Fast-forwarded to `INT` `faa1c08` (PR #21 folded W2, W3, W4, W6, W12 into `STATE.md`); no overlap, Base moved; dependency status recorded (W5 still Not started) | W7 | this commit |
 | 2026-11-07 | W7 spec written (Big, High tier; 56 edge cases, 12 threats) and reviewed by Implementer, Tester, Maintainer and Attacker lenses; findings folded; lint clean | W7 | this commit |
@@ -151,6 +152,8 @@ pm install removes the generated Prisma client, so 	sc -b fails until `prisma:ge
 - **The configured outline model times out on the live service** - a live run on SoCLaaS (2026-11-08, mock off) failed `PM_PLAN_OUTLINE` with `AI_UNAVAILABLE` (503): `qwen3.5:9b` took 58 s cold and about 17 s warm for a two-token reply, against the gateway's 25 s attempt deadline. With `LLM_MODEL_PM_PLAN_OUTLINE=llama3.1:8b` the whole flow worked (outline 6.9 s, six expansions 4 to 9 s, approve created 8 checkpoints, 6 epics and 25 tasks, no retries or flags). Not run live: retrieval with real items, injection text, the HTTP routes. Plan quality seen: tasks repeat across epics (for example a security task in four of six) and checkpoints are about two months apart.
 
 ### Deviations (new)
+
+- **D~8 Regenerate precheck/claim race** — T7 review found EXPAND-mode claim did not atomically recheck the original proposal version; deletion could shift an epic between precheck and claim. Corrected under F1; 31 affected integration tests pass and review is clean (5da505a).
 
 - **D~7 T4 full proposal suite timeouts** — four of 60 database tests timed out under parallel load; serial rerun passed 59/60; existing decide E48 race selected approve instead of reject; second serial run passed 60/60 with no skips; intermittent E48 remains a known test concern.
 
