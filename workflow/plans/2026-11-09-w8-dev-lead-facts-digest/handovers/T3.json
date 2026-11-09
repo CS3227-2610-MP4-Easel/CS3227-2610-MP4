@@ -2,7 +2,7 @@
   "task": "T3",
   "status": "done",
   "summary": "Added policy-composed endpoints 42, 44 and 45, lead runtime wiring, project resolver coverage, validation/error mapping, and focused route tests.",
-  "commit": "0e2bd18",
+  "commit": "d12fb61",
   "produces": [
     { "kind": "route", "name": "PROJECT_FACTS_READ", "where": "src/be/api/src/routes/lead.ts", "note": "GET /api/projects/{id}/facts uses caller-member facts and FactsSchema." },
     { "kind": "route", "name": "LEAD_DIGEST_CREATE", "where": "src/be/api/src/routes/lead.ts", "note": "POST /api/lead/projects/{id}/digests accepts exact JSON {} and translates typed lead-flow errors." },
