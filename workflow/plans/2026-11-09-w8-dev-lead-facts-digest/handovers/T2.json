@@ -1,0 +1,18 @@
+{
+  "task": "T2",
+  "status": "done",
+  "summary": "Added bounded lead context sources, guarded digest flow, persistence wiring, runtime exports, and focused tests.",
+  "commit": "pending",
+  "produces": [
+    { "kind": "symbol", "name": "getLeadRuntime", "where": "src/be/lead/src/runtime.ts", "note": "Lead runtime access after initLeadRuntime." },
+    { "kind": "symbol", "name": "createLeadFlow", "where": "src/be/lead/src/flow.ts", "note": "Exposes facts, createDigest, and latestDigest with cache/session/transaction ordering." },
+    { "kind": "symbol", "name": "registerLeadSources", "where": "src/be/lead/src/context-sources.ts", "note": "Registers bounded lead.facts, lead.changes, and lead.previousDigest sources." },
+    { "kind": "file", "name": "src/be/lead/src/schemas.ts", "where": "src/be/lead/src/schemas.ts", "note": "Closed digest output schema." }
+  ],
+  "next": "T3 inject the runtime route-facing methods; map failures to fixed API-safe codes and retry seconds.",
+  "deviations": [
+    { "what": "Integration fixture file is a skipped placeholder because this task's current test harness has no lead persistence fixture.", "why": "Avoided inventing a second database fixture or changing Prisma/schema scope.", "needs": "orchestrator" }
+  ],
+  "edge_cases": ["E9", "E12", "E17", "E19", "E22", "E24", "E27", "E29", "E30"],
+  "checks": { "build": "pass", "tests": "582 total, 553 pass, 29 skipped, 0 fail", "lint": "pass", "contract": "7 pass" }
+}
