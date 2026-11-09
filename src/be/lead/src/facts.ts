@@ -7,6 +7,8 @@ type Task = { id?: string; projectId: string; assigneeId?: string | null; storyP
 type Sprint = { id: string; name: string; completedPoints: number | null; startDate: Date; endDate: Date; projectId?: string; deletedAt?: Date | null };
 type Checkpoint = { id: string; projectId: string; name: string; targetDate: Date; deletedAt?: Date | null; epics?: Array<{ projectId: string; deletedAt?: Date | null; tasks?: Task[] }> };
 type Member = { projectId: string; userId: string; project?: { id: string; name: string; status?: string }; user?: { id: string; displayName: string }; assignedTasks?: Task[] };
+const PAGE_SIZE = 100;
+const SPRINT_CONCURRENCY = 4;
 
 export type FactsDb = {
   task?: FindMany<Task>;
@@ -27,6 +29,16 @@ const liveTask = (projectId?: string): Query => ({ ...(projectId ? { projectId }
 const points = (tasks: Task[], done: boolean) => tasks.reduce((total, task) => total + (task.storyPoints == null || (done ? task.status !== "DONE" : task.status === "DONE") ? 0 : task.storyPoints), 0);
 const isLiveTask = (task: Task, projectId: string) => task.projectId === projectId && task.deletedAt == null;
 
+async function allPages<T>(findMany: FindMany<T> | undefined, args: Query): Promise<T[]> {
+  if (!findMany) return [];
+  const rows: T[] = [];
+  for (let skip = 0; ; skip += PAGE_SIZE) {
+    const page = await findMany.findMany({ ...args, skip, take: PAGE_SIZE });
+    rows.push(...page);
+    if (page.length < PAGE_SIZE) return rows;
+  }
+}
+
 function averageSprintDays(sprints: Sprint[]): number | null {
   if (!sprints.length) return null;
   const days = sprints.reduce((sum, sprint) => sum + Math.round((sprint.endDate.getTime() - sprint.startDate.getTime()) / 86_400_000) + 1, 0) / sprints.length;
@@ -34,18 +46,25 @@ function averageSprintDays(sprints: Sprint[]): number | null {
 }
 
 async function completeSprints(db: FactsDb, projectIds: Set<string>): Promise<Sprint[]> {
-  const result: Sprint[] = [];
-  for (const projectId of [...projectIds].sort()) {
-    const sprints = await db.sprint?.findMany({
+  const ids = [...projectIds].sort();
+  const result: Sprint[][] = Array.from({ length: ids.length }, () => []);
+  let next = 0;
+  const read = async () => {
+    while (next < ids.length) {
+      const index = next++;
+      const projectId = ids[index];
+      const sprints = await db.sprint?.findMany({
       where: { projectId, deletedAt: null, status: "CLOSED", project: activeProject },
       orderBy: [{ endDate: "desc" }, { id: "asc" }],
       take: 3,
       select: { id: true, name: true, completedPoints: true, startDate: true, endDate: true, projectId: true, deletedAt: true },
-    });
-    result.push(...(sprints ?? []).filter((sprint) => sprint.projectId === projectId && sprint.deletedAt == null)
-      .sort((a, b) => b.endDate.getTime() - a.endDate.getTime() || a.id.localeCompare(b.id)).slice(0, 3));
-  }
-  return result;
+      });
+      result[index] = (sprints ?? []).filter((sprint) => sprint.projectId === projectId && sprint.deletedAt == null)
+      .sort((a, b) => b.endDate.getTime() - a.endDate.getTime() || a.id.localeCompare(b.id)).slice(0, 3);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(SPRINT_CONCURRENCY, ids.length) }, read));
+  return result.flat();
 }
 
 function overload(members: Member[], projectIds: Set<string>, sprints: Sprint[], requireMultipleProjects: boolean) {
@@ -72,11 +91,19 @@ export function createFacts(db: FactsDb, clock: Clock = systemClock) {
     const now = clock.now();
     const asOf = now.toISOString();
     const [taskRows, sprintRows, checkpointRows, memberRows] = await Promise.all([
-      db.task?.findMany({ where: liveTask(projectId), orderBy: { id: "asc" }, select: { id: true, projectId: true, storyPoints: true, status: true, deletedAt: true } }) ?? [],
+      allPages(db.task, { where: liveTask(projectId), orderBy: { id: "asc" }, select: { id: true, projectId: true, storyPoints: true, status: true, deletedAt: true } }),
       completeSprints(db, memberProjectIds),
       db.checkpoint?.findMany({ where: { projectId, deletedAt: null, project: activeProject }, orderBy: [{ targetDate: "asc" }, { id: "asc" }], select: { id: true, projectId: true, name: true, targetDate: true, deletedAt: true, epics: { where: { projectId, deletedAt: null, project: activeProject }, select: { projectId: true, deletedAt: true, tasks: { where: liveTask(projectId), orderBy: { id: "asc" }, select: { id: true, projectId: true, storyPoints: true, status: true, deletedAt: true } } } } } }) ?? [],
-      db.projectMember?.findMany({ where: { projectId: { in: [...memberProjectIds] }, project: activeProject }, orderBy: [{ projectId: "asc" }, { userId: "asc" }], select: { projectId: true, userId: true, project: { select: { id: true, name: true, status: true } }, user: { select: { id: true, displayName: true } }, assignedTasks: { where: { ...liveTask(), projectId: { in: [...memberProjectIds] }, assigneeId: { not: null } }, orderBy: { id: "asc" }, select: { id: true, projectId: true, assigneeId: true, storyPoints: true, status: true, deletedAt: true, sprintId: true } } } }) ?? [],
+      allPages(db.projectMember, { where: { projectId: { in: [...memberProjectIds] }, project: activeProject }, orderBy: [{ projectId: "asc" }, { userId: "asc" }], select: { projectId: true, userId: true, project: { select: { id: true, name: true, status: true } }, user: { select: { id: true, displayName: true } } } }),
     ]);
+    const assignedTasks = await allPages(db.task, { where: { ...liveTask(), projectId: { in: [...memberProjectIds] }, assigneeId: { not: null } }, orderBy: { id: "asc" }, select: { id: true, projectId: true, assigneeId: true, storyPoints: true, status: true, deletedAt: true, sprintId: true } });
+    const tasksByMember = new Map(memberRows.map((member) => [`${member.projectId}:${member.userId}`, [...(member.assignedTasks ?? [])]]));
+    for (const task of assignedTasks) {
+      const key = `${task.projectId}:${task.assigneeId}`;
+      const existing = tasksByMember.get(key);
+      if (existing && !existing.some(({ id }) => id != null && id === task.id)) existing.push(task);
+    }
+    for (const member of memberRows) member.assignedTasks = tasksByMember.get(`${member.projectId}:${member.userId}`) ?? [];
     const tasks = taskRows.filter((task) => isLiveTask(task, projectId));
     const allSprints = sprintRows;
     const sprints = allSprints.filter((sprint) => sprint.projectId == null || sprint.projectId === projectId);
@@ -97,7 +124,7 @@ export function createFacts(db: FactsDb, clock: Clock = systemClock) {
   return {
     target: (projectId: string) => build(projectId, new Set([projectId]), false),
     async caller(callerId: string, projectId: string) {
-      const memberships = await db.projectMember?.findMany({ where: { userId: callerId, project: activeProject }, orderBy: { projectId: "asc" }, select: { projectId: true } }) ?? [];
+      const memberships = await allPages(db.projectMember, { where: { userId: callerId, project: activeProject }, orderBy: { projectId: "asc" }, select: { projectId: true } });
       const projectIds = new Set(memberships.map(({ projectId }) => projectId));
       if (!projectIds.has(projectId)) throw new Error("NOT_MEMBER");
       return build(projectId, projectIds, true);

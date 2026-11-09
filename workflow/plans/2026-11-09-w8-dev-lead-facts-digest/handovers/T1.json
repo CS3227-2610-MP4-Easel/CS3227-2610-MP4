@@ -1,10 +1,10 @@
 {
   "task": "T1",
   "status": "done",
-  "summary": "Facts cap each project's newest three sprints, serialize caller queries, and scope assigned-task joins; tests cover fourth-sprint exclusion and one-sprint forecasts.",
+  "summary": "Facts now page all large task and membership reads without dropping rows, join member tasks by project, and read per-project sprint history with concurrency capped at four; 13 focused tests pass.",
   "commit": "968fad3",
   "produces": [
-    { "kind": "symbol", "name": "createFacts", "where": "src/be/lead/src/facts.ts", "note": "Builds target and active-caller-member facts with deterministic, bounded three-sprint-per-project queries and project-scoped assigned-task joins." },
+    { "kind": "symbol", "name": "createFacts", "where": "src/be/lead/src/facts.ts", "note": "Builds target and active-caller-member facts with stable paged task/member reads, bounded four-worker sprint reads, three-sprint-per-project history, and project-scoped joins." },
     { "kind": "symbol", "name": "hashFacts", "where": "src/be/lead/src/hash.ts", "note": "Canonical SHA-256 excludes asOf." },
     { "kind": "file", "name": "@agile/lead", "where": "src/be/lead", "note": "Exports facts and clock types." }
   ],
@@ -13,7 +13,7 @@
   "edge_cases": ["E1", "E2", "E3", "E4", "E5", "E6", "E25"],
   "checks": {
     "build": "pass",
-    "tests": "11 focused pass",
+    "tests": "13 focused pass; 547 pass, 28 skipped full suite",
     "lint": "pass"
   }
 }
