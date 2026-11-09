@@ -30,9 +30,8 @@ contract outcomes. CI remains deterministic and never calls SoCLaaS.
 - **F2** Cover the untrusted-text controls for T1, T2, T3, T5, T6, T9 and T11. Accept: corpus
   execution proves canaries and secrets are not exposed, forbidden links/HTML/Markdown are rejected,
   and personal-data fixtures are redacted or rejected according to the existing guard contract.
-- **F3** Cover cross-project context and object isolation for T4. Accept: a fixture containing
-  a forbidden project or object cannot appear in assembled context or a suggestion, and a
-  cross-project resource request returns `404 NOT_FOUND`.
+- **F3** Cover cross-project context and object isolation for T4. Accept: the real context seam
+  rejects a forbidden project or object, and a cross-project resource request returns `404 NOT_FOUND`.
 - **F4** Cover budget and registration-code abuse boundaries for T7 and T8 without contacting an external service. Accept: deterministic tests prove invalid codes return `403 REGISTRATION_CODE_INVALID`, repeated invalid attempts return `429 RATE_LIMITED`, and limiter/session caps return the exact existing `429 AI_BUSY` or `429 RATE_LIMITED` contract without logging secrets.
 - **F5** Generate authorization cases from `getPolicyMap()` rather than duplicating the policy table. Accept: every policy entry has a test row, every declared role is exercised, and every
   non-`NONE` predicate has a resource fixture and expected denial path.
@@ -88,8 +87,8 @@ The minimum threat matrix is:
 |---|---|---|---|
 | T1 | PM input -> guard/model boundary | input corpus | PII redacted by sanitising; injection flagged; remaining non-PII text remains untrusted data |
 | T2 | uploaded activity -> summary/standup | input and gateway corpus | injected canary absent from model-facing value; reused text is untrusted |
-| T3 | stored task text -> facts/suggestion | context and suggestion corpus | forbidden text/project ID absent from context and suggestion |
-| T4 | project-scoped retrieval | context and authorization corpus | forbidden row absent; cross-project request is `404 NOT_FOUND` |
+| T3 | stored task text -> facts/suggestion | context and suggestion corpus | forbidden text/project ID is rejected by the context seam |
+| T4 | project-scoped retrieval | context and authorization corpus | forbidden row is rejected; cross-project request is `404 NOT_FOUND` |
 | T5 | model output -> renderer | output corpus | URL, HTML and Markdown link/image return `SCHEMA_FAIL` with exact reason |
 | T6 | model output -> secret boundary | output and log corpus | key/secret candidate absent from accepted output and captured logs |
 | T7 | limiter/session boundary | gateway concurrency corpus | cap is atomic; excess call returns exact `AI_BUSY` or `RATE_LIMITED` |
@@ -111,28 +110,28 @@ record is exactly:
 {
   "id": "T1-input-001",
   "threat": "T1",
-  "layer": "GUARD",
-  "boundary": "sanitiseInput",
+  "layer": "INPUT",
+  "boundary": "INPUT_GUARD",
   "description": "synthetic prompt injection",
   "fixture": { "kind": "INPUT_TEXT", "text": "...", "maxChars": 2000 },
-  "expected": { "type": "REDACTED", "field": "text", "absent": ["CANARY-T1-001"] }
+  "expected": { "criterion": { "type": "REDACTED", "field": "text", "absent": ["CANARY-T1-001"] } }
 }
 ```
 
-Required top-level fields are `id`, `threat` (`T1` through `T11`), `layer` (`GUARD`, `GATEWAY`,
-`CONTEXT`, `AUTHORIZATION`, or `PROCESS`), `boundary`, `description`, `fixture`, and `expected`;
+Required top-level fields are `id`, `threat` (`T1` through `T11`), `layer` (`INPUT`, `OUTPUT`,
+`CONTEXT`, `SUGGESTION`, `AUTH`, or `PROCESS`), `boundary`, `description`, `fixture`, and `expected`;
 unknown fields fail validation. Fixture kinds are `INPUT_TEXT` (`text`, `maxChars`), `OUTPUT_TEXT`
-(`text`, `context`), `OUTPUT_JSON` (`text`, `schemaName`, `context`), `CONTEXT_ROWS`
-(`callerProjectId`, `rows`), `SUGGESTION_ROWS` (`callerProjectId`, `rows`), `AUTH_REQUEST`
-(`policyKey`, `role`, `callerProjectId`, `resourceId`, `resourceProjectId`, `membership`, `requestBody`), and `PROCESS_TEXT`
+(`text`, `maxChars`), `OUTPUT_JSON` (`text`, `schemaName`), `CONTEXT_ROWS`
+(`rows`), `SUGGESTION_ROWS` (`rows`), `AUTH_REQUEST`
+(`operationId`, `callerProjectId`, `resourceId`, `resourceProjectId`, `authState`, `role`, `code`, `body`), and `PROCESS_TEXT`
 (`text`). All text fields are synthetic and bounded to 8,192 Unicode code points; `rows` are bounded
 to 100 records. Criterion variants are typed: `REDACTED` requires `field` and `absent`; `ABSENT`
 requires `field` and `absent`; `REJECTED` requires `status` and `reason`; `HTTP_ERROR` requires
 `status` and `code`; `FLAGGED` requires `field` and boolean `value`; `NO_LOGGED_SECRET` requires
 `absent`; `RATE_LIMITED` requires `status`, `code`, and positive integer `retryAfterSeconds`;
 `NO_EXECUTION` requires `forbiddenPrimitives` and zero observed calls; `TEXT_ONLY` requires
-`field` and `executableNodes: 0`. `rows` have only synthetic `id`, `projectId`, `text`, and `kind`
-fields; `context` has `boundary`, `secrets`, and `maxChars`; `requestBody` is a JSON object with
+`field` and `escaped`; `CONTEXT_REJECTED` requires `code`. `rows` have only synthetic `id`, `projectId`, and `text`
+fields; `requestBody` is a JSON object with
 at most 20 keys, recursive depth at most 8, arrays at most 100 items, keys at most 64 characters,
 and serialized size at most 64 KiB; every nested string is at most 8,192 code points and all nested
 strings together are at most 64 KiB. `schemaName` is a closed enum of existing output schemas;
@@ -211,7 +210,9 @@ The corpus runner installs and removes a deny-all tripwire around each run befor
 The process-safety harness also intercepts child-process spawn/exec/fork, and filesystem
 write/open/append/mkdir/rename/remove calls, allowing writes only below its temporary fixture
 directory. Its dispatch is a literal map from validated `layer`/`boundary` values to imported
-functions. No dynamic import, evaluation, subprocess, shell, or repository write is permitted.
+functions. Guard cases call the exported W3 guard, context cases call the exported `createAiContext`
+seam, and auth cases call the exported registration-code, rate-limit, and registration seams. No
+dynamic import, evaluation, subprocess, shell, or repository write is permitted.
 The process-safety test AST-scans only runner/process source for those executable primitives and
 separately asserts that instruction-like strings are passed as values to the dispatcher, never as
 code, paths, commands or imports. The isolated corpus command runs three repeated successful
@@ -230,11 +231,11 @@ both fail the test.
 | E2 | F2 | Injection text contains delimiters and PII | Input follows the existing sanitiser contract; PII is absent from the sanitized value and `flagged` is asserted | corpus |
 | E3 | F2 | Output contains a URL | `checkOutput` returns `SCHEMA_FAIL` with `LINK`; fixture text is absent from captured logs | corpus |
 | E4 | F2 | Output contains HTML or an entity | `checkOutput` returns `SCHEMA_FAIL` with `HTML`; fixture text is absent from captured logs | corpus |
-| E5 | F2 | Output contains `](`, `][`, or `![` | `checkOutput` returns `SCHEMA_FAIL` with `MARKDOWN_LINK`; fixture text is absent from captured logs | corpus |
+| E5 | F2 | Output contains `](`, `][`, or `![` | `checkOutput` returns `SCHEMA_FAIL` with the frozen `LINK` reason; fixture text is absent from captured logs | corpus |
 | E6 | F2 | Output contains a secret pattern or boundary | `checkOutput` returns `SCHEMA_FAIL` with `SECRET` or `BOUNDARY` respectively; raw fixture is not logged | corpus |
 | E7 | F2 | Output is exactly `{"refusal":true}` | `checkOutput` returns `REFUSED` with `REFUSAL`; `{}`, `{"refusal":false}`, extra-key and non-boolean refusal near-misses return the schema result | corpus |
-| E8 | F3 | Context fixture contains a row from a non-member project | The row is absent; no forbidden project ID or canary appears in the assembled result | context |
-| E9 | F3 | Suggestion fixture contains a forbidden project/object ID | The returned suggestion rows omit the forbidden row; the forbidden ID and canary are absent | corpus |
+| E8 | F3 | Context fixture contains a row from a non-member project | The real context seam rejects with `CONTEXT_SCOPE_VIOLATION`; no forbidden project ID or canary appears in the assembled result | context |
+| E9 | F3 | Suggestion fixture contains a forbidden project/object ID | The real context seam rejects with `CONTEXT_SCOPE_VIOLATION`; the forbidden ID and canary are absent from failure output | corpus |
 | E10 | F3 | Resource ID belongs to another project | Authorization returns `404 NOT_FOUND` and does not invoke the body parser, predicate, or handler | authorization |
 | E11 | F4 | Registration code is wrong | Auth returns exactly `403 REGISTRATION_CODE_INVALID`; the code is absent from captured logs | auth |
 | E12 | F4 | Repeated invalid code attempts exceed the fixed window | Auth returns exactly `429 RATE_LIMITED` with a positive integer `Retry-After` header matching `retryAfterSeconds`; the code is absent from captured logs | auth |
@@ -256,7 +257,7 @@ both fail the test.
 |---|---|---|---|
 | Corpus input | CI/test runner only; no application principal | Synthetic, bounded, schema-validated records; no production data | Fixture text is not printed or persisted outside the repository |
 | Guard/gateway runner | Server test code using existing exported contracts | Existing sanitise/output, wrapper, schema, limiter and session rules are the authority | No live key or prompt; failures expose only case metadata and reason codes |
-| Context runner | Synthetic authorized caller through the existing context seam | Membership and target-project scope must exclude forbidden rows | No project payloads or canaries in failure output |
+| Context runner | Synthetic authorized caller through the existing context seam | Membership and target-project scope must reject forbidden rows | No project payloads or canaries in failure output |
 | API authorization suite | Synthetic principals and the canonical policy map | Resource IDs and roles come from fixtures; hidden resources remain 404; handlers must not run on denial | Tokens, registration codes and bodies are never logged |
 
 Threat coverage is T1/T2/T3/T5/T6/T11 through guard and gateway corpus cases, T4 through context

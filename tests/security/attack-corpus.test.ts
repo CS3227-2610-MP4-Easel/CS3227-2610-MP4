@@ -3,15 +3,32 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { Worker } from "node:worker_threads";
 import { buildSync } from "esbuild";
-import { runCorpus, assertCorpusContract } from "./attack-corpus/runner.js";
+import { defaultGuards } from "../../src/be/llm-gateway/src/guards.js";
+import { dispatchCorpusCase, runCorpus, assertCorpusContract } from "./attack-corpus/runner.js";
 import { createUser } from "../../src/be/auth/src/registration.js";
 
-test("W11 corpus is closed, deterministic, and machine-checked", () => {
+test("W11 corpus is closed, deterministic, and machine-checked", async () => {
   assertCorpusContract();
-  const first = runCorpus();
-  const second = runCorpus();
+  const first = await runCorpus();
+  const second = await runCorpus();
   assert.equal(first.cases, 16);
   assert.deepEqual([...first.observations.keys()], [...second.observations.keys()]);
+});
+
+test("markdown-link corpus cases invoke the production output guard", async () => {
+  const original = defaultGuards.output;
+  let called = false;
+  defaultGuards.output = () => { called = true; throw new Error("W11_OUTPUT_GUARD_SENTINEL"); };
+  try {
+    await assert.rejects(() => dispatchCorpusCase({
+      id: "markdown-guard-regression", threat: "T5", layer: "OUTPUT", boundary: "OUTPUT_GUARD",
+      description: "synthetic markdown case", fixture: { kind: "OUTPUT_TEXT", text: "[x](https://example.test)", maxChars: 256 },
+      expected: { criterion: { type: "REJECTED", status: 422, code: "SCHEMA_FAIL", reason: "LINK" } },
+    }), /W11_OUTPUT_GUARD_SENTINEL/);
+    assert.equal(called, true);
+  } finally {
+    defaultGuards.output = original;
+  }
 });
 
 test("E13 registration replay uses the existing auth route and has no side effect", async () => {
@@ -54,7 +71,7 @@ test("E22 three isolated runs stay below the five second hard timeout", async ()
   const runnerUrl = new URL("./attack-corpus/runner.ts", import.meta.url).href;
   const runnerSource = buildSync({ entryPoints: [fileURLToPath(runnerUrl)], bundle: true, format: "esm", platform: "node", target: "node20", write: false }).outputFiles[0].text;
   const workerRun = () => new Promise<void>((resolve, reject) => {
-    const worker = new Worker(`${runnerSource}\nimport { parentPort } from "node:worker_threads"; runCorpus(); parentPort.postMessage("done");`, { eval: true, type: "module", execArgv: [], env: { ...process.env, NODE_OPTIONS: "" } });
+    const worker = new Worker(`${runnerSource}\nimport { parentPort } from "node:worker_threads"; runCorpus().then(() => parentPort.postMessage("done")).catch((error) => parentPort.postMessage({ error: String(error) }));`, { eval: true, type: "module", execArgv: [], env: { ...process.env, NODE_OPTIONS: "" } });
     const timer = setTimeout(() => { void worker.terminate(); reject(new Error("W11_TIMEOUT")); }, 5_000);
     worker.on("message", (message) => { clearTimeout(timer); void worker.terminate(); if (message === "done") resolve(); else reject(new Error(message.error)); });
     worker.on("error", (error) => { clearTimeout(timer); reject(error); });

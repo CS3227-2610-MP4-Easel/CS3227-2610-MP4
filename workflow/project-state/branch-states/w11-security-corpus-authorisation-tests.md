@@ -66,7 +66,8 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-09 | Completed T3 policy-derived authorization and source-rule tests after two review rounds and final correction | W11 | 53b7195 |
 | 2026-11-09 | T2 hardening exercises the real registration seam, barrier release/upstream assertions, and worker timeout, but focused corpus verification fails T1-E2 because the frozen input guard leaves `W11_CANARY_ALPHA` and `<script>`; no production guard change is authorized by T2 | W11 | 6bcd277 |
 | 2026-11-09 | Amended T1-E2/T2-E2 to match the frozen guard contract, then passed all focused and full verification suites | W11 | 46d2c0e |
-| 2026-11-09 | Fixed E22 worker execution across Node 20/22 by bundling the TypeScript runner with esbuild before starting the isolated worker and resolving its corpus from the workspace root; exact workspace launcher passes locally | W11 | uncommitted |
+| 2026-11-09 | Fixed E22 worker execution across Node 20/22 by bundling the TypeScript runner with esbuild before starting the isolated worker and resolving its corpus from the workspace root; exact workspace launcher passes locally | W11 | 8c88f3a |
+| 2026-11-09 | Resolved review blockers by routing markdown, context, registration-code, limiter, and replay corpus cases through production seams; aligned schema/spec and declared esbuild directly | W11 | uncommitted |
 
 ## 4. Decisions
 
@@ -83,6 +84,7 @@ One line per change on this branch: what changed and why, with a commit as the r
 | Date | Type | Detail | Decision needed |
 |---|---|---|---|
 | 2026-11-09 | Resolved deviation | Initial T1-E2 expectation required arbitrary canary/tag removal not provided by the frozen guard; operator approved a spec/task/manifest amendment to test PII redaction and injection flagging instead | None |
+| 2026-11-09 | Review deviation | Initial corpus runner duplicated markdown, context, and auth decisions instead of exercising production seams; review required seam calls and an approved contract alignment | None |
 
 ## 6. Remaining / Handover
 

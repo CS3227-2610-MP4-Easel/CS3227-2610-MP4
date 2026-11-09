@@ -42,10 +42,11 @@ export type Criterion =
   | { type: "NO_LOGGED_SECRET"; forbidden: string[] }
   | { type: "RATE_LIMITED"; status: 429; code: "RATE_LIMITED"; retryAfterSeconds: number; noLoggedSecrets?: string[] }
   | { type: "NO_EXECUTION"; forbiddenPrimitives: ("network" | "process" | "filesystem")[] }
-  | { type: "TEXT_ONLY"; field: string; escaped: boolean };
+  | { type: "TEXT_ONLY"; field: string; escaped: boolean }
+  | { type: "CONTEXT_REJECTED"; code: "CONTEXT_SCOPE_VIOLATION" };
 
-export type OutputReason = "REFUSAL" | "LINK" | "HTML" | "MARKDOWN_LINK" | "BOUNDARY" | "SECRET";
-const OUTPUT_REASONS = ["REFUSAL", "LINK", "HTML", "MARKDOWN_LINK", "BOUNDARY", "SECRET"] as const;
+export type OutputReason = "REFUSAL" | "LINK" | "HTML" | "BOUNDARY" | "SECRET";
+const OUTPUT_REASONS = ["REFUSAL", "LINK", "HTML", "BOUNDARY", "SECRET"] as const;
 const ERROR_CODES = ["REGISTRATION_CODE_INVALID", "ALREADY_REGISTERED", "RATE_LIMITED"] as const;
 const HTTP_STATUSES = [403, 409, 429] as const;
 
@@ -66,7 +67,7 @@ const MAX_ARRAY = 100;
 const MAX_KEY = 64;
 const MAX_BYTES = 64 * 1024;
 const CASE_KEYS = new Set(["id", "threat", "layer", "boundary", "description", "fixture", "expected"]);
-const CRITERION_TYPES = new Set(["REDACTED", "ABSENT", "REJECTED", "HTTP_ERROR", "FLAGGED", "NO_LOGGED_SECRET", "RATE_LIMITED", "NO_EXECUTION", "TEXT_ONLY"]);
+const CRITERION_TYPES = new Set(["REDACTED", "ABSENT", "REJECTED", "HTTP_ERROR", "FLAGGED", "NO_LOGGED_SECRET", "RATE_LIMITED", "NO_EXECUTION", "TEXT_ONLY", "CONTEXT_REJECTED"]);
 const FIXTURE_KINDS = new Set(["INPUT_TEXT", "OUTPUT_TEXT", "OUTPUT_JSON", "CONTEXT_ROWS", "SUGGESTION_ROWS", "AUTH_REQUEST", "PROCESS_TEXT"]);
 
 function fail(path: string, message: string): never {
@@ -243,6 +244,10 @@ function validateCriterion(value: unknown, path: string): Criterion {
       keys(criterion, ["type", "field", "escaped"], path);
       string(criterion.field, `${path}.field`, 128);
       boolean(criterion.escaped, `${path}.escaped`);
+      break;
+    case "CONTEXT_REJECTED":
+      keys(criterion, ["type", "code"], path);
+      if (criterion.code !== "CONTEXT_SCOPE_VIOLATION") fail(`${path}.code`, "must be CONTEXT_SCOPE_VIOLATION");
       break;
   }
   bounded(criterion, path, 0, new Set());
