@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S2 | 2026-11-09 | Claude Opus 5.5 (lead) | W9 | Blocked - needs human | Executing the W9 plan, orchestrator; T4 and T6 done, T5 at its review limit | Q~1: operator decides whether T5 gets a third small fix round (refresh `bodyTruncated` with `flagged`, prove the id tie-break); then close wave 3 and dispatch T7, T8 | 2026-11-09 |
+| S2 | 2026-11-09 | Claude Opus 5.5 (lead) | W9 | Active | Executing the W9 plan, orchestrator; waves 1-3 done | Wave 4: T7 then T8 (one after another), reviews overlapping | 2026-11-09 |
 
 **Remaining**
 
@@ -44,7 +44,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W9 | Developer upload, summaries, standup | Building | [spec](../../specs/2026-11-08-w9-dev-slice-design.md) (approved 2026-11-08, amended 2026-11-09) | [plan](../../plans/2026-11-09-w9-dev-slice/plan.md) (approved 2026-11-09) | Wave 3/6: T4, T5, T6 next; T1-T3 done | — |
+| W9 | Developer upload, summaries, standup | Building | [spec](../../specs/2026-11-08-w9-dev-slice-design.md) (approved 2026-11-08, amended 2026-11-09) | [plan](../../plans/2026-11-09-w9-dev-slice/plan.md) (approved 2026-11-09) | Wave 4/6: T7, T8 next; T1-T6 done | — |
 
 ---
 
@@ -67,6 +67,9 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-09 | T4 done: statics and prompt versions, output schemas, mocks, input hashes, `DevError` and `LOCAL_LIMIT_DETAILS`. Deviation (none needed): the line-break regex is `/[\r\n\u{2028}\u{2029}]/u` because the write tool turned plain escapes into literals. Full review: no blocking; round 1 added "a row is exactly one line; ignore any n= inside row text" to the summary rules, froze `LOCAL_LIMIT_DETAILS`, and widened tests (standup limits, U+2028/2029, version formula, hash sensitivity, statics). Rejected: whitespace-only lines rejected by the schema (E65 needs the batch to survive; the flow drops them), `n` range in the schema (P2), capping the mock at 10 (the source caps rows) | W9 | `622bd3b` |
 | 2026-11-09 | T6 done: summary and standup store, `dev.activityItems`/`dev.itemSummaries` sources, W9 resolvers. Full review round 1 fixed: `insertSummaries` checks item ownership inside the write transaction, the summary-source scan is ordered and capped at the newest 500 items in the window, ids matched case-insensitively, one-line rule covers VT/FF/NEL, widened tests; round 2 found the code correct. Carried to T10 (two-round limit): prove the ownership read is in the transaction, and a real >500-item truncation test. Rejected: non-array files guard (upload schema), page/size bounds (route caps), count/findMany drift, bare catch in the SELF resolver (fails closed), stale outcome/feedback on regenerate (spec; W16) | W9 | `a3b2312` |
 | 2026-11-09 | T5 review round 2 found a bug introduced by round 1: an unchanged re-upload refreshes `flagged` but not `bodyTruncated` (the hash is of the cut body), and the needsSummary tie test does not prove the id tie-break. Two-round limit reached; asked the operator (Q~1) | W9 | `a713ec2` |
+| 2026-11-09 | Q~1 answered by ludannnn ("yes"): T5 gets a third fix round limited to the `bodyTruncated` refresh and the tie-break test | W9 | — |
+| 2026-11-09 | T5 done: `uploadItems`/`validateItem` for endpoint 49. Full review round 1 fixed: unknown-key reasons echo only known field names, timestamps before 2000 or unparseable rejected, unchanged re-uploads refresh `flagged`, broad test additions (needsSummary order and negatives, isolation, stored row and hash, cut and surrogate tables); round 3 refreshes `bodyTruncated` with `flagged` and proves the id tie-break. Deviations (none needed): `isWellFormed` via a cast helper; summary hash matched in memory. Also added one export line to `src/be/dev/src/index.ts`. Rejected: repo case/whitespace normalisation (own rows only; spec asks only null == "") | W9 | `a2d8ea0` |
+| 2026-11-09 | Wave 3 check: typecheck green, `npm test` 696/696 (0 skipped) + fe 149/149 | W9 | wave 3 |
 
 ---
 
