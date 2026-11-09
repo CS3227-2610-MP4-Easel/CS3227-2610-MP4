@@ -9,7 +9,9 @@ export type ValidateResult = { ok: true; item: ValidItem } | { ok: false; reason
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const wellFormed = (s: string) => (s as string & { isWellFormed(): boolean }).isWellFormed();
-const bad =(path: string): ValidateResult => ({ ok: false, reason: `${path}: invalid` });
+const KNOWN_KEYS = new Set(["type", "repo", "externalId", "title", "body", "timestamp", "url", "files", "projectId", "uploadedBy", "id", "author"]);
+const MIN_TIME = Date.parse("2000-01-01T00:00:00Z");
+const bad = (path: string): ValidateResult => ({ ok: false, reason: `${path}: invalid` });
 
 export function validateItem(raw: unknown, now: Date): ValidateResult {
   let input = raw;
@@ -28,12 +30,14 @@ export function validateItem(raw: unknown, now: Date): ValidateResult {
   const parsed = ActivityItemInputSchema.safeParse(input);
   if (!parsed.success) {
     const issue = parsed.error.issues[0]!;
-    const path = issue.code === "unrecognized_keys" ? String(issue.keys[0]) : issue.path.join(".") || "item";
+    const first = issue.code === "unrecognized_keys" ? String(issue.keys[0]) : null;
+    const path = first !== null ? (KNOWN_KEYS.has(first) ? first : "item") : issue.path.join(".") || "item";
     return bad(path);
   }
   const v = parsed.data;
   const occurredAt = new Date(v.timestamp);
-  if (occurredAt.getTime() > now.getTime() + DAY_MS) return bad("timestamp");
+  const at = occurredAt.getTime();
+  if (Number.isNaN(at) || at < MIN_TIME || at > now.getTime() + DAY_MS) return bad("timestamp");
   const repo = v.repo || "";
   const body = v.body ?? null;
   const url = v.url ?? null;
@@ -41,7 +45,7 @@ export function validateItem(raw: unknown, now: Date): ValidateResult {
   return { ok: true, item: { type: v.type, repo, externalId: v.externalId, title: v.title, body, bodyTruncated: truncated, occurredAt, url, files: v.files, contentHash } };
 }
 
-type Existing = { id: string; itemType: string; repo: string; externalId: string; contentHash: string };
+type Existing = { id: string; itemType: string; repo: string; externalId: string; contentHash: string; flagged: boolean };
 type Tx = {
   activityItem: { findMany(args: unknown): Promise<Existing[]>; upsert(args: unknown): Promise<{ id: string }> };
   itemSummary: { findMany(args: unknown): Promise<{ itemId: string; contentHash: string }[]> };
@@ -70,19 +74,20 @@ export async function uploadItems(deps: UploadDeps, userId: string, projectId: s
     let created = 0, updated = 0, unchanged = 0;
     const existing = await tx.activityItem.findMany({
       where: { projectId, uploadedBy: userId, OR: valid.map(({ item }) => ({ itemType: item.type, repo: item.repo, externalId: item.externalId })) },
-      select: { id: true, itemType: true, repo: true, externalId: true, contentHash: true },
+      select: { id: true, itemType: true, repo: true, externalId: true, contentHash: true, flagged: true },
     });
     const byKey = new Map(existing.map((e) => [JSON.stringify([e.itemType, e.repo, e.externalId]), e]));
     const stored: { id: string; hash: string; occurredAt: Date }[] = [];
     for (const { item, flagged } of valid) {
       const row = byKey.get(JSON.stringify([item.type, item.repo, item.externalId]));
-      if (row && row.contentHash === item.contentHash) { unchanged++; stored.push({ id: row.id, hash: item.contentHash, occurredAt: item.occurredAt }); continue; }
       const fields = { title: item.title, body: item.body, bodyTruncated: item.bodyTruncated, occurredAt: item.occurredAt, url: item.url, files: item.files, contentHash: item.contentHash, flagged };
-      const saved = await tx.activityItem.upsert({
-        where: { projectId_uploadedBy_itemType_repo_externalId: { projectId, uploadedBy: userId, itemType: item.type, repo: item.repo, externalId: item.externalId } },
-        create: { projectId, uploadedBy: userId, itemType: item.type, repo: item.repo, externalId: item.externalId, ...fields },
-        update: fields,
-      });
+      const where = { projectId_uploadedBy_itemType_repo_externalId: { projectId, uploadedBy: userId, itemType: item.type, repo: item.repo, externalId: item.externalId } };
+      const create = { projectId, uploadedBy: userId, itemType: item.type, repo: item.repo, externalId: item.externalId, ...fields };
+      if (row && row.contentHash === item.contentHash) {
+        if (row.flagged !== flagged) await tx.activityItem.upsert({ where, create, update: { flagged } });
+        unchanged++; stored.push({ id: row.id, hash: item.contentHash, occurredAt: item.occurredAt }); continue;
+      }
+      const saved = await tx.activityItem.upsert({ where, create, update: fields });
       if (row) updated++; else created++;
       stored.push({ id: saved.id, hash: item.contentHash, occurredAt: item.occurredAt });
     }
