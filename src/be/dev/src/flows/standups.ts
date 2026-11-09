@@ -17,7 +17,6 @@ export type StandupFlowDeps = {
 };
 
 type Content = { yesterday: string[]; today: string[]; blockers: string[] };
-type StoredRow = NonNullable<Awaited<ReturnType<typeof findStandup>>> & { inputHash: string | null; sessionId: string };
 
 const HIDDEN = "(line hidden: unsafe text)";
 const isCap = (error: unknown) => error instanceof Error && error.name === "SessionCapReached";
@@ -38,14 +37,15 @@ export async function generateStandup(deps: StandupFlowDeps, caller: { userId: s
   }
   const window = standupActivityWindowFor(day, now);
   let assembled: { sections: ContextSections; provenance: Provenance } = { sections: [], provenance: [] };
-  if (window.from < window.to) {
-    try { assembled = await deps.ai.assembleWith(caller, "DEV_STANDUP", projectId, { window }); } catch (error) {
-      if (error instanceof NotMember) throw new Error("NOT_FOUND");
-      throw error;
-    }
+  try {
+    if (window.from < window.to) assembled = await deps.ai.assembleWith(caller, "DEV_STANDUP", projectId, { window });
+    else await deps.write.requireMember(caller.userId, projectId);
+  } catch (error) {
+    if (error instanceof NotMember || (error instanceof Error && error.message === "NOT_FOUND")) throw new Error("NOT_FOUND");
+    throw error;
   }
   const inputHash = standupInputHash(day, assembled.sections, assembled.provenance);
-  const row = (await findStandup(deps.db, projectId, caller.userId, day)) as StoredRow | null;
+  const row = await findStandup(deps.db, projectId, caller.userId, day);
   if (row && row.inputHash === inputHash) {
     await deps.recordCacheHit({ feature: "DEV_STANDUP", caller, sessionId: row.sessionId, projectId, inputHash, promptVersion: STANDUP_PROMPT_VERSION });
     return toStandup(row, true);
@@ -80,7 +80,8 @@ export async function generateStandup(deps: StandupFlowDeps, caller: { userId: s
       if (!(error instanceof Error) || error.message !== "LLM_CALL_FAILED") throw error;
     }
     const parsed = result?.ok ? StandupOutputSchema.safeParse(result.value) : null;
-    if (result?.ok && parsed?.success) { content = parsed.data; modelFlagged = result.flagged; }
+    if (result?.ok) modelFlagged = result.flagged;
+    if (result?.ok && parsed?.success) content = parsed.data;
     else if (result && !result.ok && result.code === "AI_BUSY") throw new DevError("AI_BUSY", 429, result.retryAfterSeconds, LOCAL_LIMIT_DETAILS);
     else if (result && !result.ok && result.code === "ROLE_DENIED") throw new DevError("INTERNAL_ERROR", 500);
     else {

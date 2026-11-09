@@ -1,7 +1,7 @@
 import type { Standup } from "@agile/contracts";
 import { inDevWrite, type DevWriteDeps } from "./writable.js";
 
-type Row = { id: string; projectId: string; developerId: string; standupDate: Date; content: unknown; degraded: boolean; flagged: boolean; outcome: string | null; feedback: string | null; createdAt: Date; updatedAt: Date; version: number };
+type Row = { id: string; projectId: string; developerId: string; standupDate: Date; content: unknown; degraded: boolean; flagged: boolean; inputHash: string; sessionId: string; outcome: string | null; feedback: string | null; createdAt: Date; updatedAt: Date; version: number };
 type StandupDb = { standup: { findFirst(args: unknown): Promise<Row | null>; findMany(args: unknown): Promise<Row[]>; count(args: unknown): Promise<number> } };
 
 const dateOf = (date: string) => new Date(`${date}T00:00:00Z`);
