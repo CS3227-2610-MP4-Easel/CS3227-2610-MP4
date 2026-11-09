@@ -113,3 +113,27 @@ test("W7b E59 maximum-size plan assembled via edits approves", opts, async () =>
   response=await h.request(a.userId,"POST",`${root}/approve`,{version:plan.version}); assert.equal(response.status,200,await response.clone().text()); assert.deepEqual((await response.json() as {created:unknown}).created,{checkpoints:8,epics:10,tasks:80});
  }));
 });
+
+
+test("W7b E1 stale versions reject each editing endpoint without changes or model calls", opts, async () => {
+ await withIntegrationDb(async (base, f) => harness(base, async h => {
+  const a = await actor(h, f);
+  const response = await h.request(a.userId, "POST", `/api/pm/projects/${a.projectId}/plans`, { idea: "Build a team task tracker with sprints and reports" });
+  assert.equal(response.status, 201); const plan = await response.json() as { id: string; version: number };
+  const root = `/api/pm/proposals/${plan.id}`, stale = plan.version;
+  const advance = await h.request(a.userId, "PATCH", `${root}/epics/0`, { version: stale, title: "Advanced" });
+  assert.equal(advance.status, 200);
+  const before = await base.aiProposal.findUniqueOrThrow({ where: { id: plan.id } });
+  const epics = await base.proposalEpic.findMany({ where: { proposalId: plan.id }, orderBy: { index: "asc" } });
+  const calls = h.prompts.length;
+  for (const [method, path, body] of [["PATCH", `${root}/epics/0`, { version: stale, title: "new" }], ["POST", `${root}/epics/0/regenerate`, { version: stale }], ["PATCH", `${root}/checkpoints`, { version: stale, checkpoints: [] }], ["POST", `${root}/epics`, { version: stale, title: "new", description: "d", checkpointName: null }], ["DELETE", `${root}/epics/0?version=${stale}`, undefined]] as const) {
+   const rejected = await h.request(a.userId, method, path, body);
+   assert.equal(rejected.status, 409, path); assert.equal((await rejected.json() as { error: { code: string } }).error.code, "CONFLICT_VERSION");
+  }
+  const after = await base.aiProposal.findUniqueOrThrow({ where: { id: plan.id } });
+  assert.equal(after.version, before.version); assert.deepEqual(after.payload, before.payload);
+  const ignoreLockTimestamp = (rows: typeof epics) => rows.map(({ updatedAt, ...rest }) => rest);
+  assert.deepEqual(ignoreLockTimestamp(await base.proposalEpic.findMany({ where: { proposalId: plan.id }, orderBy: { index: "asc" } })), ignoreLockTimestamp(epics));
+  assert.equal(h.prompts.length, calls);
+ }));
+});

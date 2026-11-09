@@ -4,7 +4,7 @@ import test from "node:test";
 import { approveProposal, editEpic, replaceCheckpoints, claimEpic, storeEpic, failEpic, EXPAND_LEASE_MS, ProposalError } from "../src/index.js";
 import { integrationUrl, withIntegrationDb } from "./fakes.js";
 import { seed, holdProposalLock } from "./edit-helpers.js";
-import { PlanInputSchema } from "@agile/core";
+import { applyPlan, PlanInputSchema } from "@agile/core";
 import type { FilteredDbClient } from "@agile/db";
 import type { PrismaClient } from "@prisma/client";
 const opts = { skip: !integrationUrl };
@@ -107,9 +107,23 @@ test("W7b E58 edits to different epics complete without deadlock", opts, async (
  await withIntegrationDb(async (base,f) => { const {db,proposalId,pm}=await seed(base,f); const hold=holdProposalLock(base,proposalId); await hold.locked; const first=code(editEpic(db,{proposalId,actorId:pm,index:0,version:1,title:"first"})); const second=code(editEpic(db,{proposalId,actorId:pm,index:1,version:1,title:"second"})); try { await waitForBlocked(base,hold.holder.pid,2); } finally { hold.release(); } await hold.done; assert.deepEqual((await Promise.all([first,second])).sort(),["CONFLICT_VERSION","OK"]); }, 30000);
 });
 
-test("W7b E59 thirty edit sequences leave a valid completed plan", opts, async () => {
- await withIntegrationDb(async (base,f) => { const {db,proposalId,pm}=await seed(base,f); let version=1; let state=123456; const rand=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0; return state;}; const task={title:"t",description:"",acceptanceCriteria:[],storyPoints:1 as const};
- for(let seq=0;seq<30;seq++) { for(let step=0;step<3;step++) { if(rand()%2) await editEpic(db,{proposalId,actorId:pm,index:rand()%2,version:version++,title:`title ${rand()%100}`}); else await replaceCheckpoints(db,{proposalId,actorId:pm,version:version++,checkpoints:[{name:`C${rand()%3}`,targetDate:"2026-12-01"}]}); } for(let index=0;index<2;index++) await editEpic(db,{proposalId,actorId:pm,index,version:version++,tasks:[task]}); const proposal=await base.aiProposal.findUniqueOrThrow({where:{id:proposalId}}); const rows=await base.proposalEpic.findMany({where:{proposalId},orderBy:{index:"asc"}}); const payload=proposal.payload as {checkpoints:unknown}; assert.equal(PlanInputSchema.safeParse({checkpoints:payload.checkpoints,epics:rows.map(r=>({title:r.title,description:r.description,checkpointName:r.checkpointName,tasks:r.tasks}))}).success,true); }
+test("W7b E59 thirty edit sequences produce plans that approve", opts, async () => {
+ await withIntegrationDb(async (base, f) => {
+  let state = 123456; const rand = () => { state = (Math.imul(state, 1664525) + 1013904223) >>> 0; return state; };
+  const task = { title: "t", description: "", acceptanceCriteria: [], storyPoints: 1 as const };
+  for (let seq = 0; seq < 30; seq++) {
+   const { db, proposalId, pm } = await seed(base, f); let version = 1;
+   for (let step = 0; step < 3; step++) {
+    if (rand() % 2) await editEpic(db, { proposalId, actorId: pm, index: rand() % 2, version: version++, title: `title ${rand() % 100}` });
+    else await replaceCheckpoints(db, { proposalId, actorId: pm, version: version++, checkpoints: [{ name: `C${rand() % 3}`, targetDate: "2026-12-01" }] });
+   }
+   for (let index = 0; index < 2; index++) await editEpic(db, { proposalId, actorId: pm, index, version: version++, tasks: [task] });
+   const proposal = await base.aiProposal.findUniqueOrThrow({ where: { id: proposalId } });
+   const rows = await base.proposalEpic.findMany({ where: { proposalId }, orderBy: { index: "asc" } });
+   assert.equal(PlanInputSchema.safeParse({ checkpoints: (proposal.payload as { checkpoints: unknown }).checkpoints, epics: rows.map(r => ({ title: r.title, description: r.description, checkpointName: r.checkpointName, tasks: r.tasks })) }).success, true);
+   const result = await approveProposal({ db, core: { applyPlan: (tx, projectId, plan, actorId) => applyPlan(tx as never, projectId, plan, actorId) }, sessions: { close: async () => {} } }, { proposalId, actorId: pm, version });
+   assert.equal(result.status, "APPROVED");
+  }
  });
 });
 
@@ -120,7 +134,7 @@ test("W7b E60 archived project is hidden", opts, async () => {
 
 
 test("W7b E20 E21 E23 failed and expired edits preserve expansion state", opts, async () => {
- await withIntegrationDb(async (base,f) => { const {db,proposalId,pm}=await seed(base,f); const now=new Date("2026-11-09T00:00:00Z"); const first=await claimEpic(db,{proposalId,actorId:pm,index:0,now}); if(first.kind!=="CLAIMED") throw Error("claim"); await failEpic(db,{proposalId,index:0,claimedVersion:first.claimedVersion,error:"failed"}); const before=await base.proposalEpic.findFirstOrThrow({where:{proposalId,index:0}}); await editEpic(db,{proposalId,actorId:pm,index:0,version:1,title:"failed edit"}); const changed=await base.proposalEpic.findFirstOrThrow({where:{proposalId,index:0}}); assert.equal(changed.expansionStatus,"FAILED"); assert.equal(changed.error,"failed"); assert.equal(changed.version,before.version+1); await editEpic(db,{proposalId,actorId:pm,index:0,version:2,title:"failed edit"}); const equal=await base.proposalEpic.findFirstOrThrow({where:{proposalId,index:0}}); assert.equal(equal.version,changed.version); });
+ await withIntegrationDb(async (base,f) => { const {db,proposalId,pm}=await seed(base,f); const now=new Date("2026-11-09T00:00:00Z"); const first=await claimEpic(db,{proposalId,actorId:pm,index:0,now}); if(first.kind!=="CLAIMED") throw Error("claim"); await failEpic(db,{proposalId,index:0,claimedVersion:first.claimedVersion,error:"failed"}); const before=await base.proposalEpic.findFirstOrThrow({where:{proposalId,index:0}}); await editEpic(db,{proposalId,actorId:pm,index:0,version:1,title:"failed edit"}); const changed=await base.proposalEpic.findFirstOrThrow({where:{proposalId,index:0}}); assert.equal(changed.expansionStatus,"FAILED"); assert.equal(changed.error,"failed"); assert.deepEqual(changed.tasks,before.tasks); assert.equal(changed.version,before.version+1); assert.equal(await code(storeEpic(db,{proposalId,index:0,claimedVersion:first.claimedVersion,tasks:[{title:"late",description:"",acceptanceCriteria:[],storyPoints:1}],flagged:false})),"CONFLICT_STATE"); await editEpic(db,{proposalId,actorId:pm,index:0,version:2,title:"failed edit"}); const equal=await base.proposalEpic.findFirstOrThrow({where:{proposalId,index:0}}); assert.equal(equal.version,changed.version); });
 });
 
 test("W7b E58 store and edit different epics complete after lock release", opts, async () => {
@@ -152,5 +166,42 @@ test("W7b E10 E15 E16 checkpoint chain updates hashes and date-only edit preserv
   assert.deepEqual(withoutLockTimestamp(await base.proposalEpic.findMany({ where: { proposalId }, orderBy: { index: "asc" } })), withoutLockTimestamp(after));
   const saved = await base.aiProposal.findUniqueOrThrow({ where: { id: proposalId } });
   assert.equal((saved.payload as { edited: boolean }).edited, true);
+ });
+});
+
+
+test("W7b E13 empty checkpoints clear linked epics", opts, async () => {
+ await withIntegrationDb(async (base, f) => {
+  const { db, proposalId, pm } = await seed(base, f);
+  await replaceCheckpoints(db, { proposalId, actorId: pm, version: 1, checkpoints: [{ name: "A", targetDate: "2026-12-01" }] });
+  await editEpic(db, { proposalId, actorId: pm, version: 2, index: 0, checkpointName: "A" });
+  await editEpic(db, { proposalId, actorId: pm, version: 3, index: 1, checkpointName: "A" });
+  const result = await replaceCheckpoints(db, { proposalId, actorId: pm, version: 4, checkpoints: [] });
+  assert.deepEqual(result.checkpoints, []); assert.deepEqual(result.epics.map(e => e.checkpointName), [null, null]);
+ });
+});
+
+test("W7b E20 E21 edited completed and expired epics preserve expansion data", opts, async () => {
+ const task = { title: "t", description: "", acceptanceCriteria: [], storyPoints: 1 as const };
+ await withIntegrationDb(async (base, f) => {
+  const { db, proposalId, pm } = await seed(base, f);
+  await editEpic(db, { proposalId, actorId: pm, version: 1, index: 0, tasks: [task] });
+  await editEpic(db, { proposalId, actorId: pm, version: 2, index: 1, tasks: [task] });
+  const before = await base.proposalEpic.findFirstOrThrow({ where: { proposalId, index: 0 } });
+  await editEpic(db, { proposalId, actorId: pm, version: 3, index: 0, title: "Edited", description: "Changed" });
+  const after = await base.proposalEpic.findFirstOrThrow({ where: { proposalId, index: 0 } });
+  assert.equal(after.expansionStatus, "DONE"); assert.deepEqual(after.tasks, before.tasks); assert.equal(after.version, before.version + 1);
+  assert.equal(after.contentHash, createHash("sha256").update("Edited\nChanged\n").digest("hex"));
+  const result = await approveProposal({ db, core: { applyPlan: (tx, projectId, plan, actorId) => applyPlan(tx as never, projectId, plan, actorId) }, sessions: { close: async () => {} } }, { proposalId, actorId: pm, version: 4 });
+  assert.equal(result.status, "APPROVED");
+ });
+ await withIntegrationDb(async (base, f) => {
+  const { db, proposalId, pm } = await seed(base, f);
+  const now = new Date("2026-11-09T00:00:00Z"); const claim = await claimEpic(db, { proposalId, actorId: pm, index: 0, now }); if (claim.kind !== "CLAIMED") throw Error("claim");
+  const before = await base.proposalEpic.findFirstOrThrow({ where: { proposalId, index: 0 } });
+  await editEpic(db, { proposalId, actorId: pm, index: 0, version: 1, title: "Expired edit", now: new Date(now.getTime() + EXPAND_LEASE_MS + 1) });
+  const after = await base.proposalEpic.findFirstOrThrow({ where: { proposalId, index: 0 } });
+  assert.equal(after.expansionStatus, before.expansionStatus); assert.deepEqual(after.tasks, before.tasks); assert.equal(after.error, before.error); assert.equal(after.version, before.version + 1);
+  assert.equal(await code(storeEpic(db, { proposalId, index: 0, claimedVersion: claim.claimedVersion, tasks: [task], flagged: false })), "CONFLICT_STATE");
  });
 });
