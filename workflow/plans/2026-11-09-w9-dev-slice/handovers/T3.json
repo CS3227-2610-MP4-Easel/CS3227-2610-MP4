@@ -13,5 +13,5 @@
   "next": "T4: import gateway values only from ../gateway-binding.js. T5/T6: call inDevWrite(deps, userId, projectId, async (tx) => ...).",
   "deviations": [],
   "edge_cases": ["E40", "E62", "E63"],
-  "checks": { "build": "pass", "tests": "dev 5/5, source-scan 31/31", "lint": "n/a" }
+  "checks": { "build": "pass", "tests": "dev 10/10, source-scan 31/31", "lint": "n/a" }
 }
