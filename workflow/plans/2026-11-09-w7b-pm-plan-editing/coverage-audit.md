@@ -1,29 +1,29 @@
 # W7b close-out coverage audit
 
-Audit of test assertions, 2026-11-09. A listed test is evidence for the row, not a claim every subcase is covered. Full discover run: 713 pass, 8 fail, 0 skipped; E57 passes alone but timed out twice in suite. **N4 is incomplete until partial rows are covered and tests pass.**
+Audit of test assertions, 2026-11-09. A listed test is evidence for the row, not a claim every subcase is covered. Previous full discover run: 713 pass, 8 fail, 0 skipped; E57 passed alone but timed out twice under load. Its test isolation was improved in c6fae04; a new full-suite run is in progress. **N4 awaits the full-suite result.**
 
 ## Requirements
 
 | ID | Evidence | Status |
 |---|---|---|
-| F1 | edit-store.test.ts, epic-list.test.ts, regenerate-store.test.ts, plan-flow.test.ts | Partial: E1, E57 |
-| F2 | edit-store.test.ts | Partial: E10, E13, E15, E16 |
-| F3 | edit-store.test.ts, pm-edit-schemas.test.ts, pm-edit-routes.test.ts | Partial: E20, E21 |
+| F1 | edit-store.test.ts, epic-list.test.ts, regenerate-store.test.ts, plan-flow.test.ts | Coverage added; E57 awaiting full-suite rerun |
+| F2 | edit-store.test.ts | Covered: chain, empty-list and date-only cases added |
+| F3 | edit-store.test.ts, pm-edit-schemas.test.ts, pm-edit-routes.test.ts | Covered: completed and expired expansion cases added |
 | F4 | epic-list.test.ts, pm-edit-e2e.test.ts | Covered |
 | F5 | regenerate-store.test.ts, plan-flow.test.ts | Covered: persisted count and replacement verified |
 | F6 | list.test.ts, pm-edit-routes.test.ts, pm-edit-e2e.test.ts | Covered |
 | F7 | decide.test.ts, pm-edit-e2e.test.ts | Covered: regeneration-only approval tested |
-| F8 | edit-store.test.ts, pm-edit-e2e.test.ts | Partial: E59 |
+| F8 | edit-store.test.ts, pm-edit-e2e.test.ts | Thirty random sequences approved at store level; max-size plan approved through HTTP |
 | N1 | plan-flow.test.ts (E38/E39 and N1) | Covered |
-| N2 | edit-store.test.ts (E57/E58) | Partial: E57 flakes under suite load |
+| N2 | edit-store.test.ts (E57/E58) | E57 isolation improved; awaiting full-suite rerun |
 | N3 | list.test.ts (N3 query count) | Covered |
-| N4 | E/T mapping below | Incomplete |
+| N4 | E/T mapping below | Awaiting full-suite results |
 
 ## Edge cases
 
 | ID | Named test file(s) | Audit |
 |---|---|---|
-| E1 | plan-flow.test.ts, edit-store.test.ts, epic-list.test.ts, regenerate-store.test.ts | No explicit stale-version assertion for every endpoint through HTTP. |
+| E1 | pm-edit-e2e.test.ts, plan-flow.test.ts, edit-store.test.ts, epic-list.test.ts, regenerate-store.test.ts | All five editing endpoints tested over HTTP for stale-version 409, unchanged proposal and no model call. |
 | E2 | edit-store.test.ts | Named coverage; no gap identified in this audit |
 | E3 | plan-flow.test.ts, edit-store.test.ts, epic-list.test.ts, regenerate-store.test.ts | All three closed states checked for regeneration and edit/add/delete/checkpoint operations. |
 | E4 | pm-edit-e2e.test.ts, pm-edit-routes.test.ts, edit-store.test.ts, epic-list.test.ts, regenerate-store.test.ts | Named coverage; no gap identified in this audit |
@@ -32,18 +32,18 @@ Audit of test assertions, 2026-11-09. A listed test is evidence for the row, not
 | E7 | pm-edit-routes.test.ts, pm-edit-schemas.test.ts | Named coverage; no gap identified in this audit |
 | E8 | edit-store.test.ts | Named coverage; no gap identified in this audit |
 | E9 | pm-edit-routes.test.ts | Named coverage; no gap identified in this audit |
-| E10 | edit-store.test.ts | Rename is tested; content-hash recomputation and unchanged epic version are not asserted. |
+| E10 | edit-store.test.ts | Chain rename verifies recomputed content hashes and unchanged epic versions. |
 | E11 | edit-store.test.ts | Named coverage; no gap identified in this audit |
 | E12 | edit-store.test.ts | Named coverage; no gap identified in this audit |
-| E13 | edit-store.test.ts | Empty list is tested after epic links were already cleared. |
+| E13 | edit-store.test.ts | Empty checkpoint list clears links on two epics. |
 | E14 | pm-edit-schemas.test.ts, edit-store.test.ts | Named coverage; no gap identified in this audit |
-| E15 | edit-store.test.ts | Swap is tested; rename chain is not. |
-| E16 | edit-store.test.ts | No date-only update assertion. |
+| E15 | edit-store.test.ts | Both swap and A→B, B→C chain verified. |
+| E16 | edit-store.test.ts | Date-only edit preserves epic rows and marks proposal edited. |
 | E17 | edit-store.test.ts | Named coverage; no gap identified in this audit |
 | E18 | edit-store.test.ts | Named coverage; no gap identified in this audit |
 | E19 | edit-store.test.ts | Named coverage; no gap identified in this audit |
-| E20 | edit-store.test.ts | DONE tasks preserved; approve after title change not asserted in this test. |
-| E21 | edit-store.test.ts | FAILED case covered; expired IN_PROGRESS case lacks explicit status/tasks/error preservation assertions. |
+| E20 | edit-store.test.ts | DONE tasks preserved after title and description edits; store approval succeeds. |
+| E21 | edit-store.test.ts | FAILED and expired IN_PROGRESS edits preserve expansion state, tasks and error; stale store rejected. |
 | E22 | edit-store.test.ts | Named coverage; no gap identified in this audit |
 | E23 | edit-store.test.ts | Named coverage; no gap identified in this audit |
 | E24 | pm-edit-schemas.test.ts | Named coverage; no gap identified in this audit |
@@ -77,11 +77,11 @@ Audit of test assertions, 2026-11-09. A listed test is evidence for the row, not
 | E52 | list.test.ts | Named coverage; no gap identified in this audit |
 | E53 | pm-edit-e2e.test.ts, list.test.ts | Named coverage; no gap identified in this audit |
 | E54 | pm-edit-e2e.test.ts, decide.test.ts | Named coverage; no gap identified in this audit |
-| E55 | decide.test.ts | Actual regeneration followed by approval closes the session ACCEPTED. |
+| E55 | decide.test.ts, plan-flow.test.ts | Actual regeneration followed by approval closes the session ACCEPTED. |
 | E56 | decide.test.ts | Named coverage; no gap identified in this audit |
-| E57 | decide.test.ts, edit-store.test.ts | Both lock orders pass in isolation; this test timed out under full and serial suite load. |
+| E57 | decide.test.ts, edit-store.test.ts | Both lock orders tested; holder isolation and transaction timeout improved after earlier suite timeouts. Full-suite rerun pending. |
 | E58 | edit-store.test.ts, epic-list.test.ts | Named coverage; no gap identified in this audit |
-| E59 | pm-edit-e2e.test.ts, edit-store.test.ts | Thirty random sequences prove parse validity, but do not approve each; maximum-size plan approves. |
+| E59 | pm-edit-e2e.test.ts, edit-store.test.ts | Thirty seeded sequences of title/checkpoint edits and task replacements validate and approve through the proposal store; the maximum-size plan approves through HTTP. Random sequences do not include every edit operation and are not each exercised over HTTP. |
 | E60 | edit-store.test.ts, epic-list.test.ts, regenerate-store.test.ts | Named coverage; no gap identified in this audit |
 
 ## Threats
@@ -89,8 +89,8 @@ Audit of test assertions, 2026-11-09. A listed test is evidence for the row, not
 | ID | Evidence | Audit |
 |---|---|---|
 | T1 | E4 | Covered |
-| T2 | E1, E2, E42 | Partial: E1 |
-| T3 | E57 | Partial: suite-timeout flake |
+| T2 | E1, E2, E42 | Covered; stale requests checked over HTTP |
+| T3 | E57 | Test isolation improved; full-suite rerun pending |
 | T4 | E28, E29, E35, E37 | Covered |
 | T5 | E9 | Covered |
 | T6 | E39, E42 | Covered: stale/capped calls preserve persisted counts |
@@ -98,4 +98,4 @@ Audit of test assertions, 2026-11-09. A listed test is evidence for the row, not
 | T8 | E33 | Covered |
 | T9 | Accepted in spec | Accepted |
 | T10 | E48, N3 | Covered |
-| T11 | E59 | Partial: randomized approvals not asserted |
+| T11 | E59 | Randomized approvals tested at store level; maximum-size approval tested over HTTP |
