@@ -113,3 +113,26 @@ test("REGISTERED route handler receives principal, not identity", async () => {
   assert.deepEqual(context?.principal, { firebaseUid: "f", userId: "u", role: "PM" });
   assert.equal(context?.identity, undefined);
 });
+
+const limited = (handler: RouteDefinition["handler"] = async () => Response.json({ ok: true })) => { const app = new Hono<ApiEnv>(); app.use("*", async (c, next) => { c.set("requestId", "rid"); await next(); }); app.onError((error, c) => errorResponse(error, c.get("requestId"))); registerRoute(app, { ...route(handler), bodyLimitBytes: 16 }, deps()); return app; };
+const streamedPatch = (app: Hono<ApiEnv>, text: string, token = "Bearer ok", type = "application/json") => app.request("http://localhost/api/tasks/t1", { method: "PATCH", headers: { authorization: token, "content-type": type }, duplex: "half", body: new ReadableStream({ start(controller) { controller.enqueue(new TextEncoder().encode(text)); controller.close(); } }) } as RequestInit);
+
+test("N1 bodyLimitBytes: 17 bytes without Content-Length is 413, 16 bytes is accepted", async () => {
+  assert.equal(`{"title":"xxxx"}`.length, 16);
+  assert.equal((await streamedPatch(limited(), `{"title":"xxxx"} `)).status, 413);
+  assert.equal((await streamedPatch(limited(), `{"title":"xxxx"}`)).status, 200);
+});
+test("N1 bodyLimitBytes: a bad token with an oversized body is 401 and the body is never read", async () => {
+  const request = new Request("http://localhost/api/tasks/t1", { method: "PATCH", headers: { authorization: "Bearer bad", "content-type": "application/json" }, body: "x".repeat(17) });
+  const response = await limited().request(request);
+  assert.equal(response.status, 401);
+  assert.equal(request.bodyUsed, false);
+});
+test("bodyLimitBytes: invalid JSON and a wrong content type are 400", async () => {
+  assert.equal((await streamedPatch(limited(), "{nope")).status, 400);
+  assert.equal((await streamedPatch(limited(), `{"title":"x"}`, "Bearer ok", "text/plain")).status, 400);
+});
+test("a route without bodyLimitBytes accepts a large body as before", async () => {
+  const response = await patch(appWith(async () => Response.json({ ok: true })), { title: "x".repeat(5000) });
+  assert.equal(response.status, 200);
+});

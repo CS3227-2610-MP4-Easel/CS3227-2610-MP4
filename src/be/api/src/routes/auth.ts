@@ -1,6 +1,7 @@
 import { z } from "zod/v3";
 import { policyForRoute, type RouteDefinition } from "@agile/contracts";
 import { AlreadyRegistered, checkRegistrationCode, clientIpKey, createUser, getUser, type AuthRuntime, type RatePurpose } from "@agile/auth";
+import { bodyTooLarge } from "../body-limit.js";
 import { errorResponse, HttpError } from "../errors.js";
 
 const MAX_BODY_BYTES = 4096;
@@ -17,22 +18,6 @@ export const RegisterBodySchema = z.object({ role: RoleField, code: CodeField, d
 const codeInvalid = () => new HttpError("REGISTRATION_CODE_INVALID", 403, "The registration code is not valid for this role.");
 const tooLarge = (requestId: string) => errorResponse(new HttpError("PAYLOAD_TOO_LARGE", 413, "The request body is too large."), requestId);
 
-/** Counts body bytes as they stream in and stops past the limit, so an oversized body is never buffered whole. */
-async function bodyTooLarge(request: Request): Promise<boolean> {
-  const length = request.headers.get("content-length");
-  if (length !== null && /^\d+$/.test(length) && Number(length) > MAX_BODY_BYTES) return true;
-  const reader = request.clone().body?.getReader();
-  if (!reader) return false;
-  let total = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) return false;
-    total += value.byteLength;
-    // Not awaited: cancelling one branch of a cloned body settles only when the other branch is cancelled too.
-    if (total > MAX_BODY_BYTES) { reader.cancel().catch(() => {}); return true; }
-  }
-}
-
 /** Pipeline step 2 for endpoints 2 and 3: count the attempt per client IP, then cap the body size, before authorization or parsing. */
 function limitedBefore(runtime: () => AuthRuntime, purpose: RatePurpose): NonNullable<RouteDefinition["before"]> {
   return async ({ requestId, request }) => {
@@ -47,7 +32,7 @@ function limitedBefore(runtime: () => AuthRuntime, purpose: RatePurpose): NonNul
       response.headers.set("Retry-After", String(retryAfterSeconds));
       return response;
     }
-    if (await bodyTooLarge(request)) return tooLarge(requestId);
+    if (await bodyTooLarge(request, MAX_BODY_BYTES)) return tooLarge(requestId);
   };
 }
 
