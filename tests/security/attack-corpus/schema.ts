@@ -73,7 +73,6 @@ const FIXTURE_KINDS = new Set(["INPUT_TEXT", "OUTPUT_TEXT", "OUTPUT_JSON", "CONT
 function fail(path: string, message: string): never {
   throw new Error(`Invalid corpus at ${path}: ${message}`);
 }
-
 function object(value: unknown, path: string): Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) fail(path, "expected object");
   return value as Record<string, unknown>;
@@ -294,4 +293,3 @@ export function loadCorpus(): CorpusCase[] {
   const raw = readFileSync(join(process.cwd(), "tests/security/attack-corpus/cases.json"), "utf8");
   return validateCorpus(JSON.parse(raw) as unknown);
 }
-
