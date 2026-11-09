@@ -1,0 +1,17 @@
+{
+  "task": "T2",
+  "status": "done",
+  "summary": "Added creator-only, versioned epic and checkpoint editing with whole-plan validation and lock ordering.",
+  "commit": "pending",
+  "produces": [
+    {"kind":"symbol","name":"ProposalError","where":"src/be/proposals/src/errors.ts","note":"VALIDATION_FAILED and optional field"},
+    {"kind":"symbol","name":"isLive, guardEdit, assertWholePlan","where":"src/be/proposals/src/edit-common.ts","note":"shared edit guards and whole-plan validation"},
+    {"kind":"symbol","name":"editEpic, replaceCheckpoints","where":"src/be/proposals/src/edit-store.ts","note":"transactional edits, fresh view after commit"},
+    {"kind":"file","name":"edit-helpers.ts","where":"src/be/proposals/test/edit-helpers.ts","note":"seed and holdProposalLock"}
+  ],
+  "next": "T3 reuses guardEdit, isLive and assertWholePlan and increments proposal version with edited true. T4 uses the same liveness and guard order. T7 maps VALIDATION_FAILED and field to 422.",
+  "deviations": [],
+  "edge_cases": ["E1","E2","E3","E4","E8","E10","E11","E12","E13","E14","E15","E16","E17","E18","E19","E20","E21","E22","E23","E26","E28","E29","E30","E57","E58","E59","E60"],
+  "checks": {"build":"pass", "tests":"43 proposals tests pass, 0 fail, 0 skipped; 3 additional focused tests pass", "lint":"not run"}
+}
+

@@ -7,9 +7,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w7-implement-pm-plan-flow (from `INT` at `7caa23d`)
 - **Base:** faa1c08
 - **Owner:** Xiao-Congchen (PM)
-- **Status:** Approved
-- **Approved:** Xiao-Congchen 2026-11-08
-- **Last updated:** 2026-11-08 by Claude Sonnet 5.5 — W5 (PR 23) merged in and the proposal resolvers wired after Gate 3; the operator should confirm this addition
+- **Status:** In review
+- **Approved:** W7 prior review only; W7b branch review pending
+- **Last updated:** 2026-11-09 by Claude Sonnet 5.5 — W7b (PM plan editing) spec drafted and in review; W5 merge addition from 2026-11-08 still needs the operator's confirmation
 
 **Untouched:** Conventions (Architecture Now blocks for pm, core and proposals are written at the fold; see Close-out)
 
@@ -35,6 +35,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - [ ] **Handover W2 owner (Developer):** spec SD3 changes `Sessions.assertUsable` (a `PM_PLAN_OUTLINE` session also admits `PM_PLAN_EXPAND`) and amends contracts §5.3; their agreement is recorded in T1 (AD-11, as C59); not yet obtained.
 - [x] **W5 (Dev Lead) integrated 2026-11-08:** `origin/w5-core-planning` (PR 23, not yet merged to `INT`) is merged into this branch; W5 supplies `requireMember`, `Core.assertWritable` and a `PM_PLAN_CREATE` project resolver that reads `id`; W7 registers the four proposal resolvers in `core-composition.ts`; both `applyPlan` implementations exist (see Known Gaps). This branch now depends on PR 23 merging first.
 - [x] W5's owner estimate: no longer needed, W5 is in PR 23.
+- [ ] **W7b branch review:** T1–T8 implemented; see D~10 for remaining suite failures and coverage-audit.md for evidence. Owner review is required before approval.
 - [ ] Carry STATE.md Upcoming items addressed to W7 into the spec: W6 sources and `assembleWith` (`pm.similarItems`, titles only, at most 5, filtered by member projects); W3 section rules, blocked-input handling (`BLOCKED_INPUT` to 422 `VALIDATION_FAILED`, `REQUEST_REFUSED` to 422) and output schemas without URLs or angle brackets; W2 mock responses, static sections and `assertStaticSectionsFit`; W7 proposal resolvers.
 
 ---
@@ -44,6 +45,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
 | W7 | PM plan flow (proposals, pm) | In review | [spec](../../specs/2026-11-07-w7-pm-plan-flow-design.md) | [plan](../../plans/2026-11-07-w7-pm-plan-flow/plan.md) | T1-T11 done; 565 tests, 561 pass, 4 unrelated agent-hook failures | out of date: pm, core, proposals |
+| W7b | PM plan editing (endpoints 36, 38, 39, 58-60; carved from W16) | In review | [spec](../../specs/2026-11-09-w7b-pm-plan-editing-design.md) | [plan](../../plans/2026-11-09-w7b-pm-plan-editing/plan.md) | T1–T8 done; branch review requested; D~10 | out of date: pm, proposals, contracts |
 
 ---
 
@@ -51,6 +53,17 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-09 | W7b T1 contracts, policy, OpenAPI and documentation implemented; focused and contract tests pass; review placement finding fixed | W7b | 1bdeca0, c304835 |
+| 2026-11-09 | W7b T2 editing store implemented; review fixed strict-parse storage and deterministic lock races; 11 edit integration tests pass | W7b | 9bc5ec2, 8a5ed46 |
+| 2026-11-09 | W7b T5 approval outcome and replay implemented; 21 database tests pass; review clean | W7b | f3c4564 |
+| 2026-11-09 | W7b T6 proposal listing implemented; seven tests pass, full page uses eight queries; review clean | W7b | cb389e9 |
+| 2026-11-09 | T3 first pass committed; review found D~5. Spec and plan amendment later approved under C~7; first suite run had unexplained failure D~4, rerun passed | W7b | 9e30264 |
+| 2026-11-09 | W7b T4 watermark, regeneration claims and precheck implemented; 60 serial database tests pass; full review clean | W7b | a95127e |
+| 2026-11-09 | W7b T3 collision repair complete; 62 serial database tests pass and full review clean | W7b | cae6634 |
+| 2026-11-09 | W7b T7 PM flows implemented; 49 PM tests pass; review race fixed with 31 affected tests passing | W7b | fda7e9e, 5da505a |
+| 2026-11-09 | W7b T8 routes and real database E2E implemented; full review clean; full suite failures tracked D~10 | W7b | b6ee74c |
+| 2026-11-09 | Close-out: full branch review clean, coverage gaps addressed including 30 HTTP approvals; final suite 721/728 passes, D~10; typecheck, lint, schema and contracts pass | W7b | 82dbcba |
+| 2026-11-09 | Reran the seven failing cases serially at operator request: two pass, five fail; see D~10 | W7b | working tree |
 | 2026-11-07 | Branch created from `development` at `7caa23d`; branch state written | W7 | this commit |
 | 2026-11-07 | Fast-forwarded to `INT` `faa1c08` (PR #21 folded W2, W3, W4, W6, W12 into `STATE.md`); no overlap, Base moved; dependency status recorded (W5 still Not started) | W7 | this commit |
 | 2026-11-07 | W7 spec written (Big, High tier; 56 edge cases, 12 threats) and reviewed by Implementer, Tester, Maintainer and Attacker lenses; findings folded; lint clean | W7 | this commit |
@@ -59,6 +72,8 @@ describes `INT`; read it for context and write here instead of editing it.
 pm install removes the generated Prisma client, so 	sc -b fails until `prisma:generate` runs (now in the plan's Shared context) | W7 | this commit |
 | 2026-11-07 | Wave 2 built: T4 `applyPlan` (12 database tests incl. a real lock barrier), T5 proposals create/view/resolvers (7 database tests), T8 `pm.similarItems` and settings, T9 output schemas, sections and mocks. Run against a local Postgres in Docker (`w7-pg`; variables in untracked `.ws/w7.env`). Whole suite: 497 tests, 493 pass, 4 fail - all in `tests/process-security/agent-hook.test.ts` (F8 shell-write mediation, unrelated to W7; not compared with the base branch). The real database also found the session-rule regression (C~3) that skipped tests had hidden | W7 | this commit |
 | 2026-11-08 | Merged `origin/w5-core-planning` (PR 23) after Gate 3. Conflicts resolved by union in `api` and `core` package files, `routes/index.ts` and `core/src/index.ts`; `package-lock.json` taken from W5 and re-installed. Added the four proposal resolvers to W5's `core-composition.ts` (`PM_PROPOSAL_READ`, `PM_EPIC_EXPAND`, `PM_PROPOSAL_APPROVE`, `PM_PROPOSAL_REJECT`) and `@agile/proposals` to the api package; new test `pm-composition.test.ts`. Typecheck, lint and contract pass; suite 674 tests, 667 pass. Failing: 4 F8 agent-hook tests (as before), E9/E29 (Windows CRLF migration checksum), and E5 and E35 timing tests that pass alone. Live run on SoCLaaS before the merge: see Known Gaps | W7 | this commit |
+| 2026-11-09 | W7b spec drafted (Medium, Attacker lens added): the PM edits generated checkpoints, epics and tasks (add, change, delete), regenerates one epic, lists proposals; adds endpoints 58-60 and widens 38 and 39 to answer the proposal. Reviewed by Implementer, Tester and Attacker lenses (round 1: 12 blocking, 31 judgement findings, all folded; 60 edge cases, 11 threats); lint clean. Awaiting Gate 1 | W7b | this commit |
+| 2026-11-09 | W7b spec approved by the operator at Gate 1, with one change: editing an epic's title or description keeps its tasks and status (the contract's reset to PENDING is removed); the UI reminds the PM to create a new epic for substantial changes. `lint.mjs spec --approved` passes | W7b | this commit |
 | 2026-11-07 | W7 plan written (11 tasks, 6 waves), reviewed by an Implementer-lens reviewer, approved at Gate 2; `lint.mjs plan --approved` passes | W7 | this commit |
 
 ---
@@ -107,6 +122,20 @@ pm install removes the generated Prisma client, so 	sc -b fails until `prisma:ge
 - **Why:** approve needs the created counts and W7's error mapping; W5's version returns nothing.
 - **Rejected:** switching `decide.ts` to W5's version; editing W5's `core.ts` to expose W7's.
 
+### C~7 — Durable claim watermark
+
+- **Date and who:** 2026-11-09; operator approved the reviewed amendment after T3 review found a stale claim collision.
+- **Decision:** Persist a proposal-level watermark for claim and deletion allocations, reserve completion headroom, and run T4 before repairing T3. A version above only the current maximum was rejected because later deletes and appends can reuse old values.
+
+### C~6 — W7b: the PM can edit every generated item; chat refinement stays out
+
+- **Date:** 2026-11-09.
+- **Who asked:** the operator (PM), after asking which PM endpoints were missing: "conversations can be kept out for now, but all generated epics, checkpoints and tasks must be editable by the PM during the planning with AI stage". Answers to two scope questions: editing includes add and remove; endpoints 36 (list) and 39 (regenerate) are built in the same work.
+- **Decision:** a new workstream W7b on this branch builds endpoints 38, 36, 39 and three new ones (58 checkpoints, 59 add epic, 60 delete epic). Tasks are edited by sending an epic's whole task list. Edits answer `PlanProposal` and are guarded by the proposal `version`. The contract list grows from 57 to 60 endpoints.
+- **Why:** the plan the AI produces is a draft; without edits the PM must reject and regenerate everything. Rejected: edit-only; a model conversation (AD-61, A-07; future spec); per-entity endpoints; one replace-everything endpoint.
+- **Follow-up:** the other owners agree to the three new endpoints (AD-11); W5's `policy.test.ts` count and contracts.md §3.4 are amended in the build.
+- **Gate 1 (2026-11-09):** the operator approved the spec and its decisions SD1-SD12 and changed SD10: a title or description edit does not clear an epic's tasks; the UI reminds the PM to create a new epic instead for substantial changes. Why: the operator wants edits to be cheap and non-destructive. Rejected: clearing the tasks.
+
 ---
 
 ## 5. Close-out
@@ -126,11 +155,29 @@ pm install removes the generated Prisma client, so 	sc -b fails until `prisma:ge
 
 ### Deviations (new)
 
+- **D~11 Date-only checkpoint update** — E16 coverage found date-only edits update epic timestamps because the required lockEpic takes a row lock by updating updatedAt. Business fields and versions remain unchanged; test covers them. Timestamp side effect retained to honor locking contract.
+
+- **D~10 T8 full suite failures** — final discover-tests run: 728 total, 721 pass, 7 fail, 0 skipped. W7b tests passed; failures were transaction-marker start timeout, sanitizer timing, W13 migration checksum mismatch, and four agent-hook F8 tests. The operator requested a targeted rerun: transaction-marker and sanitizer passed; migration checksum and all four agent-hook tests still failed (2/7 pass, 5/7 fail, 0 skipped). Earlier W7b lock timeouts prompted fixture isolation and longer test-only deadlines (c6fae04); exact original cause unproven.
+
+- **D~9 Malformed JSON response** — T8 reports task E7 expects 422 while existing endpoint 34 returns 400 BAD_REQUEST; spec E7 explicitly requires 422 on W7b routes; its claim that endpoint 34 already does so is incorrect. Implement scoped mapping and retain existing endpoint behavior.
+
+- **D~8 Regenerate precheck/claim race** — T7 review found EXPAND-mode claim did not atomically recheck the original proposal version; deletion could shift an epic between precheck and claim. Corrected under F1; 31 affected integration tests pass and review is clean (5da505a).
+
+- **D~7 T4 full proposal suite timeouts** — four of 60 database tests timed out under parallel load; serial rerun passed 59/60; existing decide E48 race selected approve instead of reject; second serial run passed 60/60 with no skips; intermittent E48 remains a known test concern.
+
+- **D~6 T4 return type seam** — failEpic now returns boolean but the PM plan-flow mirror still says void. T4 updates that type only to keep its build green; T7 retains behavior changes.
+
+- **D~5 Stale expansion claim can match a shifted epic** — review found that incrementing shifted versions can collide with an expired claim at the destination index, permitting tasks to land on the wrong epic. T3 mandates version +1, which cannot prevent the collision. Draft amendment uses a persistent proposal watermark for claim and delete allocations, reserves completion headroom, and adds collision and boundary tests. T4 precedes the T3 repair. Reviewed and approved by the operator 2026-11-09 (C~7); fixed in cae6634 with collision and boundary tests.
+
+- **D~4 T3 proposal suite failure** — one of 57 tests failed; details were truncated. Rerun passed 57/57 with no skips; original failure remains unidentified.
+
 - **D~1 Archived project answers 404, not 409, on endpoints 35, 37, 40, 41** - the filtered client hides every row of an archived project, so the proposal is not found (spec SD17; architecture §8 says 409).
 - **D~2 The session rule changed after the first database run** - the first formula made a `PM_PLAN_EXPAND` session unusable for its own feature and broke W2's E26 test; fixed and recorded as C~3.
 - **D~3 `plan-flow.ts` mirrors types and recognises `ProposalError` by name** - the W6 source scan forbids workspace imports other than contracts, ai-context and the gateway in a file that calls `run`.
 
 ### Handover (for `STATE.md` Upcoming at the fold)
+
+- **W7b owners:** Dev Lead and Developer sign off endpoints 58–60 and changed 38/39 responses (AD-11); update architecture text saying 57 endpoints; UI reminds PM to create a new epic for substantial changes; creator-only editing differs from member-wide approval/rejection. Guide out of date: pm, proposals, contracts.
 
 - **W2 owner (Developer):** agree to the `Sessions.assertUsable` change (a session admits its own feature and the one mapped by `SESSION_FEATURE`; contracts §5.3 amended).
 - **W5 owner (Dev Lead):** PR 23 must merge before this branch. Agree with W7 on one `applyPlan` (see Known Gaps).

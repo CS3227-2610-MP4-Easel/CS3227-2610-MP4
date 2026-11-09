@@ -1,13 +1,14 @@
 import type { Hono } from "hono";
 import type { z } from "zod/v3";
 import { policyForRoute, validateRouteRegistration, type ApiContext, type RouteDefinition } from "@agile/contracts";
-import { parseInput, parseJsonBody } from "../errors.js";
+import { HttpError, parseInput, parseJsonBody } from "../errors.js";
 import { authorizeAdder, authorizeRequest, type AuthDependencies } from "../middleware/auth.js";
 
 export type ApiEnv = { Variables: { requestId: string } };
 
 const registered = new WeakMap<object, RouteDefinition[]>();
 const isSchema = (value: unknown): value is z.ZodTypeAny => Boolean(value) && typeof (value as { safeParse?: unknown }).safeParse === "function";
+const EDIT_BODY_KEYS = new Set(["endpoint-38", "endpoint-39", "endpoint-58", "endpoint-59"]);
 const honoPath = (path: string) => path.replace(/\{(\w+)\}/g, ":$1");
 
 /** Routes registered on `app` through `registerRoute`; `apiApp` must contain nothing else. */
@@ -39,10 +40,16 @@ export function registerRoute(app: Hono<ApiEnv>, route: RouteDefinition, deps?: 
     const scope = await authorizeRequest(policy, deps as AuthDependencies, c.req.header("authorization"), request, policy.predicate === "ADDER");
     let settled = false;
     try {
+      const parseBody = async () => {
+        try { return await parseJsonBody(c.req.raw); } catch (error) {
+          if (EDIT_BODY_KEYS.has(route.policyKey) && (c.req.header("content-type") ?? "").toLowerCase().startsWith("application/json") && error instanceof HttpError && error.code === "BAD_REQUEST") throw new HttpError("VALIDATION_FAILED", 422, "The request body is not valid.");
+          throw error;
+        }
+      };
       const input = {
         params: isSchema(route.paramsSchema) ? parseInput(route.paramsSchema, request.params) : request.params,
         query: isSchema(route.querySchema) ? parseInput(route.querySchema, Object.fromEntries(url.searchParams)) : Object.fromEntries(url.searchParams),
-        body: isSchema(route.bodySchema) ? parseInput(route.bodySchema, await parseJsonBody(c.req.raw)) : undefined,
+        body: isSchema(route.bodySchema) ? parseInput(route.bodySchema, await parseBody()) : undefined,
       };
       if (policy.predicate === "ADDER" && scope.principal && "userId" in scope.principal) {
         request.body = input.body;

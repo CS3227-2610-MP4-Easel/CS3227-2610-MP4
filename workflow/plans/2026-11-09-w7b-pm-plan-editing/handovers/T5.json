@@ -1,0 +1,12 @@
+{
+  "task": "T5",
+  "status": "done",
+  "summary": "Approval closes edited sessions EDITED, unedited sessions ACCEPTED, and never closes on replay.",
+  "commit": "pending",
+  "produces": [],
+  "next": "T8 end-to-end test expects EDITED after an edit.",
+  "deviations": [],
+  "edge_cases": ["E46", "E54", "E55", "E56", "E57"],
+  "checks": { "build": "pass", "tests": "21 passed, 0 failed, 0 skipped", "lint": "not run" },
+  "review_note": "Updated existing E32 and E33 close-call counts from 3 and 2 to 1 because replay no longer closes. Initial test assumed a null session outcome; corrected to OPEN."
+}
