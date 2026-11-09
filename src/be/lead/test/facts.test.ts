@@ -174,6 +174,7 @@ test("caller requires active target membership and averages completed work acros
   const targetSprint = id(33);
   const otherSprint = id(34);
   const queries: any[] = [];
+  const assignedQueries: any[] = [];
   const memberships = [
     { projectId: target, userId: caller, project: { id: target, name: "Target", status: "ACTIVE" } },
     { projectId: other, userId: caller, project: { id: other, name: "Other", status: "ACTIVE" } },
@@ -181,6 +182,7 @@ test("caller requires active target membership and averages completed work acros
     { projectId: other, userId: alex, user: { id: alex, displayName: "Alex" }, project: { id: other, name: "Other", status: "ACTIVE" }, assignedTasks: [{ projectId: other, assigneeId: alex, storyPoints: 2, status: "TODO" }, { projectId: other, assigneeId: alex, storyPoints: 4, status: "DONE", sprintId: otherSprint }] },
   ];
   const service = createFacts(db({
+    task: { findMany: async (query: any) => { if (query.where.assigneeId) assignedQueries.push(query); return []; } },
     sprint: { findMany: async () => [{ id: targetSprint, projectId: target, name: "Target sprint", completedPoints: 6, startDate: day("2026-11-01"), endDate: day("2026-11-02") }, { id: otherSprint, projectId: other, name: "Other sprint", completedPoints: 4, startDate: day("2026-11-01"), endDate: day("2026-11-02") }] },
     projectMember: { findMany: async (query: any) => { queries.push(query); return query.where.userId ? memberships.filter((member) => member.userId === query.where.userId) : memberships; } },
   }), { now: () => new Date("2026-11-09T10:00:00.000Z") });
@@ -189,6 +191,7 @@ test("caller requires active target membership and averages completed work acros
   assert.equal(queries[0].where.userId, caller);
   assert.deepEqual(queries[0].where.project, { status: "ACTIVE" });
   assert.deepEqual(queries[1].where.projectId, { in: [target, other] });
+  assert.deepEqual(assignedQueries[0].where.project, { status: "ACTIVE" });
   assert.ok(queries.every((query) => query.take === 100));
   await assert.rejects(() => service.caller(caller, id(99)), { message: "NOT_MEMBER" });
 });
@@ -243,6 +246,23 @@ test("bounds concurrent per-project sprint reads", async () => {
 
   assert.ok(peak > 1);
   assert.ok(peak <= 4);
+});
+
+test("pages checkpoint epics and their tasks without dropping rows", async () => {
+  const firstEpicTasks = Array.from({ length: 100 }, (_, index) => ({ id: id(2000 + index), projectId: target, storyPoints: 1, status: "TODO" }));
+  const checkpointCalls: any[] = [];
+  const facts = await createFacts(db({
+    checkpoint: { findMany: async (query: any) => {
+      checkpointCalls.push(query);
+      if (!query.where.id) return [{ id: id(200), projectId: target, name: "M1", targetDate: day("2026-11-10"), epics: Array.from({ length: 100 }, (_, index) => ({ id: id(3000 + index), projectId: target, tasks: index === 0 ? firstEpicTasks : [] })) }];
+      if (query.select.epics.where.id) return [{ epics: [{ id: id(3000), projectId: target, tasks: [{ id: id(2100), projectId: target, storyPoints: 1, status: "TODO" }] }] }];
+      return [{ epics: [{ id: id(3100), projectId: target, tasks: [] }] }];
+    } },
+  }), { now: () => new Date("2026-11-09T10:00:00.000Z") }).target(target);
+
+  assert.equal(facts.checkpoints[0].remainingPoints, 101);
+  assert.ok(checkpointCalls.some((query) => query.select?.epics?.skip === 100 && query.select.epics.take === 100));
+  assert.ok(checkpointCalls.some((query) => query.select?.epics?.where?.id === id(3000) && query.select.epics.select?.tasks?.skip === 100));
 });
 
 test("hash is canonical and excludes asOf", () => {

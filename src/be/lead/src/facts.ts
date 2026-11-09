@@ -5,7 +5,7 @@ type Query = Record<string, unknown>;
 type FindMany<T> = { findMany(args: Query): Promise<T[]> };
 type Task = { id?: string; projectId: string; assigneeId?: string | null; storyPoints: number | null; status: string; deletedAt?: Date | null; sprintId?: string | null };
 type Sprint = { id: string; name: string; completedPoints: number | null; startDate: Date; endDate: Date; projectId?: string; deletedAt?: Date | null };
-type Checkpoint = { id: string; projectId: string; name: string; targetDate: Date; deletedAt?: Date | null; epics?: Array<{ projectId: string; deletedAt?: Date | null; tasks?: Task[] }> };
+type Checkpoint = { id: string; projectId: string; name: string; targetDate: Date; deletedAt?: Date | null; epics?: Array<{ id?: string; projectId: string; deletedAt?: Date | null; tasks?: Task[] }> };
 type Member = { projectId: string; userId: string; project?: { id: string; name: string; status?: string }; user?: { id: string; displayName: string }; assignedTasks?: Task[] };
 const PAGE_SIZE = 100;
 const SPRINT_CONCURRENCY = 4;
@@ -37,6 +37,65 @@ async function allPages<T>(findMany: FindMany<T> | undefined, args: Query): Prom
     rows.push(...page);
     if (page.length < PAGE_SIZE) return rows;
   }
+}
+
+const checkpointSelect = { id: true, projectId: true, name: true, targetDate: true, deletedAt: true };
+const checkpointRelations = (projectId: string, epicSkip = 0, epicId?: string, taskSkip = 0) => ({
+  epics: {
+    where: { ...(epicId ? { id: epicId } : {}), projectId, deletedAt: null, project: activeProject }, orderBy: { id: "asc" }, ...(epicId ? {} : { skip: epicSkip }), take: PAGE_SIZE,
+    select: { id: true, projectId: true, deletedAt: true, tasks: { where: liveTask(projectId), orderBy: { id: "asc" }, ...(epicId ? { skip: taskSkip } : {}), take: PAGE_SIZE, select: { id: true, projectId: true, storyPoints: true, status: true, deletedAt: true } } },
+  },
+});
+
+function appendNew<T extends { id?: string }>(target: T[], page: T[]): boolean {
+  let added = false;
+  for (const row of page) {
+    if (row.id == null || !target.some(({ id }) => id === row.id)) {
+      target.push(row);
+      added = true;
+    }
+  }
+  return added;
+}
+
+async function readCheckpoints(db: FactsDb, projectId: string): Promise<Checkpoint[]> {
+  if (!db.checkpoint) return [];
+  const checkpoints = await allPages(db.checkpoint, {
+    where: { projectId, deletedAt: null, project: activeProject },
+    orderBy: [{ targetDate: "asc" }, { id: "asc" }],
+    select: checkpointSelect,
+  });
+
+  for (const checkpoint of checkpoints) {
+    const epics = checkpoint.epics ?? [];
+    if (checkpoint.epics == null) {
+      const rows = await db.checkpoint.findMany({ where: { id: checkpoint.id, projectId, deletedAt: null, project: activeProject }, select: checkpointRelations(projectId) });
+      epics.push(...(rows[0]?.epics ?? []));
+      checkpoint.epics = epics;
+    }
+    for (let skip = PAGE_SIZE; epics.length >= skip; skip += PAGE_SIZE) {
+      if (epics.length < skip) break;
+      const rows = await db.checkpoint.findMany({
+        where: { id: checkpoint.id, projectId, deletedAt: null, project: activeProject },
+        select: checkpointRelations(projectId, skip),
+      });
+      const page = rows[0]?.epics ?? [];
+      if (!page.length || !appendNew(epics, page)) break;
+    }
+    for (const epic of epics) {
+      const tasks = epic.tasks ?? [];
+      if (epic.id == null) continue;
+      for (let skip = PAGE_SIZE; tasks.length >= skip; skip += PAGE_SIZE) {
+        const rows = await db.checkpoint.findMany({
+          where: { id: checkpoint.id, projectId, deletedAt: null, project: activeProject },
+          select: checkpointRelations(projectId, 0, epic.id, skip),
+        });
+        const page = rows[0]?.epics?.[0]?.tasks ?? [];
+        if (!page.length || !appendNew(tasks, page)) break;
+      }
+    }
+  }
+  return checkpoints;
 }
 
 function averageSprintDays(sprints: Sprint[]): number | null {
@@ -93,10 +152,10 @@ export function createFacts(db: FactsDb, clock: Clock = systemClock) {
     const [taskRows, sprintRows, checkpointRows, memberRows] = await Promise.all([
       allPages(db.task, { where: liveTask(projectId), orderBy: { id: "asc" }, select: { id: true, projectId: true, storyPoints: true, status: true, deletedAt: true } }),
       completeSprints(db, memberProjectIds),
-      db.checkpoint?.findMany({ where: { projectId, deletedAt: null, project: activeProject }, orderBy: [{ targetDate: "asc" }, { id: "asc" }], select: { id: true, projectId: true, name: true, targetDate: true, deletedAt: true, epics: { where: { projectId, deletedAt: null, project: activeProject }, select: { projectId: true, deletedAt: true, tasks: { where: liveTask(projectId), orderBy: { id: "asc" }, select: { id: true, projectId: true, storyPoints: true, status: true, deletedAt: true } } } } } }) ?? [],
+      readCheckpoints(db, projectId),
       allPages(db.projectMember, { where: { projectId: { in: [...memberProjectIds] }, project: activeProject }, orderBy: [{ projectId: "asc" }, { userId: "asc" }], select: { projectId: true, userId: true, project: { select: { id: true, name: true, status: true } }, user: { select: { id: true, displayName: true } } } }),
     ]);
-    const assignedTasks = await allPages(db.task, { where: { ...liveTask(), projectId: { in: [...memberProjectIds] }, assigneeId: { not: null } }, orderBy: { id: "asc" }, select: { id: true, projectId: true, assigneeId: true, storyPoints: true, status: true, deletedAt: true, sprintId: true } });
+    const assignedTasks = await allPages(db.task, { where: { ...liveTask(), project: activeProject, projectId: { in: [...memberProjectIds] }, assigneeId: { not: null } }, orderBy: { id: "asc" }, select: { id: true, projectId: true, assigneeId: true, storyPoints: true, status: true, deletedAt: true, sprintId: true } });
     const tasksByMember = new Map(memberRows.map((member) => [`${member.projectId}:${member.userId}`, [...(member.assignedTasks ?? [])]]));
     for (const task of assignedTasks) {
       const key = `${task.projectId}:${task.assigneeId}`;

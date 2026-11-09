@@ -1,8 +1,8 @@
 {
   "task": "T1",
   "status": "done",
-  "summary": "Facts now page all large task and membership reads without dropping rows, join member tasks by project, and read per-project sprint history with concurrency capped at four; 13 focused tests pass.",
-  "commit": "968fad3",
+  "summary": "Facts now incrementally page checkpoints, epics, and tasks without dropping rows, explicitly exclude inactive assigned-task projects, and retain bounded sprint concurrency; 14 focused tests pass.",
+  "commit": "73f0efd55286bc47539039ac365845670ef6b08c",
   "produces": [
     { "kind": "symbol", "name": "createFacts", "where": "src/be/lead/src/facts.ts", "note": "Builds target and active-caller-member facts with stable paged task/member reads, bounded four-worker sprint reads, three-sprint-per-project history, and project-scoped joins." },
     { "kind": "symbol", "name": "hashFacts", "where": "src/be/lead/src/hash.ts", "note": "Canonical SHA-256 excludes asOf." },
@@ -13,7 +13,7 @@
   "edge_cases": ["E1", "E2", "E3", "E4", "E5", "E6", "E25"],
   "checks": {
     "build": "pass",
-    "tests": "13 focused pass; 547 pass, 28 skipped full suite",
+    "tests": "14 focused pass; 547 pass, 28 skipped full suite",
     "lint": "pass"
   }
 }
