@@ -45,7 +45,7 @@ export function validateItem(raw: unknown, now: Date): ValidateResult {
   return { ok: true, item: { type: v.type, repo, externalId: v.externalId, title: v.title, body, bodyTruncated: truncated, occurredAt, url, files: v.files, contentHash } };
 }
 
-type Existing = { id: string; itemType: string; repo: string; externalId: string; contentHash: string; flagged: boolean };
+type Existing = { id: string; itemType: string; repo: string; externalId: string; contentHash: string; flagged: boolean; bodyTruncated: boolean };
 type Tx = {
   activityItem: { findMany(args: unknown): Promise<Existing[]>; upsert(args: unknown): Promise<{ id: string }> };
   itemSummary: { findMany(args: unknown): Promise<{ itemId: string; contentHash: string }[]> };
@@ -74,7 +74,7 @@ export async function uploadItems(deps: UploadDeps, userId: string, projectId: s
     let created = 0, updated = 0, unchanged = 0;
     const existing = await tx.activityItem.findMany({
       where: { projectId, uploadedBy: userId, OR: valid.map(({ item }) => ({ itemType: item.type, repo: item.repo, externalId: item.externalId })) },
-      select: { id: true, itemType: true, repo: true, externalId: true, contentHash: true, flagged: true },
+      select: { id: true, itemType: true, repo: true, externalId: true, contentHash: true, flagged: true, bodyTruncated: true },
     });
     const byKey = new Map(existing.map((e) => [JSON.stringify([e.itemType, e.repo, e.externalId]), e]));
     const stored: { id: string; hash: string; occurredAt: Date }[] = [];
@@ -84,7 +84,7 @@ export async function uploadItems(deps: UploadDeps, userId: string, projectId: s
       const where = { projectId_uploadedBy_itemType_repo_externalId: { projectId, uploadedBy: userId, itemType: item.type, repo: item.repo, externalId: item.externalId } };
       const create = { projectId, uploadedBy: userId, itemType: item.type, repo: item.repo, externalId: item.externalId, ...fields };
       if (row && row.contentHash === item.contentHash) {
-        if (row.flagged !== flagged) await tx.activityItem.upsert({ where, create, update: { flagged } });
+        if (row.flagged !== flagged || row.bodyTruncated !== item.bodyTruncated) await tx.activityItem.upsert({ where, create, update: { flagged, bodyTruncated: item.bodyTruncated } });
         unchanged++; stored.push({ id: row.id, hash: item.contentHash, occurredAt: item.occurredAt }); continue;
       }
       const saved = await tx.activityItem.upsert({ where, create, update: fields });

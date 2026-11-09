@@ -209,6 +209,30 @@ test("E13 needsSummary orders occurredAt desc then id asc", async () => {
   assert.deepEqual(r.needsSummary, [idOf(h, "a"), idOf(h, "c"), ...[idOf(h, "d"), idOf(h, "e")].sort(), idOf(h, "b")]);
 });
 
+test("E13 tie-break: equal occurredAt orders by id asc even when input order differs", async () => {
+  const mk = (id: string, externalId: string) => ({ id, projectId: "p", uploadedBy: "u", itemType: "COMMIT", repo: "r", externalId, title: "t", contentHash: "old", flagged: false, occurredAt: NOW, files: [], body: null, url: null, bodyTruncated: false });
+  const h = harness({ seed: [mk("id-b", "e"), mk("id-a", "d"), mk("id-c", "f")] });
+  const r = await uploadItems(h.deps, "u", "p", [base({ externalId: "e" }), base({ externalId: "f" }), base({ externalId: "d" })]);
+  assert.deepEqual(r.needsSummary, ["id-a", "id-b", "id-c"]);
+});
+
+test("unchanged re-upload refreshes bodyTruncated and flagged, and skips the write when equal", async () => {
+  const h = harness();
+  await uploadItems(h.deps, "u", "p", [base({ body: "a".repeat(2000) })]);
+  assert.equal(h.rows()[0]!.bodyTruncated, false);
+  let r = await uploadItems(h.deps, "u", "p", [base({ body: "a".repeat(2500) })]);
+  assert.equal(r.unchanged, 1);
+  assert.equal(h.rows()[0]!.bodyTruncated, true);
+  assert.equal(h.rows()[0]!.flagged, true);
+  const before = h.log.upserts;
+  await uploadItems(h.deps, "u", "p", [base({ body: "a".repeat(2500) })]);
+  assert.equal(h.log.upserts, before);
+  r = await uploadItems(h.deps, "u", "p", [base({ body: "a".repeat(2000) })]);
+  assert.equal(r.unchanged, 1);
+  assert.equal(h.rows()[0]!.bodyTruncated, false);
+  assert.equal(h.rows()[0]!.flagged, false);
+});
+
 test("E13 window boundary: exactly at start is in, 1 ms before is out", async () => {
   const h = harness();
   const r = await uploadItems(h.deps, "u", "p", [base({ externalId: "in", timestamp: windowFrom.toISOString() }), base({ externalId: "out", timestamp: new Date(windowFrom.getTime() - 1).toISOString() })]);
