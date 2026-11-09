@@ -25,13 +25,13 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S2 | 2026-11-09 | Claude Opus 5.5 (lead) | W9 | Active | Merged `development`; spec amended against W5's merged code (C~7) | Get the operator's re-approval of the amendments, then run `writing-plans-lite-v2` on the spec | 2026-11-09 |
+| S2 | 2026-11-09 | Claude Opus 5.5 (lead) | W9 | Active | Writing the W9 plan (`writing-plans-lite-v2`) | Finish the plan folder `workflow/plans/2026-11-09-w9-dev-slice/`, lint, review, ask Gate 2 | 2026-11-09 |
 
 **Remaining**
 
 - [x] Gate 1: W9 spec approved by ludannnn on 2026-11-08 (one review round, four lenses).
 - [x] Check PR #23 fixes 3 and 4 against the spec (2026-11-09): fix 3 matches; fix 4 shipped `inMutationTransaction`, so § 4.6 and SD16 are amended (C~7).
-- [ ] Re-approval of the 2026-11-09 spec amendments (§ 4.1, § 4.6, F8, SD11, SD16).
+- [x] Re-approval of the 2026-11-09 spec amendments (§ 4.1, § 4.6, F8, SD11, SD16): approved by ludannnn on 2026-11-09.
 - [ ] Gate 2: W9 plan.
 - [ ] **Handover:** to the Dev Lead (W5): `lockProjectForMutation`'s no-op `version: { increment: 0 }` update also bumps `projects.updated_at` (`@updatedAt`) on every task, checkpoint and membership write.
 - [ ] **Handover:** contracts.md rows 50 and 51 list fewer errors than W9 returns (`RATE_LIMITED`, `AI_DISABLED`, 422 for `BLOCKED_INPUT`, 404, 409); add them as a clarification (they follow architecture §8 and the W3 handover).
@@ -44,7 +44,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W9 | Developer upload, summaries, standup | Spec'd | [spec](../../specs/2026-11-08-w9-dev-slice-design.md) (approved 2026-11-08) | — | Spec amended after W5 merge (C~7); re-approval pending | — |
+| W9 | Developer upload, summaries, standup | Spec'd | [spec](../../specs/2026-11-08-w9-dev-slice-design.md) (approved 2026-11-08) | — | Spec amended after W5 merge (C~7), re-approved 2026-11-09; plan in progress | — |
 
 ---
 

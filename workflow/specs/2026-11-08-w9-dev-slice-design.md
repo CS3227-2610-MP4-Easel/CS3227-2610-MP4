@@ -1,6 +1,6 @@
 # W9 Developer Upload, Summaries and Standup Design
 
-- **Status:** Approved (ludannnn, 2026-11-08); amended 2026-11-09 after W5 merged (§ 4.1, § 4.6, F8, SD11, SD16), re-approval pending
+- **Status:** Approved (ludannnn, 2026-11-08); amended 2026-11-09 after W5 merged (§ 4.1, § 4.6, F8, SD11, SD16), re-approved (ludannnn, 2026-11-09)
 - **Format:** v2
 - **Risk tier:** High - untrusted uploaded text reaches the model, every row is owned by one developer, the Dev Lead reads other users' standups, and each endpoint relies on project membership.
 - **Workstream:** W9 | **Plan:** —
