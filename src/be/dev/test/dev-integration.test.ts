@@ -11,6 +11,7 @@ import { createApiApp } from "../../api/src/app.js";
 import { createCoreComposition } from "../../api/src/core-composition.js";
 import { createDevComposition, withDevComposition } from "../../api/src/dev-composition.js";
 import { createAppDependencies } from "../../api/src/deps.js";
+import { DevError } from "../src/errors.js";
 import { insertSummaries } from "../src/store/summaries.js";
 import { createDevContextSources } from "../src/store/sources.js";
 import { GUARD_VERSION } from "../src/gateway-binding.js";
@@ -212,10 +213,10 @@ test("concurrent uploads of five different items either succeed or fail with a s
   const stored = new Set((await items(base, s.projectId)).map((r) => r.externalId));
   const ok = new Set<string>();
   settled.forEach((r, i) => {
-    if (r.status === "fulfilled") { assert.equal(r.value.created, 1); ok.add(ids[i]!); } else assert.ok(["P2034", "40001"].includes((r.reason as { code?: string }).code ?? ""), "only serialization failures");
+    if (r.status === "fulfilled") { assert.equal(r.value.created, 1); ok.add(ids[i]!); } else assert.ok(r.reason instanceof DevError && r.reason.code === "RATE_LIMITED" && r.reason.status === 429, "only exhausted retries");
   });
   assert.deepEqual([...stored].sort(), [...ok].sort());
-  t.diagnostic(`retry budget: ${settled.length - ok.size} of ${settled.length} uploads failed with a serialization error`);
+  t.diagnostic(`retry budget: ${settled.length - ok.size} of ${settled.length} uploads failed with RATE_LIMITED`);
 })));
 
 test("F3 insertSummaries for another developer's item rejects NOT_FOUND and writes nothing", opts, () => withIntegrationDb((base, fx) => scene(base, fx, async (s) => {

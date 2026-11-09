@@ -312,6 +312,14 @@ test("DevError mapping keeps the code, status, details and Retry-After, with fix
   }
 });
 
+test("an upload failing with DevError RATE_LIMITED is 429 with Retry-After 1", async () => {
+  const { api } = build({ upload: async () => { throw new DevError("RATE_LIMITED", 429, 1); } });
+  const response = await send(api, "dev", "POST", "/activity-items", { items: [] });
+  assert.equal(response.status, 429);
+  assert.equal(response.headers.get("retry-after"), "1");
+  assert.equal((await code(response)).code, "RATE_LIMITED");
+});
+
 test("a plain VALIDATION_FAILED error from a service is 422 with a fixed message", async () => {
   const { api } = build({ standup: async () => { throw new Error("VALIDATION_FAILED"); } });
   const response = await send(api, "dev", "POST", "/standups", {});

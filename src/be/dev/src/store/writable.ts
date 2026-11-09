@@ -1,5 +1,6 @@
 import { NotMember } from "@agile/contracts";
 import { lockProjectForMutation } from "@agile/core";
+import { DevError } from "../errors.js";
 import { inMutationTransaction, type MutationTransaction } from "@agile/db";
 
 export type DevWriteDeps = { db: MutationTransaction; requireMember(userId: string, projectId: string): Promise<void> };
@@ -23,5 +24,9 @@ export async function inDevWrite<T>(deps: DevWriteDeps, userId: string, projectI
       throw error;
     }
   };
-  return inMutationTransaction(deps.db, lock, (tx) => assertDevWriteAllowed(tx, userId, projectId, deps.requireMember), mutate);
+  try { return await inMutationTransaction(deps.db, lock, (tx) => assertDevWriteAllowed(tx, userId, projectId, deps.requireMember), mutate); } catch (error) {
+    const code = (error as { code?: string })?.code;
+    if (code === "P2034" || code === "40001") throw new DevError("RATE_LIMITED", 429, 1);
+    throw error;
+  }
 }

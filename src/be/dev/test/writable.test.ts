@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { NotMember } from "@agile/contracts";
+import { DevError } from "../src/errors.js";
 import { inDevWrite } from "../src/index.js";
 
 type Opts = { status?: string | null; lockCodes?: string[]; member?: boolean; memberError?: Error };
@@ -100,3 +101,13 @@ test("E40 the lock targets the project row and the check reads the same id", asy
   assert.equal((h.log.locks[0] as { where: { id: string } }).where.id, "p");
   assert.deepEqual((h.log.finds[0] as { where: unknown }).where, { id: "p" });
 });
+
+for (const code of ["40001", "P2034"]) {
+  test(`E40 three consecutive ${code} failures become DevError RATE_LIMITED 429 retry 1`, async () => {
+    const h = harness({ lockCodes: [code, code, code] });
+    await assert.rejects(inDevWrite(h.deps, "u", "p", h.mutate), (e) => e instanceof DevError && e.code === "RATE_LIMITED" && e.status === 429 && e.retryAfterSeconds === 1);
+    assert.equal(h.log.attempts, 3);
+    assert.equal(h.log.mutated, 0);
+    assert.equal(h.log.commits, 0);
+  });
+}
