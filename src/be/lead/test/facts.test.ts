@@ -93,6 +93,21 @@ test("queries each caller project for only its newest three closed sprints", asy
   assert.equal(facts.projectedCompletionDate, "2026-11-13");
 });
 
+test("excludes a fourth target sprint from velocity and averages", async () => {
+  const sprints = [
+    { id: id(104), projectId: target, name: "Newest", completedPoints: 9, startDate: day("2026-11-07"), endDate: day("2026-11-08") },
+    { id: id(105), projectId: target, name: "Middle", completedPoints: 6, startDate: day("2026-11-04"), endDate: day("2026-11-05") },
+    { id: id(106), projectId: target, name: "Old", completedPoints: 3, startDate: day("2026-11-01"), endDate: day("2026-11-02") },
+    { id: id(107), projectId: target, name: "Too old", completedPoints: 100, startDate: day("2026-10-28"), endDate: day("2026-10-29") },
+  ];
+  const facts = await createFacts(db({
+    task: { findMany: async () => [{ projectId: target, storyPoints: 12, status: "TODO" }] },
+    sprint: { findMany: async () => sprints },
+  }), { now: () => new Date("2026-11-09T10:00:00.000Z") }).target(target);
+  assert.deepEqual(facts.velocity, sprints.slice(0, 3).map(({ id: sprintId, name, completedPoints }) => ({ sprintId, name, completedPoints })));
+  assert.equal(facts.avgVelocity, 6);
+});
+
 test("uses two closed nonzero sprints newest-first for velocity and projection", async () => {
   const facts = await createFacts(db({
     task: { findMany: async () => [{ projectId: target, storyPoints: 12, status: "TODO" }] },
@@ -173,6 +188,7 @@ test("caller requires active target membership and averages completed work acros
   assert.equal(facts.overload[0].avgCompletedPerSprint, 5);
   assert.equal(queries[0].where.userId, caller);
   assert.deepEqual(queries[0].where.project, { status: "ACTIVE" });
+  assert.deepEqual(queries[1].select.assignedTasks.where.projectId, { in: [target, other] });
   assert.ok(queries.every((query) => query.take === undefined));
   await assert.rejects(() => service.caller(caller, id(99)), { message: "NOT_MEMBER" });
 });
