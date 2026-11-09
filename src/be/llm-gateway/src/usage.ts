@@ -1,6 +1,25 @@
 import type { PrismaClient } from "@prisma/client";
-import type { Feature, UsageSession, UsageSummary } from "@agile/contracts";
-import type { AppTier } from "./settings.js";
+import type { Feature, UsageSession, UsageSummary, UserRole } from "@agile/contracts";
+import { systemClock, type Clock } from "./clock.js";
+import { modelFor, type AppTier, type GatewaySettings } from "./settings.js";
+
+export type CacheHitInput = { feature: Feature; caller: { userId: string; role: UserRole }; sessionId: string | null; projectId: string | null; inputHash: string; promptVersion: string };
+
+/** AD-18: a served cache hit leaves one zero-usage row; it never touches limits, budget or breaker. */
+export function createCacheHits({ db, settings, clock = systemClock }: { db: PrismaClient; settings: Pick<GatewaySettings, "tier" | "llmMode" | "modelOverrides">; clock?: Clock }) {
+  return {
+    async recordCacheHit(input: CacheHitInput): Promise<void> {
+      await db.llmCall.create({
+        data: {
+          status: "CACHE_HIT", sessionId: input.sessionId, userId: input.caller.userId, role: input.caller.role, projectId: input.projectId, env: settings.tier,
+          feature: input.feature, model: modelFor(settings, input.feature), promptVersion: input.promptVersion, prefixHash: input.promptVersion, inputHash: input.inputHash,
+          attempts: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0, latencyMs: 0, costMicrousd: 0n, estimatedPromptTokens: 0, sectionTokens: {},
+          flagged: false, truncated: false, experiment: { resultCache: false, llmMode: settings.llmMode }, createdAt: clock.now(),
+        },
+      });
+    },
+  };
+}
 
 export type UsageSessionsQuery = { from?: Date; to?: Date; feature?: Feature; page: number; size: number };
 export type UsagePage = { items: UsageSession[]; page: number; size: number; total: number };

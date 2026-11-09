@@ -117,3 +117,38 @@ test("E37 concurrent opens overshoot the open cap by at most one", { skip }, () 
   const open = await base.aiSession.count({ where: { userId: owner, outcome: "OPEN" } });
   assert.ok(open === 3 || open === 4, `open sessions: ${open}`);
 }));
+
+test("E75 openOrReuse reuses a usable session for the same user, feature and project", { skip }, () => withIntegrationDb(async (base, { user, project }) => {
+  const { sessions, clock } = setup(base);
+  const owner = await user();
+  const projectId = await project(owner);
+  const input = { feature: "DEV_SUMMARY" as const, userId: owner, projectId };
+  const first = await sessions.openOrReuse(input);
+  clock.advance(10 * MIN);
+  assert.equal(await sessions.openOrReuse(input), first);
+  assert.equal(await base.aiSession.count({ where: { userId: owner } }), 1);
+  assert.deepEqual((await base.aiSession.findUniqueOrThrow({ where: { id: first } })).lastActivityAt, new Date(START), "reuse does not touch");
+
+  const otherProject = await sessions.openOrReuse({ ...input, projectId: await project(owner) });
+  const otherFeature = await sessions.openOrReuse({ ...input, feature: "DEV_STANDUP" });
+  assert.equal(new Set([first, otherProject, otherFeature]).size, 3);
+}));
+
+test("E75 openOrReuse abandons an idle session and opens a new one", { skip }, () => withIntegrationDb(async (base, { user, project }) => {
+  const { sessions, clock } = setup(base);
+  const owner = await user();
+  const input = { feature: "DEV_SUMMARY" as const, userId: owner, projectId: await project(owner) };
+  const first = await sessions.openOrReuse(input);
+  clock.advance(30 * MIN + 1_000);
+  const second = await sessions.openOrReuse(input);
+  assert.notEqual(second, first);
+  assert.equal((await base.aiSession.findUniqueOrThrow({ where: { id: first } })).outcome, "ABANDONED");
+}));
+
+test("E75 openOrReuse keeps the daily cap when nothing is reusable", { skip }, () => withIntegrationDb(async (base, { user, project }) => {
+  const { sessions } = setup(base);
+  const owner = await user();
+  const projectId = await project(owner);
+  for (let i = 0; i < 20; i++) await sessions.close(await sessions.open({ feature: "LEAD_DIGEST", userId: owner, projectId: null }), "ACCEPTED", owner);
+  await assert.rejects(sessions.openOrReuse({ feature: "DEV_SUMMARY", userId: owner, projectId }), (error) => error instanceof SessionCapReached);
+}));
