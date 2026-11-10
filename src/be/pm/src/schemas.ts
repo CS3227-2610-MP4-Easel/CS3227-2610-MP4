@@ -47,11 +47,20 @@ export function outlineOutputSchema(today: string): ZodTypeAny {
 
 
 
-export const expandOutputSchema: ZodTypeAny = z.object({
-  tasks: z.array(z.object({
-    title: z.string().min(1).max(200),
-    description: z.string().min(1).max(1000),
-    acceptanceCriteria: z.array(z.string().min(1).max(300)).min(1).max(6),
-    storyPoints: StoryPointsSchema,
-  })).min(1).max(8),
+const taskSchema = z.object({
+  title: z.string().min(1).max(200),
+  description: z.string().min(1).max(1000),
+  acceptanceCriteria: z.array(z.string().min(1).max(300)).min(1).max(6),
+  storyPoints: StoryPointsSchema,
 });
+
+export const expandOutputSchema: ZodTypeAny = z.object({ tasks: z.array(taskSchema).min(1).max(8) });
+
+export function bulkOutputSchema(targetIndexes: number[]): ZodTypeAny {
+  return z.object({ epics: z.array(z.object({ index: z.number().int(), tasks: z.array(taskSchema).min(1).max(8) })) }).superRefine(({ epics }, ctx) => {
+    const indexes = epics.map((epic) => epic.index);
+    if (indexes.length !== targetIndexes.length || new Set(indexes).size !== indexes.length || indexes.some((index) => !targetIndexes.includes(index))) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "epic indexes must match targets exactly" });
+    }
+  });
+}

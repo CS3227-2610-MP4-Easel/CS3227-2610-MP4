@@ -15,11 +15,12 @@ registerMockResponse("PM_PLAN_OUTLINE", (call) => {
   });
 });
 
-registerMockResponse("PM_PLAN_EXPAND", () =>
-  JSON.stringify({
-    tasks: [
+registerMockResponse("PM_PLAN_EXPAND", (call) => {
+  const tasks = [
       { title: "Design", description: "Sketch the approach for this epic.", acceptanceCriteria: ["The design is agreed."], storyPoints: 3 },
       { title: "Build", description: "Implement the agreed design.", acceptanceCriteria: ["The feature works as designed."], storyPoints: 5 },
       { title: "Test", description: "Check the result against the criteria.", acceptanceCriteria: ["All checks pass."], storyPoints: 2 },
-    ],
-  }));
+    ];
+  const epics = call.sections.find((section) => section.name === "epics");
+  return JSON.stringify(epics ? { epics: [...epics.text.matchAll(/^index: (\d+)$/gm)].map((match) => ({ index: Number(match[1]), tasks })) } : { tasks });
+});
