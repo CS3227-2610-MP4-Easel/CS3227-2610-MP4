@@ -43,8 +43,8 @@ only your own task's files. Contract tests marked read-only are not edited.
 ## Task order
 | Task | File | Depends on | Concurrent with | Wave | Weight | Review | Status |
 |---|---|---|---|---|---|---|---|
-| T1 Contracts: points schema, endpoint 61 policy and openapi | `tasks/T1.md` | - | T3 | 1 | standard | full | Not started |
-| T3 Gateway: per-feature limits for PM_PLAN_EXPAND | `tasks/T3.md` | - | T1 | 1 | complex | full | Not started |
+| T1 Contracts: points schema, endpoint 61 policy and openapi | `tasks/T1.md` | - | T3 | 1 | standard | full | Done |
+| T3 Gateway: per-feature limits for PM_PLAN_EXPAND | `tasks/T3.md` | - | T1 | 1 | complex | full | Done |
 | T2 Points: core, api routes, pm schemas, proposals types | `tasks/T2.md` | T1 | - | 2 | standard | light | Not started |
 | T4 PM: prompts, bulk and single layouts, schemas, mock | `tasks/T4.md` | T2, T3 | T5 | 3 | complex | full | Not started |
 | T5 Proposals: others context, bulk claim, store and fail | `tasks/T5.md` | T2 | T4 | 3 | complex | full | Not started |

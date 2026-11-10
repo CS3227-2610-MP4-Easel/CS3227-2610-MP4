@@ -24,7 +24,9 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| s1 | 2026-11-08 | Claude Sonnet 5.5 | W7 UI | Active | Survey done; waiting on the operator's answer on auth and live-versus-fixture mode (Remaining) | Add data-layer functions 34-41 in `src/fe/lib/api/index.ts`, then wire `PlanIdea` to 34 | 2026-11-08 |
+| s1 | 2026-11-08 | Claude Sonnet 5.5 | W7 UI | Paused | Survey done; waiting on the operator's answer on auth and live-versus-fixture mode (Remaining) | Add data-layer functions 34-41 in `src/fe/lib/api/index.ts`, then wire `PlanIdea` to 34 | 2026-11-08 |
+
+| s2 | 2026-11-10 | Codex | W7c | Active | Orchestrating W7c wave 2: T2 | Dispatch T2 with T1 handover | 2026-11-10 |
 
 **Remaining**
 
@@ -46,13 +48,14 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W7c | Story points 1-20 and plan-wide expansion | Planned | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 0/9 tasks; executing session: another agent (see How to Resume) | — |
+| W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 2/9 tasks done; wave 2 T2 next | — |
 | W7-UI | PM plan screens linked to the backend | Building | none yet (size to be set; Medium if it only wires existing screens to existing endpoints) | none yet | Survey done; blocked on the two questions above | — |
 
 ## 3. Changes
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-10 | T1 and T3 complete (2ed9726, 26d1329); Implementer, Tester and Attacker reviews found no blocking issues. T1 OpenAPI mappings lack direct assertions; contract parity passes. Gateway tests: 149 passed, 0 failed, 0 skipped including integration. | W7c | 2ed9726, 26d1329 |
 | 2026-11-10 | W7c spec approved at Gate 1 and plan approved at Gate 2 by Xiao-Congchen; plan reviewed once (7 blocking findings fixed); the front-end work (project flow, plan editing, live backlog) committed as `7dbde06`; spec `0aab004`; execution handed to another agent | W7c | this commit |
 | 2026-11-10 | W7c spec written ([spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md), Medium + Attacker lens, lint clean): points 1 to 20 (reverses AD-12) and plan-wide expansion (new endpoint 61, one model call for all epics, rest-of-plan context for 37 and 39, per-feature gateway limits). Live measurement on SoCLaaS (llama3.1:8b, 10 epics): bulk call 12.3 to 26.9 s, 977 to 2,086 output tokens; limits set to 2x (54 s, 4,200 tokens). Review round 1 (Implementer, Tester, Attacker) folded; awaiting Gate 1 approval | W7c | this commit |
 | 2026-11-10 | Project flow UI on real data (`LLM_MODE=live`): Projects list (6), New project (5), project switcher and header names (7); `Screen` sets the open project from the URL (`setCurrentProject`) and the data layer, plan drafts and backlog follow it (the seeded-id constant is gone). Endpoint 6 takes no `status` query, so the tabs filter client-side. FE typecheck and lint pass; not run in a browser | W7-UI | this commit |
