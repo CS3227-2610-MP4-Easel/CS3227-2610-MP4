@@ -164,8 +164,10 @@ export default function LivePlan() {
       await fn();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Something went wrong.');
-      // A stale version means another tab or call changed the plan: show the current one.
-      if (e instanceof ApiError && (e.code === 'CONFLICT_VERSION' || e.code === 'CONFLICT_STATE') && proposal) getProposal_35(proposal.id).then(setProposal).catch(() => {});
+      // A bulk failure can mark epics failed; conflicts can also leave this view stale.
+      if (proposal && (what === 'expand-all' || (e instanceof ApiError && (e.code === 'CONFLICT_VERSION' || e.code === 'CONFLICT_STATE')))) {
+        try { setProposal(await getProposal_35(proposal.id)); } catch {}
+      }
     } finally {
       setBusy('');
     }
