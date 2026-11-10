@@ -1,11 +1,11 @@
 import { z } from "zod/v3";
-import { PageQuerySchema, TaskStatusSchema, policyForRoute, type RouteDefinition } from "@agile/contracts";
+import { PageQuerySchema, StoryPointsSchema, TaskStatusSchema, policyForRoute, type RouteDefinition } from "@agile/contracts";
 import { HttpError } from "../errors.js";
 
 type Actor = { userId: string; role: "PM" | "DEV_LEAD" | "DEVELOPER" };
 export type PlanningRouteServices = { epics: { list(actor: Actor, projectId: string, query: { page: number; size: number }): Promise<unknown>; create(actor: Actor, projectId: string, input: { title: string; description?: string | null; checkpointId?: string | null }): Promise<unknown> }; tasks: { list(actor: Actor, projectId: string, query: { page: number; size: number; status?: string; epicId?: string; assigneeId?: string; sprintId?: string; blocked?: boolean }): Promise<unknown>; read(actor: Actor, taskId: string): Promise<unknown>; create(actor: Actor, projectId: string, input: Record<string, unknown>): Promise<unknown>; patch(actor: Actor, taskId: string, input: Record<string, unknown>): Promise<unknown>; status(actor: Actor, taskId: string, input: Record<string, unknown>): Promise<unknown> } };
 const Id = z.object({ id: z.string().uuid() }).strict();
-const Points = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(5), z.literal(8), z.literal(13)]).nullable();
+const Points = StoryPointsSchema.nullable();
 const EpicInput = z.object({ title: z.string().min(1).max(200), description: z.string().max(4000).nullable().optional(), checkpointId: z.string().uuid().nullable().optional() }).strict();
 const Create = z.object({ epicId: z.string().uuid(), title: z.string().min(1).max(200), description: z.string().max(4000).nullable().optional(), acceptanceCriteria: z.array(z.string().max(300)).max(12).optional(), storyPoints: Points.optional(), assigneeId: z.string().uuid().nullable().optional() }).strict();
 const Patch = z.object({ title: z.string().min(1).max(200).optional(), description: z.string().max(4000).nullable().optional(), acceptanceCriteria: z.array(z.string().max(300)).max(12).optional(), storyPoints: Points.optional(), epicId: z.string().uuid().optional(), assigneeId: z.string().uuid().nullable().optional(), sprintId: z.string().uuid().nullable().optional(), version: z.number().int().positive() }).strict();

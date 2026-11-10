@@ -7,7 +7,7 @@ import { toPlanEpic } from "./view.js";
 
 type PlanEpic = PlanProposal["epics"][number];
 export const EXPAND_LEASE_MS = 60_000;
-export type EpicTask = { title: string; description: string; acceptanceCriteria: string[]; storyPoints: 1 | 2 | 3 | 5 | 8 | 13 };
+export type EpicTask = { title: string; description: string; acceptanceCriteria: string[]; storyPoints: number };
 export type ClaimResult =
   | { kind: "DONE"; epic: PlanEpic }
   | { kind: "CLAIMED"; projectId: string; sessionId: string; approach: string; epic: { title: string; description: string; checkpointName: string | null }; claimedVersion: number };

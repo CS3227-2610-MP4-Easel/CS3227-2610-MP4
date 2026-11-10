@@ -7,7 +7,7 @@ import { buildExpandSections, buildOutlineSections, inputHash } from "./sections
 type PlanEpic = PlanProposal["epics"][number];
 
 // Mirrors of the `@agile/proposals` types: the W6 source scan forbids any workspace import except contracts, ai-context and the gateway in a file that calls `gateway.run`.
-export type EpicTask = { title: string; description: string; acceptanceCriteria: string[]; storyPoints: 1 | 2 | 3 | 5 | 8 | 13 };
+export type EpicTask = { title: string; description: string; acceptanceCriteria: string[]; storyPoints: number };
 export type ClaimResult =
   | { kind: "DONE"; epic: PlanEpic }
   | { kind: "CLAIMED"; projectId: string; sessionId: string; approach: string; epic: { title: string; description: string; checkpointName: string | null }; claimedVersion: number };

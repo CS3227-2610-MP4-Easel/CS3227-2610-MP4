@@ -1,0 +1,14 @@
+{
+  "task": "T2",
+  "status": "done",
+  "summary": "Replaced backend points unions with shared 1–20 validation; 308 backend tests passed, including integration.",
+  "commit": "pending",
+  "produces": [
+    { "kind": "symbol", "name": "EpicTask.storyPoints", "where": "src/be/proposals/src/expand-store.ts and src/be/pm/src/plan-flow.ts", "note": "number in both independent mirrors" },
+    { "kind": "symbol", "name": "expandOutputSchema", "where": "src/be/pm/src/schemas.ts", "note": "Uses StoryPointsSchema; POINTS removed." }
+  ],
+  "next": "T4: POINTS is removed; use expandOutputSchema task shape or StoryPointsSchema. T5: EpicTask points type is number; pm validates. T9: backend source literal union scan is clear; T4 updates prompt text.",
+  "deviations": [],
+  "edge_cases": ["E1", "E2", "E3", "E4", "E5"],
+  "checks": { "build": "pass", "tests": "308 pass, 0 fail, 0 skipped including integration", "lint": "pass; no source literal(13) hits" }
+}

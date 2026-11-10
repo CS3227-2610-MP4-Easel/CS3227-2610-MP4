@@ -1,6 +1,6 @@
+import { StoryPointsSchema } from "@agile/contracts";
 import { z, type ZodTypeAny } from "zod/v3";
 
-export const POINTS = [1, 2, 3, 5, 8, 13] as const;
 
 const DATE_SHAPE = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_DAYS_AHEAD = 730;
@@ -45,13 +45,13 @@ export function outlineOutputSchema(today: string): ZodTypeAny {
   });
 }
 
-const points = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(5), z.literal(8), z.literal(13)]);
+
 
 export const expandOutputSchema: ZodTypeAny = z.object({
   tasks: z.array(z.object({
     title: z.string().min(1).max(200),
     description: z.string().min(1).max(1000),
     acceptanceCriteria: z.array(z.string().min(1).max(300)).min(1).max(6),
-    storyPoints: points,
+    storyPoints: StoryPointsSchema,
   })).min(1).max(8),
 });

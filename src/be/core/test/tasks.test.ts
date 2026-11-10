@@ -98,3 +98,19 @@ test("task patch atomically compares the version with updateMany before reading 
   assert.deepEqual(writes, [{ where: { id: taskId, version: 1 }, data: { title: "Changed", version: { increment: 1 } } }]);
   assert.equal(reads, 2);
 });
+
+
+test("W7c E5 adding a task to a sprint requires points and accepts 17", async () => {
+  const sprintId = "00000000-0000-4000-8000-000000000005";
+  let currentPoints: number | null = 17;
+  let updated = false;
+  const db = { $transaction: async (work: (tx: any) => Promise<unknown>) => work({
+    task: { findFirst: async () => row({ storyPoints: currentPoints, sprintId: updated ? sprintId : null, version: updated ? 2 : 1 }), updateMany: async () => { updated = true; return { count: 1 }; } },
+    epic: { findFirst: async () => ({ id: epicId }) }, sprint: { findFirst: async () => ({ id: sprintId, status: "ACTIVE" }) }, taskEvent: { create: async () => undefined },
+  }) };
+  const tasks = createTasks(db as any, access());
+  assert.equal((await tasks.patch({ userId, role: "PM" }, taskId, { sprintId, version: 1 })).sprintId, sprintId);
+  currentPoints = null; updated = false;
+  await assert.rejects(() => tasks.patch({ userId, role: "PM" }, taskId, { sprintId, version: 1 }), /VALIDATION_FAILED/);
+  assert.equal(updated, false);
+});

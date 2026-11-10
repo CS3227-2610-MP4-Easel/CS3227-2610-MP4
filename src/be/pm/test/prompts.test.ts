@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { ContextSections, Feature, LlmCall } from "@agile/contracts";
 import { assertStaticSectionsFit, checkOutput, FEATURES, mockRegistry, securitySuffix, PLACEHOLDER_BOUNDARY, estimateTokens } from "@agile/llm-gateway";
-import { addDaysIso, expandOutputSchema, outlineOutputSchema, POINTS } from "../src/schemas.js";
+import { addDaysIso, expandOutputSchema, outlineOutputSchema } from "../src/schemas.js";
 import { buildExpandSections, buildOutlineSections, inputHash, outlineStaticSections, PM_PROMPT } from "../src/sections.js";
 import "../src/mocks.js";
 
@@ -100,11 +100,11 @@ test("outline schema rejects the listed bad shapes", () => {
 test("expand schema accepts and rejects", () => {
   const task = (extra: Record<string, unknown> = {}) => ({ title: "Build", description: "Do it.", acceptanceCriteria: ["Works."], storyPoints: 3, ...extra });
   assert.ok(accepts(expandOutputSchema, { tasks: [task()] }));
-  for (const p of POINTS) assert.ok(accepts(expandOutputSchema, { tasks: [task({ storyPoints: p })] }));
+  for (const p of Array.from({ length: 20 }, (_, i) => i + 1)) assert.ok(accepts(expandOutputSchema, { tasks: [task({ storyPoints: p })] }));
   assert.ok(accepts(expandOutputSchema, { tasks: Array.from({ length: 8 }, () => task()) }));
   assert.equal(accepts(expandOutputSchema, { tasks: Array.from({ length: 9 }, () => task()) }), false);
   assert.equal(accepts(expandOutputSchema, { tasks: [] }), false);
-  assert.equal(accepts(expandOutputSchema, { tasks: [task({ storyPoints: 4 })] }), false);
+  assert.equal(accepts(expandOutputSchema, { tasks: [task({ storyPoints: 21 })] }), false);
   assert.equal(accepts(expandOutputSchema, { tasks: [task({ storyPoints: 0 })] }), false);
   assert.equal(accepts(expandOutputSchema, { tasks: [task({ acceptanceCriteria: [] })] }), false);
   assert.equal(accepts(expandOutputSchema, { tasks: [task({ acceptanceCriteria: Array(7).fill("x") })] }), false);

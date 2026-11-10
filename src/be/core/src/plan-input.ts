@@ -1,6 +1,7 @@
+import { StoryPointsSchema } from "@agile/contracts";
 import { z } from "zod/v3";
 
-const points = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(5), z.literal(8), z.literal(13)]);
+const points = StoryPointsSchema;
 
 function isRealDate(value: string): boolean {
   const parsed = new Date(`${value}T00:00:00Z`);

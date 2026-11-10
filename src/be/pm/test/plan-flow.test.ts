@@ -536,10 +536,10 @@ test("E28 a session idle over 30 minutes at expand is 409 with the session-expir
   assert.deepEqual(await sessionOutcomes(h, a), ["ABANDONED"]);
 }));
 
-test("E29 stage 2 answers with 9 tasks, points 4 or a URL in a title are 503 AI_UNAVAILABLE and the row FAILED", opts, withHarness({ real: true }, async (h) => {
+test("E29 stage 2 answers with 9 tasks, points 21 or a URL in a title are 503 AI_UNAVAILABLE and the row FAILED", opts, withHarness({ real: true }, async (h) => {
   const bad: Record<string, unknown> = {
     "9 tasks": tasks(9),
-    "points 4": { tasks: [{ title: "T", description: "d", acceptanceCriteria: ["x"], storyPoints: 4 }] },
+    "points 21": { tasks: [{ title: "T", description: "d", acceptanceCriteria: ["x"], storyPoints: 21 }] },
     "url in title": { tasks: [{ title: "Go to https://example.com", description: "d", acceptanceCriteria: ["x"], storyPoints: 3 }] },
   };
   for (const [label, value] of Object.entries(bad)) {
