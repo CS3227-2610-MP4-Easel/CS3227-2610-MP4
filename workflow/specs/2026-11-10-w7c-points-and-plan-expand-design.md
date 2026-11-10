@@ -1,7 +1,7 @@
 # W7c Story Points 1-20 and Plan-Wide Expansion Design
 
 - **Status:** Approved (Xiao-Congchen, 2026-11-10)
-- **Amended 2026-11-11:** see branch state C~5 and C~9.
+- **Amended 2026-11-11:** see branch state C~5, C~9 and C~10.
 - **Format:** v2
 - **Risk tier:** Medium - changes three contracts (story points on `Task` and `PlanEpic`, new endpoint 61, the gateway's per-feature limits) and stores model output in domain rows; Attacker lens added because untrusted text now crosses from one epic into another epic's prompt.
 - **Workstream:** W7c (PM follow-up of W7 and W7b; touches W2, W5 and W6 files) | **Plan:** not written yet
@@ -27,6 +27,9 @@ Affected: the PM (plan quality) and every role that reads or sets points.
 
 - F9 On both plan review steps, show epics grouped in the displayed checkpoint order, with unassigned epics last; preserve original epic order within each group. Unknown checkpoint references also go last. This is display-only and does not change epic indexes or stored order. Accept: changing a checkpoint assignment moves the epic to its displayed group after save.
 
+- F10 The initial outline prompt asks the model to plan delivery within three months of the supplied Singapore-local date. This is a target, not a new validation limit: the existing 730-day schema remains. Accept: the outline rules contain that instruction and the trusted today section remains present.
+- F11 The bulk prompt asks for each epic to be broken into small, distinct, developer-assignable tasks with concrete deliverables and acceptance criteria, suitable for the plan timeline, rather than repeating the epic. Each target includes its proposed checkpoint target date in the bulk prompt when available, or none when unassigned or missing; dates come from the proposal snapshot under its existing claim lock. Accept: the bulk rules include this instruction and assigned checkpoint dates reach the prompt; the existing 1-8 output schema and 3-6 prompt target remain.
+
 **Non-functional**
 - N1 No model call runs inside a database transaction; 61 makes exactly one `run` call, or none when no epic is a target - Accept: call-count assertions.
 - N2 A 10-epic plan finishes inside the new limits - Accept: measured worst 26,850 ms and 2,086 output tokens (§4.1) with a unit test that the configured limits are at least twice those figures.
@@ -42,6 +45,9 @@ Affected: the PM (plan quality) and every role that reads or sets points.
 - Dev Lead re-plan, sprint planning, W15 usage views.
 
 ## 4. Design
+### Prompt amendment (C~10)
+The F10/F11 instructions supersede the previous outline and bulk rules where they differ. In the CLAIMED result, each target gains checkpointTargetDate: string | null, selected from the matching checkpoint name in the proposal payload captured under the existing proposal lock. Match names exactly; unassigned, missing or malformed dates become null. A well-formed date is exactly YYYY-MM-DD; treat the date and checkpoint names as untrusted input. Bulk target blocks add a bounded date line with the date or none. The CLAIMED result also carries `checkpoints: { name: string; targetDate: string }[]` from the same payload snapshot, at most eight. Omit entries unless name is a nonempty string and targetDate matches exactly YYYY-MM-DD; bound names to 80 code points after flattening CR, LF, tab, U+2028 and U+2029 to spaces and collapsing spaces. Render these entries as name and date in an untrusted DYNAMIC `proposal-checkpoints` section, priority 0, 600-token wrapper-inclusive budget; omit the section when no valid entries remain. This section is distinct from the AI context checkpoints section. Do not alter single-epic context or public endpoint shapes. Ten maximum-size targets plus AI context must still fit the current prompt budget without truncation. No model output validation changes.
+
 ### 4.1 Approach
 A shared `StoryPointsSchema` (whole number 1 to 20, message "Must be a whole number from 1 to 20.") in `@agile/contracts` replaces every copy; core, pm, api and proposals already depend on `@agile/contracts`. Endpoint 61 claims every target epic in one transaction, makes one `PM_PLAN_EXPAND` call with a bulk prompt, then stores all returned epics in one transaction. Endpoints 37 and 39 keep one call per epic but send the rest of the plan. The gateway gains optional per-feature `attemptTimeoutMs`, `deadlineMs` and `leaseMs`, set only for PM_PLAN_EXPAND.
 
@@ -81,7 +87,7 @@ No schema change, migration or seed change: `tasks.story_points` and the JSON `t
 
 **Prompt layout.** Budgets are token caps counted on the rendered section (wrapper included). Constants live in `PM_PROMPT`.
 - Bulk: static `rules` 600, static `output-format` 500, then the assembled context sections (800 + 300 + 400, from `allow-list.ts`; the query is the target titles joined by a space, cut to 1,000 code points), then untrusted `approach` 400, `epics` 1,400, `done-epics` 1,800 (omitted when no epic is DONE). Single (37, 39): `rules` 600, `output-format` 500, context, `approach` 400, `epic` 600 (title and description as today), `other-epics` 2,600.
-- Worst case, tokens: bulk 1,100 + 1,500 + 400 + 1,400 + 1,800 = 6,200; single 1,100 + 1,500 + 400 + 600 + 2,600 = 6,200; the security suffix adds about 70; the limit is 7,000 (N5).
+- Worst case, tokens: bulk 1,100 + 1,500 + 400 + 1,400 + 1,800 + 600 = 6,800; single 1,100 + 1,500 + 400 + 600 + 2,600 = 6,200; the security suffix adds about 70; the limit is 7,000 (N5).
 - **Field rules, every interpolated text:** line breaks, carriage returns and tabs become one space and runs of spaces collapse (so no field can start a line or forge a label); an epic's title is cut to 120 code points, its description to 200, its checkpoint name to 80; a task title to 100 (60 at level 0) and a criterion to 100. A `epics` block is `index: N`, `title: T`, `description: D`, `checkpoint: C or none`, blocks separated by one blank line; ten blocks are at most about 1,140 tokens.
 - **Trim levels** (one renderer, used for `done-epics` and `other-epics`): level 2 = the block of `epics` plus `tasks:` and per task `- title (P points): criterion; criterion` (at most 2 criteria); level 1 = per task `- title (P points)`; level 0 = `index:` and `title:` only plus per task `- title (P points)`; an epic without tasks prints `tasks: none`. The renderer takes the first level whose wrapped text fits the section budget; level 0 of nine epics of eight tasks is about 1,530 tokens, so one always fits.
 - Every dynamic section is `trusted: false`.
@@ -144,6 +150,7 @@ No schema change, migration or seed change: `tasks.story_points` and the JSON `t
 | E34 | F4 | Mock mode, plan of 10 epics | 61 makes no provider call and the mock answer passes `bulkOutputSchema` | integration |
 | E35 | N4 | Route module | exports `maxDuration` 60 (unit); the Vercel limit itself is unverified | unit |
 | E37 | F9 | Both review steps have interleaved checkpoint groups, unassigned and unknown checkpoints; an assignment is changed | displayed checkpoint order first, unassigned and unknown last in original relative order; each group keeps original order; actions target original indexes; saved reassignment moves group | manual |
+| E38 | F10, F11 | Inspect outline and bulk rules, assigned and unassigned target dates and worst-case ten-target prompt | instructions specified in F10 and F11 are present; assigned and renamed or re-dated proposal checkpoints appear, unassigned or missing target dates show none, all proposal checkpoints appear in the separate section; strings containing line separators or forged labels are not accepted as dates; the ten-target epics section fits 1,400 tokens, proposal-checkpoints fits 600 tokens, and complete prompts fit without truncation for ten targets and mixed target/DONE cases with all AI context; original validation limits remain | unit and integration |
 | E36 | F8 | Click Confirm, Retry failed epics, per-epic Expand and Retry, Regenerate; reload mid-call; 21, 0, 2.5, "1e1", "+5" and empty in the plan, task drawer and Add task points fields | one request each to 61, 61, 37, 39; controls disabled during the call; reload re-reads; invalid values blocked with "Whole number from 1 to 20."; 1 and 20 accepted | manual |
 
 ## 6. Security

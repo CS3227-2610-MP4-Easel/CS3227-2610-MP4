@@ -2,7 +2,7 @@
 
 - **Status:** Approved (Xiao-Congchen, 2026-11-10)
 - **Format:** v2
-- **Spec:** [W7c points and plan-wide expansion design](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) | **Spec hash:** f89f17bc655d
+- **Spec:** [W7c points and plan-wide expansion design](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) | **Spec hash:** b324afee6f93
 - **Workstream:** W7c
 
 > **For the orchestrator:** this file is your router. Do not open task files yourself except to
@@ -11,7 +11,7 @@
 
 ## Scope
 **Goal:** story points become any whole number 1 to 20 everywhere (reversing AD-12), and "Confirm and Expand Epics" writes every epic's tasks in one model call through a new endpoint 61, while endpoints 37 and 39 send the rest of the plan.
-**In scope:** F1-F9, N1-N5, E1-E37.
+**In scope:** F1-F11, N1-N5, E1-E38.
 **Non-goals:** a new Feature enum value or migration; chat refinement; streaming or `response_format`; changing velocity or forecast formulas; backfilling rows; a per-feature `minRetryMs`. Known Gaps not to touch: "Typed SQL is disabled", "Unvalidated relation filters are unsafe", "Nested writes require explicit authorization".
 **Risk tier:** Medium - tasks on a security surface (policy entry, ownership and locking, untrusted text in prompts, spend and timeout limits) are reviewed `full` with the Attacker lens; the rest `light`.
 **Before dispatching T1:** the orchestrator commits the pending front-end work (project flow, live backlog, plan editing) and the branch-state edits as their own commit, so T8's "no uncommitted edit under `src/fe/`" holds, and copies `.ws/w7.env` into this worktree.
@@ -52,6 +52,7 @@ only your own task's files. Contract tests marked read-only are not edited.
 | T7 API: route 61, resolver, maxDuration, route and e2e tests | `tasks/T7.md` | T1, T6 | T8 | 5 | complex | full | Done |
 | T8 Front end: bulk expand wiring and points number inputs | `tasks/T8.md` | T1 | T7 | 5 | standard | light | Done |
 | T9 Docs: AD-12 reversal, contracts text, old-list scan | `tasks/T9.md` | T1, T2, T4, T7, T8 | - | 6 | standard | light | Done |
+| T10 Prompt timeline and actionable tasks | `tasks/T10.md` | T4, T5, T6 | - | 7 | complex | full | Done |
 
 Bundles: none. Same-wave tasks share no file: T1 touches `contracts/src/*`, `contracts/test/*` and the three policy count tests; T3 `llm-gateway/src/{config,gateway}.ts` and its tests. T4 touches `pm/src/{sections,schemas,mocks}.ts` and `pm/test/prompts.test.ts`; T5 `proposals/src/*` and `proposals/test/*`. T7 touches `api/src/*`, `api/test/*` and the FE route file; T8 `src/fe/lib/*` and `src/fe/components/*`. T2 (wave 2) and T4, T6 edit `pm/src/schemas.ts` and `pm/src/plan-flow.ts` in different waves, never together.
 
@@ -66,7 +67,9 @@ Bundles: none. Same-wave tasks share no file: T1 touches `contracts/src/*`, `con
 | F6 | T4, T5, T6 | `bulk-prompts.test.ts`, `bulk-store.test.ts`, `plan-flow.test.ts` |
 | F7 | T4 | `bulk-prompts.test.ts` |
 | F8 | T8 | manual checklist (no front-end test runner) |
-| F9 | T8 | checkpoint display ordering review and self-check | 
+| F9 | T8 | checkpoint display ordering review and self-check |
+| F10 | T10 | outline prompt and static budget tests |
+| F11 | T10 | bulk prompt and checkpoint snapshot tests | 
 | N1 | T6 | `plan-flow.test.ts` call counts |
 | N2 | T3 | `feature-limits.test.ts` |
 | N3 | T5, T7 | `bulk-store.test.ts` barrier tests, `pm-expand-all-e2e.test.ts` |
@@ -109,6 +112,7 @@ Bundles: none. Same-wave tasks share no file: T1 touches `contracts/src/*`, `con
 | E35 | T7 | `route-max-duration.test.ts` |
 | E36 | T8 | manual checklist in `tasks/T8.md`, run by the orchestrator at close-out after T7 |
 | E37 | T8 | checkpoint grouping, stability and reassignment; browser check at close-out |
+| E38 | T10 | prompt instructions, checkpoint snapshot, injection and budget tests |
 
 Threat coverage (spec § 6): ownership E28; stale or replayed requests E15, E18; forged labels and untrusted text E32, E16; forged or shifted index E16, E19; repeated clicks E26; killed function and leases E13, E31; out-of-range points E1, E5; longer deadline E8, E9, E35; proposal-level edits during a call (accepted) E18.
 

@@ -6,7 +6,7 @@ import { estimateTokens, FEATURES, PLACEHOLDER_BOUNDARY, wrapSection } from "@ag
 export const PM_PROMPT = {
   outline: { rules: 600, outputFormat: 500, today: 30, idea: 1750 },
   expand: { rules: 600, outputFormat: 500, approach: 400, epic: 600, otherEpics: 2600 },
-  bulk: { rules: 600, outputFormat: 500, approach: 400, epics: 1400, doneEpics: 1800 },
+  bulk: { rules: 600, outputFormat: 500, approach: 400, epics: 1400, doneEpics: 1800, checkpoints: 600 },
 } as const;
 
 type Section = LlmCall["sections"][number];
@@ -23,7 +23,7 @@ const COMMON_RULES = [
 const OUTLINE_RULES = [
   "Task: turn the project idea into a delivery plan with an approach, checkpoints and epics.",
   "Limits: at most 8 checkpoints and 10 epics; titles up to 200 characters, descriptions up to 1000, the approach up to 1500.",
-  "Dates are YYYY-MM-DD, from today (the today section) up to 730 days after it.",
+  "Dates are YYYY-MM-DD. Plan delivery within three months of today (the Singapore-local date in the today section).",
   ...COMMON_RULES,
 ].join("\n");
 
@@ -48,6 +48,7 @@ const EXPAND_FORMAT = [
 
 const BULK_RULES = [
   "Task: write the tasks of every epic in the epics section in one pass, so the whole plan flows logically.",
+  "Break each epic into small, distinct tasks that one developer can own, with concrete deliverables and acceptance criteria suitable for the plan timeline; do not merely restate the epic.",
   "Work through the epics in order. An epic may build on the tasks of earlier epics. Never repeat work that another epic already covers: each piece of work is a task in exactly one epic. Epics in the done-epics section are already written: do not repeat or change them.",
   "Limits: 3 to 6 tasks per epic; titles up to 200 characters, descriptions up to 1000; 1 to 4 acceptance criteria per task, each up to 300 characters.",
   "Story points are whole numbers from 1 to 20 that estimate effort; use small numbers for small tasks. Do not invent dates.",
@@ -92,11 +93,12 @@ export function bulkQuery(targets: PlanTargetEpic[]): string {
   return flatten(targets.map((target) => target.title.replace(/\p{Cf}/gu, "")).join(" "), 1000) || "epics";
 }
 
-export function buildBulkSections(input: { approach: string; targets: PlanTargetEpic[]; done: PlanContextEpic[]; assembled: ContextSections }): ContextSections {
+export function buildBulkSections(input: { approach: string; checkpoints: { name: string; targetDate: string }[]; targets: (PlanTargetEpic & { checkpointTargetDate: string | null })[]; done: PlanContextEpic[]; assembled: ContextSections }): ContextSections {
   return [
     ...bulkStaticSections(), ...input.assembled,
     dynamicSection("approach", PM_PROMPT.bulk.approach, input.approach, false),
-    dynamicSection("epics", PM_PROMPT.bulk.epics, input.targets.map(targetBlock).join("\n\n"), false),
+    dynamicSection("epics", PM_PROMPT.bulk.epics, input.targets.map(e => `${targetBlock(e)}\ncheckpoint date: ${e.checkpointTargetDate ?? "none"}`).join("\n\n"), false),
+    ...(input.checkpoints.length ? [dynamicSection("proposal-checkpoints", PM_PROMPT.bulk.checkpoints, input.checkpoints.map(c => `${flatten(c.name, 80)}: ${c.targetDate}`).join("\n"), false)] : []),
     ...(input.done.length ? [dynamicSection("done-epics", PM_PROMPT.bulk.doneEpics, contextText(input.done, "done-epics", PM_PROMPT.bulk.doneEpics), false)] : []),
   ];
 }

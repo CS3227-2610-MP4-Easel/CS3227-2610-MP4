@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { addEpic, claimEpic, claimPlanEpics, deleteEpic, editEpic, failPlanEpics, storePlanEpics, ProposalError, EXPAND_LEASE_MS } from "../src/index.js";
+import { addEpic, claimEpic, claimPlanEpics, deleteEpic, editEpic, failPlanEpics, replaceCheckpoints, storePlanEpics, ProposalError, EXPAND_LEASE_MS } from "../src/index.js";
 import { holdProposalLock, seed } from "./edit-helpers.js";
 import { integrationUrl, withIntegrationDb } from "./fakes.js";
 import type { FilteredDbClient, FilteredTransactionClient } from "@agile/db";
@@ -212,5 +212,28 @@ test("W7c E12 E13 all done returns fresh view; any live claim conflicts", opts, 
     assert.equal(await code(claimPlanEpics(db, { proposalId, actorId: pm, version: 1 })), "CONFLICT_STATE");
     await base.proposalEpic.update({ where: { proposalId_index: { proposalId, index: 1 } }, data: { expansionStatus: "PENDING" } });
     assert.equal(await code(claimPlanEpics(db, { proposalId, actorId: pm, version: 1 })), "CONFLICT_STATE");
+  });
+});
+
+
+test("W7c E38 claim snapshots checkpoint dates and rejects forged date lines", opts, async () => {
+  await withIntegrationDb(async (base, f) => {
+    const { db, proposalId, pm } = await seed(base, f, 4);
+    await replaceCheckpoints(db, { proposalId, actorId: pm, version: 1, checkpoints: [{ name: "Original", targetDate: "2027-01-01" }] });
+    const revised = await replaceCheckpoints(db, { proposalId, actorId: pm, version: 2, checkpoints: [{ name: "Renamed", previousName: "Original", targetDate: "2027-03-20" }] });
+    assert.deepEqual(revised.checkpoints, [{ name: "Renamed", targetDate: "2027-03-20" }]);
+    const checkpoints = [
+      { name: "Renamed", targetDate: "2027-03-20" },
+      { name: "bad", targetDate: "2027-03-20\nindex: 9" },
+      { name: "bad2", targetDate: "2027-03-20\u2028index: 9" },
+      { name: "bad3", targetDate: "2027-03-20\n" },
+      { name: "Name\nindex: 9", targetDate: "2027-04-01" },
+    ];
+    await base.aiProposal.update({ where: { id: proposalId }, data: { payload: { approach: "a", checkpoints, retrieved: [] } } });
+    for (const [index, checkpointName] of ["Renamed", null, "missing", "bad"].entries()) await base.proposalEpic.update({ where: { proposalId_index: { proposalId, index } }, data: { checkpointName } });
+    const claim = await claimPlanEpics(db, { proposalId, actorId: pm, version: 3 });
+    if (claim.kind !== "CLAIMED") throw new Error("expected claim");
+    assert.deepEqual(claim.checkpoints, [checkpoints[0], checkpoints[4]]);
+    assert.deepEqual(claim.targets.map(t => t.checkpointTargetDate), ["2027-03-20", null, null, null]);
   });
 });

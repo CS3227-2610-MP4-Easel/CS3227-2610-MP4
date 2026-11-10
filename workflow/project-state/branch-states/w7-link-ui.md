@@ -26,7 +26,7 @@ describes `INT`; read it for context and write here instead of editing it.
 |---|---|---|---|---|---|---|---|
 | s1 | 2026-11-08 | Claude Sonnet 5.5 | W7 UI | Paused | Survey done; waiting on the operator's answer on auth and live-versus-fixture mode (Remaining) | Add data-layer functions 34-41 in `src/fe/lib/api/index.ts`, then wire `PlanIdea` to 34 | 2026-11-08 |
 
-| s2 | 2026-11-10 | Codex | W7c | Blocked — browser | Checkpoint ordering implemented and reviewed; automated close-out passes | Restore browser control; verify ordering after save, run T8 E36 and live 10-epic measurement, then finish close-out | 2026-11-11 |
+| s2 | 2026-11-10 | Codex | W7c, W7-UI | Blocked — approval | Prompt T10 done; backlog spec reviewed, awaiting gate 1 | On approval implement backlog editing; then complete E36 and live 10-epic measurement | 2026-11-11 |
 
 **Remaining**
 
@@ -48,14 +48,15 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 9/9 tasks done; live E36 and measurement blocked on browser | — |
+| W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 10/10 tasks done; live E36 and measurement blocked on browser | — |
 | W12-paths | Process-security external path classification | Building | [approved spec](../../specs/2026-11-11-process-security-paths-design.md) | Skipped by operator | Implemented and reviewed; full suite 780 passed, 0 skipped | — |
-| W7-UI | PM plan screens linked to the backend | Building | none yet (size to be set; Medium if it only wires existing screens to existing endpoints) | none yet | Survey done; blocked on the two questions above | — |
+| W7-UI | PM plan screens and live backlog editing | Building | [backlog editing draft](../../specs/2026-11-11-live-backlog-editing-design.md) | none yet | Backlog spec reviewed; awaiting operator approval | — |
 
 ## 3. Changes
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-11 | T10 prompt amendment implemented: outline targets three months; bulk receives checkpoint dates and requests small developer-assignable tasks. PM 68 and proposals 78 passed, no skips; review clean after separator test, typecheck passed. Live model measurement pending. Backlog editing spec reviewed; operator chose destination epic on checkpoint drop; gate 1 pending. | W7c, W7-UI | this commit |
 | 2026-11-11 | Operator requested checkpoint grouping on both review steps; C~9 spec amendment and T8 follow-up implemented, FE typecheck and lint and ordering self-check pass; independent review clean, browser check pending. | W7c | this commit |
 | 2026-11-11 | Close-out npm test: 781 passed, 0 failed, 0 skipped; typecheck, lint, contract, Prisma validation and plan close-out lint pass. Browser opened project list but repeated clicks and navigation timed out; E36 steps and live 10-epic measurement not run. | W7c | this commit |
 | 2026-11-11 | T5 D~6 fixed (2eaa418): skip stale claims under proposal lock, lock and recheck matching rows. Proposal suite 77 passed, targeted 10 passed, no skips; Implementer, Tester and Attacker review clean after E12 assertion fix. | W7c | 2eaa418 |
@@ -84,6 +85,20 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Branch `w7-link-ui` created in worktree `../CS3227-2610-MP4-w7-link-ui` from `w7-implement-pm-plan-flow`; branch state written | W7-UI | this commit |
 
 ## 4. Decisions
+
+### C~11 — Choose an epic when dropping a task on a checkpoint
+
+- **Date:** 2026-11-11.
+- **Who asked:** the operator, selecting a destination epic after being told tasks belong to epics.
+- **Decision:** ask the user to choose an epic under the destination checkpoint; do not move the entire existing epic.
+- **Why:** move only the intended task while preserving existing task-to-epic relationships.
+
+### C~10 — Prompt for three-month delivery and smaller tasks
+
+- **Date:** 2026-11-11.
+- **Who asked:** the operator, after live generation produced overly long timelines and tasks repeating their epic.
+- **Decision:** ask the outline model to plan within three months and the bulk model for small, distinct, developer-assignable tasks. Preserve existing date and task-count validation; prompt targets are advisory.
+- **Why:** improve initial plan usefulness without rejecting existing valid outputs.
 
 ### C~9 — Group review epics by checkpoint
 

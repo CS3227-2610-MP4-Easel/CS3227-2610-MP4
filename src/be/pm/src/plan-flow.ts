@@ -11,8 +11,8 @@ export type EpicTask = { title: string; description: string; acceptanceCriteria:
 export type ClaimResult =
   | { kind: "DONE"; epic: PlanEpic }
   | { kind: "CLAIMED"; projectId: string; sessionId: string; approach: string; epic: { title: string; description: string; checkpointName: string | null }; claimedVersion: number; others: PlanContextEpic[] };
-export type PlanClaim = { index: number; title: string; description: string; checkpointName: string | null; claimedVersion: number };
-export type PlanClaimResult = { kind: "NONE"; proposal: PlanProposal } | { kind: "CLAIMED"; projectId: string; sessionId: string; approach: string; targets: PlanClaim[]; done: PlanContextEpic[] };
+export type PlanClaim = { index: number; title: string; description: string; checkpointName: string | null; checkpointTargetDate: string | null; claimedVersion: number };
+export type PlanClaimResult = { kind: "NONE"; proposal: PlanProposal } | { kind: "CLAIMED"; projectId: string; sessionId: string; approach: string; checkpoints: { name: string; targetDate: string }[]; targets: PlanClaim[]; done: PlanContextEpic[] };
 export type CreateProposalInput = {
   projectId: string; creatorId: string; sessionId: string; flagged: boolean; approach: string;
   checkpoints: { name: string; targetDate: string }[];
@@ -178,7 +178,7 @@ export function createPlanFlow(deps: PlanFlowDeps) {
     let result: Extract<LlmResult, { ok: true }>;
     try {
       const assembled = await aiContext.assembleWith(caller, "PM_PLAN_EXPAND", claim.projectId, { query: bulkQuery(claim.targets) });
-      const sections = buildBulkSections({ approach: claim.approach, targets: claim.targets, done: claim.done, assembled: assembled.sections });
+      const sections = buildBulkSections({ approach: claim.approach, checkpoints: claim.checkpoints, targets: claim.targets, done: claim.done, assembled: assembled.sections });
       result = await runModel(gateway, {
         feature: "PM_PLAN_EXPAND", caller, sessionId: claim.sessionId, projectId: claim.projectId, sections,
         output: { kind: "json", schema: bulkOutputSchema(claim.targets.map((t) => t.index)) }, inputHash: inputHash("PM_PLAN_EXPAND", sections),

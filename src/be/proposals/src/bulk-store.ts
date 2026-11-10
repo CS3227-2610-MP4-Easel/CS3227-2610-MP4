@@ -6,8 +6,8 @@ import { EXPAND_LEASE_MS, planContextEpic, type EpicTask, type PlanContextEpic }
 import { lockEpic, lockProposal } from "./locks.js";
 import { getProposalView } from "./view.js";
 
-export type PlanClaim = { index: number; title: string; description: string; checkpointName: string | null; claimedVersion: number };
-export type PlanClaimResult = { kind: "NONE"; proposal: PlanProposal } | { kind: "CLAIMED"; projectId: string; sessionId: string; approach: string; targets: PlanClaim[]; done: PlanContextEpic[] };
+export type PlanClaim = { index: number; title: string; description: string; checkpointName: string | null; checkpointTargetDate: string | null; claimedVersion: number };
+export type PlanClaimResult = { kind: "NONE"; proposal: PlanProposal } | { kind: "CLAIMED"; projectId: string; sessionId: string; approach: string; checkpoints: { name: string; targetDate: string }[]; targets: PlanClaim[]; done: PlanContextEpic[] };
 
 export async function claimPlanEpics(db: FilteredDbClient, i: { proposalId: string; actorId: string; version: number; now?: Date }): Promise<PlanClaimResult> {
   const now = i.now ?? new Date();
@@ -18,6 +18,8 @@ export async function claimPlanEpics(db: FilteredDbClient, i: { proposalId: stri
     const targets = rows.filter(row => row.expansionStatus !== "DONE");
     if (!targets.length) return null;
     const payload = (proposal.payload ?? {}) as { approach?: string; epicVersionWatermark?: number; [key: string]: unknown };
+    const checkpoints = (Array.isArray(payload.checkpoints) ? payload.checkpoints : []).filter((entry): entry is { name: string; targetDate: string } =>
+      entry !== null && typeof entry === "object" && typeof entry.name === "string" && entry.name.length > 0 && typeof entry.targetDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(entry.targetDate) && entry.targetDate.length === 10).slice(0, 8);
     const first = Math.max(payload.epicVersionWatermark ?? 0, ...rows.map(row => row.version)) + 1;
     const last = first + targets.length - 1;
     if (last > 2_147_483_646) throw new ProposalError("CONFLICT_STATE");
@@ -28,9 +30,9 @@ export async function claimPlanEpics(db: FilteredDbClient, i: { proposalId: stri
       if (!row) throw new ProposalError("CONFLICT_STATE");
       const claimedVersion = first + k;
       await tx.proposalEpic.update({ where: { proposalId_index: { proposalId: i.proposalId, index: row.index } }, data: { expansionStatus: "IN_PROGRESS", leaseExpiresAt: new Date(now.getTime() + EXPAND_LEASE_MS), error: null, version: claimedVersion } });
-      claims.push({ index: row.index, title: row.title, description: row.description, checkpointName: row.checkpointName, claimedVersion });
+      claims.push({ index: row.index, title: row.title, description: row.description, checkpointName: row.checkpointName, checkpointTargetDate: checkpoints.find(c => c.name === row.checkpointName)?.targetDate ?? null, claimedVersion });
     }
-    return { kind: "CLAIMED" as const, projectId: proposal.projectId, sessionId: proposal.sessionId, approach: typeof payload.approach === "string" ? payload.approach : "", targets: claims, done: rows.filter(row => row.expansionStatus === "DONE").map(planContextEpic) };
+    return { kind: "CLAIMED" as const, projectId: proposal.projectId, sessionId: proposal.sessionId, approach: typeof payload.approach === "string" ? payload.approach : "", checkpoints, targets: claims, done: rows.filter(row => row.expansionStatus === "DONE").map(planContextEpic) };
   });
   if (result) return result;
   const proposal = await getProposalView(db, i.proposalId, i.actorId);

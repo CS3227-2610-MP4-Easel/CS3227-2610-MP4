@@ -754,3 +754,17 @@ test("W7c E34 registered mock expands ten epics without network", opts, withHarn
   assert.equal(result.epics.length, 10); assert.ok(result.epics.every((e) => e.expansion.status === "DONE"));
   assert.equal(h.runs.filter((r) => r.feature === "PM_PLAN_EXPAND").length, 1); assert.ok(h.inTx.every((value) => !value));
 }));
+
+
+test("W7c E38 bulk flow sends proposal checkpoint dates in untrusted prompt", opts, withHarness({}, async (h) => {
+  const a = await h.actor();
+  const plan = await create(h, a);
+  await h.base.aiProposal.update({ where: { id: plan.id }, data: { payload: { approach: "approach", checkpoints: [{ name: "Launch", targetDate: "2027-01-15" }], retrieved: [] } } });
+  await h.base.proposalEpic.update({ where: { proposalId_index: { proposalId: plan.id, index: 0 } }, data: { checkpointName: "Launch" } });
+  const flow = createPlanFlow({ proposals: h.proposals, gateway: { run: async (call) => { h.runs.push(call); return okResult({ epics: [0, 1, 2].map(index => ({ index, ...tasks() })) }); } }, sessions: h.sessions, aiContext: h.ctx as unknown as AiContextWith, clock: h.clock });
+  await flow.expandAll({ caller: a.caller, proposalId: plan.id, version: plan.version });
+  const sections = h.runs.at(-1)!.sections;
+  assert.match(sections.find(s => s.name === "epics")!.text, /checkpoint date: 2027-01-15/);
+  const context = sections.find(s => s.name === "proposal-checkpoints")!;
+  assert.equal(context.trusted, false); assert.match(context.text, /Launch: 2027-01-15/);
+}));
