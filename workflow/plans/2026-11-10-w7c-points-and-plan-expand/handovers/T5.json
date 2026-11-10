@@ -1,0 +1,15 @@
+{
+  "task": "T5",
+  "status": "done",
+  "summary": "Implemented bulk proposal claim, store and fail with context and leases; integration tests passed.",
+  "commit": "pending",
+  "produces": [
+    { "kind": "symbol", "name": "claimPlanEpics, storePlanEpics, failPlanEpics", "where": "@agile/proposals", "note": "Bulk claim, conditional store and failure functions." },
+    { "kind": "symbol", "name": "PlanClaim, PlanClaimResult, PlanContextEpic", "where": "@agile/proposals", "note": "Bulk and context types to mirror in pm." },
+    { "kind": "symbol", "name": "ClaimResult and EXPAND_LEASE_MS", "where": "@agile/proposals", "note": "CLAIMED includes others; lease is 75000ms." }
+  ],
+  "next": "T6 mirrors these store types in pm/src/plan-flow.ts. storePlanEpics throws CONFLICT_STATE when nothing was stored.",
+  "deviations": [],
+  "edge_cases": ["E11", "E12", "E13", "E14", "E15", "E18", "E19", "E20", "E21", "E22", "E23", "E26", "E27", "E30", "E31"],
+  "checks": { "build": "pass", "tests": "proposal suite 76 pass, 0 fail, 0 skipped; final bulk file 10 pass, 0 fail, 0 skipped", "lint": "handover lint pass" }
+}

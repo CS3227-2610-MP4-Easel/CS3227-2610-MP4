@@ -26,6 +26,20 @@ const epicRow = (base: PrismaClient, proposalId: string, index = 0) => base.prop
 const proposalRow = (base: PrismaClient, id: string) => base.aiProposal.findUniqueOrThrow({ where: { id } });
 const code = (promise: Promise<unknown>) => promise.then(() => "OK", (e: unknown) => (e instanceof ProposalError ? e.code : `OTHER:${String(e)}`));
 
+test("W7c E23 single claim includes every other epic by index, including duplicate titles", opts, async () => {
+  await withIntegrationDb(async (base, f) => {
+    const { db, proposalId, pm } = await seed(base, f, 4);
+    await base.proposalEpic.update({ where: { proposalId_index: { proposalId, index: 0 } }, data: { title: "Epic 2", tasks } });
+    const claim = await claimEpic(db, { proposalId, actorId: pm, index: 2 });
+    assert.equal(claim.kind, "CLAIMED");
+    if (claim.kind === "CLAIMED") {
+      assert.deepEqual(claim.others.map(e => e.index), [0, 1, 3]);
+      assert.deepEqual(claim.others[0].tasks, tasks);
+      assert.equal(claim.others[1].tasks, null);
+    }
+  });
+});
+
 /** Holds a row lock on the proposal until `release` is called; resolves `locked` once the lock is taken. */
 function holdProposalLock(base: PrismaClient, proposalId: string, inside?: (tx: Parameters<Parameters<PrismaClient["$transaction"]>[0]>[0]) => Promise<void>) {
   let release!: () => void;
