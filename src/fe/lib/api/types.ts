@@ -44,7 +44,17 @@ export type PlanProposal = {
   flagged: boolean;
   version: number;
 };
-export type PlanApproved = { proposalId: string; status: 'APPROVED'; created: { checkpoints: number; epics: number; tasks: number } };
+export type CheckpointDraft = { name: string; targetDate: string; previousName?: string };
+export type EpicPatch = { title?: string; description?: string; checkpointName?: string | null; tasks?: PlanTask[] };
+
+// Created data, read back after approve (endpoints 12, 16, 20); mirrors CheckpointSchema, EpicSchema, TaskSchema.
+export type LiveProject = { id: string; name: string; brief: string | null; status: 'ACTIVE' | 'ARCHIVED'; version: number; progress?: { pointsTotal: number; pointsDone: number; percent: number; unestimatedTasks: number } };
+export type LiveCheckpoint ={ id: string; name: string; targetDate: string };
+export type LiveEpic = { id: string; checkpointId: string | null; title: string; description: string | null; position: number; taskCount: number; pointsTotal: number };
+export type LiveTask = { id: string; epicId: string; title: string; description: string | null; acceptanceCriteria: string[]; status: 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE'; storyPoints: number | null; assigneeId: string | null; sprintId: string | null; blocked: boolean; blockedReason: string | null };
+export type Page<T> = { items: T[]; page: number; size: number; total: number };
+
+export type PlanApproved ={ proposalId: string; status: 'APPROVED'; created: { checkpoints: number; epics: number; tasks: number } };
 
 export type Db = {
   project: Project;

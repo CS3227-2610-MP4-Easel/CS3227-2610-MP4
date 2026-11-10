@@ -16,5 +16,6 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   if (!signedIn && !PUBLIC.includes(pathname)) redirect('/sign-in');
   const view = typeof sp.task === 'string' ? 'task' : typeof sp.view === 'string' ? sp.view : undefined;
   const found = resolve(pathname, view, role);
-  return <Screen found={found} role={role} home={HOME[role]} />;
+  const projectId = pathname.match(/^\/projects\/([^/]+)/)?.[1];
+  return <Screen found={found} role={role} home={HOME[role]} projectId={projectId} />;
 }

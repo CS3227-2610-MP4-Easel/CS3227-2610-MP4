@@ -1,11 +1,17 @@
 'use client';
 import { A, r } from '../../lib/nav';
-import { useDb } from '../../lib/api';
+import { isLive, useDb } from '../../lib/api';
+import LiveBacklog from './live-backlog';
 import StatusChip from '../canvas/StatusChip';
 import { WHO } from './people';
 
 // Epics and their task rows (endpoints 16, 20, 12 for checkpoint names, 27 for sprint names).
+// With LLM_MODE=live the backlog is the real one from the API; otherwise the prototype data.
 export default function BacklogList() {
+  return isLive() ? <LiveBacklog /> : <FixtureBacklog />;
+}
+
+function FixtureBacklog() {
   const db = useDb();
   return (
     <>

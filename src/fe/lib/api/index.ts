@@ -3,8 +3,8 @@
 // Screens call these and nothing else. Linking the backend replaces the bodies with calls to /api
 // through the contracts client; the signatures stay. Fixtures are used only inside this folder.
 import { read, write } from './store';
-import { call, LIVE_PROJECT_ID, LiveError } from './live';
-import type { Checkpoint, Epic, Member, PlanApproved, PlanEpic, PlanProposal, Sprint, Standup, Task, TaskStatus } from './types';
+import { call, LiveError, openProjectId } from './live';
+import type { Checkpoint, CheckpointDraft, Epic, EpicPatch, LiveCheckpoint, LiveEpic, LiveProject, LiveTask, Member, Page, PlanApproved, PlanEpic, PlanProposal, Sprint, Standup, Task, TaskStatus } from './types';
 
 export { useDb, reset as resetPrototypeData } from './store';
 export { isLive, ModeProvider } from './mode';
@@ -19,7 +19,7 @@ export class ApiError extends Error {
 }
 
 // Plan flow, live only (LLM_MODE=live, see ./mode). Calls go to /api; failures become ApiError with the server's message.
-const live = async <T,>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<T> => {
+const live = async <T,>(method: 'GET' | 'POST' | 'PATCH' | 'DELETE', path: string, body?: unknown): Promise<T> => {
   try {
     return await call<T>(method, path, body);
   } catch (e) {
@@ -28,16 +28,57 @@ const live = async <T,>(method: 'GET' | 'POST', path: string, body?: unknown): P
   }
 };
 
+// The project of the open page, as an ApiError when the page has none.
+const pid = (): string => {
+  try {
+    return openProjectId();
+  } catch (e) {
+    throw e instanceof LiveError ? new ApiError(e.code, e.message) : e;
+  }
+};
+
+// 5: create a project (the creator becomes a member)
+export const createProject_5 = (name: string, brief: string) => live<LiveProject>('POST', '/pm/projects', { name, ...(brief.trim() ? { brief } : {}) });
+// 6: the projects of the signed-in user, newest first
+export const listLiveProjects_6 = () => live<Page<LiveProject>>('GET', '/projects?size=100');
+// 7: one project
+export const getLiveProject_7 = (id?: string) => live<LiveProject>('GET', `/projects/${id ?? pid()}`);
+
 // 34: draft a plan from an idea
-export const createPlan_34 = (idea: string) => live<PlanProposal>('POST', `/pm/projects/${LIVE_PROJECT_ID}/plans`, { idea });
+export const createPlan_34 = (idea: string) => live<PlanProposal>('POST', `/pm/projects/${pid()}/plans`, { idea });
 // 35: read a proposal
 export const getProposal_35 = (id: string) => live<PlanProposal>('GET', `/pm/proposals/${id}`);
 // 37: expand one epic into tasks
 export const expandEpic_37 = (id: string, index: number) => live<PlanEpic>('POST', `/pm/proposals/${id}/epics/${index}/expand`, {});
+// 36: earlier proposals of the project, newest first
+export const listProposals_36 = () => live<Page<PlanProposal>>('GET', `/pm/projects/${pid()}/proposals?size=20`);
+// 38: edit one epic (title, description, checkpoint, and the whole task list); every edit needs the proposal's version
+export const editEpic_38 = (id: string, index: number, version: number, patch: EpicPatch) => live<PlanProposal>('PATCH', `/pm/proposals/${id}/epics/${index}`, { ...patch, version });
+// 39: regenerate one expanded epic with the model
+export const regenerateEpic_39 = (id: string, index: number, version: number) => live<PlanProposal>('POST', `/pm/proposals/${id}/epics/${index}/regenerate`, { version });
+// 58: replace the checkpoint list; `previousName` keeps epics attached to a renamed checkpoint
+export const setCheckpoints_58 = (id: string, version: number, checkpoints: CheckpointDraft[]) => live<PlanProposal>('PATCH', `/pm/proposals/${id}/checkpoints`, { checkpoints, version });
+// 59: add an epic
+export const addEpic_59 = (id: string, version: number, epic: { title: string; description: string; checkpointName: string | null }) => live<PlanProposal>('POST', `/pm/proposals/${id}/epics`, { ...epic, version });
+// 60: delete an epic
+export const deleteEpic_60 = (id: string, index: number, version: number) => live<PlanProposal>('DELETE', `/pm/proposals/${id}/epics/${index}?version=${version}`);
 // 40: approve; creates the checkpoints, epics and tasks
 export const approvePlan_40 = (id: string, version: number) => live<PlanApproved>('POST', `/pm/proposals/${id}/approve`, { version });
 // 41: reject
 export const rejectPlan_41 = (id: string, version: number) => live<PlanProposal>('POST', `/pm/proposals/${id}/reject`, { version });
+
+// 12, 16, 20: what approve created, read back for the live backlog
+export const listLiveCheckpoints_12 = () => live<LiveCheckpoint[]>('GET', `/projects/${pid()}/checkpoints`);
+async function all<T>(path: string): Promise<T[]> {
+  const items: T[] = [];
+  for (let page = 0; ; page++) {
+    const res = await live<Page<T>>('GET', `${path}?size=100&page=${page}`);
+    items.push(...res.items);
+    if (res.items.length === 0 || items.length >= res.total) return items;
+  }
+}
+export const listLiveEpics_16 = () => all<LiveEpic>(`/projects/${pid()}/epics`);
+export const listLiveTasks_20 = () => all<LiveTask>(`/projects/${pid()}/tasks`);
 
 // 8: archive the project
 export async function archiveProject_8(): Promise<void> {

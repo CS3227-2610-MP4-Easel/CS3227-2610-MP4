@@ -1,10 +1,11 @@
 'use client';
 import { RoleCtx } from '../lib/nav';
-import type { Resolved, Role } from '../lib/screens';
+import { PROJECT, setCurrentProject, type Resolved, type Role } from '../lib/screens';
 import { SCREEN_COMPONENTS } from './screens-index';
 import Top from './canvas/Top';
 
-export default function Screen({ found, role, home }: { found: Resolved; role: Role; home: string }) {
+export default function Screen({ found, role, home, projectId }: { found: Resolved; role: Role; home: string; projectId?: string }) {
+  setCurrentProject(projectId ?? PROJECT);
   if ('file' in found) {
     const C = SCREEN_COMPONENTS[found.file];
     return (
