@@ -31,6 +31,11 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] Flag chosen: `LLM_MODE` (C~1).
 - [x] Token source: dev token on the `local` tier (C~2); real sign-in is still the C46 follow-up.
 - [ ] **Run it:** local Postgres + `npm run seed`-style seeding (demo PM and project `00000000-0000-4000-8000-000000000010`), `APP_TIER=local`, `LLM_MODE=live` (or the mock-model route is not reachable from the UI, see C~1), then drive idea → generate → expand → approve in the browser.
+- [ ] **W7c execution (next action):** a different agent runs `executing-plans-lite-v2` on `workflow/plans/2026-11-10-w7c-points-and-plan-expand/plan.md`, starting with wave 1 (T1 and T3). `.ws/w7.env` is in this worktree. The orchestrator writes the plan's Status column and this file. Close-out lists the manual E36 run and the Known Gap about rolling back after points outside the earlier scale.
+- [x] W7c spec and plan approved (above). Original scope, for reference: (1) story points become any integer 1 to 20, reversing AD-12 (C~3); changes `Task`/`PlanInputSchema`/W5 task CRUD/contracts.md/decision log and the FE points input; (2) a new bulk-expand prompt: one model call that writes the tasks of every epic together so they flow logically (C~4), with the other epics and tasks sent along when regenerating a single epic (endpoint 39). Contract change (new endpoint or changed 37) and a prompt change; AD-11 sign-offs.
+- [x] Project flow UI (2026-11-10): live Projects list (6), New project (5), project switcher and page header names (7), project id taken from the URL; the plan flow, backlog and drafts follow the open project. Other project pages (Overview, Board, Sprints, Members, Settings, Health) are still fixtures.
+- [x] Edit, add, delete, regenerate and checkpoint editing wired (2026-11-09); live backlog added. Not tried in a browser or with a model.
+- [ ] Live backlog shows sprint and assignee as plain text only (endpoints 27 and 9 not linked); Checkpoints pages still fixtures; the Backlog add/edit forms (`BacklogAddEpic`, `BacklogAddTask`) still write fixtures.
 - [ ] Still canvas-only (not wired): `PlanApprove` dialog, `PlanApproved`, `PlanRejected`, `PlanHistory` (endpoint 36), edit/regenerate (38, 39 have no backend), Stop. `live/plan-actions.tsx` still fakes them on the canvas pages.
 - [ ] The live project id is the seed constant `LIVE_PROJECT_ID` in `lib/api/live.ts` until screens carry a project id.
 - [ ] Data layer: endpoints 34, 35, 36, 37, 40, 41 in `src/fe/lib/api/index.ts` with `PlanProposal` types from `@agile/contracts` (AD-01b: no Prisma or `@agile/db` in `src/fe`).
@@ -41,12 +46,18 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
+| W7c | Story points 1-20 and plan-wide expansion | Planned | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 0/9 tasks; executing session: another agent (see How to Resume) | — |
 | W7-UI | PM plan screens linked to the backend | Building | none yet (size to be set; Medium if it only wires existing screens to existing endpoints) | none yet | Survey done; blocked on the two questions above | — |
 
 ## 3. Changes
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-10 | W7c spec approved at Gate 1 and plan approved at Gate 2 by Xiao-Congchen; plan reviewed once (7 blocking findings fixed); the front-end work (project flow, plan editing, live backlog) committed as `7dbde06`; spec `0aab004`; execution handed to another agent | W7c | this commit |
+| 2026-11-10 | W7c spec written ([spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md), Medium + Attacker lens, lint clean): points 1 to 20 (reverses AD-12) and plan-wide expansion (new endpoint 61, one model call for all epics, rest-of-plan context for 37 and 39, per-feature gateway limits). Live measurement on SoCLaaS (llama3.1:8b, 10 epics): bulk call 12.3 to 26.9 s, 977 to 2,086 output tokens; limits set to 2x (54 s, 4,200 tokens). Review round 1 (Implementer, Tester, Attacker) folded; awaiting Gate 1 approval | W7c | this commit |
+| 2026-11-10 | Project flow UI on real data (`LLM_MODE=live`): Projects list (6), New project (5), project switcher and header names (7); `Screen` sets the open project from the URL (`setCurrentProject`) and the data layer, plan drafts and backlog follow it (the seeded-id constant is gone). Endpoint 6 takes no `status` query, so the tabs filter client-side. FE typecheck and lint pass; not run in a browser | W7-UI | this commit |
+| 2026-11-10 | Live plan page reworked on the operator's feedback: checkpoint list and editor use a 160 px date column then the name; two steps (outline: approach, checkpoints and an editable Epics card with "Confirm and Expand Epics", then tasks, all editable); approve shows a toast and opens the backlog; live backlog shows a "live data" banner with the project name (endpoint 7). Story points still the 1, 2, 3, 5, 8, 13 select: the request for any number up to 20 collides with AD-12 and is held for the operator (Remaining) | W7-UI | this commit |
+| 2026-11-09 | Merged `w7-implement-pm-plan-flow` at `21b47fd` (W7b: endpoints 36, 38, 39, 58, 59, 60; clean merge). `live-plan.tsx` now edits checkpoints (58), epics (38: title, description, checkpoint, whole task list), adds (59) and deletes (60) epics, regenerates (39), with a note on title/description edits (W7b spec SD10); "Expand all" keeps going past a failed epic and says how to recover (Edit and write the tasks). New `live-backlog.tsx` reads checkpoints, epics and tasks (12, 16, 20) when `LLM_MODE=live`. FE and `tsc -b` clean; not run in a browser | W7-UI | this commit |
 | 2026-11-08 | First UI slice: `LLM_MODE=live` switches `PlanIdea` and `Plan` to a new `live/live-plan.tsx` (idea, generate, expand each or all epics, approve, reject) over data-layer functions 34, 35, 37, 40, 41 (`lib/api/index.ts`, `live.ts`, `mode.tsx`); layout passes the mode down; `local`-tier dev token `dev-pm` (C~2). FE typecheck and data-layer lint pass; `tsc -b` clean; 15 API tests pass. Not run in a browser or against a database | W7-UI | this commit |
 | 2026-11-08 | Branch `w7-link-ui` created in worktree `../CS3227-2610-MP4-w7-link-ui` from `w7-implement-pm-plan-flow`; branch state written | W7-UI | this commit |
 
@@ -58,6 +69,21 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Who asked:** the operator, replying to the question on how the plan screens decide to call the real API: use the existing `LLM_MODE` and create no new variable.
 - **Decision:** the plan data-layer functions (endpoints 34 to 41) call `/api` when `LLM_MODE=live` and use fixtures otherwise. `LLM_MODE` is read on the server (it is not `NEXT_PUBLIC_`) and handed to the client through the root layout; no new environment variable is added.
 - **Consequence to check:** by W2 SD5, `prod` must be `live` and `test` and `preview` must be `mock`, so `mock` is not a "backend with a mock model" in the UI; in `mock` the plan screens never reach the backend, and the mock plan flow (E45) can be driven from the UI only by a tier that sets `live`. The API needs a Firebase Bearer token and `src/fe` has no sign-in (role cookie only, C46), so the live path returns 401 until a token source exists.
+
+### C~3 — Reverse AD-12: story points are any integer 1 to 20 (not built yet)
+
+- **Date:** 2026-11-10.
+- **Who asked:** the operator, answering the keep-or-reverse question raised when they asked for a numeric points input up to 20.
+- **Decision:** reverse AD-12 (story points were 1, 2, 3, 5, 8, 13). New range: integers 1 to 20. Velocity, progress and forecast keep working on the sum.
+- **Why:** the operator's call; they want free numeric estimates. Not yet recorded in `docs/architecture` (decision log, contracts §3.1, `agile-platform-architecture.md` §8 error example); that is part of W7c.
+- **Follow-up:** own workstream W7c with a spec before any code (AGENTS §3, §4); owners of W5 (Dev Lead: task CRUD) and W8 (facts) to agree under AD-11.
+
+### C~4 — Bulk expand: one model call for all epics, single-epic regenerate sees the rest
+
+- **Date:** 2026-11-10.
+- **Who asked:** the operator: since the UI expands all epics at once, add a new prompt that writes every epic's tasks in one call so they flow logically; regenerate stays per epic but is sent the other epics and tasks.
+- **Decision:** part of W7c (above). Replaces the per-epic calls of the "Confirm and Expand Epics" button.
+- **Why:** per-epic calls only see the approach and their own epic, so tasks overlap across epics.
 
 ### C~2 — Fixed dev token `dev-pm` stands in for sign-in on the `local` tier only
 
