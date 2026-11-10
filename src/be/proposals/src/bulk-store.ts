@@ -44,6 +44,8 @@ export async function storePlanEpics(db: FilteredDbClient, i: { proposalId: stri
     if (!proposal || proposal.status !== "PENDING") throw new ProposalError("CONFLICT_STATE");
     let stored = 0;
     for (const result of [...i.results].sort((a, b) => a.index - b.index)) {
+      const current = await tx.proposalEpic.findFirst({ where: { proposalId: i.proposalId, index: result.index } });
+      if (!current || current.expansionStatus !== "IN_PROGRESS" || current.version !== result.claimedVersion) continue;
       const row = await lockEpic(tx, i.proposalId, result.index);
       if (!row || row.expansionStatus !== "IN_PROGRESS" || row.version !== result.claimedVersion) continue;
       await tx.proposalEpic.update({ where: { proposalId_index: { proposalId: i.proposalId, index: result.index } }, data: { tasks: result.tasks, expansionStatus: "DONE", error: null, leaseExpiresAt: null, version: row.version + 1 } });
@@ -61,6 +63,8 @@ export async function failPlanEpics(db: FilteredDbClient, i: { proposalId: strin
     if (!proposal || proposal.status !== "PENDING") return 0;
     let failed = 0;
     for (const claim of [...i.claims].sort((a, b) => a.index - b.index)) {
+      const current = await tx.proposalEpic.findFirst({ where: { proposalId: i.proposalId, index: claim.index } });
+      if (!current || current.expansionStatus !== "IN_PROGRESS" || current.version !== claim.claimedVersion) continue;
       const row = await lockEpic(tx, i.proposalId, claim.index);
       if (!row || row.expansionStatus !== "IN_PROGRESS" || row.version !== claim.claimedVersion) continue;
       await tx.proposalEpic.update({ where: { proposalId_index: { proposalId: i.proposalId, index: claim.index } }, data: { expansionStatus: "FAILED", error: i.error, leaseExpiresAt: null, version: row.version + 1 } });

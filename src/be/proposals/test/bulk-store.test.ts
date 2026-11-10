@@ -84,10 +84,11 @@ test("W7c E18 E19 E20 stale claims are skipped, and no surviving claim rolls bac
     const { db, proposalId, pm } = await seed(base, f, 3);
     const claim = await claimPlanEpics(db, { proposalId, actorId: pm, version: 1 });
     if (claim.kind !== "CLAIMED") throw new Error("expected claim");
-    await base.proposalEpic.update({ where: { proposalId_index: { proposalId, index: 1 } }, data: { title: "edited", expansionStatus: "PENDING", version: { increment: 1 } } });
+    await base.proposalEpic.update({ where: { proposalId_index: { proposalId, index: 1 } }, data: { title: "edited", expansionStatus: "PENDING", version: { increment: 1 }, updatedAt: new Date("2020-01-01T00:00:00Z") } });
+    const edited = await row(base, proposalId, 1);
     const results = claim.targets.map(t => ({ index: t.index, claimedVersion: t.claimedVersion, tasks }));
     assert.deepEqual(await storePlanEpics(db, { proposalId, results, flagged: true }), { stored: 2, skipped: 1 });
-    assert.equal((await row(base, proposalId, 1)).title, "edited");
+    assert.deepEqual(await row(base, proposalId, 1), edited);
     assert.equal((await base.aiProposal.findUniqueOrThrow({ where: { id: proposalId } })).flagged, true);
     await base.aiProposal.update({ where: { id: proposalId }, data: { flagged: false } });
     assert.equal(await code(storePlanEpics(db, { proposalId, results, flagged: true })), "CONFLICT_STATE");
@@ -102,10 +103,11 @@ test("W7c E21 E22 failure marks only intact claims", opts, async () => {
     const { db, proposalId, pm } = await seed(base, f, 3);
     const claim = await claimPlanEpics(db, { proposalId, actorId: pm, version: 1 });
     if (claim.kind !== "CLAIMED") throw new Error("expected claim");
-    await base.proposalEpic.update({ where: { proposalId_index: { proposalId, index: 1 } }, data: { expansionStatus: "PENDING", version: { increment: 1 } } });
+    await base.proposalEpic.update({ where: { proposalId_index: { proposalId, index: 1 } }, data: { expansionStatus: "PENDING", version: { increment: 1 }, updatedAt: new Date("2020-01-01T00:00:00Z") } });
+    const edited = await row(base, proposalId, 1);
     assert.equal(await failPlanEpics(db, { proposalId, claims: claim.targets, error: "TIMEOUT" }), 2);
     for (const index of [0, 2]) { const item = await row(base, proposalId, index); assert.deepEqual([item.expansionStatus, item.error, item.leaseExpiresAt, item.version], ["FAILED", "TIMEOUT", null, claim.targets[index].claimedVersion + 1]); }
-    assert.equal((await row(base, proposalId, 1)).expansionStatus, "PENDING");
+    assert.deepEqual(await row(base, proposalId, 1), edited);
   });
 });
 
@@ -194,6 +196,7 @@ test("W7c E12 E13 all done returns fresh view; any live claim conflicts", opts, 
     await base.aiSession.update({ where: { id: sessionId }, data: { outcome: "ABANDONED", endedAt: new Date() } });
     const beforeRows = await base.proposalEpic.findMany({ where: { proposalId }, orderBy: { index: "asc" } });
     const beforeProposal = await base.aiProposal.findUniqueOrThrow({ where: { id: proposalId } });
+    const beforeSession = await base.aiSession.findUniqueOrThrow({ where: { id: sessionId } });
     const none = await claimPlanEpics(db, { proposalId, actorId: pm, version: 1 });
     assert.equal(none.kind, "NONE");
     if (none.kind === "NONE") {
@@ -203,7 +206,8 @@ test("W7c E12 E13 all done returns fresh view; any live claim conflicts", opts, 
     }
     assert.deepEqual(await base.proposalEpic.findMany({ where: { proposalId }, orderBy: { index: "asc" } }), beforeRows);
     const afterProposal = await base.aiProposal.findUniqueOrThrow({ where: { id: proposalId } });
-    assert.deepEqual({ payload: afterProposal.payload, version: afterProposal.version, flagged: afterProposal.flagged }, { payload: beforeProposal.payload, version: beforeProposal.version, flagged: beforeProposal.flagged });
+    assert.deepEqual({ ...afterProposal, updatedAt: beforeProposal.updatedAt }, beforeProposal);
+    assert.deepEqual(await base.aiSession.findUniqueOrThrow({ where: { id: sessionId } }), beforeSession);
     await base.proposalEpic.update({ where: { proposalId_index: { proposalId, index: 0 } }, data: { expansionStatus: "IN_PROGRESS", leaseExpiresAt: new Date(Date.now() + 60_000) } });
     assert.equal(await code(claimPlanEpics(db, { proposalId, actorId: pm, version: 1 })), "CONFLICT_STATE");
     await base.proposalEpic.update({ where: { proposalId_index: { proposalId, index: 1 } }, data: { expansionStatus: "PENDING" } });
