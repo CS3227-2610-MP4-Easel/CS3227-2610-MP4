@@ -26,7 +26,7 @@ describes `INT`; read it for context and write here instead of editing it.
 |---|---|---|---|---|---|---|---|
 | s1 | 2026-11-08 | Claude Sonnet 5.5 | W7 UI | Paused | Survey done; waiting on the operator's answer on auth and live-versus-fixture mode (Remaining) | Add data-layer functions 34-41 in `src/fe/lib/api/index.ts`, then wire `PlanIdea` to 34 | 2026-11-08 |
 
-| s2 | 2026-11-10 | Codex | W7c | Active | W7c close-out | Run close-out checks, manual E36 and branch review | 2026-11-11 |
+| s2 | 2026-11-10 | Codex | W7c | Blocked — needs human | T5 task conflict D~6; UI review fix committed | Correct T5 task and fix stale-row locking, then complete E36 and close-out | 2026-11-11 |
 
 **Remaining**
 
@@ -48,7 +48,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 9/9 tasks done; close-out in progress | — |
+| W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | T5 blocked D~6; E36 and live measurement pending | — |
 | W12-paths | Process-security external path classification | Building | [approved spec](../../specs/2026-11-11-process-security-paths-design.md) | Skipped by operator | Implemented and reviewed; full suite 780 passed, 0 skipped | — |
 | W7-UI | PM plan screens linked to the backend | Building | none yet (size to be set; Medium if it only wires existing screens to existing endpoints) | none yet | Survey done; blocked on the two questions above | — |
 
@@ -56,6 +56,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-11 | Close-out review: fixed stale UI after bulk failure (bb7b5ed), independently reviewed; found T5 skipped-row timestamp conflict D~6. E36 and live measurement pending; browser automation timed out. | W7c | bb7b5ed |
 | 2026-11-11 | T9 complete (62d1145); old-scale scan passed and Implementer review corrected formula wording; wave build checks pass. | W7c | 62d1145 |
 | 2026-11-11 | T7 complete (13ea6a2); full suite 780 passed, 0 failed, 0 skipped; full review resolved E28/E29 coverage gaps; wave build checks pass. | W7c | 13ea6a2 |
 | 2026-11-11 | W12-paths implemented directly from approved spec: process-security suite 63 passed, 0 failed, 0 skipped; Implementer, Tester and Attacker reviews complete, test coverage finding fixed. Existing broader Known Gaps remain. | W12-paths | this commit |
@@ -213,3 +214,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Shell working-directory assumption (Handover):** The pre-tool hook resolves relative paths against the Git repository root without establishing the requested shell's execution working directory. Compound commands can change directory; this may misclassify later paths. Found in W12-paths spec review, not flagged by the full-suite failures. On 2026-11-11 the operator asked to log additional issues and move on; follow up under process security with an authoritative cwd contract and tests. This is not fixed by the absolute-path correction.
 
 - **Other shell-mediation limitations (Handover):** Security review identified that command-script effects such as sed read/write/execute commands, shell expansion and symlink handling, and normalization of absolute protected write targets are not comprehensively handled by this correction. In particular absolute repository paths may miss root-relative protected-path matching. These are additional issues outside the reported full-suite failures; follow up under process security. Do not treat the literal-path fix as closing them.
+
+### D~6 — T5 stale epic lock changes skipped row
+
+- **What:** Close-out review found lockEpic updates epic.updatedAt before stale claim checking; when a transaction commits, skipped epic rows are not left exactly unchanged as required. This affects bulk store and fail paths.
+- **Consequence:** T5 is blocked: its explicit steps say to lock every result before checking, contradicting the no-change contract under the existing write-based lock. The E12 exception C~5 applies only to proposal updatedAt, not epic timestamps.
+- **Action:** Stopped T5 per operator instruction for wrong task files. The implementer identified a candidate ordering (read under proposal lock, skip stale rows, lock and recheck matching rows), but it requires a task correction; no change applied. UI failure refresh fix committed as bb7b5ed and independently reviewed; FE checks and two behavioral self-checks pass. Browser inspection attempts timed out; E36 and live measurement remain unrun.
