@@ -4,7 +4,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import type { Sessions } from "@agile/contracts";
 import { applyPlan } from "@agile/core";
 import { createDbClient } from "@agile/db";
-import { addEpic, approveProposal, claimEpic, createProposal, deleteEpic, editEpic, failEpic, getProposalView, listProposals, precheckRegenerate, rejectProposal, replaceCheckpoints, storeEpic } from "@agile/proposals";
+import { addEpic, approveProposal, claimEpic, claimPlanEpics, createProposal, deleteEpic, editEpic, failEpic, failPlanEpics, getProposalView, listProposals, precheckRegenerate, rejectProposal, replaceCheckpoints, storeEpic, storePlanEpics } from "@agile/proposals";
 import type { ProposalsApi } from "../src/plan-flow.js";
 
 export const integrationUrl = process.env.W1_INTEGRATION_DATABASE_URL;
@@ -80,6 +80,9 @@ export function bindProposals(base: PrismaClient, sessions: Pick<Sessions, "clos
   const db = createDbClient(base);
   const core = { applyPlan: (tx: unknown, projectId: string, plan: unknown, actorId: string) => applyPlan(tx as never, projectId, plan, actorId) };
   return {
+    claimPlanEpics: (i) => claimPlanEpics(db, i),
+    storePlanEpics: (i) => storePlanEpics(db, i),
+    failPlanEpics: (i) => failPlanEpics(db, i),
     createProposal: (i) => createProposal(db, i),
     getProposalView: (proposalId, viewerId) => getProposalView(db, proposalId, viewerId),
     claimEpic: (i) => claimEpic(db, i),

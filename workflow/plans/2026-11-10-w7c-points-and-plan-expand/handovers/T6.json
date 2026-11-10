@@ -1,15 +1,16 @@
 {
   "task": "T6",
-  "status": "blocked",
-  "summary": "E12 no-change requirement conflicts with T5 locking behavior.",
+  "status": "done",
+  "summary": "Implemented plan-wide expansion, guarded failure handling, rest-of-plan context and runtime bindings.",
   "commit": "pending",
-  "produces": [],
-  "next": "Resolve the E12 conflict before continuing; partial T6 edits and a failing integration test remain uncommitted.",
-  "deviations": [
-    { "what": "E12 requires the all-DONE path to change nothing, but claimPlanEpics calls guardEdit and lockProposal updates aiProposal.updatedAt even when no target exists.", "why": "The required proposal lock is implemented as an update to updatedAt.", "needs": "operator" },
-    { "what": "The spec lists RATE_LIMITED for endpoint 61, but the expand path cannot raise it.", "why": "The gateway result codes exclude RATE_LIMITED; only session opening and regeneration can raise it.", "needs": "orchestrator" }
+  "produces": [
+    { "kind": "symbol", "name": "PlanFlow.expandAll", "where": "src/be/pm/src/plan-flow.ts", "note": "Claims eligible epics, makes one model call, stores guarded results and returns fresh PlanProposal." },
+    { "kind": "symbol", "name": "PlanFlowDeps.onExpandAll", "where": "src/be/pm/src/plan-flow.ts", "note": "Receives only targets, written and skipped counts after successful store." }
   ],
-  "edge_cases": ["E10", "E12", "N1"],
-  "checks": { "build": "not run", "tests": "Initial E10/E12/N1 failed as expected before implementation; after partial implementation E12 fails because updatedAt changes; integration ran, 0 skipped.", "lint": "not run" },
-  "blocked_reason": "E12 demands no change, but the required existing claim lock changes the proposal updatedAt; resolving this needs a task or behavior decision."
+  "next": "T7: call flow().expandAll({ caller: { userId, role: PM }, proposalId, version }) and return 200; existing respond helper maps PlanFlowError.",
+  "deviations": [
+    { "what": "Endpoint 61 lists RATE_LIMITED but no expand path can raise it.", "why": "Gateway results exclude RATE_LIMITED; only session opening and regeneration can raise it.", "needs": "orchestrator" }
+  ],
+  "edge_cases": ["E10", "E11", "E12", "E16", "E21", "E22", "E34"],
+  "checks": { "build": "pass", "tests": "PM suite 66 passed, 0 failed, 0 skipped including integration; after test-only strengthening, W7c targeted suite 6 passed, 0 failed, 0 skipped.", "lint": "handover lint passed" }
 }

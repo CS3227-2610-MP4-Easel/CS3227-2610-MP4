@@ -1,8 +1,8 @@
 import { NotMember, type LlmGateway, type LlmResult, type PlanApproval, type PlanProposal } from "@agile/contracts";
 import { sanitiseInput, SessionCapReached, type GatewaySessions } from "@agile/llm-gateway";
 import type { AiContextWith } from "@agile/ai-context";
-import { expandOutputSchema, outlineOutputSchema } from "./schemas.js";
-import { buildExpandSections, buildOutlineSections, inputHash } from "./sections.js";
+import { bulkOutputSchema, expandOutputSchema, outlineOutputSchema } from "./schemas.js";
+import { buildBulkSections, buildExpandSections, buildOutlineSections, bulkQuery, inputHash, type PlanContextEpic } from "./sections.js";
 
 type PlanEpic = PlanProposal["epics"][number];
 
@@ -10,7 +10,9 @@ type PlanEpic = PlanProposal["epics"][number];
 export type EpicTask = { title: string; description: string; acceptanceCriteria: string[]; storyPoints: number };
 export type ClaimResult =
   | { kind: "DONE"; epic: PlanEpic }
-  | { kind: "CLAIMED"; projectId: string; sessionId: string; approach: string; epic: { title: string; description: string; checkpointName: string | null }; claimedVersion: number };
+  | { kind: "CLAIMED"; projectId: string; sessionId: string; approach: string; epic: { title: string; description: string; checkpointName: string | null }; claimedVersion: number; others: PlanContextEpic[] };
+export type PlanClaim = { index: number; title: string; description: string; checkpointName: string | null; claimedVersion: number };
+export type PlanClaimResult = { kind: "NONE"; proposal: PlanProposal } | { kind: "CLAIMED"; projectId: string; sessionId: string; approach: string; targets: PlanClaim[]; done: PlanContextEpic[] };
 export type CreateProposalInput = {
   projectId: string; creatorId: string; sessionId: string; flagged: boolean; approach: string;
   checkpoints: { name: string; targetDate: string }[];
@@ -30,6 +32,9 @@ export class PlanFlowError extends Error {
 
 /** The proposals functions already bound to a database client, core and sessions, so this file never sees a database client. */
 export type ProposalsApi = {
+  claimPlanEpics(i: { proposalId: string; actorId: string; version: number; now?: Date }): Promise<PlanClaimResult>;
+  storePlanEpics(i: { proposalId: string; results: { index: number; claimedVersion: number; tasks: EpicTask[] }[]; flagged: boolean }): Promise<{ stored: number; skipped: number }>;
+  failPlanEpics(i: { proposalId: string; claims: { index: number; claimedVersion: number }[]; error: string }): Promise<number>;
   createProposal(i: CreateProposalInput): Promise<string>;
   getProposalView(proposalId: string, viewerId: string): Promise<PlanProposal | null>;
   claimEpic(i: { proposalId: string; index: number; actorId: string; now?: Date; mode?: "EXPAND" | "REGENERATE"; expectedProposalVersion?: number }): Promise<ClaimResult>;
@@ -44,7 +49,7 @@ export type ProposalsApi = {
   approveProposal(i: { proposalId: string; version: number; actorId: string }): Promise<PlanApproval>;
   rejectProposal(i: { proposalId: string; version: number; actorId: string }): Promise<PlanProposal>;
 };
-export type PlanFlowDeps = { proposals: ProposalsApi; gateway: LlmGateway; sessions: GatewaySessions; aiContext: AiContextWith; clock?: { now(): Date } };
+export type PlanFlowDeps = { proposals: ProposalsApi; gateway: LlmGateway; sessions: GatewaySessions; aiContext: AiContextWith; clock?: { now(): Date }; onExpandAll?: (e: { targets: number; written: number; skipped: number }) => void };
 export type PlanFlow = ReturnType<typeof createPlanFlow>;
 export type Caller = { userId: string; role: "PM" };
 
@@ -165,6 +170,41 @@ export function createPlanFlow(deps: PlanFlowDeps) {
     }
   }
 
+  async function expandAll({ caller, proposalId, version }: { caller: Caller; proposalId: string; version: number }): Promise<PlanProposal> {
+    let claim: PlanClaimResult;
+    try { claim = await proposals.claimPlanEpics({ proposalId, actorId: caller.userId, version, now: clock.now() }); } catch (e) { return mapProposalError(e); }
+    if (claim.kind === "NONE") return claim.proposal;
+    const claims = claim.targets.map(({ index, claimedVersion }) => ({ index, claimedVersion }));
+    let result: Extract<LlmResult, { ok: true }>;
+    try {
+      const assembled = await aiContext.assembleWith(caller, "PM_PLAN_EXPAND", claim.projectId, { query: bulkQuery(claim.targets) });
+      const sections = buildBulkSections({ approach: claim.approach, targets: claim.targets, done: claim.done, assembled: assembled.sections });
+      result = await runModel(gateway, {
+        feature: "PM_PLAN_EXPAND", caller, sessionId: claim.sessionId, projectId: claim.projectId, sections,
+        output: { kind: "json", schema: bulkOutputSchema(claim.targets.map((t) => t.index)) }, inputHash: inputHash("PM_PLAN_EXPAND", sections),
+      });
+    } catch (e) {
+      const { error, code } = classify(e);
+      let marked = 1;
+      try { marked = await proposals.failPlanEpics({ proposalId, claims, error: code }); } catch { /* the mapped error matters more */ }
+      if (!marked) throw new PlanFlowError("CONFLICT_STATE", 409, "The proposal or project is no longer in a state that allows this.");
+      throw error;
+    }
+    let stored: { stored: number; skipped: number };
+    try {
+      const epics = (result.value as { epics: { index: number; tasks: EpicTask[] }[] }).epics;
+      const results = epics.map((epic) => ({ ...epic, claimedVersion: claim.targets.find((target) => target.index === epic.index)!.claimedVersion }));
+      stored = await proposals.storePlanEpics({ proposalId, results, flagged: result.flagged });
+    } catch (e) {
+      if (!(isProposalError(e) && e.code === "CONFLICT_STATE")) {
+        try { await proposals.failPlanEpics({ proposalId, claims, error: "INTERNAL" }); } catch { /* best effort */ }
+      }
+      return mapProposalError(e);
+    }
+    deps.onExpandAll?.({ targets: claim.targets.length, written: stored.stored, skipped: stored.skipped });
+    return getProposal({ caller, proposalId });
+  }
+
   async function expandEpic(i: { caller: Caller; proposalId: string; index: number }): Promise<PlanEpic> {
     const { caller, proposalId, index } = i;
     let claim: ClaimResult;
@@ -182,7 +222,7 @@ export function createPlanFlow(deps: PlanFlowDeps) {
     let result: Extract<LlmResult, { ok: true }>;
     try {
       const assembled = await aiContext.assembleWith(caller, "PM_PLAN_EXPAND", claim.projectId, { query: `${claim.epic.title} ${claim.epic.description}` });
-      const sections = buildExpandSections({ approach: claim.approach, epic: claim.epic, assembled: assembled.sections });
+      const sections = buildExpandSections({ approach: claim.approach, epic: claim.epic, others: claim.others, assembled: assembled.sections });
       result = await runModel(gateway, {
         feature: "PM_PLAN_EXPAND", caller, sessionId: claim.sessionId, projectId: claim.projectId, sections,
         output: { kind: "json", schema: expandOutputSchema }, inputHash: inputHash("PM_PLAN_EXPAND", sections),
@@ -258,5 +298,5 @@ export function createPlanFlow(deps: PlanFlowDeps) {
     }
   }
 
-  return { createPlan, getProposal, expandEpic, editEpic, replaceCheckpoints, addEpic, deleteEpic, regenerateEpic, listProposals, approve, reject };
+  return { createPlan, getProposal, expandAll, expandEpic, editEpic, replaceCheckpoints, addEpic, deleteEpic, regenerateEpic, listProposals, approve, reject };
 }
