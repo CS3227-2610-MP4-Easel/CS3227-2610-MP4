@@ -11,7 +11,7 @@ test('W7b E7 versions and unknown keys are rejected', () => {
 });
 test('W7b E14 checkpoint count', () => assert.equal(PlanCheckpointsBodySchema.safeParse({ version: 1, checkpoints: Array(9).fill({ name: 'x', targetDate: '2026-01-01' }) }).success, false));
 test('W7b E24 task constraints', () => {
-  for (const tasks of [[], Array(9).fill(task), [{ ...task, storyPoints: 4 }], [{ ...task, storyPoints: null }], [{ ...task, acceptanceCriteria: Array(13).fill('x') }], [{ ...task, acceptanceCriteria: [''] }], [{ ...task, id: 'x' }]]) assert.equal(PlanEpicEditBodySchema.safeParse({ version: 1, tasks }).success, false);
+  for (const tasks of [[], Array(9).fill(task), [{ ...task, storyPoints: 21 }], [{ ...task, storyPoints: null }], [{ ...task, acceptanceCriteria: Array(13).fill('x') }], [{ ...task, acceptanceCriteria: [''] }], [{ ...task, id: 'x' }]]) assert.equal(PlanEpicEditBodySchema.safeParse({ version: 1, tasks }).success, false);
 });
 test('W7b E25 at least one valid edit', () => {
   for (const body of [{ version: 1 }, { version: 1, tasks: null }, { version: 1, title: '' }]) assert.equal(PlanEpicEditBodySchema.safeParse(body).success, false);
@@ -22,7 +22,7 @@ test('W7b E49 list query constraints', () => {
   assert.deepEqual(PlanListQuerySchema.parse({}), { page: 0, size: 20 });
 });
 test('W7b policy entries', () => {
-  const entries = getPolicyMap(); assert.equal(entries.length, 60);
+  const entries = getPolicyMap(); assert.equal(entries.length, 61);
   for (const entry of entries.slice(57)) { assert.deepEqual(entry.roles, ['PM']); assert.equal(entry.predicate, 'MEMBER'); }
   assert.equal(entries[58].successStatus, 201);
 });
