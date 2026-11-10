@@ -26,7 +26,7 @@ describes `INT`; read it for context and write here instead of editing it.
 |---|---|---|---|---|---|---|---|
 | s1 | 2026-11-08 | Claude Sonnet 5.5 | W7 UI | Paused | Survey done; waiting on the operator's answer on auth and live-versus-fixture mode (Remaining) | Add data-layer functions 34-41 in `src/fe/lib/api/index.ts`, then wire `PlanIdea` to 34 | 2026-11-08 |
 
-| s2 | 2026-11-10 | Codex | W7c | Active | Orchestrating W7c wave 3: T4 and T5 | Dispatch T4 and T5 with dependency handovers | 2026-11-10 |
+| s2 | 2026-11-10 | Codex | W7c | Active | Orchestrating W7c wave 4: T6 | Dispatch T6 with T4 and T5 handovers | 2026-11-10 |
 
 **Remaining**
 
@@ -48,13 +48,14 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 3/9 tasks done; wave 3 T4 and T5 next | — |
+| W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 5/9 tasks done; wave 4 T6 next | — |
 | W7-UI | PM plan screens linked to the backend | Building | none yet (size to be set; Medium if it only wires existing screens to existing endpoints) | none yet | Survey done; blocked on the two questions above | — |
 
 ## 3. Changes
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-10 | T4 and T5 complete (7b665b7, 60702ae); full reviews resolved Unicode separator injection and E11/E12 coverage findings. PM suite 60 and proposal suite 76 passed without skips; revised targeted suites passed. Shared-worktree task markers skipped to avoid collisions. Handover commit fields are pending; refs here are actual. | W7c | 7b665b7, 60702ae |
 | 2026-11-10 | T2 complete (04feed6): shared points schema applied to backend; 308 tests passed, 0 failed, 0 skipped including integration; Implementer review clean. Handover commit field says pending; actual commit is 04feed6. | W7c | 04feed6 |
 | 2026-11-10 | T1 and T3 complete (2ed9726, 26d1329); Implementer, Tester and Attacker reviews found no blocking issues. T1 OpenAPI mappings lack direct assertions; contract parity passes. Gateway tests: 149 passed, 0 failed, 0 skipped including integration. | W7c | 2ed9726, 26d1329 |
 | 2026-11-10 | W7c spec approved at Gate 1 and plan approved at Gate 2 by Xiao-Congchen; plan reviewed once (7 blocking findings fixed); the front-end work (project flow, plan editing, live backlog) committed as `7dbde06`; spec `0aab004`; execution handed to another agent | W7c | this commit |
@@ -104,3 +105,21 @@ describes `INT`; read it for context and write here instead of editing it.
 - Contracts define 38 (edit an epic) and 39 (regenerate an epic), but W7's backend scope is 34, 35, 37, 40, 41 (C~1), so edit and regenerate have no backend yet; "Expand all" and "Stop" have no endpoint at all (expand-all can loop 37). Which of those controls to keep, hide or build is a scope question.
 
 - **Seed on Windows does nothing (W13 bug, found 2026-11-08):** `npm --workspace @agile/db run seed` exits silently because the entry check in `src/be/db/prisma/seed.ts` compares `import.meta.url` with `file://` + the raw path, which never matches on Windows. Workaround: `node --import tsx -e "import('./prisma/seed.ts').then(m => m.runSeed())"` from `src/be/db` with `APP_TIER=local`, `NEON_HOST=localhost`, `NEON_PROJECT=local` and `DATABASE_URL` set for that command only (the Neon variables must not stay set when running the app: they trigger the Vercel identity checks). Hand over to W13 (repo owner).
+
+## Lessons
+
+### L~1 — Prompt labels must flatten Unicode line separators
+
+- **Date:** 2026-11-10
+- **Cause:** T4 initially flattened CR and LF but omitted U+2028 and U+2029, permitting forged mock index lines.
+- **Rule:** When rendering untrusted text into line-based prompt formats, test all JavaScript line separators.
+- **Scope:** project
+- **Found by:** Attacker reviewer
+
+### L~2 — Assert context and no-write results directly
+
+- **Date:** 2026-11-10
+- **Cause:** T5 tests checked result kinds without checking populated context and unchanged persisted rows.
+- **Rule:** Test the returned data and persisted state for context and no-op paths, not just the result kind.
+- **Scope:** project
+- **Found by:** Tester reviewer
