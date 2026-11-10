@@ -10,6 +10,12 @@ import {
 
 type Data = { projectId: string; project: string; checkpoints: LiveCheckpoint[]; epics: LiveEpic[]; tasks: LiveTask[]; members: LiveMember[]; sprints: LiveSprint[] };
 type Editor = { kind: 'checkpoint' | 'epic' | 'task'; id: string } | null;
+const STATUS: Record<LiveTask['status'], { label: string; cls: string }> = {
+  TODO: { label: 'To do', cls: 'c-todo' },
+  IN_PROGRESS: { label: 'In progress', cls: 'c-acc' },
+  IN_REVIEW: { label: 'In review', cls: 'c-warn' },
+  DONE: { label: 'Done', cls: 'c-done' },
+};
 
 async function load(projectId: string): Promise<Data> {
   const [project, checkpoints, epics, tasks, members, sprints] = await Promise.all([
@@ -63,6 +69,8 @@ export default function LiveBacklog() {
   const projectId = currentProject();
   const [data, setData] = useState<Data | null>(null), [error, setError] = useState(''), [editing, setEditing] = useState<Editor>(null);
   const [busy, setBusy] = useState(false), [unavailable, setUnavailable] = useState(false), [collapsed, setCollapsed] = useState<string[]>([]);
+  const [expandedTasks, setExpandedTasks] = useState<string[]>([]), [announcement, setAnnouncement] = useState('');
+  const [focusAfterMove, setFocusAfterMove] = useState<string | null>(null);
   const [dragged, setDragged] = useState<string | null>(null), [picker, setPicker] = useState<{ taskId: string; checkpointId: string } | null>(null), [destination, setDestination] = useState('');
   const epoch = useRef(0);
   const focusBeforePicker = useRef<HTMLElement | null>(null), pickerRef = useRef<HTMLSelectElement | HTMLButtonElement | null>(null);
@@ -70,11 +78,16 @@ export default function LiveBacklog() {
   useEffect(() => {
     let active = true;
     epoch.current++;
-    setData(null); setError(''); setEditing(null); setUnavailable(false); setPicker(null); setBusy(false);
+    setData(null); setError(''); setEditing(null); setUnavailable(false); setPicker(null); setBusy(false); setCollapsed([]); setExpandedTasks([]); setAnnouncement(''); setFocusAfterMove(null);
     load(projectId).then((value) => { if (active && stillCurrent(projectId)) setData(value); }).catch((e) => { if (active && stillCurrent(projectId)) setError(e instanceof Error ? e.message : 'Something went wrong.'); });
     return () => { active = false; };
   }, [projectId]);
   useEffect(() => { if (picker) pickerRef.current?.focus(); }, [picker]);
+  useEffect(() => {
+    if (!focusAfterMove) return;
+    document.getElementById(`task-toggle-${focusAfterMove}`)?.focus();
+    setFocusAfterMove(null);
+  }, [data, collapsed, focusAfterMove]);
   const closePicker = () => { setPicker(null); setDestination(''); focusBeforePicker.current?.focus(); };
   const mutate = async (kind: 'checkpoint' | 'epic' | 'task', id: string, request: () => Promise<unknown>) => {
     if (busy || !data || data.projectId !== projectId || !stillCurrent(projectId)) return false;
@@ -124,28 +137,62 @@ export default function LiveBacklog() {
     } finally { if (valid()) setBusy(false); }
   };
   if (!data || data.projectId !== projectId) return error ? <div className="banner b-bad" role="alert">{error}</div> : <div className="card">Loading backlog…</div>;
-  const move = async (taskId: string, epicId: string) => {
+  const move = async (taskId: string, epicId: string, keyboard = false) => {
     const task = data.tasks.find((t) => t.id === taskId);
     if (!task || task.epicId === epicId) return true;
-    return mutate('task', taskId, () => updateLiveTask_23(task.id, { epicId, version: task.version }));
+    const moved = await mutate('task', taskId, () => updateLiveTask_23(task.id, { epicId, version: task.version }));
+    if (moved) {
+      const target = data.epics.find((epic) => epic.id === epicId);
+      setAnnouncement(`${task.title} moved to ${target?.title ?? 'the selected epic'}.`);
+      if (keyboard) {
+        if (target?.checkpointId) setCollapsed((ids) => ids.filter((id) => id !== target.checkpointId));
+        setFocusAfterMove(taskId);
+      }
+    }
+    return moved;
   };
   const onDropEpic = (event: DragEvent, epicId: string) => { event.preventDefault(); event.stopPropagation(); const id = event.dataTransfer.getData('text/plain'); setDragged(null); if (id) void move(id, epicId); };
   const onDropCheckpoint = (event: DragEvent, checkpointId: string) => { event.preventDefault(); event.stopPropagation(); const id = event.dataTransfer.getData('text/plain'); setDragged(null); if (!data.tasks.some((task) => task.id === id)) return; focusBeforePicker.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setDestination(''); setPicker({ taskId: id, checkpointId }); };
   const groups = [...data.checkpoints].sort((a, b) => a.targetDate.localeCompare(b.targetDate) || a.name.localeCompare(b.name));
-  const renderEpic = (epic: LiveEpic) => <section className="card stack8" key={epic.id} onDragOver={(e) => { if (dragged) e.preventDefault(); }} onDrop={(e) => onDropEpic(e, epic.id)}>
-    {editing?.kind === 'epic' && editing.id === epic.id ? <EpicForm item={epic} data={data} busy={busy} blocked={unavailable} onCancel={() => { setEditing(null); setUnavailable(false); }} onSave={(patch) => void mutate('epic', epic.id, () => updateLiveEpic_18(epic.id, { ...patch, version: epic.version }))} /> : <><div className="row between"><h3>{epic.title}</h3><button className="btn sm" disabled={busy || editing !== null} onClick={() => { setError(''); setUnavailable(false); setEditing({ kind: 'epic', id: epic.id }); }}>Edit epic</button></div>{epic.description && <p>{epic.description}</p>}</>}
-    {data.tasks.filter((t) => t.epicId === epic.id).map((task) => <div className="card flat stack8" key={task.id} draggable={!busy && !editing} onDragStart={(e) => { e.dataTransfer.setData('text/plain', task.id); e.dataTransfer.effectAllowed = 'move'; setDragged(task.id); }} onDragEnd={() => setDragged(null)}>
-      {editing?.kind === 'task' && editing.id === task.id ? <TaskForm item={task} data={data} busy={busy} blocked={unavailable} onCancel={() => { setEditing(null); setUnavailable(false); }} onSave={(patch) => void mutate('task', task.id, () => updateLiveTask_23(task.id, { ...patch, version: task.version }))} /> : <><div className="row between"><b>{task.title}</b><button className="btn sm" disabled={busy || editing !== null} onClick={() => { setError(''); setUnavailable(false); setEditing({ kind: 'task', id: task.id }); }}>Edit task</button></div><span className="small muted">{task.status.replaceAll('_', ' ')} · {task.storyPoints ?? 'Unestimated'} points · {data.members.find((m) => m.userId === task.assigneeId)?.displayName ?? 'Unassigned'} · {data.sprints.find((s) => s.id === task.sprintId)?.name ?? 'No sprint'}</span>{task.description && <p>{task.description}</p>}{task.acceptanceCriteria.length > 0 && <ul>{task.acceptanceCriteria.map((line, i) => <li key={i}>{line}</li>)}</ul>}<label>Move task to epic<select className="in" aria-label={`Move ${task.title} to epic`} value={task.epicId} disabled={busy || editing !== null} onChange={(e) => void move(task.id, e.target.value)}>{data.epics.map((v) => <option key={v.id} value={v.id}>{v.title}</option>)}</select></label></>}
-    </div>)}
+  const noCheckpoint = data.epics.filter((epic) => !epic.checkpointId || !data.checkpoints.some((c) => c.id === epic.checkpointId));
+  const orderedEpics = [...groups.flatMap((cp) => data.epics.filter((epic) => epic.checkpointId === cp.id)), ...noCheckpoint];
+  const renderEpic = (epic: LiveEpic) => <section key={epic.id} onDragOver={(e) => { if (dragged) e.preventDefault(); }} onDrop={(e) => onDropEpic(e, epic.id)}>
+    {editing?.kind === 'epic' && editing.id === epic.id ? <div className="ch"><EpicForm item={epic} data={data} busy={busy} blocked={unavailable} onCancel={() => { setEditing(null); setUnavailable(false); }} onSave={(patch) => void mutate('epic', epic.id, () => updateLiveEpic_18(epic.id, { ...patch, version: epic.version }))} /></div> : <div className="ch" style={{ background: 'var(--head)' }}><div><h3 style={{ margin: 0 }}>{epic.title}</h3>{epic.description && <span className="small muted">{epic.description}</span>}</div><button className="btn sm" disabled={busy || editing !== null} onClick={() => { setError(''); setUnavailable(false); setEditing({ kind: 'epic', id: epic.id }); }}>Edit epic</button></div>}
+    {data.tasks.filter((t) => t.epicId === epic.id).map((task) => {
+      const expanded = expandedTasks.includes(task.id);
+      const epicIndex = orderedEpics.findIndex((item) => item.id === epic.id);
+      return <div key={task.id} draggable={!busy && !editing} onDragStart={(e) => { e.dataTransfer.setData('text/plain', task.id); e.dataTransfer.effectAllowed = 'move'; setDragged(task.id); }} onDragEnd={() => setDragged(null)}>
+        <div className="trow">
+          <svg className="ic muted" aria-hidden="true"><use href="#i-grip" /></svg>
+          <button id={`task-toggle-${task.id}`} className="btn g sm ib" type="button" aria-label={`${expanded ? 'Collapse' : 'Expand'} ${task.title}`} aria-expanded={expanded} disabled={editing !== null} onClick={() => setExpandedTasks((ids) => expanded ? ids.filter((id) => id !== task.id) : [...ids, task.id])}><svg className="ic" aria-hidden="true"><use href={expanded ? '#i-down' : '#i-right'} /></svg></button>
+          <span className="chip scol c-line">{data.sprints.find((s) => s.id === task.sprintId)?.name ?? 'No sprint'}</span>
+          <span className={`pts${task.storyPoints == null ? ' none' : ''}`}>{task.storyPoints ?? 'Unestimated'}</span>
+          <span className={`chip ${STATUS[task.status].cls}`}>{STATUS[task.status].label}</span>
+          {task.blocked && <span className="chip c-bad" title={task.blockedReason ?? ''}>Blocked</span>}
+          <span className="t">{task.title}</span>
+          <span className="chip c-line">{data.members.find((m) => m.userId === task.assigneeId)?.displayName ?? 'Unassigned'}</span>
+        </div>
+        {expanded && <div style={{ padding: '4px 20px 16px 70px' }}>
+          {editing?.kind === 'task' && editing.id === task.id ? <TaskForm item={task} data={data} busy={busy} blocked={unavailable} onCancel={() => { setEditing(null); setUnavailable(false); }} onSave={(patch) => void mutate('task', task.id, () => updateLiveTask_23(task.id, { ...patch, version: task.version }))} /> : <>
+            {task.description && <p>{task.description}</p>}{task.acceptanceCriteria.length > 0 && <ul>{task.acceptanceCriteria.map((line, i) => <li key={i}>{line}</li>)}</ul>}
+            <div className="row wrap"><button className="btn sm" disabled={busy || editing !== null} onClick={() => { setError(''); setUnavailable(false); setEditing({ kind: 'task', id: task.id }); }}>Edit task</button><button className="btn sm" disabled={busy || editing !== null || epicIndex <= 0} onClick={() => void move(task.id, orderedEpics[epicIndex - 1].id, true)}>Move to previous epic</button><button className="btn sm" disabled={busy || editing !== null || epicIndex < 0 || epicIndex >= orderedEpics.length - 1} onClick={() => void move(task.id, orderedEpics[epicIndex + 1].id, true)}>Move to next epic</button></div>
+          </>}
+        </div>}
+      </div>;
+    })}
+    {!data.tasks.some((task) => task.epicId === epic.id) && <div className="trow small muted">No tasks in this epic yet.</div>}
   </section>;
   return <div className="stack">
-    <div className="banner b-info">Backlog for <b>{data.project}</b>. Drag tasks onto an epic or checkpoint, or use the move selector.</div>
+    <div className="banner b-info">Backlog for <b>{data.project}</b>. Drag a task onto an epic to move it.</div>
     {error && <div className="banner b-bad" role="alert">{error}</div>}
-    {groups.map((cp) => <section className="card stack8" key={cp.id} onDragOver={(e) => { if (dragged) e.preventDefault(); }} onDrop={(e) => onDropCheckpoint(e, cp.id)}>
-      {editing?.kind === 'checkpoint' && editing.id === cp.id ? <CheckpointForm item={cp} busy={busy} blocked={unavailable} onCancel={() => { setEditing(null); setUnavailable(false); }} onSave={(patch) => void mutate('checkpoint', cp.id, () => updateLiveCheckpoint_14(cp.id, { ...patch, version: cp.version }))} /> : <div className="row between"><button className="btn" disabled={editing !== null} aria-expanded={!collapsed.includes(cp.id)} onClick={() => setCollapsed((ids) => ids.includes(cp.id) ? ids.filter((id) => id !== cp.id) : [...ids, cp.id])}>{collapsed.includes(cp.id) ? 'Expand' : 'Collapse'} {cp.name} · {cp.targetDate}</button><button className="btn sm" disabled={busy || editing !== null} onClick={() => { setError(''); setUnavailable(false); setEditing({ kind: 'checkpoint', id: cp.id }); }}>Edit checkpoint</button></div>}
-      {!collapsed.includes(cp.id) && data.epics.filter((epic) => epic.checkpointId === cp.id).map(renderEpic)}
-    </section>)}
-    <section className="card stack8"><h2>No checkpoint</h2>{data.epics.filter((epic) => !epic.checkpointId || !data.checkpoints.some((c) => c.id === epic.checkpointId)).map(renderEpic)}</section>
+    <div className="small muted" role="status" aria-live="polite">{announcement}</div>
+    <div className="card pad0">
+      {groups.map((cp) => <section key={cp.id} onDragOver={(e) => { if (dragged) e.preventDefault(); }} onDrop={(e) => onDropCheckpoint(e, cp.id)}>
+        {editing?.kind === 'checkpoint' && editing.id === cp.id ? <div className="ch"><CheckpointForm item={cp} busy={busy} blocked={unavailable} onCancel={() => { setEditing(null); setUnavailable(false); }} onSave={(patch) => void mutate('checkpoint', cp.id, () => updateLiveCheckpoint_14(cp.id, { ...patch, version: cp.version }))} /></div> : <div className="ch"><div className="row"><button className="btn g sm ib" type="button" disabled={editing !== null} aria-label={`${collapsed.includes(cp.id) ? 'Expand' : 'Collapse'} ${cp.name}`} aria-expanded={!collapsed.includes(cp.id)} onClick={() => setCollapsed((ids) => ids.includes(cp.id) ? ids.filter((id) => id !== cp.id) : [...ids, cp.id])}><svg className="ic" aria-hidden="true"><use href={collapsed.includes(cp.id) ? '#i-right' : '#i-down'} /></svg></button><b>{cp.name}</b><span className="muted num">{cp.targetDate}</span></div><button className="btn sm" disabled={busy || editing !== null} onClick={() => { setError(''); setUnavailable(false); setEditing({ kind: 'checkpoint', id: cp.id }); }}>Edit checkpoint</button></div>}
+        {!collapsed.includes(cp.id) && data.epics.filter((epic) => epic.checkpointId === cp.id).map(renderEpic)}
+      </section>)}
+      {noCheckpoint.length > 0 && <section><div className="ch"><h2>No checkpoint</h2></div>{noCheckpoint.map(renderEpic)}</section>}
+    </div>
     {picker && <div className="card stack8" role="dialog" aria-labelledby="move-task-heading"><h3 id="move-task-heading">Choose an epic</h3>{data.epics.some((epic) => epic.checkpointId === picker.checkpointId) ? <><label>Destination epic<select className="in" ref={pickerRef as React.RefObject<HTMLSelectElement>} value={destination} onChange={(e) => setDestination(e.target.value)}><option value="">Choose an epic</option>{data.epics.filter((epic) => epic.checkpointId === picker.checkpointId).map((epic) => <option key={epic.id} value={epic.id}>{epic.title}</option>)}</select></label><button className="btn p" disabled={!destination || busy} onClick={async () => { if (await move(picker.taskId, destination)) closePicker(); }}>Move task</button></> : <p>This checkpoint needs an epic before a task can be moved here.</p>}<button className="btn" ref={!data.epics.some((epic) => epic.checkpointId === picker.checkpointId) ? pickerRef as React.RefObject<HTMLButtonElement> : undefined} disabled={busy} onClick={closePicker}>Cancel</button></div>}
   </div>;
 }
