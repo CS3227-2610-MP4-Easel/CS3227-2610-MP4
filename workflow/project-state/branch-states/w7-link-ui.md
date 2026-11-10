@@ -26,7 +26,7 @@ describes `INT`; read it for context and write here instead of editing it.
 |---|---|---|---|---|---|---|---|
 | s1 | 2026-11-08 | Claude Sonnet 5.5 | W7 UI | Paused | Survey done; waiting on the operator's answer on auth and live-versus-fixture mode (Remaining) | Add data-layer functions 34-41 in `src/fe/lib/api/index.ts`, then wire `PlanIdea` to 34 | 2026-11-08 |
 
-| s2 | 2026-11-10 | Codex | W7c, W7-UI | Blocked — browser verification | Backlog implemented and reviewed; 786 tests pass, 0 skipped; browser collapse and edit-cancel checked | Verify live saves, drag, picker, conflicts and project switching; complete E36 and 10-epic live measurement; then close out | 2026-11-11 |
+| s2 | 2026-11-10 | Codex | W7c, W7-UI | Blocked — live outline | Backlog saves and movement checked; live outline calls fail output guard D~8 | Diagnose live outline output-guard failures; verify backlog conflict/project switching and complete E36 and 10-epic measurement | 2026-11-11 |
 
 **Remaining**
 
@@ -48,7 +48,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 10/10 tasks done; live E36 and measurement blocked on browser | — |
+| W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 10/10 tasks done; live E36 and measurement blocked by D~8 | — |
 | W12-paths | Process-security external path classification | Building | [approved spec](../../specs/2026-11-11-process-security-paths-design.md) | Skipped by operator | Implemented and reviewed; full suite 780 passed, 0 skipped | — |
 | W7-UI | PM plan screens and live backlog editing | Building | [backlog editing draft](../../specs/2026-11-11-live-backlog-editing-design.md) | none yet | Backlog implemented and reviewed; live interaction verification incomplete | — |
 
@@ -56,7 +56,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-11 | Live backlog editing implemented and reviewed: checkpoint, epic and task editors; checkpoint grouping and task movement; sprint list and scoped versioned writes. Full suite 786 passed, 0 skipped; typecheck, lint, contracts and Prisma validation passed. Browser verified collapse, keyboard expand, edit fields and cancel; live saves, drag/picker, conflicts and project switching remain unverified. | W7-UI | this commit |
+| 2026-11-11 | Live backlog editing implemented and reviewed: checkpoint, epic and task editors; checkpoint grouping and task movement; sprint list and scoped versioned writes. Full suite 786 passed, 0 skipped; typecheck, lint, contracts and Prisma validation passed. Browser verified collapse, keyboard expand, checkpoint/epic/task saves, task move selector, checkpoint drop picker and cancel in disposable local project; conflict recovery, cross-checkpoint drop completion and project switching remain unverified. | W7-UI | this commit |
 | 2026-11-11 | T10 prompt amendment implemented: outline targets three months; bulk receives checkpoint dates and requests small developer-assignable tasks. PM 68 and proposals 78 passed, no skips; review clean after separator test, typecheck passed. Live model measurement pending. Backlog editing spec reviewed; operator chose destination epic on checkpoint drop; gate 1 pending. | W7c, W7-UI | this commit |
 | 2026-11-11 | Operator requested checkpoint grouping on both review steps; C~9 spec amendment and T8 follow-up implemented, FE typecheck and lint and ordering self-check pass; independent review clean, browser check pending. | W7c | this commit |
 | 2026-11-11 | Close-out npm test: 781 passed, 0 failed, 0 skipped; typecheck, lint, contract, Prisma validation and plan close-out lint pass. Browser opened project list but repeated clicks and navigation timed out; E36 steps and live 10-epic measurement not run. | W7c | this commit |
@@ -266,6 +266,12 @@ Project members can read checkpoints, epics, tasks, members and sprints. Project
 - **What:** Close-out review found lockEpic updates epic.updatedAt before stale claim checking; when a transaction commits, skipped epic rows are not left exactly unchanged as required. This affects bulk store and fail paths.
 - **Consequence:** T5 is blocked: its explicit steps say to lock every result before checking, contradicting the no-change contract under the existing write-based lock. The E12 exception C~5 applies only to proposal updatedAt, not epic timestamps.
 - **Action:** Stopped T5 per operator instruction for wrong task files. The implementer identified a candidate ordering (read under proposal lock, skip stale rows, lock and recheck matching rows), but it requires a task correction; no change applied. UI failure refresh fix committed as bb7b5ed and independently reviewed; FE checks and two behavioral self-checks pass. Browser inspection attempts timed out; E36 and live measurement remain unrun.
+
+### D~8 — Live outline fails output guard
+
+- **What:** Three live outline requests in local project W7c close-out verification (dd20c48e-dfcd-4efd-b518-d9a2f982074d) returned The AI is unavailable. Stored call metadata shows SCHEMA_FAIL for llama3.1:8b on all three; this status covers output parsing, security guards and schema validation. The detailed reason is discarded. The truncated flag is false but covers input, not provider output; provider finish reason is not recorded. Test project remains in local DB.
+- **Consequence:** Cannot generate an outline to execute E36 or record the 10-epic bulk measurement; W7c remains Building. No live bulk call was made.
+- **Action:** Diagnose the output guard without reading secrets or logging prompts; a reason-only diagnostic would change logging and needs spec change control; preserve the no-live-provider rule in automated tests. Browser control is intermittent. Local project W7c close-out verification contains disposable checkpoint, epic and task records; browser verified checkpoint, epic and task saves, move selector, checkpoint drop picker, cancel, collapse and keyboard expand. Conflict, cross-checkpoint drop completion and project switching remain unchecked.
 
 ### D~7 — Browser control prevented live close-out
 
