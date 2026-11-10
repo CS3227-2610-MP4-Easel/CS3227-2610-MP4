@@ -26,7 +26,7 @@ describes `INT`; read it for context and write here instead of editing it.
 |---|---|---|---|---|---|---|---|
 | s1 | 2026-11-08 | Claude Sonnet 5.5 | W7 UI | Paused | Survey done; waiting on the operator's answer on auth and live-versus-fixture mode (Remaining) | Add data-layer functions 34-41 in `src/fe/lib/api/index.ts`, then wire `PlanIdea` to 34 | 2026-11-08 |
 
-| s2 | 2026-11-10 | Codex | W7c | Blocked | Security spec blocked on Q1 after two review rounds | Resolve trusted shell cwd, finish review and request spec approval | 2026-11-11 |
+| s2 | 2026-11-10 | Codex | W7c | Blocked — needs human | Security fix spec reviewed; awaiting gate 1 approval | On approval record yes, write plan and seek gate 2 | 2026-11-11 |
 
 **Remaining**
 
@@ -49,13 +49,14 @@ describes `INT`; read it for context and write here instead of editing it.
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
 | W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 7/9 done; T7 blocked on full-suite failures D~5 | — |
-| W12-paths | Process-security external path classification | Blocked — needs human | [draft spec](../../specs/2026-11-11-process-security-paths-design.md) | — | Spec review Q1: trusted shell cwd | — |
+| W12-paths | Process-security external path classification | Spec'd | [draft spec](../../specs/2026-11-11-process-security-paths-design.md) | — | Four-lens review complete; awaiting spec approval | — |
 | W7-UI | PM plan screens linked to the backend | Building | none yet (size to be set; Medium if it only wires existing screens to existing endpoints) | none yet | Survey done; blocked on the two questions above | — |
 
 ## 3. Changes
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-11 | Operator deferred additional cwd issue as Known Gap; security draft narrowed to literal absolute-path failures and re-reviewed by Implementer, Tester, Maintainer and Attacker. Other detected security limitations recorded for handover. Awaiting Gate 1. | W12-paths | this commit |
 | 2026-11-11 | W12-paths security fix spec drafted and reviewed twice; Q1 remains on obtaining trusted execution cwd before relative paths can be classified. Security implementation not started. | W12-paths | this commit |
 | 2026-11-11 | D~5 migration checksum fixed locally by restoring tracked LF checkout; W13 migration tests 6 passed, 0 failed, 0 skipped. Checkout-only fix will need repeating if Git converts line endings again. Security path fix being specified under W12-paths. | W7c | working tree |
 | 2026-11-11 | Operator clarified T7 E28/E34 (C~6): mock provider is allowed, live provider is not; non-creator receives 404 via existing ownership check. Task corrected; T7 resumed. | W7c | this commit |
@@ -194,3 +195,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **What:** discover-tests: 770 passed, 8 failed, 0 skipped. Failures cover migration checksum, two gateway timing tests, gateway integration and four process-security tests; targeted T7 integration 5 passed, 0 failed, 0 skipped.
 - **Consequence:** T7 not accepted or committed; full log is .ws/t7-tests.log and partial files remain.
 - **Action:** Focused reruns: gateway suites 46 passed, 0 failed, 0 skipped (full-run cause unproven). Migration checksum reproduces because tracked LF migration is checked out CRLF. Four process-security failures reproduce: scripts/agent-pre-tool-hook.mjs isExternalPath overlooks absolute paths when path and parent do not exist; this merits security review. No tests weakened. T7 handover and .ws/t7-tests.log preserve details.
+
+## Known Gaps
+
+- **Shell working-directory assumption (Handover):** The pre-tool hook resolves relative paths against the Git repository root without establishing the requested shell's execution working directory. Compound commands can change directory; this may misclassify later paths. Found in W12-paths spec review, not flagged by the full-suite failures. On 2026-11-11 the operator asked to log additional issues and move on; follow up under process security with an authoritative cwd contract and tests. This is not fixed by the absolute-path correction.
+
+- **Other shell-mediation limitations (Handover):** Security review identified that command-script effects such as sed read/write/execute commands, shell expansion and symlink handling, and normalization of absolute protected write targets are not comprehensively handled by this correction. In particular absolute repository paths may miss root-relative protected-path matching. These are additional issues outside the reported full-suite failures; follow up under process security. Do not treat the literal-path fix as closing them.
