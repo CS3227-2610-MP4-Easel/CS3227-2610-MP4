@@ -26,7 +26,7 @@ describes `INT`; read it for context and write here instead of editing it.
 |---|---|---|---|---|---|---|---|
 | s1 | 2026-11-08 | Claude Sonnet 5.5 | W7 UI | Paused | Survey done; waiting on the operator's answer on auth and live-versus-fixture mode (Remaining) | Add data-layer functions 34-41 in `src/fe/lib/api/index.ts`, then wire `PlanIdea` to 34 | 2026-11-08 |
 
-| s2 | 2026-11-10 | Codex | W7c | Blocked — browser | Automated close-out passes; browser input times out | Restore browser control; run T8 E36 and live 10-epic measurement, then finish close-out | 2026-11-11 |
+| s2 | 2026-11-10 | Codex | W7c | Blocked — browser | Checkpoint ordering implemented and reviewed; automated close-out passes | Restore browser control; verify ordering after save, run T8 E36 and live 10-epic measurement, then finish close-out | 2026-11-11 |
 
 **Remaining**
 
@@ -56,6 +56,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-11 | Operator requested checkpoint grouping on both review steps; C~9 spec amendment and T8 follow-up implemented, FE typecheck and lint and ordering self-check pass; independent review clean, browser check pending. | W7c | this commit |
 | 2026-11-11 | Close-out npm test: 781 passed, 0 failed, 0 skipped; typecheck, lint, contract, Prisma validation and plan close-out lint pass. Browser opened project list but repeated clicks and navigation timed out; E36 steps and live 10-epic measurement not run. | W7c | this commit |
 | 2026-11-11 | T5 D~6 fixed (2eaa418): skip stale claims under proposal lock, lock and recheck matching rows. Proposal suite 77 passed, targeted 10 passed, no skips; Implementer, Tester and Attacker review clean after E12 assertion fix. | W7c | 2eaa418 |
 | 2026-11-11 | Operator approved T5 stale-claim check, lock and recheck correction (C~8); task amended, regression fix started. | W7c | this commit |
@@ -83,6 +84,13 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Branch `w7-link-ui` created in worktree `../CS3227-2610-MP4-w7-link-ui` from `w7-implement-pm-plan-flow`; branch state written | W7-UI | this commit |
 
 ## 4. Decisions
+
+### C~9 — Group review epics by checkpoint
+
+- **Date:** 2026-11-11.
+- **Who asked:** the operator, after trying the review flow.
+- **Decision:** display epics in checkpoint-list order on both review steps; unassigned or unknown checkpoints last, original order within groups. Display only; rejected changing stored ordering.
+- **Why:** make epics easier to review by checkpoint.
 
 ### C~8 — Skip stale epic claims before taking an epic lock
 

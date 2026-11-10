@@ -1,7 +1,7 @@
 # W7c Story Points 1-20 and Plan-Wide Expansion Design
 
 - **Status:** Approved (Xiao-Congchen, 2026-11-10)
-- **Amended 2026-11-11:** see branch state C~5.
+- **Amended 2026-11-11:** see branch state C~5 and C~9.
 - **Format:** v2
 - **Risk tier:** Medium - changes three contracts (story points on `Task` and `PlanEpic`, new endpoint 61, the gateway's per-feature limits) and stores model output in domain rows; Attacker lens added because untrusted text now crosses from one epic into another epic's prompt.
 - **Workstream:** W7c (PM follow-up of W7 and W7b; touches W2, W5 and W6 files) | **Plan:** not written yet
@@ -24,6 +24,8 @@ Affected: the PM (plan quality) and every role that reads or sets points.
 - F6 Endpoints 37 and 39 send the rest of the plan - Accept: `other-epics` lists every other epic by index with its tasks when it has any, and never the epic being written.
 - F7 Every PM prompt demands a JSON-only answer - Accept: the outline, single expand and bulk `output-format` texts each contain "Answer with one JSON object and no other text" and "no markdown fences".
 - F8 The UI uses these - Accept (manual, the front end has no test runner): "Confirm and Expand Epics" and "Retry failed epics" send one request to 61; per-epic Expand and Retry send one to 37; Regenerate one to 39; every points control is a number field limited to 1 to 20.
+
+- F9 On both plan review steps, show epics grouped in the displayed checkpoint order, with unassigned epics last; preserve original epic order within each group. Unknown checkpoint references also go last. This is display-only and does not change epic indexes or stored order. Accept: changing a checkpoint assignment moves the epic to its displayed group after save.
 
 **Non-functional**
 - N1 No model call runs inside a database transaction; 61 makes exactly one `run` call, or none when no epic is a target - Accept: call-count assertions.
@@ -141,6 +143,7 @@ No schema change, migration or seed change: `tasks.story_points` and the JSON `t
 | E33 | F5 | An epic whose title is only zero-width characters, in a plan expanded by 37, 39, 61 | the other calls are not blocked (the `index:` label keeps each block non-empty) | unit |
 | E34 | F4 | Mock mode, plan of 10 epics | 61 makes no provider call and the mock answer passes `bulkOutputSchema` | integration |
 | E35 | N4 | Route module | exports `maxDuration` 60 (unit); the Vercel limit itself is unverified | unit |
+| E37 | F9 | Both review steps have interleaved checkpoint groups, unassigned and unknown checkpoints; an assignment is changed | displayed checkpoint order first, unassigned and unknown last in original relative order; each group keeps original order; actions target original indexes; saved reassignment moves group | manual |
 | E36 | F8 | Click Confirm, Retry failed epics, per-epic Expand and Retry, Regenerate; reload mid-call; 21, 0, 2.5, "1e1", "+5" and empty in the plan, task drawer and Add task points fields | one request each to 61, 61, 37, 39; controls disabled during the call; reload re-reads; invalid values blocked with "Whole number from 1 to 20."; 1 and 20 accepted | manual |
 
 ## 6. Security
@@ -180,4 +183,4 @@ Medium plus Attacker lens. **Principal** PM; **authorisation** the policy gate (
 | SD12 | Prompt text is flattened to single lines and cut per field (§4.3) | stops forged labels and bounds the prompt by construction | Attacker lens |
 
 ## 9. Review record
-Lenses: Implementer, Tester, Attacker (untrusted text across epics, ownership, races, spend) | Rounds: 1 | Round 1 found 7 blocking (2 Implementer, 5 Tester) and 35 judgement or minor items; all folded: prompt arithmetic with context sections (§4.3), gateway retry wording and per-feature lease (§4.1, §4.5), named seams (§4.3), missing points copies (§1), bulk store and failure rules (§4.2), many E rows. Rejected findings: Attacker A1 (one bad epic blocks the rest) - blocked input means empty after sanitising and each block carries an `index:` label, covered by E33; Tester Q16 asking for a CI test of the measured latency - replaced by the limits-versus-measurement unit test in N2; Attacker A7 option to compare the proposal `version` at store - kept as accepted (T9).
+F9 amendment reviewed 2026-11-11 by Implementer and Tester: no blocking findings. Lenses: Implementer, Tester, Attacker (untrusted text across epics, ownership, races, spend) | Rounds: 1 | Round 1 found 7 blocking (2 Implementer, 5 Tester) and 35 judgement or minor items; all folded: prompt arithmetic with context sections (§4.3), gateway retry wording and per-feature lease (§4.1, §4.5), named seams (§4.3), missing points copies (§1), bulk store and failure rules (§4.2), many E rows. Rejected findings: Attacker A1 (one bad epic blocks the rest) - blocked input means empty after sanitising and each block carries an `index:` label, covered by E33; Tester Q16 asking for a CI test of the measured latency - replaced by the limits-versus-measurement unit test in N2; Attacker A7 option to compare the proposal `version` at store - kept as accepted (T9).

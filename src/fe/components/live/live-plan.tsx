@@ -250,6 +250,11 @@ export default function LivePlan() {
   const ready = proposal.epics.filter((e) => e.expansion.status === 'DONE').length;
   const pending = proposal.status === 'PENDING';
   const names = proposal.checkpoints.map((c) => c.name);
+  const checkpointOrder = (epic: PlanEpic) => {
+    const index = names.indexOf(epic.checkpointName ?? '');
+    return index < 0 ? names.length : index;
+  };
+  const displayedEpics = [...proposal.epics].sort((a, b) => checkpointOrder(a) - checkpointOrder(b));
   const idle = busy === '';
   // Step 1: the model's outline, nothing expanded yet. Step 2: tasks exist (or an expansion failed and needs a retry).
   const outline = pending && proposal.epics.every((e) => e.expansion.status === 'PENDING');
@@ -288,7 +293,7 @@ export default function LivePlan() {
             <h3>Epics</h3>
             <span className="small muted">Check the epics before any tasks are generated. You can edit, add and delete them.</span>
           </div>
-          {proposal.epics.map((e) => (
+          {displayedEpics.map((e) => (
             <div className="card flat stack8" key={`${e.index}-${e.contentHash}`}>
               {editing === e.index ? (
                 <EpicEditor epic={e} withTasks={false} checkpoints={names} busy={!idle} onCancel={() => setEditing(null)} onSave={(patch) => change(`edit-${e.index}`, (p) => editEpic_38(p.id, e.index, p.version, patch), 'Epic saved.')} />
@@ -310,7 +315,7 @@ export default function LivePlan() {
         </section>
       )}
 
-      {!outline && proposal.epics.map((e) => (
+      {!outline && displayedEpics.map((e) => (
         <article className="card stack8" key={`${e.index}-${e.contentHash}`}>
           {editing === e.index ? (
             <EpicEditor epic={e} checkpoints={names} busy={!idle} onCancel={() => setEditing(null)} onSave={(patch) => change(`edit-${e.index}`, (p) => editEpic_38(p.id, e.index, p.version, patch), 'Epic saved.')} />
