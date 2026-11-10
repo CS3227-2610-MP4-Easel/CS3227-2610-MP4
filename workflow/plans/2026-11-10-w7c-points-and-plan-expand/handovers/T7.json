@@ -1,12 +1,12 @@
 {
   "task":"T7",
-  "status":"blocked",
-  "summary":"Route 61 implementation and targeted integration tests pass; full discover suite has eight failures.",
+  "status":"done",
+  "summary":"Added endpoint 61, proposal resolver wiring, 60-second route duration and route and real-database mock-gateway coverage.",
   "commit":"pending",
-  "produces":[{"kind":"route","name":"POST /api/pm/proposals/{proposalId}/expand","where":"src/be/api/src/routes/pm.ts","note":"Uncommitted; strict version body, 1024-byte pre-auth limit."},{"kind":"symbol","name":"maxDuration","where":"src/fe/app/api/[[...route]]/route.ts","note":"Uncommitted; 60 seconds."}],
-  "next":"Investigate or record the full-suite failures, then review and commit T7. Partial T7 changes remain uncommitted; see .ws/t7-tests.log.",
-  "deviations":[{"what":"Full discover-tests run had eight failures: migration checksum, two gateway timing tests, one gateway integration test and four process-security tests.","why":"Cause has not been established.","needs":"orchestrator"}],
+  "produces":[{"kind":"route","name":"POST /api/pm/proposals/{proposalId}/expand","where":"src/be/api/src/routes/pm.ts","note":"Strict {version}, 1024-byte pre-auth limit; returns fresh PlanProposal."},{"kind":"symbol","name":"maxDuration","where":"src/fe/app/api/[[...route]]/route.ts","note":"60 seconds."}],
+  "next":"T8 POSTs {version} to /api/pm/proposals/{id}/expand; errors use the usual error body. T9 may mark endpoint 61 live.",
+  "deviations":[],
   "edge_cases":["E10","E15","E26","E28","E29","E34","E35"],
-  "checks":{"build":"typecheck, lint and contract passed","tests":"Targeted route/composition/duration 6 passed, 0 failed, 0 skipped; targeted E2E 5 passed, 0 failed, 0 skipped; full discover 770 passed, 8 failed, 0 skipped.","lint":"handover lint pending"},
-  "blocked_reason":"Full test suite failed; failures were not anticipated by the task."
+  "checks":{"build":"pass","tests":"Targeted route/composition/duration 6 passed; E2E 5 passed; full discover rerun 780 passed, 0 failed, 0 skipped.","lint":"handover lint passed"},
+  "note":"Initial full suite: 770 passed, 8 failed, 0 skipped; process-security fixes and migration line-ending restoration were handled separately before the clean rerun. Initial E2E assertions were corrected to match the response schema and edit a DONE epic."
 }

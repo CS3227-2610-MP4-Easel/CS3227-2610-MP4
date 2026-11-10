@@ -6,7 +6,7 @@ import { createProposalResolvers } from "@agile/proposals";
 import type { AuthDependencies } from "./middleware/auth.js";
 import { createW5Routes, type W5RouteServices } from "./routes/index.js";
 
-const PROPOSAL_OPERATIONS = new Set(["PM_PROPOSAL_READ", "PM_EPIC_EXPAND", "PM_PROPOSAL_APPROVE", "PM_PROPOSAL_REJECT", "PM_EPIC_UPDATE", "PM_EPIC_REGENERATE", "PM_PROPOSAL_CHECKPOINTS_UPDATE", "PM_PROPOSAL_EPIC_CREATE", "PM_PROPOSAL_EPIC_DELETE"]);
+const PROPOSAL_OPERATIONS = new Set(["PM_PROPOSAL_READ", "PM_EPIC_EXPAND", "PM_PROPOSAL_APPROVE", "PM_PROPOSAL_REJECT", "PM_EPIC_UPDATE", "PM_EPIC_REGENERATE", "PM_PROPOSAL_CHECKPOINTS_UPDATE", "PM_PROPOSAL_EPIC_CREATE", "PM_PROPOSAL_EPIC_DELETE", "PM_PROPOSAL_EXPAND_ALL"]);
 
 export type CoreComposition = Pick<AuthDependencies, "resolveResource" | "requireMember"> & { routes: ReturnType<typeof createW5Routes> };
 
