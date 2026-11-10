@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { A, r } from '../../lib/nav';
 import { currentProject } from '../../lib/screens';
 import {
-  ApiError, addEpic_59, approvePlan_40, createPlan_34, deleteEpic_60, editEpic_38, expandEpic_37, getProposal_35,
-  regenerateEpic_39, rejectPlan_41, setCheckpoints_58,
+  ApiError, addEpic_59, approvePlan_40, createPlan_34, deleteEpic_60, editEpic_38, expandAll_61, expandEpic_37, getProposal_35,
+  regenerateEpic_39, rejectPlan_41, setCheckpoints_58, validPoints,
   type CheckpointDraft, type PlanEpic, type PlanProposal, type PlanTask,
 } from '../../lib/api';
 import { toast } from './toast';
@@ -25,13 +25,12 @@ const recall = () => {
     return null;
   }
 };
-const POINTS = [1, 2, 3, 5, 8, 13];
 
 // ---- task and epic drafts (strings while typing, parsed on save) ----
-type TaskDraft = { title: string; description: string; criteria: string; points: number };
-const toDraft = (t: PlanTask): TaskDraft => ({ title: t.title, description: t.description, criteria: t.acceptanceCriteria.join('\n'), points: t.storyPoints ?? 3 });
+type TaskDraft = { title: string; description: string; criteria: string; points: number; pointsText: string };
+const toDraft = (t: PlanTask): TaskDraft => ({ title: t.title, description: t.description, criteria: t.acceptanceCriteria.join('\n'), points: t.storyPoints ?? 3, pointsText: String(t.storyPoints ?? 3) });
 const toTask = (d: TaskDraft): PlanTask => ({ title: d.title.trim(), description: d.description.trim(), acceptanceCriteria: d.criteria.split('\n').map((s) => s.trim()).filter(Boolean), storyPoints: d.points });
-const blankTask = (): TaskDraft => ({ title: '', description: '', criteria: '', points: 3 });
+const blankTask = (): TaskDraft => ({ title: '', description: '', criteria: '', points: 3, pointsText: '3' });
 
 function EpicEditor({ epic, checkpoints, busy, withTasks = true, onSave, onCancel }: { epic: PlanEpic; checkpoints: string[]; busy: boolean; withTasks?: boolean; onSave: (patch: { title?: string; description?: string; checkpointName?: string | null; tasks?: PlanTask[] }) => void; onCancel: () => void }) {
   const [title, setTitle] = useState(epic.title);
@@ -47,6 +46,7 @@ function EpicEditor({ epic, checkpoints, busy, withTasks = true, onSave, onCance
     if (!title.trim()) return setProblem('Give the epic a title.');
     if (withTasks && tasks.length > 8) return setProblem('An epic has at most 8 tasks.');
     if (withTasks && parsed.some((t) => !t.title)) return setProblem('Every task needs a title.');
+    if (withTasks && tasks.some((t) => !validPoints(t.pointsText))) return;
     const patch: { title?: string; description?: string; checkpointName?: string | null; tasks?: PlanTask[] } = {};
     if (title.trim() !== epic.title) patch.title = title.trim();
     if (description !== epic.description) patch.description = description;
@@ -76,9 +76,8 @@ function EpicEditor({ epic, checkpoints, busy, withTasks = true, onSave, onCance
         <div className="card flat stack8" key={i}>
           <div className="row">
             <input className="in" style={{ flex: 1 }} aria-label={`Task ${i + 1} title`} placeholder="Task title" value={t.title} maxLength={200} onChange={(e) => setTask(i, { title: e.target.value })} />
-            <select className="in" style={{ width: 80 }} aria-label={`Task ${i + 1} story points`} value={t.points} onChange={(e) => setTask(i, { points: Number(e.target.value) })}>
-              {POINTS.map((p) => <option key={p} value={p}>{p} pt{p === 1 ? '' : 's'}</option>)}
-            </select>
+            <div><input className="in" style={{ width: 80 }} type="number" min={1} max={20} step={1} aria-label={`Task ${i + 1} story points`} value={t.pointsText === 'invalid' ? '' : t.pointsText} onChange={(e) => { const text = e.currentTarget.validity.badInput ? 'invalid' : e.currentTarget.value; setTask(i, { pointsText: text, points: Number(text) }); }} />
+              {!validPoints(t.pointsText) && <div className="err-t">Whole number from 1 to 20.</div>}</div>
             <button className="btn sm" type="button" onClick={() => setTasks((ts) => ts.filter((_, j) => j !== i))}>Remove</button>
           </div>
           <textarea className="in" rows={2} aria-label={`Task ${i + 1} description`} placeholder="Description" value={t.description} maxLength={4000} onChange={(e) => setTask(i, { description: e.target.value })} />
@@ -195,18 +194,10 @@ export default function LivePlan() {
 
   const expandAll = () => run('expand-all', async () => {
     if (!proposal) return;
-    let first = '';
-    for (const e of proposal.epics) {
-      if (e.expansion.status === 'DONE') continue;
-      try {
-        await expandEpic_37(proposal.id, e.index);
-      } catch (err) {
-        // One failed epic must not stop the rest; it stays FAILED and can be retried or written by hand.
-        first ||= err instanceof ApiError ? err.message : 'Something went wrong.';
-      }
-    }
-    setProposal(await getProposal_35(proposal.id));
-    if (first) setError(`Some epics could not be expanded: ${first} Retry them, or open Edit and write the tasks yourself.`);
+    const result = await expandAll_61(proposal.id, proposal.version);
+    setProposal(result);
+    const unfinished = result.epics.filter((e) => e.expansion.status !== 'DONE').length;
+    if (unfinished) setError(`${unfinished} epics could not be saved or finished. Retry them, or open Edit and write the tasks yourself.`);
   });
 
   const approve = () => run('approve', async () => {
@@ -261,7 +252,7 @@ export default function LivePlan() {
   // Step 1: the model's outline, nothing expanded yet. Step 2: tasks exist (or an expansion failed and needs a retry).
   const outline = pending && proposal.epics.every((e) => e.expansion.status === 'PENDING');
   return (
-    <div className="stack" style={{ gap: 16 }}>
+    <fieldset className="stack" disabled={busy === 'expand-all'} style={{ gap: 16, border: 0, padding: 0, margin: 0, minWidth: 0 }}>
       <div className="row wrap">
         <h2>Plan draft</h2>
         <span className="chip c-warn">{pending ? 'Draft' : proposal.status}</span>
@@ -354,16 +345,16 @@ export default function LivePlan() {
           <button className="btn d" disabled={!idle} onClick={reject}>{busy === 'reject' ? 'Rejecting…' : 'Reject plan'}</button>
           <div className="row">
             {outline ? (
-              <button className="btn p" disabled={!idle} onClick={expandAll}>{busy === 'expand-all' ? 'Expanding epics…' : 'Confirm and Expand Epics'}</button>
+              <button className="btn p" disabled={!idle} onClick={expandAll}>{busy === 'expand-all' ? 'Expanding all epics. This can take up to a minute.' : 'Confirm and Expand Epics'}</button>
             ) : (
               <>
-                {ready < proposal.epics.length && <button className="btn" disabled={!idle} onClick={expandAll}>{busy === 'expand-all' ? 'Expanding…' : 'Retry failed epics'}</button>}
+                {ready < proposal.epics.length && <button className="btn" disabled={!idle} onClick={expandAll}>{busy === 'expand-all' ? 'Expanding all epics. This can take up to a minute.' : 'Retry failed epics'}</button>}
                 <button className="btn p" disabled={!idle || ready < proposal.epics.length} onClick={approve}>{busy === 'approve' ? 'Approving…' : 'Approve plan'}</button>
               </>
             )}
           </div>
         </div>
       )}
-    </div>
+    </fieldset>
   );
 }

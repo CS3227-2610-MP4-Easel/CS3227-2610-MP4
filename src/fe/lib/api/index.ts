@@ -2,6 +2,7 @@
 // The data layer: one function per endpoint of docs/architecture/contracts.md, named with its number.
 // Screens call these and nothing else. Linking the backend replaces the bodies with calls to /api
 // through the contracts client; the signatures stay. Fixtures are used only inside this folder.
+import { StoryPointsSchema } from '@agile/contracts';
 import { read, write } from './store';
 import { call, LiveError, openProjectId } from './live';
 import type { Checkpoint, CheckpointDraft, Epic, EpicPatch, LiveCheckpoint, LiveEpic, LiveProject, LiveTask, Member, Page, PlanApproved, PlanEpic, PlanProposal, Sprint, Standup, Task, TaskStatus } from './types';
@@ -48,6 +49,10 @@ export const getLiveProject_7 = (id?: string) => live<LiveProject>('GET', `/proj
 export const createPlan_34 = (idea: string) => live<PlanProposal>('POST', `/pm/projects/${pid()}/plans`, { idea });
 // 35: read a proposal
 export const getProposal_35 = (id: string) => live<PlanProposal>('GET', `/pm/proposals/${id}`);
+// 61: expand all unexpanded epics
+export const expandAll_61 = (id: string, version: number) => live<PlanProposal>('POST', `/pm/proposals/${id}/expand`, { version });
+// A numeric input must contain digits only; the shared schema validates the range.
+export const validPoints = (value: string) => /^\d+$/.test(value) && StoryPointsSchema.safeParse(Number(value)).success;
 // 37: expand one epic into tasks
 export const expandEpic_37 = (id: string, index: number) => live<PlanEpic>('POST', `/pm/proposals/${id}/epics/${index}/expand`, {});
 // 36: earlier proposals of the project, newest first

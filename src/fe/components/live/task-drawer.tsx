@@ -2,7 +2,7 @@
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { A, r } from '../../lib/nav';
-import { ApiError, deleteTask_25, setTaskStatus_24, updateTask_23, useDb, type TaskStatus } from '../../lib/api';
+import { ApiError, deleteTask_25, setTaskStatus_24, updateTask_23, useDb, validPoints, type TaskStatus } from '../../lib/api';
 import StatusChip from '../canvas/StatusChip';
 import { toast } from './toast';
 import { WHO } from './people';
@@ -31,7 +31,9 @@ function Drawer() {
   const sprint = db.sprints.find((s) => s.id === t.sprintId);
   const epic = db.epics.find((e) => e.title === t.epic);
   const cp = db.checkpoints.find((c) => c.id === epic?.checkpointId);
+  const pointsValid = pts === '' || validPoints(pts);
   const save = async () => {
+    if (!pointsValid) return;
     try {
       await updateTask_23(t.id, { title, description: desc, points: pts ? Number(pts) : null });
       setEditing(false);
@@ -94,7 +96,7 @@ function Drawer() {
         </div>
       )}
       <div className="g2" style={{ gap: '12px 16px' }}>
-        <div><div className="small muted">Story points</div>{editing ? <select className="in" aria-label="Story points" value={pts} onChange={(e) => setPts(e.target.value)}>{['', '1', '2', '3', '5', '8', '13'].map((p) => <option key={p} value={p}>{p || 'None'}</option>)}</select> : <span className={`pts${t.points ? '' : ' none'}`}>{t.points ?? 'Unestimated'}</span>}</div>
+        <div><div className="small muted">Story points</div>{editing ? <><input className="in" aria-label="Story points" type="number" min={1} max={20} step={1} value={pts === 'invalid' ? '' : pts} onChange={(e) => setPts(e.currentTarget.validity.badInput ? 'invalid' : e.currentTarget.value)} />{!pointsValid && <div className="err-t">Whole number from 1 to 20.</div>}</> : <span className={`pts${t.points ? '' : ' none'}`}>{t.points ?? 'Unestimated'}</span>}</div>
         <div><div className="small muted">Assignee</div>{t.assignee ? <div className="row"><span className={`av ${WHO[t.assignee].av}`}>{WHO[t.assignee].ini}</span>{WHO[t.assignee].name}</div> : <span className="chip c-line">Unassigned</span>}</div>
         <div><div className="small muted">Sprint</div><span className="chip c-acc">{sprint ? sprint.name : 'No sprint'}</span></div>
         <div><div className="small muted">Checkpoint (from epic)</div>{cp ? <span className="chip c-acc"><svg className="ic" aria-hidden="true"><use href="#i-flag" /></svg>{cp.name}</span> : <span className="muted">None</span>}</div>
