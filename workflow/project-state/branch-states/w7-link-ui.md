@@ -26,7 +26,7 @@ describes `INT`; read it for context and write here instead of editing it.
 |---|---|---|---|---|---|---|---|
 | s1 | 2026-11-08 | Claude Sonnet 5.5 | W7 UI | Paused | Survey done; waiting on the operator's answer on auth and live-versus-fixture mode (Remaining) | Add data-layer functions 34-41 in `src/fe/lib/api/index.ts`, then wire `PlanIdea` to 34 | 2026-11-08 |
 
-| s2 | 2026-11-10 | Codex | W7c | Active | Orchestrating wave 5 T7 and T8 | Dispatch T7 and T8 with handovers | 2026-11-11 |
+| s2 | 2026-11-10 | Codex | W7c | Blocked | T7 task conflicts D~3 and D~4; partial T7 work uncommitted | Correct T7 task then resume, review, and finish wave 5 | 2026-11-11 |
 
 **Remaining**
 
@@ -48,13 +48,14 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 6/9 done; wave 5 T7 and T8 next | — |
+| W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 7/9 done; T7 blocked D~3 and D~4 | — |
 | W7-UI | PM plan screens linked to the backend | Building | none yet (size to be set; Medium if it only wires existing screens to existing endpoints) | none yet | Survey done; blocked on the two questions above | — |
 
 ## 3. Changes
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-11 | T8 complete (1d2bc12); FE typecheck and data-layer lint pass, 8 validation self-check cases pass; reviewer found and confirmed fix for missing bulk loading copy. Manual E36 pending. | W7c | 1d2bc12 |
 | 2026-11-11 | T6 complete (ade3a1b); PM suite 66 passed, 0 failed, 0 skipped; full reviews resolved F6 task-context coverage. Wave build, contract and Prisma checks pass. D~2 remains. | W7c | ade3a1b |
 | 2026-11-11 | Operator accepted all-DONE lock updating proposal updatedAt (C~5); E12 spec and T5/T6 amended; Implementer, Tester and Attacker reviewed and re-reviewed. T5 restored to Done; T6 resumes. | W7c | this commit |
 | 2026-11-10 | T4 and T5 complete (7b665b7, 60702ae); full reviews resolved Unicode separator injection and E11/E12 coverage findings. PM suite 60 and proposal suite 76 passed without skips; revised targeted suites passed. Shared-worktree task markers skipped to avoid collisions. Handover commit fields are pending; refs here are actual. | W7c | 7b665b7, 60702ae |
@@ -155,3 +156,23 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Rule:** Assert both included and excluded context at each prompt path.
 - **Scope:** project
 - **Found by:** Tester reviewer
+
+### D~3 — T7 mock provider assertion conflicts with gateway
+
+- **What:** T7 E34 requires no provider call in mock mode, but the real gateway invokes a mock provider's complete method.
+- **Consequence:** T7 stopped as instructed for a wrong task file; route edits and tests remain uncommitted. T8 continues independently.
+- **Action:** Preserve T7 partial work (paths and exact task quotations in handovers/T7.json); report the discrepancy without interpreting provider as live provider. Plan lint reports two existing T7 create paths while T7 is Blocked; E2E tests have not been written.
+
+### D~4 — T7 non-creator assertion conflicts with ownership boundary
+
+- **What:** T7 E28 requires a member non-creator to receive 404 without calling the flow, but its rules put creator ownership in the proposal store reached through the flow.
+- **Consequence:** T7's assertions cannot both hold under the specified ownership boundary.
+- **Action:** Stopped T7 and retained partial work for task correction.
+
+### L~4 — Verify required UI copy in loading states
+
+- **Date:** 2026-11-11
+- **Cause:** T8 initially retained shorter loading labels than the task required.
+- **Rule:** Compare each changed UI state against its exact specified copy before review.
+- **Scope:** project
+- **Found by:** Implementer reviewer

@@ -1,0 +1,34 @@
+{
+  "task": "T7",
+  "status": "blocked",
+  "summary": "T7 has contradictory E28 and E34 expectations.",
+  "commit": "pending",
+  "produces": [],
+  "next": "Correct T7 E28 and E34, then resume with the uncommitted route implementation and tests; write end-to-end tests.",
+  "deviations": [
+    {
+      "what": "E34 requires no provider call in mock mode, but the gateway calls its mock provider's complete method.",
+      "why": "The real gateway invokes the configured provider for both modes; mock mode uses a mock provider.",
+      "needs": "orchestrator"
+    },
+    {
+      "what": "E28 says a member non-creator is rejected without calling flow, while the task mandates creator checks in the proposal store.",
+      "why": "The store is reached through the flow; policy only checks membership.",
+      "needs": "orchestrator"
+    }
+  ],
+  "edge_cases": [
+    "E10",
+    "E15",
+    "E28",
+    "E29",
+    "E35"
+  ],
+  "checks": {
+    "build": "not run",
+    "tests": "Route, composition, and duration tests: 6 passed, 0 failed, 0 skipped; integration and full suite not run.",
+    "lint": "not run"
+  },
+  "blocked_reason": "The task requires outcomes inconsistent with the specified implementation and current gateway.",
+  "note": "Exact E34: \"61 makes no provider call and every epic ends DONE\". Exact E28: \"each gets the status and error body endpoint 37 returns for that caller ...; the flow is not called\". Modified: src/be/api/src/routes/pm.ts, routes/register.ts, core-composition.ts, test/pm-routes.test.ts, test/pm-composition.test.ts, src/fe/app/api/[[...route]]/route.ts. Created: src/be/api/test/pm-expand-all-routes.test.ts, route-max-duration.test.ts. The end-to-end test file does not yet exist."
+}
