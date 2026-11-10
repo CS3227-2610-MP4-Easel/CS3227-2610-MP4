@@ -26,7 +26,7 @@ describes `INT`; read it for context and write here instead of editing it.
 |---|---|---|---|---|---|---|---|
 | s1 | 2026-11-08 | Claude Sonnet 5.5 | W7 UI | Paused | Survey done; waiting on the operator's answer on auth and live-versus-fixture mode (Remaining) | Add data-layer functions 34-41 in `src/fe/lib/api/index.ts`, then wire `PlanIdea` to 34 | 2026-11-08 |
 
-| s2 | 2026-11-10 | Codex | W7c | Blocked | T7 task conflicts D~3 and D~4; partial T7 work uncommitted | Correct T7 task then resume, review, and finish wave 5 | 2026-11-11 |
+| s2 | 2026-11-10 | Codex | W7c | Active | Resuming T7 after operator clarified D~3 and D~4 | Complete T7 integration tests and full reviews | 2026-11-11 |
 
 **Remaining**
 
@@ -48,13 +48,14 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 7/9 done; T7 blocked D~3 and D~4 | — |
+| W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 7/9 done; T7 in progress after D~3 and D~4 clarifications | — |
 | W7-UI | PM plan screens linked to the backend | Building | none yet (size to be set; Medium if it only wires existing screens to existing endpoints) | none yet | Survey done; blocked on the two questions above | — |
 
 ## 3. Changes
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-11 | Operator clarified T7 E28/E34 (C~6): mock provider is allowed, live provider is not; non-creator receives 404 via existing ownership check. Task corrected; T7 resumed. | W7c | this commit |
 | 2026-11-11 | T8 complete (1d2bc12); FE typecheck and data-layer lint pass, 8 validation self-check cases pass; reviewer found and confirmed fix for missing bulk loading copy. Manual E36 pending. | W7c | 1d2bc12 |
 | 2026-11-11 | T6 complete (ade3a1b); PM suite 66 passed, 0 failed, 0 skipped; full reviews resolved F6 task-context coverage. Wave build, contract and Prisma checks pass. D~2 remains. | W7c | ade3a1b |
 | 2026-11-11 | Operator accepted all-DONE lock updating proposal updatedAt (C~5); E12 spec and T5/T6 amended; Implementer, Tester and Attacker reviewed and re-reviewed. T5 restored to Done; T6 resumes. | W7c | this commit |
@@ -70,6 +71,14 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Branch `w7-link-ui` created in worktree `../CS3227-2610-MP4-w7-link-ui` from `w7-implement-pm-plan-flow`; branch state written | W7-UI | this commit |
 
 ## 4. Decisions
+
+### C~6 — Clarify mock provider and creator checks in T7
+
+- **Date:** 2026-11-11.
+- **Who asked:** the operator, clarifying T7 after D~3 and D~4 were reported.
+- **Decision:** mock mode makes no live provider call; invoking the in-process mock provider is expected. A non-creator receives 404; the existing store check may run through the flow before rejecting the request.
+- **Why:** these are the intended test outcomes; the previous task wording incorrectly excluded the mock provider and the existing ownership-check path.
+
 
 ### C~5 — Allow timestamp update for an all-DONE bulk claim
 
