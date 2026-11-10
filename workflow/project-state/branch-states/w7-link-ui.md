@@ -26,7 +26,7 @@ describes `INT`; read it for context and write here instead of editing it.
 |---|---|---|---|---|---|---|---|
 | s1 | 2026-11-08 | Claude Sonnet 5.5 | W7 UI | Paused | Survey done; waiting on the operator's answer on auth and live-versus-fixture mode (Remaining) | Add data-layer functions 34-41 in `src/fe/lib/api/index.ts`, then wire `PlanIdea` to 34 | 2026-11-08 |
 
-| s2 | 2026-11-10 | Codex | W7c, W7-UI | Blocked — live outline | Backlog rows revised and verified; live outline output-guard failures D~8 remain | Diagnose D~8; verify backlog conflict/project switching and complete E36 and 10-epic measurement | 2026-11-11 |
+| s2 | 2026-11-10 | Codex | W7c, W7-UI | Blocked — live outline | PM history wired and reviewed; W5/W14/W16 remain with their owners; D~8 remains | Diagnose D~8; verify backlog conflict/project switching and complete E36 and live 10-epic measurement | 2026-11-11 |
 
 **Remaining**
 
@@ -50,12 +50,13 @@ describes `INT`; read it for context and write here instead of editing it.
 |---|---|---|---|---|---|---|
 | W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 10/10 tasks done; live E36 and measurement blocked by D~8 | — |
 | W12-paths | Process-security external path classification | Building | [approved spec](../../specs/2026-11-11-process-security-paths-design.md) | Skipped by operator | Implemented and reviewed; full suite 780 passed, 0 skipped | — |
-| W7-UI | PM plan screens and live backlog editing | Building | [backlog editing draft](../../specs/2026-11-11-live-backlog-editing-design.md) | none yet | Compact backlog rows verified; conflict/project-switch verification remains | — |
+| W7-UI | PM plan screens and live backlog editing | Building | [backlog editing draft](../../specs/2026-11-11-live-backlog-editing-design.md) | none yet | PM history wired; conflict/project-switch verification remains | — |
 
 ## 3. Changes
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-11 | Wired PM plan history to endpoint 36 with filters, paging and project-safe opening; live browser verified approved plan, filter and new composer. FE typecheck, lint and navigation epoch test pass; independent review fixed stale-navigation races. W5/W14/W16 owner scopes retained. | W7-UI | this commit |
 | 2026-11-11 | Restored compact backlog rows and status chips; chevrons toggle checkpoint/task details, direct epic drag and keyboard move with focus restoration verified in local test project. FE typecheck, lint and spec lint passed; independent review clean. | W7-UI | this commit |
 | 2026-11-11 | Live backlog editing implemented and reviewed: checkpoint, epic and task editors; checkpoint grouping and task movement; sprint list and scoped versioned writes. Full suite 786 passed, 0 skipped; typecheck, lint, contracts and Prisma validation passed. Browser verified collapse, keyboard expand, checkpoint/epic/task saves, task move selector, checkpoint drop picker and cancel in disposable local project; conflict recovery, cross-checkpoint drop completion and project switching remain unverified. | W7-UI | this commit |
 | 2026-11-11 | T10 prompt amendment implemented: outline targets three months; bulk receives checkpoint dates and requests small developer-assignable tasks. PM 68 and proposals 78 passed, no skips; review clean after separator test, typecheck passed. Live model measurement pending. Backlog editing spec reviewed; operator chose destination epic on checkpoint drop; gate 1 pending. | W7c, W7-UI | this commit |
@@ -91,6 +92,13 @@ describes `INT`; read it for context and write here instead of editing it.
 Project members can read checkpoints, epics, tasks, members and sprints. Project-member PMs and Dev Leads can update checkpoints and epics through versioned, transactionally authorized endpoints, and update tasks through the existing task endpoint. The live backlog groups epics by checkpoint, supports editing and moving tasks between epics, and uses project-scoped data and versions. Task status authorization remains separate. The frontend uses the local dev-PM token until real sign-in is wired.
 
 ## 4. Decisions
+
+### C~14 — Wire PM plan history in its existing UI slice
+
+- **Date:** 2026-11-11.
+- **Who asked:** the operator, asking to implement PM-side gaps not covered by other workstreams.
+- **Decision:** connect the PM plan-history screen to W7b endpoints 36 and 35 in live mode; retain mock history in mock mode. W5, W14 and the other W16 owner slices remain with their recorded owners.
+- **Why:** W7b shipped the history API but explicitly left UI wiring out; this branch lists the PM history screen as remaining.
 
 ### C~13 — Restore backlog rows and direct epic dragging
 

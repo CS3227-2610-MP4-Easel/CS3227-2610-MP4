@@ -56,7 +56,11 @@ export const validPoints = (value: string) => /^\d+$/.test(value) && StoryPoints
 // 37: expand one epic into tasks
 export const expandEpic_37 = (id: string, index: number) => live<PlanEpic>('POST', `/pm/proposals/${id}/epics/${index}/expand`, {});
 // 36: earlier proposals of the project, newest first
-export const listProposals_36 = () => live<Page<PlanProposal>>('GET', `/pm/projects/${pid()}/proposals?size=20`);
+export const listProposals_36 = (projectId = pid(), page = 0, status?: PlanProposal['status']) => {
+  const query = new URLSearchParams({ size: '20', page: String(page) });
+  if (status) query.set('status', status);
+  return live<Page<PlanProposal>>('GET', `/pm/projects/${projectId}/proposals?${query}`);
+};
 // 38: edit one epic (title, description, checkpoint, and the whole task list); every edit needs the proposal's version
 export const editEpic_38 = (id: string, index: number, version: number, patch: EpicPatch) => live<PlanProposal>('PATCH', `/pm/proposals/${id}/epics/${index}`, { ...patch, version });
 // 39: regenerate one expanded epic with the model

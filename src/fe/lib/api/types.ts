@@ -42,6 +42,7 @@ export type PlanProposal = {
   epics: PlanEpic[];
   retrieved: { source: string; projectId: string; projectName: string; id: string; title: string }[];
   flagged: boolean;
+  createdAt: string;
   version: number;
 };
 export type CheckpointDraft = { name: string; targetDate: string; previousName?: string };

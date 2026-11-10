@@ -1,8 +1,9 @@
 'use client';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 import { A, r } from '../../lib/nav';
 import { currentProject } from '../../lib/screens';
+import { advancePlanSelection } from '../../lib/plan-selection';
 import {
   ApiError, addEpic_59, approvePlan_40, createPlan_34, deleteEpic_60, editEpic_38, expandAll_61, expandEpic_37, getProposal_35,
   regenerateEpic_39, rejectPlan_41, setCheckpoints_58, validPoints,
@@ -145,17 +146,43 @@ function NewEpic({ checkpoints, busy, onSave, onCancel }: { checkpoints: string[
 
 // The PM plan flow against the real API (endpoints 34 to 41 and 58 to 60). Rendered by the plan screens when LLM_MODE=live.
 export default function LivePlan() {
+  const projectId = currentProject();
   const [idea, setIdea] = useState('');
   const [proposal, setProposal] = useState<PlanProposal | null>(null);
+  const [loadingProposal, setLoadingProposal] = useState(true);
   const router = useRouter();
+  const search = useSearchParams().toString();
+  const selectionKey = `${projectId}:${search}`;
+  const navigation = useRef({ key: selectionKey, epoch: 0 });
+  navigation.current = advancePlanSelection(navigation.current, selectionKey);
+  const selectionEpoch = navigation.current.epoch;
+  const mounted = useRef(true);
+  const isCurrent = () => mounted.current && navigation.current.epoch === selectionEpoch && currentProject() === projectId;
+  const [proposalKey, setProposalKey] = useState('');
+  const [proposalEpoch, setProposalEpoch] = useState(-1);
   const [editing, setEditing] = useState<number | 'new' | 'checkpoints' | null>(null);
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
 
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   useEffect(() => {
-    const id = recall();
-    if (id) getProposal_35(id).then(setProposal).catch(() => remember(null));
-  }, []);
+    let active = true;
+    setProposal(null); setEditing(null); setError(''); setBusy(''); setLoadingProposal(true);
+    const query = new URLSearchParams(search);
+    const explicit = query.get('proposal');
+    const id = explicit || (query.get('new') === '1' ? null : recall());
+    if (!id) { setLoadingProposal(false); return () => { active = false; }; }
+    getProposal_35(id).then((value) => {
+      if (!active || currentProject() !== projectId) return;
+      if (value.projectId !== projectId) { setError('Plan not found in this project.'); return; }
+      setProposalKey(selectionKey); setProposalEpoch(selectionEpoch); setProposal(value); if (explicit) remember(value.id);
+    }).catch((e) => {
+      if (!active || currentProject() !== projectId) return;
+      if (explicit) setError(e instanceof Error ? e.message : 'Could not open the plan.');
+      else remember(null);
+    }).finally(() => { if (active && currentProject() === projectId) setLoadingProposal(false); });
+    return () => { active = false; };
+  }, [projectId, search]);
 
   const run = async (what: string, fn: () => Promise<void>) => {
     setBusy(what);
@@ -163,13 +190,14 @@ export default function LivePlan() {
     try {
       await fn();
     } catch (e) {
+      if (!isCurrent()) return;
       setError(e instanceof ApiError ? e.message : 'Something went wrong.');
       // A bulk failure can mark epics failed; conflicts can also leave this view stale.
       if (proposal && (what === 'expand-all' || (e instanceof ApiError && (e.code === 'CONFLICT_VERSION' || e.code === 'CONFLICT_STATE')))) {
-        try { setProposal(await getProposal_35(proposal.id)); } catch {}
+        try { const latest = await getProposal_35(proposal.id); if (isCurrent()) setProposal(latest); } catch {}
       }
     } finally {
-      setBusy('');
+      if (isCurrent()) setBusy('');
     }
   };
 
@@ -177,26 +205,35 @@ export default function LivePlan() {
   const change = (what: string, fn: (p: PlanProposal) => Promise<PlanProposal>, after?: string) =>
     run(what, async () => {
       if (!proposal) return;
-      setProposal(await fn(proposal));
+      const updated = await fn(proposal);
+      if (!isCurrent()) return;
+      setProposal(updated);
       setEditing(null);
       if (after) toast(after);
     });
 
   const generate = () => run('generate', async () => {
     const p = await createPlan_34(idea);
+    if (!isCurrent() || p.projectId !== projectId) return;
     remember(p.id);
+    setProposalKey(selectionKey);
+    setProposalEpoch(selectionEpoch);
     setProposal(p);
+    if (new URLSearchParams(search).has('new')) router.replace(`${r('PlanIdea.dc.html')}?proposal=${encodeURIComponent(p.id)}`);
   });
 
   const expand = (index: number) => run(`expand-${index}`, async () => {
     if (!proposal) return;
     await expandEpic_37(proposal.id, index);
-    setProposal(await getProposal_35(proposal.id));
+    if (!isCurrent()) return;
+    const updated = await getProposal_35(proposal.id);
+    if (isCurrent()) setProposal(updated);
   });
 
   const expandAll = () => run('expand-all', async () => {
     if (!proposal) return;
     const result = await expandAll_61(proposal.id, proposal.version);
+    if (!isCurrent()) return;
     setProposal(result);
     const unfinished = result.epics.filter((e) => e.expansion.status !== 'DONE').length;
     if (unfinished) setError(`${unfinished} epics could not be saved or finished. Retry them, or open Edit and write the tasks yourself.`);
@@ -205,7 +242,9 @@ export default function LivePlan() {
   const approve = () => run('approve', async () => {
     if (!proposal) return;
     const latest = await getProposal_35(proposal.id);
+    if (!isCurrent()) return;
     const res = await approvePlan_40(latest.id, latest.version);
+    if (!isCurrent()) return;
     remember(null);
     const { checkpoints, epics, tasks } = res.created;
     toast(`Plan approved: ${checkpoints} checkpoints, ${epics} epics and ${tasks} tasks created.`);
@@ -215,7 +254,9 @@ export default function LivePlan() {
   const reject = () => run('reject', async () => {
     if (!proposal) return;
     const latest = await getProposal_35(proposal.id);
+    if (!isCurrent()) return;
     await rejectPlan_41(latest.id, latest.version);
+    if (!isCurrent()) return;
     remember(null);
     setProposal(null);
     setIdea('');
@@ -229,6 +270,7 @@ export default function LivePlan() {
     </div>
   );
 
+  if (loadingProposal || (proposal && (proposal.projectId !== projectId || proposalKey !== selectionKey || proposalEpoch !== selectionEpoch))) return <div className="card">Loading plan…</div>;
   if (!proposal) {
     const len = [...idea].length;
     return (
@@ -241,6 +283,7 @@ export default function LivePlan() {
         {banner}
         <div className="row wrap between">
           <A href={r('Backlog.dc.html')} className="b muted" style={{ textDecoration: 'underline' }}>Create manually</A>
+          <A href={r('PlanHistory.dc.html')} className="b muted" style={{ textDecoration: 'underline' }}>Plan history</A>
           <button className="btn p" disabled={busy !== '' || len < 20 || len > 6000} onClick={generate}>{busy === 'generate' ? 'Generating…' : 'Generate plan'}</button>
         </div>
       </section>
@@ -262,6 +305,7 @@ export default function LivePlan() {
     <fieldset className="stack" disabled={busy === 'expand-all'} style={{ gap: 16, border: 0, padding: 0, margin: 0, minWidth: 0 }}>
       <div className="row wrap">
         <h2>Plan draft</h2>
+        <A href={r('PlanHistory.dc.html')}>Plan history</A>
         <span className="chip c-warn">{pending ? 'Draft' : proposal.status}</span>
         <span className="b num">{ready} of {proposal.epics.length} epics ready</span>
         {proposal.flagged && <span className="flagm">Flagged for review</span>}
