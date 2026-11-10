@@ -1,6 +1,6 @@
 # Process-Security Shell Path Classification Design
 
-- **Status:** Draft
+- **Status:** Approved (operator, 2026-11-11)
 - **Format:** v2
 - **Risk tier:** High - this changes a security control that authorizes agent shell operations.
 - **Workstream:** W~1 (process-security path correction) | **Plan:** not written yet

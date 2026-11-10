@@ -26,7 +26,7 @@ describes `INT`; read it for context and write here instead of editing it.
 |---|---|---|---|---|---|---|---|
 | s1 | 2026-11-08 | Claude Sonnet 5.5 | W7 UI | Paused | Survey done; waiting on the operator's answer on auth and live-versus-fixture mode (Remaining) | Add data-layer functions 34-41 in `src/fe/lib/api/index.ts`, then wire `PlanIdea` to 34 | 2026-11-08 |
 
-| s2 | 2026-11-10 | Codex | W7c | Blocked — needs human | Security fix spec reviewed; awaiting gate 1 approval | On approval record yes, write plan and seek gate 2 | 2026-11-11 |
+| s2 | 2026-11-10 | Codex | W7c | Active | Security literal-path fix reviewed; rerunning W7c full suite | Complete full suite and resume T7 review | 2026-11-11 |
 
 **Remaining**
 
@@ -49,13 +49,15 @@ describes `INT`; read it for context and write here instead of editing it.
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
 | W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 7/9 done; T7 blocked on full-suite failures D~5 | — |
-| W12-paths | Process-security external path classification | Spec'd | [draft spec](../../specs/2026-11-11-process-security-paths-design.md) | — | Four-lens review complete; awaiting spec approval | — |
+| W12-paths | Process-security external path classification | Building | [approved spec](../../specs/2026-11-11-process-security-paths-design.md) | Skipped by operator | Implemented; 63 process-security tests pass; full-suite check pending | — |
 | W7-UI | PM plan screens linked to the backend | Building | none yet (size to be set; Medium if it only wires existing screens to existing endpoints) | none yet | Survey done; blocked on the two questions above | — |
 
 ## 3. Changes
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-11 | W12-paths implemented directly from approved spec: process-security suite 63 passed, 0 failed, 0 skipped; Implementer, Tester and Attacker reviews complete, test coverage finding fixed. Existing broader Known Gaps remain. | W12-paths | this commit |
+| 2026-11-11 | Operator approved security fix spec and directed implementation without a plan (C~7); tests and security review retained. | W12-paths | this commit |
 | 2026-11-11 | Operator deferred additional cwd issue as Known Gap; security draft narrowed to literal absolute-path failures and re-reviewed by Implementer, Tester, Maintainer and Attacker. Other detected security limitations recorded for handover. Awaiting Gate 1. | W12-paths | this commit |
 | 2026-11-11 | W12-paths security fix spec drafted and reviewed twice; Q1 remains on obtaining trusted execution cwd before relative paths can be classified. Security implementation not started. | W12-paths | this commit |
 | 2026-11-11 | D~5 migration checksum fixed locally by restoring tracked LF checkout; W13 migration tests 6 passed, 0 failed, 0 skipped. Checkout-only fix will need repeating if Git converts line endings again. Security path fix being specified under W12-paths. | W7c | working tree |
@@ -75,6 +77,14 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Branch `w7-link-ui` created in worktree `../CS3227-2610-MP4-w7-link-ui` from `w7-implement-pm-plan-flow`; branch state written | W7-UI | this commit |
 
 ## 4. Decisions
+
+### C~7 — Implement security fix directly from its spec
+
+- **Date:** 2026-11-11.
+- **Who asked:** the operator, after questioning the ceremony.
+- **Decision:** approve the narrowed process-security spec and skip its implementation plan; implement directly from the spec.
+- **Why:** the operator judged a separate plan excessive for these fixes. Security tests and review still apply.
+
 
 ### C~6 — Clarify mock provider and creator checks in T7
 
