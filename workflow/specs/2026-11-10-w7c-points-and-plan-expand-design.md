@@ -1,6 +1,7 @@
 # W7c Story Points 1-20 and Plan-Wide Expansion Design
 
 - **Status:** Approved (Xiao-Congchen, 2026-11-10)
+- **Amended 2026-11-11:** see branch state C~5.
 - **Format:** v2
 - **Risk tier:** Medium - changes three contracts (story points on `Task` and `PlanEpic`, new endpoint 61, the gateway's per-feature limits) and stores model output in domain rows; Attacker lens added because untrusted text now crosses from one epic into another epic's prompt.
 - **Workstream:** W7c (PM follow-up of W7 and W7b; touches W2, W5 and W6 files) | **Plan:** not written yet
@@ -116,7 +117,7 @@ No schema change, migration or seed change: `tasks.story_points` and the JSON `t
 | E9 | F3 | PM_PLAN_EXPAND: provider takes 50,000 ms; takes 54,001 ms; 5xx at 10,000 ms; 429 at 1,000 ms | OK; one attempt then `AI_UNAVAILABLE`; one retry with 44,000 ms left; one retry after 2,000 ms with 51,000 ms left; fake clock | unit |
 | E10 | F4 | 61 on 3 PENDING epics, mock mode | one `run` call; three DONE; proposal `version` and session unchanged | integration |
 | E11 | F5 | 61 with 2 DONE and 2 PENDING epics; and with none DONE | DONE rows untouched and absent from `epics`; `done-epics` lists them; with none DONE the section is absent | integration |
-| E12 | F4 | 61 when every epic is DONE; when a session is closed and no target exists | 200 with the fresh view, no call, nothing changes (no session check) | integration |
+| E12 | F4 | 61 when every epic is DONE; when a session is closed and no target exists | 200 with the fresh view, no model call or session check; the lock may update proposal `updatedAt`, while all other persisted proposal fields, session and epic data remain unchanged | integration |
 | E13 | F4 | 61 while one epic is live IN_PROGRESS and the rest PENDING; live IN_PROGRESS beside only DONE epics | 409 `CONFLICT_STATE`, no call, nothing claimed (live check before the empty-target 200) | integration |
 | E14 | F4 | An expired-lease epic and a FAILED epic | both are targets and finish DONE | integration |
 | E15 | F4 | Stale `version`; proposal not PENDING; replay of the old `version` after an edit | 409 `CONFLICT_VERSION`; 409 `CONFLICT_STATE`; 409 `CONFLICT_VERSION`; no call | integration |

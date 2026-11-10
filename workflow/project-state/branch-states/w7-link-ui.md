@@ -26,7 +26,7 @@ describes `INT`; read it for context and write here instead of editing it.
 |---|---|---|---|---|---|---|---|
 | s1 | 2026-11-08 | Claude Sonnet 5.5 | W7 UI | Paused | Survey done; waiting on the operator's answer on auth and live-versus-fixture mode (Remaining) | Add data-layer functions 34-41 in `src/fe/lib/api/index.ts`, then wire `PlanIdea` to 34 | 2026-11-08 |
 
-| s2 | 2026-11-10 | Codex | W7c | Blocked | T5/T6 E12 task conflict; partial T6 edits uncommitted | Resolve D~1, then resume T5/T6 and their reviews | 2026-11-10 |
+| s2 | 2026-11-10 | Codex | W7c | Active | Resuming T6 after E12 amendment C~5 | Complete T6 tests and reviews | 2026-11-11 |
 
 **Remaining**
 
@@ -48,13 +48,14 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 4/9 accepted; T5 and T6 blocked on D~1 | — |
+| W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 5/9 accepted; T6 in progress after C~5 | — |
 | W7-UI | PM plan screens linked to the backend | Building | none yet (size to be set; Medium if it only wires existing screens to existing endpoints) | none yet | Survey done; blocked on the two questions above | — |
 
 ## 3. Changes
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-11 | Operator accepted all-DONE lock updating proposal updatedAt (C~5); E12 spec and T5/T6 amended; Implementer, Tester and Attacker reviewed and re-reviewed. T5 restored to Done; T6 resumes. | W7c | this commit |
 | 2026-11-10 | T4 and T5 complete (7b665b7, 60702ae); full reviews resolved Unicode separator injection and E11/E12 coverage findings. PM suite 60 and proposal suite 76 passed without skips; revised targeted suites passed. Shared-worktree task markers skipped to avoid collisions. Handover commit fields are pending; refs here are actual. | W7c | 7b665b7, 60702ae |
 | 2026-11-10 | T2 complete (04feed6): shared points schema applied to backend; 308 tests passed, 0 failed, 0 skipped including integration; Implementer review clean. Handover commit field says pending; actual commit is 04feed6. | W7c | 04feed6 |
 | 2026-11-10 | T1 and T3 complete (2ed9726, 26d1329); Implementer, Tester and Attacker reviews found no blocking issues. T1 OpenAPI mappings lack direct assertions; contract parity passes. Gateway tests: 149 passed, 0 failed, 0 skipped including integration. | W7c | 2ed9726, 26d1329 |
@@ -67,6 +68,14 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Branch `w7-link-ui` created in worktree `../CS3227-2610-MP4-w7-link-ui` from `w7-implement-pm-plan-flow`; branch state written | W7-UI | this commit |
 
 ## 4. Decisions
+
+### C~5 — Allow timestamp update for an all-DONE bulk claim
+
+- **Date:** 2026-11-11.
+- **Who asked:** the operator, answering the E12 blocker question.
+- **Decision:** proposal updatedAt may advance when the existing lock is acquired on an all-DONE request; plan content and proposal version remain unchanged, with no model call or session check.
+- **Why:** the operator accepts the lock's timestamp update; preserving the timestamp was rejected as unnecessary.
+
 
 ### C~1 — `LLM_MODE` is the switch between fixtures and the live API; no new variable
 
