@@ -51,7 +51,7 @@ only your own task's files. Contract tests marked read-only are not edited.
 | T6 PM: expandAll, rest-of-plan context, runtime binding | `tasks/T6.md` | T4, T5 | - | 4 | complex | full | Done |
 | T7 API: route 61, resolver, maxDuration, route and e2e tests | `tasks/T7.md` | T1, T6 | T8 | 5 | complex | full | Done |
 | T8 Front end: bulk expand wiring and points number inputs | `tasks/T8.md` | T1 | T7 | 5 | standard | light | Done |
-| T9 Docs: AD-12 reversal, contracts text, old-list scan | `tasks/T9.md` | T1, T2, T4, T7, T8 | - | 6 | standard | light | Not started |
+| T9 Docs: AD-12 reversal, contracts text, old-list scan | `tasks/T9.md` | T1, T2, T4, T7, T8 | - | 6 | standard | light | Done |
 
 Bundles: none. Same-wave tasks share no file: T1 touches `contracts/src/*`, `contracts/test/*` and the three policy count tests; T3 `llm-gateway/src/{config,gateway}.ts` and its tests. T4 touches `pm/src/{sections,schemas,mocks}.ts` and `pm/test/prompts.test.ts`; T5 `proposals/src/*` and `proposals/test/*`. T7 touches `api/src/*`, `api/test/*` and the FE route file; T8 `src/fe/lib/*` and `src/fe/components/*`. T2 (wave 2) and T4, T6 edit `pm/src/schemas.ts` and `pm/src/plan-flow.ts` in different waves, never together.
 
