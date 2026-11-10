@@ -38,6 +38,24 @@ export function createEpics(db: EpicDb, gate: EpicAccess) {
         return output(await tx.epic.create({ data: { projectId, title: input.title, description: input.description ?? null, checkpointId: input.checkpointId ?? null, position } }));
       });
     },
+    async patch(actor: Actor, id: string, input: { title?: string; description?: string | null; checkpointId?: string | null; position?: number; version: number }) {
+      if (!actor.userId || (actor.role !== "PM" && actor.role !== "DEV_LEAD")) throw new Error("FORBIDDEN_ROLE");
+      return inMutationTransaction(db, async () => {}, async () => {}, async (tx: any) => {
+        const include = { _count: { select: { tasks: true } }, tasks: { select: { storyPoints: true } } };
+        const current = await tx.epic.findFirst({ where: { id }, include });
+        if (!current) throw new Error("NOT_FOUND");
+        await lockProjectForEpicPosition(tx, current.projectId);
+        await access(gate, actor, current.projectId, true, tx);
+        if (current.version !== input.version) throw new Error("CONFLICT_VERSION");
+        if (input.checkpointId && !await tx.checkpoint.findFirst({ where: { id: input.checkpointId, projectId: current.projectId } })) throw new Error("VALIDATION_FAILED");
+        const data: Row = {};
+        for (const key of ["title", "description", "checkpointId", "position"] as const) if (input[key] !== undefined && input[key] !== current[key]) data[key] = input[key];
+        if (!Object.keys(data).length) return output(current);
+        data.version = { increment: 1 };
+        if (!(await tx.epic.updateMany({ where: { id, version: input.version }, data })).count) throw new Error("CONFLICT_VERSION");
+        return output(await tx.epic.findFirst({ where: { id }, include }));
+      });
+    },
   };
 }
 export type EpicsService = ReturnType<typeof createEpics>;

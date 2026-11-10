@@ -17,7 +17,7 @@ const deps: AuthDependencies = {
 test("W7c E1 E2 E3 task create and patch validate points at the route", async () => {
   const calls: any[] = [];
   const record = async (_actor: unknown, _id: unknown, input: unknown) => { calls.push(input); return {}; };
-  const app = createApiApp(deps, createPlanningRoutes({ epics: {} as any, tasks: { create: record, patch: record } as any }));
+  const app = createApiApp(deps, createPlanningRoutes({ epics: {} as any, sprints: {} as any, tasks: { create: record, patch: record } as any }));
   for (const [method, path, base] of [["POST", `/api/projects/${id}/tasks`, { epicId: id, title: "Task" }], ["PATCH", `/api/tasks/${id}`, { version: 1 }]] as const) {
     const request = (storyPoints: unknown) => app.request(`http://localhost${path}`, { method, headers: { authorization: "Bearer ok", "content-type": "application/json" }, body: JSON.stringify({ ...base, storyPoints }) });
     for (const value of [0, -1, -0, 21, 1.5, "5", "20", true, 2147483648]) {

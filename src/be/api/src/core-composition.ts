@@ -1,7 +1,7 @@
 import type { AuthRuntime } from "@agile/auth";
 import { registerContextSource, registerCore } from "@agile/ai-context";
 import { NotMember, type ResolvedResource } from "@agile/contracts";
-import { createCheckpoints, createCore, createCoreResourceResolvers, createEpics, createProjects, createTasks, registerCoreContextSources, resolveCoreResource } from "@agile/core";
+import { createCheckpoints, createCore, createCoreResourceResolvers, createEpics, createProjects, createSprints, createTasks, registerCoreContextSources, resolveCoreResource } from "@agile/core";
 import { createProposalResolvers } from "@agile/proposals";
 import type { AuthDependencies } from "./middleware/auth.js";
 import { createW5Routes, type W5RouteServices } from "./routes/index.js";
@@ -23,7 +23,11 @@ export function createCoreComposition(auth: Pick<AuthRuntime, "db" | "lookupUser
       throw error;
     }
   };
-  const access = { requireMember: core.requireMember, archivedMembership: auth.lookupArchivedMembership };
+  const access = { requireMember: async (userId: string, projectId: string, tx?: unknown) => {
+    if (!tx) return core.requireMember(userId, projectId);
+    const client = tx as { projectMember: { findFirst(args: unknown): Promise<unknown> } };
+    if (!await client.projectMember.findFirst({ where: { userId, projectId } }) || await auth.lookupArchivedMembership(userId, projectId)) throw new NotMember();
+  }, archivedMembership: auth.lookupArchivedMembership };
   const resolvers = createCoreResourceResolvers(db as never);
   // Endpoints 35, 37, 40, 41 resolve through the stored proposal (W7); endpoint 34 resolves as a project through core.
   const proposalResolver = createProposalResolvers(auth.db);
@@ -45,7 +49,7 @@ export function createCoreComposition(auth: Pick<AuthRuntime, "db" | "lookupUser
   const services: W5RouteServices = {
     projects: createProjects(db as never, access),
     checkpoints: createCheckpoints(db as never, access),
-    planning: { epics: createEpics(db as never, access), tasks: createTasks(db as never, access) },
+    planning: { epics: createEpics(db as never, access), tasks: createTasks(db as never, access), sprints: createSprints(db as never, access) },
   };
 
   // Registration is intentionally fail-fast: a duplicate or missing source must prevent degraded boot.

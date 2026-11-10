@@ -1,9 +1,9 @@
 # Live Backlog Editing Design
 
-- **Status:** Draft — open questions and review pending
+- **Status:** Approved (Xiao-Congchen, 2026-11-11)
 - **Format:** v2
 - **Risk tier:** High — project-scoped writes require authorization, tenancy and concurrency checks.
-- **Workstream:** pending | **Plan:** not written
+- **Workstream:** W7-UI | **Plan:** skipped by operator
 - **Constraints consulted:** contracts.md §3.3 (endpoints 12–25), AD-55 policy map; W7c points 1–20; branch state Known Gap: live backlog and forms not wired.
 
 ## 1. Problem

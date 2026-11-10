@@ -10,7 +10,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Status:** Building
 - **Last updated:** 2026-11-08 by Claude Sonnet 5.5 — branch and worktree created, scope survey done, no UI code yet
 
-**Untouched:** Conventions, Architecture (no Now block changed yet)
+**Untouched:** Conventions
 
 ---
 
@@ -26,7 +26,7 @@ describes `INT`; read it for context and write here instead of editing it.
 |---|---|---|---|---|---|---|---|
 | s1 | 2026-11-08 | Claude Sonnet 5.5 | W7 UI | Paused | Survey done; waiting on the operator's answer on auth and live-versus-fixture mode (Remaining) | Add data-layer functions 34-41 in `src/fe/lib/api/index.ts`, then wire `PlanIdea` to 34 | 2026-11-08 |
 
-| s2 | 2026-11-10 | Codex | W7c, W7-UI | Blocked — approval | Prompt T10 done; backlog spec reviewed, awaiting gate 1 | On approval implement backlog editing; then complete E36 and live 10-epic measurement | 2026-11-11 |
+| s2 | 2026-11-10 | Codex | W7c, W7-UI | Blocked — browser verification | Backlog implemented and reviewed; 786 tests pass, 0 skipped; browser collapse and edit-cancel checked | Verify live saves, drag, picker, conflicts and project switching; complete E36 and 10-epic live measurement; then close out | 2026-11-11 |
 
 **Remaining**
 
@@ -50,12 +50,13 @@ describes `INT`; read it for context and write here instead of editing it.
 |---|---|---|---|---|---|---|
 | W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 10/10 tasks done; live E36 and measurement blocked on browser | — |
 | W12-paths | Process-security external path classification | Building | [approved spec](../../specs/2026-11-11-process-security-paths-design.md) | Skipped by operator | Implemented and reviewed; full suite 780 passed, 0 skipped | — |
-| W7-UI | PM plan screens and live backlog editing | Building | [backlog editing draft](../../specs/2026-11-11-live-backlog-editing-design.md) | none yet | Backlog spec reviewed; awaiting operator approval | — |
+| W7-UI | PM plan screens and live backlog editing | Building | [backlog editing draft](../../specs/2026-11-11-live-backlog-editing-design.md) | none yet | Backlog implemented and reviewed; live interaction verification incomplete | — |
 
 ## 3. Changes
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-11 | Live backlog editing implemented and reviewed: checkpoint, epic and task editors; checkpoint grouping and task movement; sprint list and scoped versioned writes. Full suite 786 passed, 0 skipped; typecheck, lint, contracts and Prisma validation passed. Browser verified collapse, keyboard expand, edit fields and cancel; live saves, drag/picker, conflicts and project switching remain unverified. | W7-UI | this commit |
 | 2026-11-11 | T10 prompt amendment implemented: outline targets three months; bulk receives checkpoint dates and requests small developer-assignable tasks. PM 68 and proposals 78 passed, no skips; review clean after separator test, typecheck passed. Live model measurement pending. Backlog editing spec reviewed; operator chose destination epic on checkpoint drop; gate 1 pending. | W7c, W7-UI | this commit |
 | 2026-11-11 | Operator requested checkpoint grouping on both review steps; C~9 spec amendment and T8 follow-up implemented, FE typecheck and lint and ordering self-check pass; independent review clean, browser check pending. | W7c | this commit |
 | 2026-11-11 | Close-out npm test: 781 passed, 0 failed, 0 skipped; typecheck, lint, contract, Prisma validation and plan close-out lint pass. Browser opened project list but repeated clicks and navigation timed out; E36 steps and live 10-epic measurement not run. | W7c | this commit |
@@ -84,7 +85,18 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | First UI slice: `LLM_MODE=live` switches `PlanIdea` and `Plan` to a new `live/live-plan.tsx` (idea, generate, expand each or all epics, approve, reject) over data-layer functions 34, 35, 37, 40, 41 (`lib/api/index.ts`, `live.ts`, `mode.tsx`); layout passes the mode down; `local`-tier dev token `dev-pm` (C~2). FE typecheck and data-layer lint pass; `tsc -b` clean; 15 API tests pass. Not run in a browser or against a database | W7-UI | this commit |
 | 2026-11-08 | Branch `w7-link-ui` created in worktree `../CS3227-2610-MP4-w7-link-ui` from `w7-implement-pm-plan-flow`; branch state written | W7-UI | this commit |
 
+## Architecture — planning and backlog (proposed Now)
+
+Project members can read checkpoints, epics, tasks, members and sprints. Project-member PMs and Dev Leads can update checkpoints and epics through versioned, transactionally authorized endpoints, and update tasks through the existing task endpoint. The live backlog groups epics by checkpoint, supports editing and moving tasks between epics, and uses project-scoped data and versions. Task status authorization remains separate. The frontend uses the local dev-PM token until real sign-in is wired.
+
 ## 4. Decisions
+
+### C~12 — Approve live backlog editing
+
+- **Date:** 2026-11-11.
+- **Who asked:** the operator approved the reviewed live backlog editing spec for implementation.
+- **Decision:** implement the approved spec directly, continuing the operator preference to skip separate plans; retain security review and tests.
+- **Why:** the operator approved implementation and previously directed direct implementation from the spec.
 
 ### C~11 — Choose an epic when dropping a task on a checkpoint
 

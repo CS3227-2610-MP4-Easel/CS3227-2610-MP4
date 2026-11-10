@@ -5,7 +5,7 @@
 import { StoryPointsSchema } from '@agile/contracts';
 import { read, write } from './store';
 import { call, LiveError, openProjectId } from './live';
-import type { Checkpoint, CheckpointDraft, Epic, EpicPatch, LiveCheckpoint, LiveEpic, LiveProject, LiveTask, Member, Page, PlanApproved, PlanEpic, PlanProposal, Sprint, Standup, Task, TaskStatus } from './types';
+import type { Checkpoint, CheckpointDraft, Epic, EpicPatch, LiveCheckpoint, LiveEpic, LiveMember, LiveSprint, LiveProject, LiveTask, Member, Page, PlanApproved, PlanEpic, PlanProposal, Sprint, Standup, Task, TaskStatus } from './types';
 
 export { useDb, reset as resetPrototypeData } from './store';
 export { isLive, ModeProvider } from './mode';
@@ -73,17 +73,22 @@ export const approvePlan_40 = (id: string, version: number) => live<PlanApproved
 export const rejectPlan_41 = (id: string, version: number) => live<PlanProposal>('POST', `/pm/proposals/${id}/reject`, { version });
 
 // 12, 16, 20: what approve created, read back for the live backlog
-export const listLiveCheckpoints_12 = () => live<LiveCheckpoint[]>('GET', `/projects/${pid()}/checkpoints`);
-async function all<T>(path: string): Promise<T[]> {
+export const listLiveCheckpoints_12 = (projectId = pid()) => live<LiveCheckpoint[]>('GET', `/projects/${projectId}/checkpoints`);
+export const listLiveMembers_9 = (projectId: string) => live<LiveMember[]>('GET', `/projects/${projectId}/members`);
+export const listLiveSprints_27 = (projectId: string) => live<LiveSprint[]>('GET', `/projects/${projectId}/sprints`);
+export const updateLiveCheckpoint_14 = (id: string, patch: { name?: string; targetDate?: string; version: number }) => live<LiveCheckpoint>('PATCH', `/checkpoints/${id}`, patch);
+export const updateLiveEpic_18 = (id: string, patch: { title?: string; description?: string | null; checkpointId?: string | null; version: number }) => live<LiveEpic>('PATCH', `/epics/${id}`, patch);
+export const updateLiveTask_23 = (id: string, patch: { title?: string; description?: string | null; acceptanceCriteria?: string[]; storyPoints?: number | null; epicId?: string; assigneeId?: string | null; sprintId?: string | null; version: number }) => live<LiveTask>('PATCH', `/tasks/${id}`, patch);
+async function all<T extends { id: string }>(path: string): Promise<T[]> {
   const items: T[] = [];
   for (let page = 0; ; page++) {
     const res = await live<Page<T>>('GET', `${path}?size=100&page=${page}`);
     items.push(...res.items);
-    if (res.items.length === 0 || items.length >= res.total) return items;
+    if (res.items.length === 0 || items.length >= res.total) return [...new Map(items.map((item) => [item.id, item])).values()];
   }
 }
-export const listLiveEpics_16 = () => all<LiveEpic>(`/projects/${pid()}/epics`);
-export const listLiveTasks_20 = () => all<LiveTask>(`/projects/${pid()}/tasks`);
+export const listLiveEpics_16 = (projectId = pid()) => all<LiveEpic>(`/projects/${projectId}/epics`);
+export const listLiveTasks_20 = (projectId = pid()) => all<LiveTask>(`/projects/${projectId}/tasks`);
 
 // 8: archive the project
 export async function archiveProject_8(): Promise<void> {
