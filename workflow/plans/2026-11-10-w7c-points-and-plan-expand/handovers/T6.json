@@ -1,0 +1,15 @@
+{
+  "task": "T6",
+  "status": "blocked",
+  "summary": "E12 no-change requirement conflicts with T5 locking behavior.",
+  "commit": "pending",
+  "produces": [],
+  "next": "Resolve the E12 conflict before continuing; partial T6 edits and a failing integration test remain uncommitted.",
+  "deviations": [
+    { "what": "E12 requires the all-DONE path to change nothing, but claimPlanEpics calls guardEdit and lockProposal updates aiProposal.updatedAt even when no target exists.", "why": "The required proposal lock is implemented as an update to updatedAt.", "needs": "operator" },
+    { "what": "The spec lists RATE_LIMITED for endpoint 61, but the expand path cannot raise it.", "why": "The gateway result codes exclude RATE_LIMITED; only session opening and regeneration can raise it.", "needs": "orchestrator" }
+  ],
+  "edge_cases": ["E10", "E12", "N1"],
+  "checks": { "build": "not run", "tests": "Initial E10/E12/N1 failed as expected before implementation; after partial implementation E12 fails because updatedAt changes; integration ran, 0 skipped.", "lint": "not run" },
+  "blocked_reason": "E12 demands no change, but the required existing claim lock changes the proposal updatedAt; resolving this needs a task or behavior decision."
+}

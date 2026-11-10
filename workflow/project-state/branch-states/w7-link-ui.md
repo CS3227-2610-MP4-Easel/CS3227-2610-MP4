@@ -26,7 +26,7 @@ describes `INT`; read it for context and write here instead of editing it.
 |---|---|---|---|---|---|---|---|
 | s1 | 2026-11-08 | Claude Sonnet 5.5 | W7 UI | Paused | Survey done; waiting on the operator's answer on auth and live-versus-fixture mode (Remaining) | Add data-layer functions 34-41 in `src/fe/lib/api/index.ts`, then wire `PlanIdea` to 34 | 2026-11-08 |
 
-| s2 | 2026-11-10 | Codex | W7c | Active | Orchestrating W7c wave 4: T6 | Dispatch T6 with T4 and T5 handovers | 2026-11-10 |
+| s2 | 2026-11-10 | Codex | W7c | Blocked | T5/T6 E12 task conflict; partial T6 edits uncommitted | Resolve D~1, then resume T5/T6 and their reviews | 2026-11-10 |
 
 **Remaining**
 
@@ -48,7 +48,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 5/9 tasks done; wave 4 T6 next | — |
+| W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 4/9 accepted; T5 and T6 blocked on D~1 | — |
 | W7-UI | PM plan screens linked to the backend | Building | none yet (size to be set; Medium if it only wires existing screens to existing endpoints) | none yet | Survey done; blocked on the two questions above | — |
 
 ## 3. Changes
@@ -123,3 +123,17 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Rule:** Test the returned data and persisted state for context and no-op paths, not just the result kind.
 - **Scope:** project
 - **Found by:** Tester reviewer
+
+## Deviations
+
+### D~1 — All-DONE bulk claim updates proposal timestamp
+
+- **What:** T6's all-DONE no-change integration test sees proposal.updatedAt advance because T5 claimPlanEpics locks the proposal via a write before detecting no targets.
+- **Consequence:** T6 is blocked; its partial edits and failing test are uncommitted. Determine whether the approved task contracts can be reconciled without a behavior change; otherwise a spec amendment is required.
+- **Action:** Stopped T6 without weakening the test. T5 reviewer confirmed the task requires both the existing write-based lock and no writes, which conflict in this environment. T5 is blocked as a wrong task file; T6 is blocked on its dependency. Plan lint now reports two existing T5 Create paths because T5 is Blocked; it passed before the status change. Partial T6 edits are in src/be/pm/src/plan-flow.ts, runtime.ts, test/fakes.ts and test/plan-flow.test.ts; handover T6.json records the failure.
+
+### D~2 — Endpoint 61 lists an unreachable error
+
+- **What:** The approved spec lists RATE_LIMITED for endpoint 61, but no expand path can raise it; gateway result codes exclude it.
+- **Consequence:** This listed error cannot be exercised as specified.
+- **Action:** Recorded as requested; no artificial error path added. Resolve through spec change control if behavior or contract is amended.
