@@ -47,7 +47,7 @@ only your own task's files. Contract tests marked read-only are not edited.
 | T3 Gateway: per-feature limits for PM_PLAN_EXPAND | `tasks/T3.md` | - | T1 | 1 | complex | full | Done |
 | T2 Points: core, api routes, pm schemas, proposals types | `tasks/T2.md` | T1 | - | 2 | standard | light | Done |
 | T4 PM: prompts, bulk and single layouts, schemas, mock | `tasks/T4.md` | T2, T3 | T5 | 3 | complex | full | Done |
-| T5 Proposals: others context, bulk claim, store and fail | `tasks/T5.md` | T2 | T4 | 3 | complex | full | Blocked |
+| T5 Proposals: others context, bulk claim, store and fail | `tasks/T5.md` | T2 | T4 | 3 | complex | full | Done |
 | T6 PM: expandAll, rest-of-plan context, runtime binding | `tasks/T6.md` | T4, T5 | - | 4 | complex | full | Done |
 | T7 API: route 61, resolver, maxDuration, route and e2e tests | `tasks/T7.md` | T1, T6 | T8 | 5 | complex | full | Done |
 | T8 Front end: bulk expand wiring and points number inputs | `tasks/T8.md` | T1 | T7 | 5 | standard | light | Done |

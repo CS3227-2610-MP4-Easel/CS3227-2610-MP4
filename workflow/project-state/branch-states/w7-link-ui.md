@@ -26,7 +26,7 @@ describes `INT`; read it for context and write here instead of editing it.
 |---|---|---|---|---|---|---|---|
 | s1 | 2026-11-08 | Claude Sonnet 5.5 | W7 UI | Paused | Survey done; waiting on the operator's answer on auth and live-versus-fixture mode (Remaining) | Add data-layer functions 34-41 in `src/fe/lib/api/index.ts`, then wire `PlanIdea` to 34 | 2026-11-08 |
 
-| s2 | 2026-11-10 | Codex | W7c | Blocked — needs human | T5 task conflict D~6; UI review fix committed | Correct T5 task and fix stale-row locking, then complete E36 and close-out | 2026-11-11 |
+| s2 | 2026-11-10 | Codex | W7c | Blocked — browser | Automated close-out passes; browser input times out | Restore browser control; run T8 E36 and live 10-epic measurement, then finish close-out | 2026-11-11 |
 
 **Remaining**
 
@@ -48,7 +48,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | T5 blocked D~6; E36 and live measurement pending | — |
+| W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 9/9 tasks done; live E36 and measurement blocked on browser | — |
 | W12-paths | Process-security external path classification | Building | [approved spec](../../specs/2026-11-11-process-security-paths-design.md) | Skipped by operator | Implemented and reviewed; full suite 780 passed, 0 skipped | — |
 | W7-UI | PM plan screens linked to the backend | Building | none yet (size to be set; Medium if it only wires existing screens to existing endpoints) | none yet | Survey done; blocked on the two questions above | — |
 
@@ -56,6 +56,9 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-11 | Close-out npm test: 781 passed, 0 failed, 0 skipped; typecheck, lint, contract, Prisma validation and plan close-out lint pass. Browser opened project list but repeated clicks and navigation timed out; E36 steps and live 10-epic measurement not run. | W7c | this commit |
+| 2026-11-11 | T5 D~6 fixed (2eaa418): skip stale claims under proposal lock, lock and recheck matching rows. Proposal suite 77 passed, targeted 10 passed, no skips; Implementer, Tester and Attacker review clean after E12 assertion fix. | W7c | 2eaa418 |
+| 2026-11-11 | Operator approved T5 stale-claim check, lock and recheck correction (C~8); task amended, regression fix started. | W7c | this commit |
 | 2026-11-11 | Close-out review: fixed stale UI after bulk failure (bb7b5ed), independently reviewed; found T5 skipped-row timestamp conflict D~6. E36 and live measurement pending; browser automation timed out. | W7c | bb7b5ed |
 | 2026-11-11 | T9 complete (62d1145); old-scale scan passed and Implementer review corrected formula wording; wave build checks pass. | W7c | 62d1145 |
 | 2026-11-11 | T7 complete (13ea6a2); full suite 780 passed, 0 failed, 0 skipped; full review resolved E28/E29 coverage gaps; wave build checks pass. | W7c | 13ea6a2 |
@@ -80,6 +83,14 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Branch `w7-link-ui` created in worktree `../CS3227-2610-MP4-w7-link-ui` from `w7-implement-pm-plan-flow`; branch state written | W7-UI | this commit |
 
 ## 4. Decisions
+
+### C~8 — Skip stale epic claims before taking an epic lock
+
+- **Date:** 2026-11-11.
+- **Who asked:** the operator approved the proposed approach after discussing timestamp and locking behavior.
+- **Decision:** under the proposal lock, read and skip stale epic claims without an epic lock; lock and recheck matching claims before writing. Preserve every field of skipped rows.
+- **Why:** the existing epic lock updates updatedAt; checking first preserves stale rows while retaining a lock and final guarded check for writes.
+
 
 ### C~7 — Implement security fix directly from its spec
 
@@ -220,3 +231,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **What:** Close-out review found lockEpic updates epic.updatedAt before stale claim checking; when a transaction commits, skipped epic rows are not left exactly unchanged as required. This affects bulk store and fail paths.
 - **Consequence:** T5 is blocked: its explicit steps say to lock every result before checking, contradicting the no-change contract under the existing write-based lock. The E12 exception C~5 applies only to proposal updatedAt, not epic timestamps.
 - **Action:** Stopped T5 per operator instruction for wrong task files. The implementer identified a candidate ordering (read under proposal lock, skip stale rows, lock and recheck matching rows), but it requires a task correction; no change applied. UI failure refresh fix committed as bb7b5ed and independently reviewed; FE checks and two behavioral self-checks pass. Browser inspection attempts timed out; E36 and live measurement remain unrun.
+
+### D~7 — Browser control prevented live close-out
+
+- **What:** Chrome displayed the local project list at localhost:3101 but repeated input dispatch and navigation calls timed out; in-app browser tab creation also timed out.
+- **Consequence:** T8 E36 manual network/input checklist and 10-epic live expansion time/token measurement were not performed. Existing app tier/mode and live key have not been verified. W7c remains Building rather than In review.
+- **Action:** Restore usable browser control; verify APP_TIER=local and LLM_MODE=live without reading secrets; execute each E36 step and record live measurement. Then finish plan close-out and ask operator for gate 3 review.
