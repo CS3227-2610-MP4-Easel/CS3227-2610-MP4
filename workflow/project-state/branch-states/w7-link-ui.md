@@ -26,7 +26,7 @@ describes `INT`; read it for context and write here instead of editing it.
 |---|---|---|---|---|---|---|---|
 | s1 | 2026-11-08 | Claude Sonnet 5.5 | W7 UI | Paused | Survey done; waiting on the operator's answer on auth and live-versus-fixture mode (Remaining) | Add data-layer functions 34-41 in `src/fe/lib/api/index.ts`, then wire `PlanIdea` to 34 | 2026-11-08 |
 
-| s2 | 2026-11-10 | Codex | W7c | Active | Resuming T7 after operator clarified D~3 and D~4 | Complete T7 integration tests and full reviews | 2026-11-11 |
+| s2 | 2026-11-10 | Codex | W7c | Blocked | T7 full-suite failures D~5; partial T7 work uncommitted | Resolve persistent failures, rerun full suite, review T7 | 2026-11-11 |
 
 **Remaining**
 
@@ -48,7 +48,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 7/9 done; T7 in progress after D~3 and D~4 clarifications | — |
+| W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 7/9 done; T7 blocked on full-suite failures D~5 | — |
 | W7-UI | PM plan screens linked to the backend | Building | none yet (size to be set; Medium if it only wires existing screens to existing endpoints) | none yet | Survey done; blocked on the two questions above | — |
 
 ## 3. Changes
@@ -185,3 +185,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Rule:** Compare each changed UI state against its exact specified copy before review.
 - **Scope:** project
 - **Found by:** Implementer reviewer
+
+### D~5 — Full test suite failed during T7
+
+- **What:** discover-tests: 770 passed, 8 failed, 0 skipped. Failures cover migration checksum, two gateway timing tests, gateway integration and four process-security tests; targeted T7 integration 5 passed, 0 failed, 0 skipped.
+- **Consequence:** T7 not accepted or committed; full log is .ws/t7-tests.log and partial files remain.
+- **Action:** Focused reruns: gateway suites 46 passed, 0 failed, 0 skipped (full-run cause unproven). Migration checksum reproduces because tracked LF migration is checked out CRLF. Four process-security failures reproduce: scripts/agent-pre-tool-hook.mjs isExternalPath overlooks absolute paths when path and parent do not exist; this merits security review. No tests weakened. T7 handover and .ws/t7-tests.log preserve details.

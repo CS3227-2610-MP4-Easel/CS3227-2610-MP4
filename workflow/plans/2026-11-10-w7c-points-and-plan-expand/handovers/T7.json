@@ -1,34 +1,12 @@
 {
-  "task": "T7",
-  "status": "blocked",
-  "summary": "T7 has contradictory E28 and E34 expectations.",
-  "commit": "pending",
-  "produces": [],
-  "next": "Correct T7 E28 and E34, then resume with the uncommitted route implementation and tests; write end-to-end tests.",
-  "deviations": [
-    {
-      "what": "E34 requires no provider call in mock mode, but the gateway calls its mock provider's complete method.",
-      "why": "The real gateway invokes the configured provider for both modes; mock mode uses a mock provider.",
-      "needs": "orchestrator"
-    },
-    {
-      "what": "E28 says a member non-creator is rejected without calling flow, while the task mandates creator checks in the proposal store.",
-      "why": "The store is reached through the flow; policy only checks membership.",
-      "needs": "orchestrator"
-    }
-  ],
-  "edge_cases": [
-    "E10",
-    "E15",
-    "E28",
-    "E29",
-    "E35"
-  ],
-  "checks": {
-    "build": "not run",
-    "tests": "Route, composition, and duration tests: 6 passed, 0 failed, 0 skipped; integration and full suite not run.",
-    "lint": "not run"
-  },
-  "blocked_reason": "The task requires outcomes inconsistent with the specified implementation and current gateway.",
-  "note": "Exact E34: \"61 makes no provider call and every epic ends DONE\". Exact E28: \"each gets the status and error body endpoint 37 returns for that caller ...; the flow is not called\". Modified: src/be/api/src/routes/pm.ts, routes/register.ts, core-composition.ts, test/pm-routes.test.ts, test/pm-composition.test.ts, src/fe/app/api/[[...route]]/route.ts. Created: src/be/api/test/pm-expand-all-routes.test.ts, route-max-duration.test.ts. The end-to-end test file does not yet exist."
+  "task":"T7",
+  "status":"blocked",
+  "summary":"Route 61 implementation and targeted integration tests pass; full discover suite has eight failures.",
+  "commit":"pending",
+  "produces":[{"kind":"route","name":"POST /api/pm/proposals/{proposalId}/expand","where":"src/be/api/src/routes/pm.ts","note":"Uncommitted; strict version body, 1024-byte pre-auth limit."},{"kind":"symbol","name":"maxDuration","where":"src/fe/app/api/[[...route]]/route.ts","note":"Uncommitted; 60 seconds."}],
+  "next":"Investigate or record the full-suite failures, then review and commit T7. Partial T7 changes remain uncommitted; see .ws/t7-tests.log.",
+  "deviations":[{"what":"Full discover-tests run had eight failures: migration checksum, two gateway timing tests, one gateway integration test and four process-security tests.","why":"Cause has not been established.","needs":"orchestrator"}],
+  "edge_cases":["E10","E15","E26","E28","E29","E34","E35"],
+  "checks":{"build":"typecheck, lint and contract passed","tests":"Targeted route/composition/duration 6 passed, 0 failed, 0 skipped; targeted E2E 5 passed, 0 failed, 0 skipped; full discover 770 passed, 8 failed, 0 skipped.","lint":"handover lint pending"},
+  "blocked_reason":"Full test suite failed; failures were not anticipated by the task."
 }
