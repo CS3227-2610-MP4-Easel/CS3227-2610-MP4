@@ -26,7 +26,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
 | S1 | 2026-11-09 00:00 | Codex | W13 | In review | PR #26 is open into `development`; immutable tier map and Firebase tier configuration are recorded | Owner reviews/merges PR #26, then redeploys `development` and verifies health/auth/tier checks | 2026-11-09 03:35 |
-| S2 | 2026-11-12 | Codex | W13 | Active | AD-32-preserving safety-fix spec is being tightened around the confirmed direct recovery host and protected CI | Finish Gate 1 spec review, request operator approval, then write the implementation plan | 2026-11-12 |
+| S2 | 2026-11-12 | Codex | W13 | Active | Gate 1 safety-repair spec and Gate 2 four-task plan approved; execution is starting | Execute T1 exact recovery target, then T2 checker, T3 workflow, and T4 runbook | 2026-11-12 |
 
 **Remaining**
 
@@ -39,7 +39,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | Spec'd | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md); [safety repairs](../../specs/2026-11-12-w13-safety-repairs-design.md) (Gate 1 pending) | [follow-up plan](../../plans/2026-11-06-w13-deployment.md) | Safety-repair spec drafted and reviewed; awaiting Gate 1 approval before plan | — |
+| W13 | Environments, seed data and deployment | Planned | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md); [safety repairs](../../specs/2026-11-12-w13-safety-repairs-design.md) (approved 2026-11-12) | [safety repairs plan](../../plans/2026-11-12-w13-safety-repairs/plan.md) (approved 2026-11-12) | T1 starting: exact recovery target binding | — |
 
 ---
 
@@ -88,6 +88,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | T6 close-out passed: 488 tests (462 passed, 26 skipped), typecheck, lint, contract, Prisma validation, workflow validation, agent-policy, secret scan, and diff check; branch is ready for owner review. | W13 | this commit |
 | 2026-11-08 | Final review found a sequencing race: Vercel's automatic `main` deployment can start before the protected migration workflow completes; T6 is blocked until tokenless sequencing is chosen. | W13 | this commit |
 | 2026-11-12 | Drafted and linted the high-risk safety-repair spec covering exact recovery targeting, AD-32-preserving production CI, workflow-contract validation, and runbook sequencing; Implementer, Tester/QA, Attacker, and Maintainer reviews completed. | W13 | pending Gate 1 approval |
+| 2026-11-12 | Operator approved Gate 1 and Gate 2; four-task safety-repair plan is ready for execution. | W13 | 23321e2 + plan commit |
 
 ### Handover — post-merge production execution
 
