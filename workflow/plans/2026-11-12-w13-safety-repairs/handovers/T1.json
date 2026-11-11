@@ -2,7 +2,7 @@
   "task": "T1",
   "status": "done",
   "summary": "Bound W13 recovery validation to the exact direct Neon tuple and added regression coverage for invalid targets and pre-construction seed rejection.",
-  "commit": "c824202",
+  "commit": "f7843a4",
   "produces": [
     {
       "kind": "symbol",
