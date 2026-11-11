@@ -32,7 +32,7 @@ async function invoke<T>(work: () => Promise<T>): Promise<T> {
 /** Endpoints 42, 44 and 45. Authorization and role checks remain exclusively in the policy gate. */
 export function createLeadRoutes(services: LeadRouteServices): RouteDefinition[] {
   return [
-    { ...route("endpoint-42"), paramsSchema: Id, responseSchema: FactsSchema, handler: async ({ input }) => Response.json(await invoke(() => services.runtime().facts((input.params as { id: string }).id))) },
+    { ...route("endpoint-42"), paramsSchema: Id, responseSchema: FactsSchema, handler: async ({ principal, input }) => Response.json(await invoke(() => services.runtime().facts((input.params as { id: string }).id, (principal as { userId: string }).userId))) },
     { ...route("endpoint-44"), paramsSchema: Id, bodySchema: EmptyBody, responseSchema: DigestSchema, handler: async ({ principal, input, requestId }) => {
       try {
         const digest = await services.runtime().createDigest(principal as { userId: string; role: "DEV_LEAD" }, (input.params as { id: string }).id);

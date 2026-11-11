@@ -6,7 +6,7 @@ const P = "00000000-0000-4000-8000-000000000001"; const U = "00000000-0000-4000-
 const facts = { asOf: "2026-11-09T00:00:00.000Z", pointsTotal: 0, pointsDone: 0, pointsRemaining: 0, unestimatedTasks: 0, velocity: [], avgVelocity: null, projectedCompletionDate: null, checkpoints: [], overload: [] };
 test("digest cache is checked before session or gateway and persistence is the only transaction", async () => {
   const order: string[] = []; let tx = 0;
-  const db = { projectDigest: { findFirst: async () => { order.push("cache"); return { id: "d", projectId: P, facts, factsHash: "x", degraded: false, proposalId: null }; } }, $transaction: async () => { tx++; return undefined; } };
+  const db = { projectDigest: { findFirst: async () => { order.push("cache"); return { id: "d", projectId: P, facts, factsHash: hashFacts(facts), degraded: false, proposalId: null }; } }, $transaction: async () => { tx++; return undefined; } };
   const flow = createLeadFlow({ db, facts: { target: async () => { order.push("facts"); return facts; }, caller: async () => facts }, binding: { gateway: { run: async () => { order.push("gateway"); throw new Error("called"); } }, sessions: { open: async () => { order.push("session"); return "s"; }, close: async () => {} } } });
   const result = await flow.createDigest({ userId: U, role: "DEV_LEAD" }, P);
   assert.equal(result.cached, true); assert.deepEqual(order, ["facts", "cache"]); assert.equal(tx, 0);
@@ -18,13 +18,44 @@ test("degraded same-hash rows retry while healthy same-hash rows hit cache", asy
   const flow = createLeadFlow({ db, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => { calls++; return { ok: false, code: "AI_DISABLED", flagged: false } as any; } }, sessions: { open: async () => { sessions++; return "s"; }, close: async () => {} } }, context: { assembleWith: async () => ({ sections: [], provenance: [] }) } as any });
   const degraded = await flow.createDigest({ userId: U, role: "DEV_LEAD" }, P);
   assert.equal(degraded.degraded, true); assert.equal(sessions, 1); assert.equal(calls, 1); assert.equal(writes, 1);
-  const healthyDb = { projectDigest: { findFirst: async () => ({ id: "h", projectId: P, facts, factsHash: "same", degraded: false, proposalId: null }) }, $transaction: async () => { throw new Error("cache miss"); } };
+  const healthyDb = { projectDigest: { findFirst: async () => ({ id: "h", projectId: P, facts, factsHash: hashFacts(facts), degraded: false, proposalId: null }) }, $transaction: async () => { throw new Error("cache miss"); } };
   const healthy = createLeadFlow({ db: healthyDb, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => { throw new Error("gateway"); } }, sessions: { open: async () => { throw new Error("session"); }, close: async () => {} } } });
   assert.equal((await healthy.createDigest({ userId: U, role: "DEV_LEAD" }, P)).cached, true);
 });
 
+test("createDigest only caches the latest project digest", async () => {
+  let gatewayCalls = 0;
+  let writes = 0;
+  const oldHealthy = { id: "old", projectId: P, facts, factsHash: hashFacts(facts), degraded: false, proposalId: null };
+  const latestChanged = { id: "latest", projectId: P, facts, factsHash: "different", degraded: false, proposalId: null };
+  const db = {
+    projectDigest: { findFirst: async () => latestChanged },
+    $transaction: async (fn: (tx: any) => Promise<unknown>) => { writes++; return fn({ projectDigest: { create: async () => ({ id: "new", createdAt: new Date() }) } }); },
+  };
+  const flow = createLeadFlow({ db, facts: { target: async () => facts, caller: async () => facts }, binding: {
+    gateway: { run: async () => { gatewayCalls++; return { ok: false, code: "AI_DISABLED", flagged: false } as any; } },
+    sessions: { open: async () => "s", close: async () => {} },
+  }, context: { assembleWith: async () => ({ sections: [], provenance: [] }) } as any });
+  const result = await flow.createDigest({ userId: U, role: "DEV_LEAD" }, P);
+  assert.equal(result.degraded, true);
+  assert.equal(gatewayCalls, 1);
+  assert.equal(writes, 1);
+  assert.notEqual(oldHealthy.id, result.id);
+});
+
+test("createDigest passes its captured facts snapshot to context assembly", async () => {
+  let captured: unknown;
+  const db = { projectDigest: { findFirst: async () => null }, $transaction: async () => ({ digest: { id: "d", createdAt: new Date() }, proposalId: null }) };
+  const flow = createLeadFlow({ db, facts: { target: async () => facts, caller: async () => facts }, binding: {
+    gateway: { run: async () => ({ ok: false, code: "AI_DISABLED", flagged: false } as any) },
+    sessions: { open: async () => "s", close: async () => {} },
+  }, context: { assembleWith: async (...args: any[]) => { captured = args[4]; return { sections: [], provenance: [] }; } } as any });
+  await flow.createDigest({ userId: U, role: "DEV_LEAD" }, P);
+  assert.deepEqual(captured, { facts });
+});
+
 test("cached and latest digests expose only public DigestSchema fields", async () => {
-  const persisted = { id: "d", projectId: P, facts, factsHash: "private-hash", sessionId: "private-session", explanation: null, degraded: false, flagged: false, proposalId: null, createdAt: new Date("2026-11-09T00:00:00.000Z") };
+  const persisted = { id: "d", projectId: P, facts, factsHash: hashFacts(facts), sessionId: "private-session", explanation: null, degraded: false, flagged: false, proposalId: null, createdAt: new Date("2026-11-09T00:00:00.000Z") };
   const cachedFlow = createLeadFlow({ db: { projectDigest: { findFirst: async () => persisted } }, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => { throw new Error("unused"); } }, sessions: { open: async () => "unused", close: async () => {} } } });
   const cached = await cachedFlow.createDigest({ userId: U, role: "DEV_LEAD" }, P);
   const latestFlow = createLeadFlow({ db: { projectMember: { findFirst: async () => ({ userId: U }) }, projectDigest: { findFirst: async () => persisted } }, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => { throw new Error("unused"); } }, sessions: { open: async () => "unused", close: async () => {} } }, requireMember: async () => {} });

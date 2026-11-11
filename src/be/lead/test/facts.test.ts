@@ -153,6 +153,16 @@ test("short, absent, and zero sprint history leaves projections null and risks U
   assert.equal(zero.checkpoints[0].risk, "UNKNOWN");
 });
 
+test("a completed checkpoint is ON_TRACK without sprint history", async () => {
+  const service = createFacts(db({
+    checkpoint: { findMany: async () => [{ id: id(25), projectId: target, name: "Complete", targetDate: day("2026-11-10"), epics: [{ projectId: target, tasks: [{ projectId: target, storyPoints: 3, status: "DONE" }] }] }] },
+  }), { now: () => new Date("2026-11-09T10:00:00.000Z") });
+  const result = await service.target(target);
+  assert.equal(result.avgVelocity, null);
+  assert.equal(result.checkpoints[0].remainingPoints, 0);
+  assert.equal(result.checkpoints[0].risk, "ON_TRACK");
+});
+
 test("E6 and E25 separate caller-member overloads from target-only digest overloads", async () => {
   const memberships = [
     { projectId: target, project: { id: target, name: "Target", status: "ACTIVE" }, userId: id(30), user: { id: id(30), displayName: "Alex" }, assignedTasks: [{ projectId: target, assigneeId: id(30), storyPoints: 3, status: "TODO" }] },

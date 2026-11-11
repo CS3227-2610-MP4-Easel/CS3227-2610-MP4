@@ -11,6 +11,21 @@ test("lead sources render bounded facts in vocabulary order and bound changes", 
   const changes = await sources.changes({ projectId: P, caller: { userId: U, role: "DEV_LEAD" }, options: {} });
   assert.match(changes[0].text, /STATUS_CHANGED task  -> DONE /);
 });
+
+test("lead facts format recurring numeric values to six decimal places", async () => {
+  const recurring = { ...facts, pointsTotal: 3, pointsDone: 1 };
+  const sources = createLeadSources({}, async () => recurring);
+  const rows = await sources.facts({ projectId: P, caller: { userId: U, role: "DEV_LEAD" }, options: {} });
+  assert.equal(rows.find((row) => row.text.startsWith("progress_percent="))?.text, "progress_percent=33.333333");
+});
+
+test("lead facts uses a captured snapshot instead of recalculating it", async () => {
+  const captured = { ...facts, pointsTotal: 3, pointsDone: 1 };
+  const sources = createLeadSources({}, async () => { throw new Error("facts changed"); });
+  const rows = await sources.facts({ projectId: P, caller: { userId: U, role: "DEV_LEAD" }, options: {}, captured: { facts: captured } } as any);
+  assert.equal(rows.find((row) => row.text.startsWith("points_total="))?.text, "points_total=3");
+  assert.equal(rows.find((row) => row.text.startsWith("progress_percent="))?.text, "progress_percent=33.333333");
+});
 test("prior explanations over 4000 characters are omitted", async () => {
   const sources = createLeadSources({ projectDigest: { findMany: async () => [{ id: "d", explanation: "x".repeat(4001) }] } }, async () => facts);
   assert.deepEqual(await sources.previousDigest({ projectId: P, caller: { userId: U, role: "DEV_LEAD" }, options: {} }), []);

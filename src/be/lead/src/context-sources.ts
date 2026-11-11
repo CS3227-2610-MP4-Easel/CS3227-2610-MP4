@@ -6,6 +6,11 @@ export type LeadSourceDb = { taskEvent?: FindMany<any>; projectDigest?: FindMany
 const CONTROL = /[\u0000-\u001f\u007f]/g;
 const clean = (value: unknown, limit: number) => typeof value === "string" && value.length <= limit ? value.replace(CONTROL, " ") : "";
 const row = (projectId: string, type: "FACTS" | "TASK_EVENT" | "DIGEST", id: string, text: string) => ({ projectId, ref: { type, id }, text });
+const numberText = (value: number) => {
+  const text = value.toFixed(6).replace(/\.?0+$/, "");
+  return text === "-0" ? "0" : text;
+};
+const factText = (value: unknown) => value == null ? "null" : typeof value === "number" ? numberText(value) : String(value);
 
 function factRows(projectId: string, facts: Facts) {
   const scalar: string[] = [];
@@ -16,18 +21,21 @@ function factRows(projectId: string, facts: Facts) {
     active_sprint: null, blocked_tasks: null, projected_completion_date: facts.projectedCompletionDate,
   };
   for (const key of ["points_total", "points_done", "progress_percent", "unestimated_tasks", "avg_velocity", "points_remaining", "sprints_needed", "active_sprint", "blocked_tasks", "projected_completion_date"]) {
-    const value = values[key]; scalar.push(`${key}=${value == null ? "null" : typeof value === "number" ? String(value) : value}`);
+    scalar.push(`${key}=${factText(values[key])}`);
   }
   const checkpoints = facts.checkpoints.flatMap((checkpoint) => [
-    `checkpoint=${checkpoint.id}`, `checkpoint_remaining_points=${checkpoint.remainingPoints}`, `checkpoint_projected_date=${checkpoint.projectedDate ?? "null"}`,
+    `checkpoint=${checkpoint.id}`, `checkpoint_remaining_points=${factText(checkpoint.remainingPoints)}`, `checkpoint_projected_date=${checkpoint.projectedDate ?? "null"}`,
     `checkpoint_target_date=${checkpoint.targetDate}`, `checkpoint_risk=${checkpoint.risk}`,
   ]);
-  const overload = facts.overload.flatMap((user) => [`overloaded_user=${user.userId}`, `overloaded_user_open_points=${user.openPoints}`, `overloaded_user_avg_points=${user.avgCompletedPerSprint ?? "null"}`]);
+  const overload = facts.overload.flatMap((user) => [`overloaded_user=${user.userId}`, `overloaded_user_open_points=${factText(user.openPoints)}`, `overloaded_user_avg_points=${factText(user.avgCompletedPerSprint)}`]);
   return [...scalar, ...checkpoints, ...overload].filter((text) => [...text].length <= 52).slice(0, 200).map((text, i) => row(projectId, "FACTS", `facts-${String(i).padStart(3, "0")}`, text));
 }
 
 export function createLeadSources(db: LeadSourceDb, getFacts: (projectId: string) => Promise<Facts>): Record<"facts" | "changes" | "previousDigest", ContextSource> {
-  const facts: ContextSource = async ({ projectId }) => factRows(projectId, await getFacts(projectId));
+  const facts: ContextSource = async ({ projectId, captured }) => {
+    const snapshot = (captured as { facts?: Facts } | undefined)?.facts;
+    return factRows(projectId, snapshot ?? await getFacts(projectId));
+  };
   const changes: ContextSource = async ({ projectId, options }) => {
     const now = new Date(); const requestedFrom = options.window?.from ?? new Date(now.getTime() - 30 * 86_400_000);
     const from = new Date(Math.max(requestedFrom.getTime(), now.getTime() - 31 * 86_400_000));

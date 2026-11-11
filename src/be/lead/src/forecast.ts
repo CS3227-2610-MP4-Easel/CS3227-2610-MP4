@@ -18,6 +18,7 @@ export function projectCompletion(asOf: string, pointsRemaining: number, avgVelo
 }
 
 export function forecast(asOf: string, targetDate: string, pointsRemaining: number, avgVelocity: number | null, averageSprintDays: number | null): Forecast {
+  if (pointsRemaining === 0) return { projectedDate: asOf, risk: "ON_TRACK" };
   const projectedDate = projectCompletion(asOf, pointsRemaining, avgVelocity, averageSprintDays);
   return { projectedDate, risk: projectedDate == null ? "UNKNOWN" : projectedDate > targetDate ? "AT_RISK" : "ON_TRACK" };
 }

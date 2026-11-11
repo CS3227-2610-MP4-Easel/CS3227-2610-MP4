@@ -54,7 +54,8 @@ export function createLeadFlow(deps: FlowDeps) {
   async function factsFor(callerId: string | undefined, projectId: string) { return callerId ? deps.facts.caller(callerId, projectId) : deps.facts.target(projectId); }
   async function createDigest(caller: { userId: string; role: "DEV_LEAD" }, projectId: string) {
     const facts = await deps.facts.target(projectId); const factsHash = hashFacts(facts);
-    const cached = await deps.db.projectDigest.findFirst({ where: { projectId, factsHash, degraded: false }, orderBy: [{ factsAsOf: "desc" }, { createdAt: "desc" }, { id: "desc" }], take: 1 });
+    const latest = await deps.db.projectDigest.findFirst({ where: { projectId }, orderBy: [{ factsAsOf: "desc" }, { createdAt: "desc" }, { id: "desc" }], take: 1 });
+    const cached = latest && latest.factsHash === factsHash && latest.degraded === false ? latest : null;
     if (cached) return publicDigest(cached, true);
     let sessionId: string | null = null;
     try { sessionId = await deps.binding.sessions.open({ feature: "LEAD_DIGEST", userId: caller.userId, projectId }); } catch (error) {
@@ -65,7 +66,7 @@ export function createLeadFlow(deps: FlowDeps) {
     }
     let output: DigestOutput | null = null; let flagged = false; let persistSessionId: string | null = sessionId;
     try {
-      const assembled = await context.assembleWith(caller, "LEAD_DIGEST", projectId, {});
+      const assembled = await context.assembleWith(caller, "LEAD_DIGEST", projectId, {}, { facts });
       const result = await deps.binding.gateway.run({ feature: "LEAD_DIGEST", caller, sessionId, projectId, sections: [...LEAD_STATIC_SECTIONS, ...assembled.sections], output: { kind: "json", schema: DigestOutputSchema }, inputHash: factsHash });
       flagged = Boolean((result as { flagged?: unknown }).flagged);
       if (!result.ok && !(result as { callId?: unknown }).callId) persistSessionId = null;

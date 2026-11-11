@@ -17,7 +17,7 @@ const auth = (role: "PM" | "DEV_LEAD" | "DEVELOPER" = "DEV_LEAD") => ({
 });
 const routes = (runtime: any) => createLeadRoutes({ runtime: () => runtime });
 
-test("endpoint 42 returns target-only facts without invoking caller-wide facts", async () => {
+test("endpoint 42 passes the authenticated caller to caller-wide facts", async () => {
   let callerFactsCalls = 0;
   const targetFacts = { ...facts, pointsTotal: 8 };
   const runtime = {
@@ -31,8 +31,8 @@ test("endpoint 42 returns target-only facts without invoking caller-wide facts",
   const app = createApiApp(createAppDependencies(auth(), { resolveResource: async () => ({ kind: "PROJECT", projectId, state: "ACTIVE" }), requireMember: async () => {} }), routes(runtime));
   const factsResponse = await app.request(`http://localhost/api/projects/${projectId}/facts`, { headers: { authorization: "Bearer token" } });
   assert.equal(factsResponse.status, 200);
-  assert.deepEqual(await factsResponse.json(), targetFacts);
-  assert.equal(callerFactsCalls, 0);
+  assert.deepEqual(await factsResponse.json(), { ...facts, pointsTotal: 999 });
+  assert.equal(callerFactsCalls, 1);
 });
 
 test("endpoint 44 accepts only JSON {} and maps typed AI_BUSY with Retry-After", async () => {

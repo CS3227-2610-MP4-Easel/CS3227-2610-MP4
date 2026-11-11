@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** project operator
 - **Status:** In review
 - **Approved:** Gate 1 spec, Gate 2 plan, and Gate 3 branch review — project operator, 2026-11-09
-- **Last updated:** 2026-11-10 by Codex — committed and pushed the verified W8 blocker repairs as `9975055`
+- **Last updated:** 2026-11-12 by Codex — re-reviewing the W8 branch for remaining blockers
 
 **Untouched:** Architecture, Conventions, Known Gaps, Decisions, Deviations
 
@@ -37,7 +37,9 @@ sources, and their guarded gateway integration.
 | S9 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | Amended W8 for durable `factsAsOf` ordering and migration | Owner review of the uncommitted change set | 2026-11-09 |
 | S10 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | Implementer, tester, and attacker reviews of schema, migrations, and digest flow | — | 2026-11-09 |
 | S11 | 2026-11-10 | Codex (orchestrator) | W8 | Complete | Final verification and owner handover | Request final Gate 3 review and monitor PR CI | 2026-11-10 |
-| S12 | 2026-11-12 | Codex | W8 | Active | Repairing five PR #28 review findings and diagnosing the failing CI check | Reproduce the failing check, add red regressions, then implement and verify repairs | 2026-11-12 |
+| S12 | 2026-11-12 | Codex | W8 | Complete | Repaired five PR #28 findings and the failing CI frontend check | Owner review of the isolated repair branch | 2026-11-12 |
+| S13 | 2026-11-12 | Codex | W8 | Complete | Re-reviewed the repaired W8 branch and found the E33 async assertion still unfixed | Move the waitFor assertion from E32 to E33 before merge | 2026-11-12 |
+| S14 | 2026-11-12 | Codex | W8 | Complete | Moved the async assertion to E33 and re-reviewed the complete branch | Owner review of the amended W8 branch | 2026-11-12 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human` (name the question).
 
@@ -76,6 +78,7 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-09 | Implementer/tester/attacker lenses found rollout, invalid-backfill, rollback, and bounded-query gaps; spec and T2 were amended with expand/contract phases and explicit regression requirements | W8 | pending task commit |
 | 2026-11-09 | Attacker review found the two migration phases still deploy together before the new writer and the documented production path has no down migration; query bounds, tenant scoping, and session-cap mapping otherwise passed | W8 | pending task commit |
 | 2026-11-09 | Resolved review findings with compatibility-triggered expand/contract migration, forward-only restore recovery, offset-bearing backfill validation, final non-null Prisma shape, migration manifest updates, and a CI-gated PostgreSQL migration regression; full suite passed | W8 | 9975055 |
+| 2026-11-12 | Repaired caller-scoped endpoint-42 facts, bounded trusted numeric formatting, latest-row digest caching, captured-facts assembly, completed-checkpoint risk, and the asynchronous registration CI assertion; added regressions | W8 | this commit |
 
 ## 4. Deviations
 
@@ -88,6 +91,7 @@ One line per change on this branch: what changed and why, with a commit as the r
 | D~4 | No real lead database fixture exists for transaction/concurrency integration tests. | Deterministic transaction fixtures cover control flow, but Prisma rollback/schema/concurrent visibility remain unverified locally. | Carry as a close-out deviation; add a database-backed fixture when the repository integration database is available. |
 | D~5 | W8 changed the shared JSON parser to return 415/422 for lead-route semantics, while existing auth tests expect 400. | Four auth-route assertions fail; the behavior change is a cross-route compatibility issue, not an unrelated failure. | Resolved 2026-11-09: parser defaults to auth's legacy 400 mappings; W8 lead routes explicitly opt into 415/422. |
 | D~6 | Latest-digest correctness requires durable ordering by `facts.asOf`, but JSON facts are not indexable in the current schema and bounded createdAt candidates can be wrong. | Endpoint 45 currently scans all project digests; fixing this correctly requires a `factsAsOf` scalar/index or equivalent latest pointer, outside the original no-migration scope. | Resolved 2026-11-09: operator approved the expand/contract `factsAsOf` field, validated backfill, and composite index; spec and T2 plan amended before implementation. |
+| D~7 | PR CI exposed an asynchronous frontend assertion in the development merge context, while the W8 branch itself predates that frontend test. | The check failed after registration completed because the router replacement had not settled before the assertion. | Resolved 2026-11-12: merged current development into the isolated repair branch and awaited the replacement in E33; no W13 checkout changes made. |
 
 ## 4a. Decisions recorded on this branch
 
@@ -100,7 +104,8 @@ One line per change on this branch: what changed and why, with a commit as the r
 - `npm run typecheck`: pass
 - `npm run lint`: pass
 - `npm run contract`: 7 pass
-- `npm test`: 604 total, 575 pass, 29 skipped, 0 fail
+- `npm test`: 609 total, 580 pass, 29 skipped, 0 fail; frontend 149 pass
+- Focused PR frontend registration test: 44 pass
 - Focused auth/lead/input-parser tests: 41 pass
 - Plan/handover lint: pass
 - Full branch review: Implementer/Tester/Attacker task reviews completed; close-out tenancy finding repaired
