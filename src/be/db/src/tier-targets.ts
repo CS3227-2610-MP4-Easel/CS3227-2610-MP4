@@ -44,16 +44,23 @@ const PREVIEW_FORBIDDEN_NAMES = [
   "SOCLAAS_API_KEY", "VERCEL_TOKEN", "VERCEL_TEAM_ID",
 ] as const;
 
+const W13_RECOVERY_PROJECT = "falling-rice-06970921";
 const W13_RECOVERY_BRANCH = "w13-recovery-baseline";
+const W13_RECOVERY_HOST = "ep-purple-shape-aohygd1w.c-2.ap-southeast-1.aws.neon.tech";
+const W13_RECOVERY_DATABASE = "neondb";
 
 function isApprovedW13RecoveryTarget(env: Record<string, string | undefined>, target: TierTarget, parsed: { host: string; databaseName: string }): boolean {
   return target.tier === "dev"
     && env.W13_RECOVERY_REHEARSAL === "1"
     && env.NEON_BRANCH === W13_RECOVERY_BRANCH
-    && env.NEON_PROJECT === target.neonProject
-    && env.NEON_HOST === parsed.host
-    && parsed.databaseName === target.databaseName
-    && parsed.host !== TARGETS.prod.neonHost;
+    && env.NEON_PROJECT === W13_RECOVERY_PROJECT
+    && env.NEON_HOST === W13_RECOVERY_HOST
+    && parsed.host === W13_RECOVERY_HOST
+    && parsed.databaseName === W13_RECOVERY_DATABASE;
+}
+
+function expectedObservedHost(recoveryTarget: boolean, target: TierTarget): string | null {
+  return recoveryTarget ? W13_RECOVERY_HOST : target.neonHost;
 }
 
 export function validatePreviewEnvironment(env: Record<string, string | undefined>): true {
@@ -75,11 +82,12 @@ export function validateRuntimeDatabaseTarget(env: Record<string, string | undef
   if (!env.DATABASE_URL) throw new Error("DATABASE_URL is required");
   const parsed = parseDatabaseTarget(env.DATABASE_URL);
   const recoveryTarget = isApprovedW13RecoveryTarget(env, target, parsed);
-  if ((!recoveryTarget && parsed.host !== target.neonHost) || parsed.databaseName !== target.databaseName) throw new Error("DATABASE_URL does not match APP_TIER target");
+  const expectedHost = expectedObservedHost(recoveryTarget, target);
+  if (parsed.host !== expectedHost || parsed.databaseName !== target.databaseName) throw new Error("DATABASE_URL does not match APP_TIER target");
   const hasHost = env.NEON_HOST !== undefined;
   const hasProject = env.NEON_PROJECT !== undefined;
   if (target.tier === "dev" || target.tier === "prod" || hasHost || hasProject) {
-    if (env.NEON_HOST !== target.neonHost || env.NEON_PROJECT !== target.neonProject) throw new Error("Neon observations do not match APP_TIER target");
+    if (env.NEON_HOST !== expectedHost || env.NEON_PROJECT !== (recoveryTarget ? W13_RECOVERY_PROJECT : target.neonProject)) throw new Error("Neon observations do not match APP_TIER target");
   }
   return target;
 }
@@ -90,7 +98,8 @@ export function validateDatabaseTarget(env: Record<string, string | undefined>, 
   if (!databaseUrl) throw new Error("DATABASE_URL is required");
   const parsed = parseDatabaseTarget(databaseUrl);
   const recoveryTarget = isApprovedW13RecoveryTarget(env, target, parsed);
-  if ((!recoveryTarget && parsed.host !== target.neonHost) || parsed.databaseName !== target.databaseName) throw new Error("DATABASE_URL does not match APP_TIER target");
-  if ((!recoveryTarget && env.NEON_HOST !== target.neonHost) || env.NEON_PROJECT !== target.neonProject) throw new Error("Neon observations do not match APP_TIER target");
+  const expectedHost = expectedObservedHost(recoveryTarget, target);
+  if (parsed.host !== expectedHost || parsed.databaseName !== target.databaseName) throw new Error("DATABASE_URL does not match APP_TIER target");
+  if (env.NEON_HOST !== expectedHost || env.NEON_PROJECT !== (recoveryTarget ? W13_RECOVERY_PROJECT : target.neonProject)) throw new Error("Neon observations do not match APP_TIER target");
   return target;
 }

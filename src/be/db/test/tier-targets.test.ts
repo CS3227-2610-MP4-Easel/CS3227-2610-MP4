@@ -69,12 +69,34 @@ test("W13 recovery seed accepts only the explicitly approved isolated branch", (
     APP_TIER: "dev",
     W13_RECOVERY_REHEARSAL: "1",
     NEON_BRANCH: "w13-recovery-baseline",
-    DATABASE_URL: "postgresql://user:password@ep-w13-recovery-123456-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb",
-    NEON_HOST: "ep-w13-recovery-123456-pooler.c-2.ap-southeast-1.aws.neon.tech",
+    DATABASE_URL: "postgresql://user:password@ep-purple-shape-aohygd1w.c-2.ap-southeast-1.aws.neon.tech/neondb",
+    NEON_HOST: "ep-purple-shape-aohygd1w.c-2.ap-southeast-1.aws.neon.tech",
     NEON_PROJECT: "falling-rice-06970921",
   };
   assert.doesNotThrow(() => validateDatabaseTarget(rehearsal, "dev"));
   assert.throws(() => validateDatabaseTarget({ ...rehearsal, W13_RECOVERY_REHEARSAL: undefined }, "dev"), /target|rehearsal/i);
   assert.throws(() => validateDatabaseTarget({ ...rehearsal, NEON_BRANCH: "w13-recovery-rehearsal" }, "dev"), /target|rehearsal/i);
   assert.throws(() => validateDatabaseTarget({ ...rehearsal, DATABASE_URL: "postgresql://user:password@ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech/neondb", NEON_HOST: "ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech" }, "dev"), /target|observations/i);
+});
+
+test("E1-E3 recovery requires the exact direct target and fixed observations", () => {
+  const base = {
+    APP_TIER: "dev",
+    W13_RECOVERY_REHEARSAL: "1",
+    NEON_BRANCH: "w13-recovery-baseline",
+    DATABASE_URL: "postgresql://user:password@ep-purple-shape-aohygd1w.c-2.ap-southeast-1.aws.neon.tech/neondb",
+    NEON_HOST: "ep-purple-shape-aohygd1w.c-2.ap-southeast-1.aws.neon.tech",
+    NEON_PROJECT: "falling-rice-06970921",
+  };
+  for (const mismatch of [
+    { DATABASE_URL: "postgresql://user:password@ep-other-shape-aohygd1w.c-2.ap-southeast-1.aws.neon.tech/neondb" },
+    { DATABASE_URL: "postgresql://user:password@ep-purple-shape-aohygd1w.c-2.ap-southeast-1.aws.neon.tech/neondb", NEON_HOST: "ep-other-shape-aohygd1w.c-2.ap-southeast-1.aws.neon.tech" },
+    { NEON_PROJECT: "other-project" },
+    { NEON_BRANCH: "other-branch" },
+    { DATABASE_URL: "postgresql://user:password@ep-purple-shape-aohygd1w.c-2.ap-southeast-1.aws.neon.tech/otherdb" },
+    { DATABASE_URL: "not-a-url" },
+    { DATABASE_URL: "postgresql://user:password@ep-purple-shape-aohygd1w-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb" },
+  ]) {
+    assert.throws(() => validateDatabaseTarget({ ...base, ...mismatch }, "dev"), /target|observations|malformed/i);
+  }
 });
