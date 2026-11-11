@@ -25,6 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
+| Codex integration | 2026-11-11 | Codex | W7/W7b | Active | Integrating development and preparing PR | Merge origin/development, resolve conflicts, verify and document scope | 2026-11-11 |
 
 **Remaining**
 
