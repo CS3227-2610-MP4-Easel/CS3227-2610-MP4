@@ -28,6 +28,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | s2 | 2026-11-10 | Codex | W7c, W7-UI | Blocked — live outline | PM history wired and reviewed; W5/W14/W16 remain with their owners; D~8 remains | Diagnose D~8; verify backlog conflict/project switching and complete E36 and live 10-epic measurement | 2026-11-11 |
 
+**Upstream check (2026-11-11):** origin/main remains at the initial commit and is already an ancestor; a fast-forward-only pull was a no-op. origin/development has 59 commits absent from this branch; eight files changed on both sides. Do not merge or rebase without the required branch review and integration decision. The published parent stops at 1bc7384; its 30 W7b commits are local only.
+
 **Remaining**
 
 - [x] Flag chosen: `LLM_MODE` (C~1).
