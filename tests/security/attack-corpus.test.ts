@@ -3,8 +3,11 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { Worker } from "node:worker_threads";
 import { buildSync } from "esbuild";
+import { SESSION_CAPS } from "@agile/contracts";
 import { defaultGuards } from "../../src/be/llm-gateway/src/guards.js";
+import { createSessions, SessionCapReached } from "../../src/be/llm-gateway/src/sessions.js";
 import { dispatchCorpusCase, runCorpus, assertCorpusContract } from "./attack-corpus/runner.js";
+import { createHit } from "../../src/be/auth/src/rate-limit.js";
 import { createUser } from "../../src/be/auth/src/registration.js";
 
 test("W11 corpus is closed, deterministic, and machine-checked", async () => {
@@ -56,26 +59,42 @@ test("E13 registration replay uses the existing auth route and has no side effec
 });
 
 test("E14 limiter barrier admits exactly its cap", async () => {
-  let inFlight = 0; let upstreamCalls = 0; let releaseCount = 0; const cap = 3;
-  const reserve = async () => { if (inFlight >= cap) return { status: 429, code: "AI_BUSY" }; inFlight++; upstreamCalls++; await Promise.resolve(); return { status: 200, release: () => { inFlight--; releaseCount++; } }; };
-  const results = await Promise.all(Array.from({ length: cap + 2 }, reserve));
-  assert.equal(results.filter((result) => result.status === 200).length, cap);
-  assert.equal(results.filter((result) => result.status === 429).length, 2);
-  assert.equal(upstreamCalls, cap);
-  for (const result of results) if (result.status === 200) result.release();
-  assert.equal(releaseCount, cap);
-  assert.equal((await reserve()).status, 200);
+  const cap = 3;
+  const counts = new Map<string, number>();
+  const hit = createHit(async (key) => {
+    const count = (counts.get(key) ?? 0) + 1;
+    counts.set(key, count);
+    return { count, remainingSeconds: 60 };
+  });
+  const results = await Promise.all(Array.from({ length: cap + 2 }, () => hit("synthetic-client", 60, cap)));
+  assert.equal(results.filter((result) => result.allowed).length, cap);
+  assert.equal(results.filter((result) => !result.allowed).length, 2);
+  assert.deepEqual(results.slice(cap).map((result) => result.retryAfterSeconds), [60, 60]);
 });
 
 test("E15 session barrier admits exactly its cap and rejects excess", async () => {
-  let open = 0; let upstreamCalls = 0; let releaseCount = 0; const cap = 3;
-  const openSession = async () => { if (open >= cap) return { status: 429, code: "RATE_LIMITED" }; open++; upstreamCalls++; return { status: 201, close: () => { open--; releaseCount++; } }; };
-  const attempts = await Promise.all(Array.from({ length: cap + 2 }, openSession));
-  assert.deepEqual(attempts.map(({ status }) => status), [201, 201, 201, 429, 429]);
-  assert.equal(upstreamCalls, cap);
-  for (const attempt of attempts) if (attempt.status === 201) attempt.close();
-  assert.equal(releaseCount, cap);
-  assert.equal((await openSession()).status, 201);
+  const cap = SESSION_CAPS.maxRegenerations;
+  const userId = "00000000-0000-4000-8000-000000000001";
+  const sessionId = "00000000-0000-4000-8000-000000000002";
+  let regenerateCount = 0;
+  let updateAttempts = 0;
+  const db = {
+    aiSession: {
+      findUnique: async () => ({ userId, feature: "DEV_STANDUP", env: "test", outcome: "OPEN", lastActivityAt: new Date() }),
+      updateMany: async ({ where }: { where: { regenerateCount?: { lt?: number } } }) => {
+        updateAttempts++;
+        if (regenerateCount >= (where.regenerateCount?.lt ?? Number.POSITIVE_INFINITY)) return { count: 0 };
+        regenerateCount++;
+        return { count: 1 };
+      },
+    },
+  } as never;
+  const sessions = createSessions({ db, settings: { tier: "test" } });
+  const attempts = await Promise.allSettled(Array.from({ length: cap + 2 }, () => sessions.regenerate(sessionId, userId)));
+  assert.equal(attempts.filter((attempt) => attempt.status === "fulfilled").length, cap);
+  assert.equal(attempts.filter((attempt) => attempt.status === "rejected" && attempt.reason instanceof SessionCapReached).length, 2);
+  assert.equal(regenerateCount, cap);
+  assert.equal(updateAttempts, cap + 2);
 });
 
 test("E22 three isolated runs stay below the five second hard timeout", async () => {

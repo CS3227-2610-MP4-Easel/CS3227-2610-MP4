@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** Dev Lead
 - **Status:** In review
 - **Approved:** — (project owner only)
-- **Last updated:** 2026-11-10 by Codex — resolved network-deny and route-file review blockers
+- **Last updated:** 2026-11-12 by Codex — resolved PR #27 review issues for test wiring and production limiter/session seams
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -40,7 +40,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human` (name the ques
 
 - [x] Approve the W11 spec (Gate 1).
 - [x] Approve the W11 implementation plan (Gate 2).
-- [ ] Implement and verify the W11 corpus and authorisation tests.
+- [x] Implement and verify the W11 corpus and authorisation tests.
 
 ---
 
@@ -70,6 +70,7 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-09 | Resolved review blockers by routing markdown, context, registration-code, limiter, and replay corpus cases through production seams; aligned schema/spec and declared esbuild directly | W11 | uncommitted |
 | 2026-11-09 | Fixed the dedicated deny-all command so the real rate-limit IP parser may import `node:net` while connect/createConnection remain blocked; full verification passes | W11 | uncommitted |
 | 2026-11-10 | Closed the network deny gaps for DNS promises and socket instances, allowed the platform temp directory for the TypeScript loader, and made route-source discovery accept new `.ts` route files | W11 | uncommitted |
+| 2026-11-12 | Wired the deny setup into the discovered security-test process and replaced E14/E15 inline barriers with the production rate-limit and session seams; focused, full backend, frontend, lint, and root test verification pass | W11 | ccd60e3 |
 
 ## 4. Decisions
 
