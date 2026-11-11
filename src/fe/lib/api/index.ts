@@ -3,18 +3,15 @@
 // Screens call these and nothing else. Linking the backend replaces the bodies with calls to /api
 // through the contracts client; the signatures stay. Fixtures are used only inside this folder.
 import { read, write } from './store';
-import type { Checkpoint, Epic, Member, Sprint, Standup, Task, TaskStatus } from './types';
+import { ApiError } from './errors';
+import { apiFetch } from './http';
+import type { Checkpoint, Epic, Member, Sprint, Standup, Task, TaskStatus, User } from './types';
 
 export { useDb, reset as resetPrototypeData } from './store';
 export * from './types';
+export { ApiError } from './errors';
 
 const wait = (ms = 250) => new Promise((r) => setTimeout(r, ms));
-
-export class ApiError extends Error {
-  constructor(public code: string, message: string) {
-    super(message);
-  }
-}
 
 // 8: archive the project
 export async function archiveProject_8(): Promise<void> {
@@ -337,4 +334,21 @@ export async function listTeamStandups_55(date: string, person?: import('./types
 // 56: the signed-in user's AI sessions with token and cost totals.
 export async function listAiSessions_56(): Promise<import('./types').AiSession[]> {
   return read().aiSessions;
+}
+
+export type ApiRole = 'PM' | 'DEV_LEAD' | 'DEVELOPER';
+
+// 2: check a registration code (no session yet)
+export async function checkCode_2(role: ApiRole, code: string): Promise<void> {
+  await apiFetch<unknown>('/api/auth/check-code', { method: 'POST', body: { role, code: code.trim() }, auth: false });
+}
+
+// 3: register the signed-in Firebase user with a role code
+export async function register_3(role: ApiRole, code: string, displayName: string): Promise<User> {
+  return apiFetch<User>('/api/auth/register', { method: 'POST', body: { role, code: code.trim(), displayName: displayName.trim() } });
+}
+
+// 4: the signed-in user's profile
+export async function me_4(): Promise<User> {
+  return apiFetch<User>('/api/me');
 }

@@ -1,0 +1,21 @@
+{
+  "task": "T3",
+  "status": "done",
+  "summary": "Firebase wrapper, hardNavigate, apiFetch with same-origin token rule, extended ApiError, and checkCode_2/register_3/me_4 added; tests green.",
+  "commit": "12b4864",
+  "produces": [
+    {"kind": "file", "name": "lib/auth/firebase.ts", "where": "src/fe/lib/auth/firebase.ts", "note": "firebaseConfigured, currentUser, onUserChanged, signIn, signUp, signOutUser, idToken; only @firebase/* importer"},
+    {"kind": "symbol", "name": "hardNavigate", "where": "src/fe/lib/auth/navigate.ts", "note": "only location.assign caller"},
+    {"kind": "symbol", "name": "apiFetch", "where": "src/fe/lib/api/http.ts", "note": "only fetch caller outside app/api"},
+    {"kind": "symbol", "name": "ApiError", "where": "src/fe/lib/api/errors.ts", "note": "adds status, details, requestId, retryAfterSeconds; re-exported from lib/api"},
+    {"kind": "symbol", "name": "checkCode_2", "where": "src/fe/lib/api/index.ts", "note": "also register_3, me_4, ApiRole; User type in types.ts"}
+  ],
+  "next": [
+    "A 401 from me_4 already started sign-out; session must not change state on it.",
+    "signIn/signUp reject with the SDK error (code, message).",
+    "register_3 and checkCode_2 trim their inputs."
+  ],
+  "deviations": [],
+  "edge_cases": ["E60", "E61", "E62", "E63", "E64", "E65", "E88", "E89", "E90", "E91", "E92", "E93"],
+  "checks": {"build": "pass", "tests": "pass", "lint": "pass"}
+}
