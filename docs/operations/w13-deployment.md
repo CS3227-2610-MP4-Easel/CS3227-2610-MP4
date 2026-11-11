@@ -12,20 +12,26 @@ The owner performs this gate after a reviewed commit is merged to `development`:
 
 T4 is complete only when all fields are present, `health`, `auth`, `foreignAuth`, and `tier` pass, and `outcome` is `pass`. No repository workflow or application runtime receives a Vercel deployment token.
 
-## Production migration (manual handover)
+## Production migration (protected CI handover)
 
-Production migration and deployment are owner-operated manual actions. No protected repository
-workflow or Vercel Deploy Hook is used. Before running, confirm the checked-out release commit,
-production tier identity, and the committed migration manifest. Run the forward migration with the
-direct production Neon connection:
+Production migration and deployment run only from the protected `production` Environment in the
+W13 workflow. The owner does not run Prisma or the migration wrapper locally. Before release:
 
-```text
-DATABASE_URL="$DIRECT_DATABASE_URL" npm --workspace @agile/db exec prisma validate -- --schema prisma/schema.prisma
-DATABASE_URL="$DIRECT_DATABASE_URL" npm --workspace @agile/db exec prisma migrate deploy -- --schema prisma/schema.prisma
-```
+1. In Vercel, disable Production Branch auto-deploy for `main` and record redacted setting evidence
+   showing the project, branch, setting state, owner, and check time. Do not record tokens, URLs with
+   credentials, the deploy hook URL, response bodies, or secret values.
+2. Approve the protected production Environment, confirm the release commit and committed migration
+   manifest, then merge or promote that reviewed commit to `main`.
+3. Confirm that the `main` push starts the protected workflow. Its migration action is the sole CI
+   entry point and runs `node --import tsx scripts/w13/migrate-production.mjs`; the direct database
+   URL is supplied only to that process environment.
+4. Inspect the successful migration evidence and then the successful deployment evidence. A target,
+   manifest, checksum, command, or deploy-hook failure is failed release evidence: stop and record no
+   successful migration or deployment outcome. No down migration is used.
 
-The direct URL exists only in the migration process environment and must not be recorded. No down
-migration is used. If a migration fails, stop and preserve only redacted evidence.
+The release evidence is redacted and limited to status labels, timestamps, commit/deployment IDs,
+owner, and approved target identifiers. Never record tokens, credential-bearing URLs, the deploy hook
+URL, secret values, or response bodies.
 
 ## Manual recovery rehearsal
 
