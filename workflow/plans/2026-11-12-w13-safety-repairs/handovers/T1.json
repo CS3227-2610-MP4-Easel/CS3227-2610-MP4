@@ -1,8 +1,8 @@
 {
   "task": "T1",
   "status": "done",
-  "summary": "Bound W13 recovery validation to the exact direct Neon tuple and added regression coverage for invalid targets and pre-construction seed rejection.",
-  "commit": "f7843a4",
+  "summary": "Closed T1 recovery-validation findings: missing observations, sensitive error redaction, and malformed percent-encoded paths now have regression coverage and fixed errors.",
+  "commit": "0af0dc4",
   "produces": [
     {
       "kind": "symbol",
@@ -20,7 +20,7 @@
       "kind": "file",
       "name": "recovery regression tests",
       "where": "src/be/db/test/tier-targets.test.ts and src/be/db/test/seed.test.ts",
-      "note": "Covers E1-E3 including arbitrary, pooled, malformed, mismatched-label, and wrong-database recovery inputs."
+      "note": "Covers E1-E3 including arbitrary, pooled, malformed, mismatched-label, missing-observation, wrong-database, and redaction recovery inputs."
     }
   ],
   "next": "T4 can use the exact C~13 tuple and rely on validation failing before seed client construction. No compatibility issue found with ordinary pooled dev/prod runtime targets.",
@@ -34,7 +34,7 @@
   "edge_cases": ["E1", "E2", "E3"],
   "checks": {
     "build": "pass",
-    "tests": "11 pass, 0 fail in tier-targets and seed tests; root focused command reached 531 pass before frontend vitest missing",
+    "tests": "12 pass, 0 fail in tier-targets and seed tests; root focused command reached 536 pass before frontend vitest missing",
     "lint": "git diff --check pass"
   }
 }
