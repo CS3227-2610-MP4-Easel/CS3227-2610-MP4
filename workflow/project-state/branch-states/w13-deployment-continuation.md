@@ -26,7 +26,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
 | S1 | 2026-11-09 00:00 | Codex | W13 | In review | PR #26 is open into `development`; immutable tier map and Firebase tier configuration are recorded | Owner reviews/merges PR #26, then redeploys `development` and verifies health/auth/tier checks | 2026-11-09 03:35 |
-| S2 | 2026-11-12 | Codex | W13 | Blocked | T4 runbook and migration regression coverage are implemented and verified; owner evidence gate is open | Provide redacted evidence that Vercel Production Branch auto-deploy for `main` is disabled, then commit T4 handover and run close-out | 2026-11-12 |
+| S2 | 2026-11-12 | Codex | W13 | Active | Operator chose the repository-owned Vercel `main` deployment rule; T4 is resuming | Add `vercel.json`, commit T4 handover, run close-out checks and review | 2026-11-12 |
 
 **Remaining**
 
@@ -39,7 +39,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | Planned | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md); [safety repairs](../../specs/2026-11-12-w13-safety-repairs-design.md) (approved 2026-11-12) | [safety repairs plan](../../plans/2026-11-12-w13-safety-repairs/plan.md) (approved 2026-11-12) | T1/T2/T3 complete; T4 pending | — |
+| W13 | Environments, seed data and deployment | Planned | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md); [safety repairs](../../specs/2026-11-12-w13-safety-repairs-design.md) (approved 2026-11-12) | [safety repairs plan](../../plans/2026-11-12-w13-safety-repairs/plan.md) (approved 2026-11-12) | T1/T2/T3 complete; T4 resumed with repository-owned Vercel gate | — |
 
 ---
 
@@ -93,7 +93,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-12 | Wave 1 checks pass after dependency-backed verification: 564 backend tests (536 pass, 28 skipped), 149 frontend tests, typecheck, lint, contract, workflow checker, plan lint, and diff check. | W13 | pending state commit |
 | 2026-11-12 | T3 restored the protected push-main production workflow with pinned Actions, least-privilege checkout, migration wrapper, and post-migration Deploy Hook; workflow and repository checks pass. | W13 | 5e4e9c0 |
 | 2026-11-12 | Wave 2 verification passes: 538 backend tests with 28 skipped, 149 frontend tests, typecheck, lint, contract, workflow checker, handover lint, and diff check. | W13 | pending state commit |
-| 2026-11-12 | T4 implementation is complete in the worktree and focused checks pass, but execution pauses at the required owner gate for redacted evidence that Vercel Production Branch auto-deploy for `main` is disabled; no T4 commit or handover exists yet. | W13 | owner action required |
+| 2026-11-12 | T4 resumed after the operator chose a repository-owned `vercel.json` rule disabling Git deployments for `main`; the prior owner evidence gate is replaced by the checked-in configuration and verification. | W13 | pending state commit |
 
 ### D~7 — Full typecheck unavailable during Wave 1
 
@@ -155,6 +155,14 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Decision:** Amend C~3 so the W13 recovery exception accepts only project `falling-rice-06970921`, branch `w13-recovery-baseline`, database `neondb`, and direct host `ep-purple-shape-aohygd1w.c-2.ap-southeast-1.aws.neon.tech`. The URL host and supplied observations must equal this code-owned entry; pooled hosts are not accepted for recovery seed/migration operations.
 - **Why:** Labels beside an arbitrary URL are not proof of Neon branch identity; the owner-confirmed direct host gives the recovery operation one exact target.
 - **Rejected:** C~3's former acceptance of any non-production host with matching operator-supplied labels, and using the synthetic test host as production configuration.
+
+### C~14 — Disable Vercel Git deployment for `main` in the repository
+
+- **Date:** 2026-11-12
+- **Who asked:** operator.
+- **Decision:** Add the root `vercel.json` configuration with `git.deploymentEnabled.main = false`; production deployments are initiated only by the protected post-migration Deploy Hook.
+- **Why:** The Vercel dashboard exposes the `main` branch tracking but no separate automatic-production-deployment switch; repository configuration provides an auditable, reviewable gate that preserves preview deployments.
+- **Rejected:** Disabling custom-domain assignment, disconnecting the Git repository, or retaining automatic production deployment.
 
 ### T4 redacted evidence
 
