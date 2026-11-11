@@ -7,9 +7,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w13-deployment-continuation (from `INT` at `dc3447f`)
 - **Base:** dc3447f
 - **Owner:** operator / repository owner
-- **Status:** In review
-- **Approved:** —
-- **Last updated:** 2026-11-12 by Codex — operator kept AD-32; W13 production CI restoration is now required
+- **Status:** Approved
+- **Approved:** operator / repository owner, 2026-11-12
+- **Last updated:** 2026-11-12 by Codex — Gate 3 approved by operator; branch is ready for integration
 
 **Untouched:** Architecture, Conventions, Known Gaps
 
@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S4 | 2026-11-12 | Codex | W13 | Done | Replaced the unauthenticated release-SHA lookup with an authenticated read-only GitHub API check and reran close-out checks | Ask the operator for Gate 3 branch review before push or merge | 2026-11-12 |
+| *(none)* | — | — | — | — | Branch approved; no active session | Integrate through the normal pull request; do not fold until merged | 2026-11-12 |
 
 **Remaining**
 
@@ -38,7 +38,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | In review | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md); [safety repairs](../../specs/2026-11-12-w13-safety-repairs-design.md) (amended and approved 2026-11-12) | [safety repairs plan](../../plans/2026-11-12-w13-safety-repairs/plan.md) (approved 2026-11-12) | T1-T4 complete; Gate 3 review pending | — |
+| W13 | Environments, seed data and deployment | In review | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md); [safety repairs](../../specs/2026-11-12-w13-safety-repairs-design.md) (amended and approved 2026-11-12) | [safety repairs plan](../../plans/2026-11-12-w13-safety-repairs/plan.md) (approved 2026-11-12) | T1-T4 complete; Gate 3 approved | — |
 
 ---
 
@@ -102,6 +102,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-12 | Owner reports the Vercel Deploy Hook and protected GitHub production Environment with both secrets are configured; values remain unrecorded. | W13 | owner report |
 | 2026-11-12 | Gate 3 review identified that the pre-hook SHA check used unauthenticated `git ls-remote`; the repair replaced it with an authenticated read-only GitHub API check using `github.token`. | W13 | resolved by 1c22eb9 |
 | 2026-11-12 | Replaced the unauthenticated `git ls-remote` release-SHA guard with a `contents: read` GitHub refs API check using `github.token`, `pipefail`, and a fail-closed JSON SHA comparison; focused and full close-out checks pass. | W13 | 1c22eb9 |
+| 2026-11-12 | Operator approved Gate 3 after the authenticated SHA-guard repair and close-out verification; branch is ready for normal integration. | W13 | owner approval |
 
 ### D~8 — Deploy Hook cannot carry an exact commit SHA
 
