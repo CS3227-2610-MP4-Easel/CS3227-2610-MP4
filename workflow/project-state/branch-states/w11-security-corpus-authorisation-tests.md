@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** Dev Lead
 - **Status:** In review
 - **Approved:** — (project owner only)
-- **Last updated:** 2026-11-12 by Codex — resolved follow-up review blockers for isolated workers and gateway limiter coverage
+- **Last updated:** 2026-11-12 by Codex — fixed Node 20 CI worker loading for the W11 deny setup
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -72,6 +72,7 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-10 | Closed the network deny gaps for DNS promises and socket instances, allowed the platform temp directory for the TypeScript loader, and made route-source discovery accept new `.ts` route files | W11 | uncommitted |
 | 2026-11-12 | Wired the deny setup into the discovered security-test process and replaced E14/E15 inline barriers with the production rate-limit and session seams; focused, full backend, frontend, lint, and root test verification pass | W11 | ccd60e3 |
 | 2026-11-12 | Loaded the deny setup inside E22 workers and drove E14 through createLlmGateway to assert AI_BUSY; full backend, frontend, lint, and root test verification pass | W11 | a99a562 |
+| 2026-11-12 | Bundled the deny setup and imported it as an isolated worker module so Node 20 CI protects E22 workers; workspace tests and lint pass | W11 | 59c0d71 |
 
 ## 4. Decisions
 

@@ -143,8 +143,12 @@ test("E15 session barrier admits exactly its cap and rejects excess", async () =
 test("E22 three isolated runs stay below the five second hard timeout", async () => {
   const runnerUrl = new URL("./attack-corpus/runner.ts", import.meta.url).href;
   const runnerSource = buildSync({ entryPoints: [fileURLToPath(runnerUrl)], bundle: true, format: "esm", platform: "node", target: "node20", write: false }).outputFiles[0].text;
+  const denySetupUrl = new URL("./w11-network-deny.setup.ts", import.meta.url);
+  const denySetupSource = buildSync({ entryPoints: [fileURLToPath(denySetupUrl)], bundle: true, format: "esm", platform: "node", target: "node20", define: { "import.meta.url": JSON.stringify(denySetupUrl.href) }, write: false }).outputFiles[0].text;
+  const denySetupModule = `data:text/javascript,${encodeURIComponent(denySetupSource)}`;
+  const runnerModule = `data:text/javascript,${encodeURIComponent(runnerSource)}`;
   const workerRun = () => new Promise<void>((resolve, reject) => {
-    const worker = new Worker(`${runnerSource}\nimport { parentPort } from "node:worker_threads"; runCorpus().then(() => parentPort.postMessage("done")).catch((error) => parentPort.postMessage({ error: String(error) }));`, { eval: true, type: "module", execArgv: ["--import", "tsx", "--import", fileURLToPath(new URL("./w11-network-deny.setup.ts", import.meta.url))], env: { ...process.env, NODE_OPTIONS: "" } });
+    const worker = new Worker(`import { parentPort } from "node:worker_threads"; await import(${JSON.stringify(denySetupModule)}); const { runCorpus } = await import(${JSON.stringify(runnerModule)}); runCorpus().then(() => parentPort.postMessage("done")).catch((error) => parentPort.postMessage({ error: String(error) }));`, { eval: true, type: "module", execArgv: [], env: { ...process.env, NODE_OPTIONS: "" } });
     const timer = setTimeout(() => { void worker.terminate(); reject(new Error("W11_TIMEOUT")); }, 5_000);
     worker.on("message", (message) => { clearTimeout(timer); void worker.terminate(); if (message === "done") resolve(); else reject(new Error(message.error)); });
     worker.on("error", (error) => { clearTimeout(timer); reject(error); });
@@ -157,14 +161,11 @@ test("E22 three isolated runs stay below the five second hard timeout", async ()
 });
 
 test("E22 isolated workers install the network deny setup", async () => {
-  const setupPath = fileURLToPath(new URL("./w11-network-deny.setup.ts", import.meta.url));
+  const setupUrl = new URL("./w11-network-deny.setup.ts", import.meta.url);
+  const setupSource = buildSync({ entryPoints: [fileURLToPath(setupUrl)], bundle: true, format: "esm", platform: "node", target: "node20", define: { "import.meta.url": JSON.stringify(setupUrl.href) }, write: false }).outputFiles[0].text;
+  const setupModule = `data:text/javascript,${encodeURIComponent(setupSource)}`;
   const result = await new Promise<string>((resolve, reject) => {
-    const worker = new Worker("import { parentPort } from 'node:worker_threads'; import('node:dns/promises').then(() => parentPort.postMessage('imported')).catch((error) => parentPort.postMessage(String(error)))", {
-      eval: true,
-      type: "module",
-      execArgv: ["--import", "tsx", "--import", setupPath],
-      env: { ...process.env, NODE_OPTIONS: "" },
-    });
+    const worker = new Worker(`import { parentPort } from 'node:worker_threads'; await import(${JSON.stringify(setupModule)}); import('node:dns/promises').then(() => parentPort.postMessage('imported')).catch((error) => parentPort.postMessage(String(error)))`, { eval: true, type: "module", execArgv: [], env: { ...process.env, NODE_OPTIONS: "" } });
     worker.on("message", (message) => { void worker.terminate(); resolve(String(message)); });
     worker.on("error", reject);
   });
