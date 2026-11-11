@@ -40,7 +40,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] Gate 3: approved by ludannnn on 2026-11-09 (after the C~9 fix).
 - [x] Push and open the PR into `development` (PR #29).
 - [x] Gate 3 again: ludannnn approved the PR #29 review fixes and the 2026-11-11 spec amendment (C~10, D~1) on 2026-11-11 ("yes").
-- [ ] Push the fixes to PR #29.
+- [x] Push the fixes to PR #29 (`c846ace`, pushed by ludannnn 2026-11-11).
 - [ ] **Handover:** to the Dev Lead (W5): `core.blockedTasks` now ignores `options.window` and lists every task assigned to the caller that is blocked now (D~1); `context-sources.test.ts` was updated to match (the W5 spec names no window for this source, so it is unchanged). DEV_STANDUP is its only consumer.
 - [ ] **Handover:** to the W4 owner (this owner): the 413 counter moved to `src/be/api/src/body-limit.ts`; `auth.ts` keeps 4,096 bytes. To the W1 owners: `RouteDefinition.bodyLimitBytes` (plan P1) reads the body after authorisation; endpoints 49 (1 MiB), 50 and 51 (16 KiB) use it.
 - [ ] **Handover:** test follow-ups (two-round limit): poll `pg_locks` instead of a 300 ms wait in the E47 lock test, and await the pending write before cleanup on failure (`src/be/dev/test/dev-integration.test.ts`).
