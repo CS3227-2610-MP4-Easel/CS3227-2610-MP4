@@ -5,10 +5,10 @@ describes `INT`; read it for context and write here instead of editing it.
 `sync-project-state` folds this file in after the branch merges.
 
 - **Branch:** w7-implement-pm-plan-flow (from `INT` at `7caa23d`)
-- **Base:** faa1c08
+- **Base:** 3519ff077de611e79be28b1c3743a027675260c9
 - **Owner:** Xiao-Congchen (PM)
-- **Status:** Approved
-- **Approved:** Xiao-Congchen 2026-11-08
+- **Status:** Draft
+- **Prior approval:** Xiao-Congchen 2026-11-08, before integration; renewed review pending.
 - **Last updated:** 2026-11-08 by Claude Sonnet 5.5 — W5 (PR 23) merged in and the proposal resolvers wired after Gate 3; the operator should confirm this addition
 
 **Untouched:** Conventions (Architecture Now blocks for pm, core and proposals are written at the fold; see Close-out)
@@ -25,6 +25,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
+
+**Integration (2026-11-11):** Merged development at 3519ff0 into the W7 boundary; resolved the lockfile by retaining both dependency sets. Renew Gate 3 review after integration.
 
 **Remaining**
 
