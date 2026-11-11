@@ -87,6 +87,8 @@ export async function generateSummaries(deps: SummaryFlowDeps, caller: { userId:
     rows.push({ itemId: item.id, contentHash: item.contentHash, oneLiner: text, flagged: item.flagged || deps.sanitiseFlag(text), callId: result.callId });
   }
   await insertSummaries(deps.write, caller.userId, projectId, rows, deps.key);
+  // A concurrent request may have stored its answer first (the insert skips duplicates); return what was saved.
+  for (const [itemId, saved] of await currentSummaries(deps.db, left.filter((i) => fresh.has(i.id)), deps.key)) fresh.set(itemId, saved.oneLiner);
   if (cached.length) await quietHit();
   return finish();
 }

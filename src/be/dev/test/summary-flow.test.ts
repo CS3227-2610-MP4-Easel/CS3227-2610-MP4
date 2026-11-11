@@ -381,3 +381,14 @@ test("preview tier: AI_NOT_CONFIGURED from the all-cached recordCacheHit gives A
   await assert.rejects(generateSummaries(deps, caller, P, [id(1)]), (e: any) => e instanceof DevError && e.code === "AI_DISABLED" && e.status === 503);
 });
 
+test("E20 a concurrent request that stored first wins: the response is the saved one-liner, not this call's", async () => {
+  const sums: Sum[] = [];
+  const w = world([item(1), item(2)], sums);
+  // Another request commits item 1's summary while this one is inside its model call.
+  const reply = async () => { sums.push(sum(1, { oneLiner: "theirs" })); return okValue([{ n: 1, oneLiner: "mine" }, { n: 2, oneLiner: "mine 2" }]); };
+  const { deps } = stubs(w, { reply });
+  const r = await generateSummaries(deps, caller, P, [id(1), id(2)]);
+  assert.deepEqual(r.summaries, [{ itemId: id(1), oneLiner: "theirs", cached: false }, { itemId: id(2), oneLiner: "mine 2", cached: false }]);
+  assert.deepEqual(r.failed, []);
+});
+

@@ -3,7 +3,7 @@ import test from "node:test";
 import type { PrismaClient } from "@prisma/client";
 import { createDbClient, isInTransaction } from "@agile/db";
 import { resetContextRegistries } from "@agile/ai-context/testing";
-import { createCore } from "@agile/core";
+import { createCore, createCoreContextSources } from "@agile/core";
 import { defaultStandupDate, standupActivityWindowFor } from "@agile/contracts";
 import { createSessions } from "@agile/llm-gateway";
 import { createDevRuntime, validateItem } from "@agile/dev";
@@ -26,7 +26,7 @@ const raw = (externalId: string, over: Record<string, unknown> = {}) => ({ type:
 const caller = (userId: string) => ({ userId, role: "DEVELOPER" as const });
 
 type Db = ReturnType<typeof createDbClient>;
-type Stub = { run?: (call: unknown) => Promise<unknown>; wrapDb?: (db: Db) => Db };
+type Stub = { run?: (call: unknown) => Promise<unknown>; wrapDb?: (db: Db) => Db; oneLiner?: () => string };
 
 // Wraps every transaction's tx; `patch` returns replacement delegates by name.
 function wrapTx(db: Db, patch: (tx: object) => Record<string, object>): Db {
@@ -93,7 +93,7 @@ async function build(base: PrismaClient, projectId: string, devs: string[]) {
         runCalls.n++;
         if (stub.run) await stub.run(call);
         const feature = (call as { feature: string }).feature;
-        const value = feature === "DEV_SUMMARY" ? { items: [{ n: 1, oneLiner: "did a thing" }] } : { yesterday: ["did a thing"], today: [], blockers: [] };
+        const value = feature === "DEV_SUMMARY" ? { items: [{ n: 1, oneLiner: stub.oneLiner?.() ?? "did a thing" }] } : { yesterday: ["did a thing"], today: [], blockers: [] };
         return { ok: true, value, callId: callRow.id, flagged: false, truncated: false, cacheHit: false, promptTokens: 0, completionTokens: 0, costMicroUsd: 0 };
       },
     };
@@ -167,14 +167,29 @@ test("E48 an item re-uploaded during its summary call keeps the old-hash summary
   assert.equal(summaries.filter((x) => x.contentHash === after!.contentHash).length, 0, "no current summary");
 })));
 
-test("E20 two concurrent summary requests for one uncached item write one summary", { ...opts, timeout: 30_000 }, () => withIntegrationDb((base, fx) => scene(base, fx, async (s) => {
-  const rt = s.makeRuntime({ run: rendezvous(2) });
+test("E20 two concurrent summary requests with different answers write one summary and both return it", { ...opts, timeout: 30_000 }, () => withIntegrationDb((base, fx) => scene(base, fx, async (s) => {
+  let n = 0;
+  const rt = s.makeRuntime({ run: rendezvous(2), oneLiner: () => `answer ${++n}` });
   await rt.upload(s.dev, s.projectId, [raw("a")]);
   const [item] = await items(base, s.projectId);
   const results = await Promise.all([rt.summaries(caller(s.dev), s.projectId, [item!.id]), rt.summaries(caller(s.dev), s.projectId, [item!.id])]);
   assert.equal(s.runCalls.n, 2, "both requests reached the model");
-  for (const r of results) assert.equal(r.summaries.length, 1);
-  assert.equal(await base.itemSummary.count({ where: { itemId: item!.id } }), 1);
+  const stored = await base.itemSummary.findMany({ where: { itemId: item!.id } });
+  assert.equal(stored.length, 1);
+  for (const r of results) assert.deepEqual(r.summaries.map((x) => x.oneLiner), [stored[0]!.oneLiner]);
+})));
+
+test("core.blockedTasks lists a task created before the standup window that is blocked now", opts, () => withIntegrationDb((base, fx) => scene(base, fx, async (s) => {
+  const window = standupActivityWindowFor(defaultStandupDate(NOW), NOW);
+  const epic = await base.epic.create({ data: { projectId: s.projectId, title: "Epic", position: 1 } });
+  const task = await base.task.create({ data: { projectId: s.projectId, epicId: epic.id, assigneeId: s.dev, title: "Old task", blocked: true, blockedReason: "Waiting on API keys", createdBy: s.dev, createdAt: new Date(window.from.getTime() - 7 * 24 * 60 * 60 * 1000) } });
+  try {
+    const rows = await createCoreContextSources(s.filtered as never).blockedTasks({ caller: caller(s.dev), projectId: s.projectId, options: { window } });
+    assert.deepEqual(rows.map((r) => [r.ref.id, r.text]), [[task.id, "Old task: Waiting on API keys"]]);
+  } finally {
+    await base.task.deleteMany({ where: { projectId: s.projectId } });
+    await base.epic.deleteMany({ where: { projectId: s.projectId } });
+  }
 })));
 
 test("E34 two concurrent first standups for one date leave one row at version 2", { ...opts, timeout: 30_000 }, () => withIntegrationDb((base, fx) => scene(base, fx, async (s) => {

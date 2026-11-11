@@ -1,6 +1,6 @@
 # W9 Developer Upload, Summaries and Standup Design
 
-- **Status:** Approved (ludannnn, 2026-11-08); amended 2026-11-09 after W5 merged (§ 4.1, § 4.6, F8, SD11, SD16), re-approved (ludannnn, 2026-11-09); SD16 lock amended and approved (ludannnn, 2026-11-09)
+- **Status:** Approved (ludannnn, 2026-11-08); amended 2026-11-09 after W5 merged (§ 4.1, § 4.6, F8, SD11, SD16), re-approved (ludannnn, 2026-11-09); SD16 lock amended and approved (ludannnn, 2026-11-09); amended 2026-11-11 for the PR #29 review (F4 blockers, § 4.2 `content_hash`, E20), approved (ludannnn, 2026-11-11)
 - **Format:** v2
 - **Risk tier:** High - untrusted uploaded text reaches the model, every row is owned by one developer, the Dev Lead reads other users' standups, and each endpoint relies on project membership.
 - **Workstream:** W9 | **Plan:** —
@@ -18,7 +18,7 @@ Desired: a `src/be/dev` workspace package (C51) that stores uploaded items for t
 - F1 Upload (49) validates each item, stores valid ones for the caller in the target project in one transaction, and reports counts. - Accept: a 3-item file whose item at index 1 is invalid returns `received: 3`, `created: 2`, `rejected: [{ index: 1, ... }]`; re-sending it returns `unchanged: 2`, `created: 0`, `updated: 0`.
 - F2 `needsSummary` lists the ids of this upload's stored items with `occurredAt` at or after today's window start that have no current summary. - Accept: an item dated in the window with no summary is listed; one dated before the window is not; one already summarised under the current key is not.
 - F3 Summaries (50) return a one-liner per requested item, from the cache when present, otherwise from one gateway call for the uncached in-window items. - Accept: 4 cached and 3 uncached in-window ids make one `run` call whose activity-items section has 3 lines; the response has 7 `summaries`, 4 with `cached: true`.
-- F4 Standup generation (51) builds the standup from the caller's item summaries, task events and blocked tasks in the window for the chosen date and stores one row per (project, developer, date). - Accept: two calls for the same date leave one row; the second returns `cached: true` and the same `version` when the input is unchanged.
+- F4 Standup generation (51) builds the standup from the caller's item summaries and task events in the window for the chosen date, plus the caller's tasks that are blocked now whenever they were created, and stores one row per (project, developer, date). - Accept: two calls for the same date leave one row; the second returns `cached: true` and the same `version` when the input is unchanged.
 - F5 On model failure the standup is code-built and marked `degraded: true`. - Accept: with the mock returning invalid JSON and two task-event lines in the window, the response is 200, `degraded: true`, `yesterday` = those two lines.
 - F6 A Developer reads their own standup for a date (52). - Accept: 200 for the stored date; 404 for a date with none.
 - F7 A Dev Lead pages the project's standups of current developer members (55). - Accept: with two current developers and one removed developer each holding one standup, `items` has 2 rows and `total` is 2.
@@ -57,7 +57,7 @@ No schema change; the W1 tables are used as they are. Migration and rollback: no
 
 | Table | W9's use |
 |---|---|
-| `activity_items` | Upsert by (project_id, uploaded_by, item_type, repo, external_id) with Prisma `upsert` on the compound unique key. `repo` null or `""` stores `""` and hashes as null. `occurred_at` = input `timestamp`. `files` = the names array. `content_hash` = SHA-256 hex of the canonical JSON `[type, repo or null, externalId, title, body or null, timestamp, url or null, files]` after the body cut. `flagged` = `sanitiseInput(title + "\n" + (body ?? "") + "\n" + files.join("\n")).flagged`, or `true` when the body was cut. `body_truncated` = the body was cut. Never deleted. |
+| `activity_items` | Upsert by (project_id, uploaded_by, item_type, repo, external_id) with Prisma `upsert` on the compound unique key. `repo` null or `""` stores `""` and hashes as null. `occurred_at` = input `timestamp`. `files` = the names array. `content_hash` = SHA-256 hex of the canonical JSON `[type, repo or null, externalId, title, body or null, timestamp, url or null, files, bodyTruncated]` after the body cut (the cut flag is hashed so a longer body with the same first 2000 characters is a new version and gets a new, flagged summary). `flagged` = `sanitiseInput(title + "\n" + (body ?? "") + "\n" + files.join("\n")).flagged`, or `true` when the body was cut. `body_truncated` = the body was cut. Never deleted. |
 | `item_summaries` | Insert only (`createMany` with `skipDuplicates`); key (item_id, content_hash, guard_version, prompt_version). `content_hash` = the item hash read **before** the call. `guard_version` = `GUARD_VERSION`; `prompt_version` = `SUMMARY_PROMPT_VERSION` (§ 4.5). `one_liner` 1-300 UTF-16 units, no line break. `flagged` = the item's stored `flagged` OR `sanitiseInput(oneLiner).flagged`. `call_id` = the `run` result's `callId`. A summary is **current** for an item when its key equals (item.content_hash, `GUARD_VERSION`, `SUMMARY_PROMPT_VERSION`). |
 | `standups` | Upsert by (project_id, developer_id, standup_date) with Prisma `upsert`. `content` = `StandupContentSchema` JSON. `input_hash` (§ 4.5). `degraded`, `flagged` (§ 4.3 Standup content). `session_id` = the DEV_STANDUP session used for the latest generation. `version` +1 on every replace. `outcome` and `feedback` stay null (53/54 are W16). |
 | `llm_calls` | `recordCacheHit` writes one row per cache hit (§ 4.3 Gateway additions); `session_id` null for a summary hit, the stored standup's session for a standup hit. |
@@ -147,7 +147,7 @@ None: backend only (C~1). The follow-up wires S20 and S18 (W10 spec screens-dev.
 | E17 | F3 | Model returns only `n=1` of 3 | item 1 summarised; items 2-3 in `failed` | unit |
 | E18 | F3 | Model output fails the schema or the output guard | 503 `AI_UNAVAILABLE`; nothing inserted | integration |
 | E19 | F3 | Mock answers `{"refusal":true}` | 200; every uncached id in `failed` | integration |
-| E20 | F3 | Two concurrent requests for the same uncached item | both 200; one `item_summaries` row | integration |
+| E20 | F3 | Two concurrent requests for the same uncached item, the model answering differently | both 200; one `item_summaries` row; both responses carry its stored one-liner (the flow re-reads after the insert) | integration |
 | E21 | F3 | Uncached item dated before the window | in `failed`; not in the section | unit |
 | E22 | F3 | `GUARD_VERSION` changes | old summary not current; the item is summarised again | unit |
 | E23 | F4 | Monday-Thursday: date = tomorrow | accepted; window from 00:00 today | unit |

@@ -8,10 +8,10 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Base:** 3519ff0
 - **Owner:** ludannnn (Developer member)
 - **Status:** Approved
-- **Approved:** ludannnn 2026-11-09
-- **Last updated:** 2026-11-09 by Claude Opus 5.5 — Gate 3 approved by the owner
+- **Approved:** ludannnn 2026-11-11 (re-approval after the PR #29 review fixes; first approved 2026-11-09)
+- **Last updated:** 2026-11-11 by Claude Opus 5.5 — Gate 3 re-approved by the owner
 
-**Untouched:** Architecture, Conventions, Deviations
+**Untouched:** Architecture, Conventions
 
 ---
 
@@ -38,7 +38,10 @@ describes `INT`; read it for context and write here instead of editing it.
 - [ ] **Handover:** S20 (Upload and standup) and S18 (Team standups) wiring to the live API is a Medium follow-up spec (C~1); the browser must cut bodies over 2000 characters instead of rejecting them (spec SD4), send `{}` (not an empty body) to endpoint 51, and render summaries and standup lines as plain text only.
 - [x] Build T1-T10 and close-out: plan lint `--closeout` clean; typecheck, lint, `prisma:validate` green; `npm test` 808/808 (0 skipped, Postgres ran) + fe 149/149; audit passes at high; whole-branch code review (high) with two fixes (`e2e1e00`).
 - [x] Gate 3: approved by ludannnn on 2026-11-09 (after the C~9 fix).
-- [ ] Push and open the PR into `development` (separate question after Gate 3).
+- [x] Push and open the PR into `development` (PR #29).
+- [x] Gate 3 again: ludannnn approved the PR #29 review fixes and the 2026-11-11 spec amendment (C~10, D~1) on 2026-11-11 ("yes").
+- [ ] Push the fixes to PR #29.
+- [ ] **Handover:** to the Dev Lead (W5): `core.blockedTasks` now ignores `options.window` and lists every task assigned to the caller that is blocked now (D~1); `context-sources.test.ts` was updated to match (the W5 spec names no window for this source, so it is unchanged). DEV_STANDUP is its only consumer.
 - [ ] **Handover:** to the W4 owner (this owner): the 413 counter moved to `src/be/api/src/body-limit.ts`; `auth.ts` keeps 4,096 bytes. To the W1 owners: `RouteDefinition.bodyLimitBytes` (plan P1) reads the body after authorisation; endpoints 49 (1 MiB), 50 and 51 (16 KiB) use it.
 - [ ] **Handover:** test follow-ups (two-round limit): poll `pg_locks` instead of a 300 ms wait in the E47 lock test, and await the pending write before cleanup on failure (`src/be/dev/test/dev-integration.test.ts`).
 - [ ] **Handover:** guide out of date: the dev package (`src/be/dev`), endpoints 49-52 and 55, the gateway additions (`openOrReuse`, `recordCacheHit`), `RouteDefinition.bodyLimitBytes`, and the Postgres integration tests.
@@ -49,7 +52,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W9 | Developer upload, summaries, standup | In review | [spec](../../specs/2026-11-08-w9-dev-slice-design.md) (approved 2026-11-08, amended 2026-11-09) | [plan](../../plans/2026-11-09-w9-dev-slice/plan.md) (approved 2026-11-09) | T1-T10 done; close-out done; Gate 3 asked | — |
+| W9 | Developer upload, summaries, standup | In review | [spec](../../specs/2026-11-08-w9-dev-slice-design.md) (approved 2026-11-08, amended 2026-11-09) | [plan](../../plans/2026-11-09-w9-dev-slice/plan.md) (approved 2026-11-09) | PR #29 review fixes done; Gate 3 re-approved (C~10) | — |
 
 ---
 
@@ -88,6 +91,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-09 | Close-out code review (high, whole branch): 10 findings. Fixing: preview tier makes 50/51 return 500 (session proxy throws AI_NOT_CONFIGURED; map to 503 AI_DISABLED), and a failing usage row on a standup cache hit fails the request (swallow it, like summaries). Recorded, not fixed: summary session opened before assembly (spec order; self-only cap use), dev resolvers ignore the authorization tx (production supplies none, spec § 4.6), a body-less POST to 51 is 400 (same as every bodySchema route; the S20 follow-up must send `{}`), and maintainability nits (limit declared twice per route, repeated helpers and CacheHitInput copy, second core instance in dev-composition, N+1 reads in openOrReuse, repeated id dedupe, duplicated window body) | W9 | close-out |
 | 2026-11-09 | Close-out fixes: preview tier now gives 503 AI_DISABLED on 50/51, and a failing usage row on a standup cache hit is ignored; checks green | W9 | `e2e1e00` |
 | 2026-11-09 | Gate 3 asked; the operator asked for the concurrency fix first (C~9): `inDevWrite` maps exhausted serialization retries to 429 `RATE_LIMITED` with `Retry-After: 1`; unit, route and Postgres tests updated. Checks: typecheck green, `npm test` 811/811 (0 skipped) + fe 149/149 | W9 | `1a38dcd` |
+| 2026-11-11 | PR #29 review fixes (C~10): `content_hash` includes `bodyTruncated`, so a longer body with the same first 2000 characters gets a new, flagged summary and standup; endpoint 50 re-reads after the insert and returns the stored one-liner when a concurrent request saved first; `core.blockedTasks` ignores the window (D~1). Spec F4, § 4.2 and E20 amended. Tests: the reviewer's truncation sequence, a concurrent unit test and a Postgres E20 with different model answers, and a Postgres older-blocked-task test; all 8 affected tests fail with the fixes stashed. Checks: typecheck, lint green; `npm test` 813/813 (0 skipped) + fe 149/149 | W9 | PR #29 fixes |
 
 ---
 
@@ -161,6 +165,24 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Decision:** when `inDevWrite` still fails with a serialization error (`P2034`/`40001`) after `inMutationTransaction`'s 3 attempts, it throws `DevError("RATE_LIMITED", 429, 1)`; the routes send `Retry-After: 1`. Endpoints 49-51 gain this 429.
 - **Why:** T10 measured 2 of 5 simultaneous uploads to one project failing every run; a retryable "busy" answer is honest, a 500 is not.
 - **Rejected:** a larger retry budget in W5's helper (shared code, more lock waiting); leaving the 500.
+
+### C~10 Fix the three PR #29 review findings before merge
+- **Date:** 2026-11-11 · **Asked by:** ludannnn (operator), after reviewing the PR #29 feedback with the agent: "yes"
+- **Decision:** (1) hash the truncation flag with the item, so a changed cut is a new version; (2) endpoint 50 answers with the stored one-liner, re-read after the insert; (3) `core.blockedTasks` lists every task blocked now (D~1).
+- **Why:** without (1) a truncated body loses its warning through the old summary and the standup cache; without (2) two concurrent callers can see an answer never saved; without (3) a task created before the window and blocked now is missing from the blockers.
+- **Rejected:** checking the item's `flagged` in `summaryFlagged` instead of rehashing (the standup's input hash would not change, so the cached unflagged standup would still be served); filtering blocked tasks in `@agile/dev` (`assembleWith` passes one options object to every source).
+
+## 8. Deviations
+
+> Legend: `D` = Deviation, where reality diverged from a spec or plan. Not to be confused with
+> AD-nn, an Architecture Decision.
+
+### D~1 W9 changes W5's `core.blockedTasks` to ignore the window
+- **Date:** 2026-11-11 · **Found by:** PR #29 review
+- **What diverged:** W5's source filtered blocked tasks by `createdAt` inside `options.window`; the architecture (§ developer prompt sections; decision log "the standup reads blocked tasks directly") and contracts row DEV_STANDUP name the caller's blocked tasks with no time bound, and the W6 conventions apply the window only "where it applies".
+- **Change:** `src/be/core/src/context-sources.ts` drops the window from `blockedTasks`; ordering (newest creation first) and the 50-row cap are unchanged; `src/be/core/test/context-sources.test.ts` asserts no `createdAt` filter.
+- **Impact:** a standup's input hash now changes when any assigned task becomes blocked or unblocked, which is the intended regeneration. DEV_STANDUP is the only feature with the `blocked-tasks` section.
+- **Handover:** the Dev Lead (W5) owns the source; see How to Resume.
 
 ## Lessons
 

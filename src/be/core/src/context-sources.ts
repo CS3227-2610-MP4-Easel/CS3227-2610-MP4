@@ -50,10 +50,10 @@ export function createCoreContextSources(db: ContextSourceDb): Readonly<Record<"
         return rendered ? [{ projectId, ref: { type: "TASK_EVENT" as const, id: String(row.id) }, ownerId: row.actorId, text: rendered }] : [];
       });
     }),
-    blockedTasks: async ({ caller, projectId, options }) => source("core.blockedTasks", async () => {
+    // Blocked now, whenever created: the standup window does not apply to a current blocker.
+    blockedTasks: async ({ caller, projectId }) => source("core.blockedTasks", async () => {
       if (!await member(db, caller.userId, projectId)) return [];
-      const window = options.window ? { createdAt: { gte: options.window.from, lt: options.window.to } } : {};
-      const rows = await db.task?.findMany({ where: { projectId, assigneeId: caller.userId, blocked: true, ...window }, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 50, select: { id: true, projectId: true, assigneeId: true, title: true, blockedReason: true, createdAt: true } }) ?? [];
+      const rows = await db.task?.findMany({ where: { projectId, assigneeId: caller.userId, blocked: true }, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 50, select: { id: true, projectId: true, assigneeId: true, title: true, blockedReason: true, createdAt: true } }) ?? [];
       return rows.filter((row) => row.projectId === projectId && row.assigneeId === caller.userId).flatMap((row) => {
         const rendered = chars(`${row.title}: ${row.blockedReason ?? ""}`, 800);
         return rendered ? [{ projectId, ref: { type: "TASK" as const, id: row.id }, ownerId: row.assigneeId, text: rendered }] : [];

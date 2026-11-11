@@ -216,21 +216,26 @@ test("E13 tie-break: equal occurredAt orders by id asc even when input order dif
   assert.deepEqual(r.needsSummary, ["id-a", "id-b", "id-c"]);
 });
 
-test("unchanged re-upload refreshes bodyTruncated and flagged, and skips the write when equal", async () => {
-  const h = harness();
-  await uploadItems(h.deps, "u", "p", [base({ body: "a".repeat(2000) })]);
-  assert.equal(h.rows()[0]!.bodyTruncated, false);
+test("a longer body with the same first 2000 changes the hash, so the unflagged summary is no longer current", async () => {
+  const h0 = harness();
+  await uploadItems(h0.deps, "u", "p", [base({ body: "a".repeat(2000) })]);
+  const summarised = h0.rows()[0]!;
+  assert.deepEqual([summarised.bodyTruncated, summarised.flagged], [false, false]);
+  const h = harness({ seed: h0.rows(), summaries: [{ itemId: summarised.id, contentHash: summarised.contentHash, guardVersion: "g1", promptVersion: "p1" }] });
   let r = await uploadItems(h.deps, "u", "p", [base({ body: "a".repeat(2500) })]);
-  assert.equal(r.unchanged, 1);
-  assert.equal(h.rows()[0]!.bodyTruncated, true);
-  assert.equal(h.rows()[0]!.flagged, true);
+  assert.deepEqual([r.updated, r.unchanged], [1, 0]);
+  assert.deepEqual([h.rows()[0]!.bodyTruncated, h.rows()[0]!.flagged], [true, true]);
+  assert.notEqual(h.rows()[0]!.contentHash, summarised.contentHash);
+  assert.deepEqual(r.needsSummary, [summarised.id]);
   const before = h.log.upserts;
-  await uploadItems(h.deps, "u", "p", [base({ body: "a".repeat(2500) })]);
+  r = await uploadItems(h.deps, "u", "p", [base({ body: "a".repeat(2500) })]);
+  assert.equal(r.unchanged, 1);
   assert.equal(h.log.upserts, before);
   r = await uploadItems(h.deps, "u", "p", [base({ body: "a".repeat(2000) })]);
-  assert.equal(r.unchanged, 1);
-  assert.equal(h.rows()[0]!.bodyTruncated, false);
-  assert.equal(h.rows()[0]!.flagged, false);
+  assert.deepEqual([r.updated, r.unchanged], [1, 0]);
+  assert.equal(h.rows()[0]!.contentHash, summarised.contentHash);
+  assert.deepEqual([h.rows()[0]!.bodyTruncated, h.rows()[0]!.flagged], [false, false]);
+  assert.deepEqual(r.needsSummary, [], "the original summary is current again");
 });
 
 test("E13 window boundary: exactly at start is in, 1 ms before is out", async () => {
@@ -269,15 +274,16 @@ test("stored row: omitted body and url become null, hash matches the contract ar
   const { body: _b, url: _u, ...item } = base({ repo: undefined });
   await uploadItems(h.deps, "u", "p", [item]);
   const row = h.rows()[0]!;
-  const hash = sha(["COMMIT", null, "e1", "t", null, "2026-11-09T02:00:00.000Z", null, ["a.ts"]]);
+  const hash = sha(["COMMIT", null, "e1", "t", null, "2026-11-09T02:00:00.000Z", null, ["a.ts"], false]);
   assert.deepEqual(row, { id: row.id, projectId: "p", uploadedBy: "u", itemType: "COMMIT", repo: "", externalId: "e1", title: "t", body: null, bodyTruncated: false, occurredAt: new Date("2026-11-09T02:00:00.000Z"), url: null, files: ["a.ts"], contentHash: hash, flagged: false });
 });
 
-test("hash changes with body, url, files and timestamp; long body hashes like its 2000 prefix", () => {
+test("hash changes with body, url, files, timestamp and the cut; long bodies with one prefix hash alike", () => {
   const hashOf = (over: Record<string, unknown>) => { const r = validateItem(base(over), NOW); assert.ok(r.ok); return r.ok ? r.item.contentHash : ""; };
   const h0 = hashOf({});
   for (const over of [{ body: "c" }, { url: "https://x.test/2" }, { files: ["z.ts"] }, { timestamp: "2026-11-09T02:00:01.000Z" }]) assert.notEqual(hashOf(over), h0);
-  assert.equal(hashOf({ body: "a".repeat(2500) }), hashOf({ body: "a".repeat(2000) }));
+  assert.notEqual(hashOf({ body: "a".repeat(2500) }), hashOf({ body: "a".repeat(2000) }));
+  assert.equal(hashOf({ body: "a".repeat(2500) }), hashOf({ body: "a".repeat(2001) }));
 });
 
 test("cut boundaries: 2000 not cut, 2001 cut and flagged", async () => {
@@ -343,7 +349,7 @@ test("E10 changed title keeps one row and id, with the expected new hash", async
   assert.equal(h.rows().length, 1);
   assert.equal(h.rows()[0]!.id, id);
   assert.equal(h.rows()[0]!.title, "other");
-  assert.equal(h.rows()[0]!.contentHash, sha(["COMMIT", "r", "e1", "other", "b", "2026-11-09T02:00:00.000Z", "https://x.test/1", ["a.ts"]]));
+  assert.equal(h.rows()[0]!.contentHash, sha(["COMMIT", "r", "e1", "other", "b", "2026-11-09T02:00:00.000Z", "https://x.test/1", ["a.ts"], false]));
 });
 
 test("E51 empty string first then null is unchanged and stores repo empty", async () => {

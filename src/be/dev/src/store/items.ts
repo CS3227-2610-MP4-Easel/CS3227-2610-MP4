@@ -41,7 +41,7 @@ export function validateItem(raw: unknown, now: Date): ValidateResult {
   const repo = v.repo || "";
   const body = v.body ?? null;
   const url = v.url ?? null;
-  const contentHash = createHash("sha256").update(JSON.stringify([v.type, repo || null, v.externalId, v.title, body, occurredAt.toISOString(), url, v.files])).digest("hex");
+  const contentHash = createHash("sha256").update(JSON.stringify([v.type, repo || null, v.externalId, v.title, body, occurredAt.toISOString(), url, v.files, truncated])).digest("hex");
   return { ok: true, item: { type: v.type, repo, externalId: v.externalId, title: v.title, body, bodyTruncated: truncated, occurredAt, url, files: v.files, contentHash } };
 }
 
