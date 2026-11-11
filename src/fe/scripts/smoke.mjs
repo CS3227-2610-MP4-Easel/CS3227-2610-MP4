@@ -1,3 +1,4 @@
+// Prototype mode only: run with APP_TIER=preview and no NEXT_PUBLIC_FIREBASE_* values; it signs in with the role cookie.
 // Route smoke test: every screen listed on /screens answers 200 and renders for its role.
 const base = process.env.BASE || 'http://localhost:3100';
 let failed = 0;

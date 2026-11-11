@@ -33,15 +33,29 @@ test("E24-E25 applyPlan ignores embedded project id, validates assignees, and wr
   await assert.rejects(() => createApply().applyPlan(denied, projectId, { checkpoints: [], epics: [{ title: "e", tasks: [{ title: "t", storyPoints: 3, assigneeId: taskId }] }] }, actorId), /VALIDATION_FAILED/);
 });
 
-test("applyPlan rejects unestimated tasks and tasks assigned to closed sprints", async () => {
+test("applyPlan accepts unestimated backlog tasks but rejects them in a sprint", async () => {
   const unestimated = transaction();
-  await assert.rejects(() => createApply().applyPlan(unestimated, projectId, { checkpoints: [], epics: [{ title: "e", tasks: [{ title: "t", storyPoints: null }] }] }, actorId), /VALIDATION_FAILED/);
-  assert.deepEqual(unestimated.calls, []);
+  await createApply().applyPlan(unestimated, projectId, { checkpoints: [], epics: [{ title: "e", tasks: [{ title: "t", storyPoints: null }] }] }, actorId);
+  assert.deepEqual(unestimated.calls, ["event"]);
+  const inSprint = transaction();
+  await assert.rejects(() => createApply().applyPlan(inSprint, projectId, { checkpoints: [], epics: [{ title: "e", tasks: [{ title: "t", storyPoints: null, sprintId: "00000000-0000-4000-8000-000000000005" }] }] }, actorId), /VALIDATION_FAILED/);
+});
 
+test("applyPlan rejects tasks assigned to closed sprints", async () => {
   const closed = transaction();
   closed.sprint.findFirst = async () => ({ id: "sprint", status: "CLOSED" });
   await assert.rejects(() => createApply().applyPlan(closed, projectId, { checkpoints: [], epics: [{ title: "e", tasks: [{ title: "t", storyPoints: 3, sprintId: "00000000-0000-4000-8000-000000000005" }] }] }, actorId), /CONFLICT_STATE/);
   assert.deepEqual(closed.calls, []);
+});
+
+test("applyReplan locks the project before checking whether it is active", async () => {
+  const tx: any = transaction();
+  let locked = false;
+  tx.user.findFirst = async () => ({ id: actorId, role: "DEV_LEAD" });
+  tx.project.update = async () => { locked = true; return {}; };
+  tx.project.findFirst = async () => ({ id: projectId, status: locked ? "ARCHIVED" : "ACTIVE" });
+  await assert.rejects(() => createApply().applyReplan(tx, projectId, { suggestions: [] }, actorId), /CONFLICT_STATE/);
+  assert.equal(locked, true);
 });
 
 test("applyPlan allocates epic positions from max position, not row count", async () => {
