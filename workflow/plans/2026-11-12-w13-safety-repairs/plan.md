@@ -34,8 +34,8 @@
 |---|---|---|---|---|---|---|---|
 | T1 Exact recovery target binding | `tasks/T1.md` | - | - | 1 | complex | full | Done |
 | T2 Workflow checker contracts | `tasks/T2.md` | - | - | 1 | complex | full | Done |
-| T3 Protected production workflow | `tasks/T3.md` | T2 | - | 2 | complex | full | Not started |
-| T4 Runbook and migration regression coverage | `tasks/T4.md` | T1, T3 | - | 3 | standard | full | Not started |
+| T3 Protected production workflow | `tasks/T3.md` | T2 | - | 2 | complex | full | Done |
+| T4 Runbook and migration regression coverage | `tasks/T4.md` | T1, T3 | - | 3 | standard | full | In progress (S2) |
 
 ## Traceability
 

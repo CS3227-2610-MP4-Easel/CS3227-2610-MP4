@@ -26,7 +26,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
 | S1 | 2026-11-09 00:00 | Codex | W13 | In review | PR #26 is open into `development`; immutable tier map and Firebase tier configuration are recorded | Owner reviews/merges PR #26, then redeploys `development` and verifies health/auth/tier checks | 2026-11-09 03:35 |
-| S2 | 2026-11-12 | Codex | W13 | Active | Wave 1 T1/T2 complete; all dependency-backed checks pass | Dispatch T3 protected production workflow | 2026-11-12 |
+| S2 | 2026-11-12 | Codex | W13 | Active | Wave 2 checks pass; T4 runbook and migration regression coverage is starting | Dispatch T4 implementer; owner evidence gate remains before relying on production CI | 2026-11-12 |
 
 **Remaining**
 
@@ -39,7 +39,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | Planned | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md); [safety repairs](../../specs/2026-11-12-w13-safety-repairs-design.md) (approved 2026-11-12) | [safety repairs plan](../../plans/2026-11-12-w13-safety-repairs/plan.md) (approved 2026-11-12) | T1 starting: exact recovery target binding | — |
+| W13 | Environments, seed data and deployment | Planned | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md); [safety repairs](../../specs/2026-11-12-w13-safety-repairs-design.md) (approved 2026-11-12) | [safety repairs plan](../../plans/2026-11-12-w13-safety-repairs/plan.md) (approved 2026-11-12) | T1/T2/T3 complete; T4 pending | — |
 
 ---
 
@@ -91,6 +91,8 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-12 | Operator approved Gate 1 and Gate 2; four-task safety-repair plan is ready for execution. | W13 | 23321e2 + plan commit |
 | 2026-11-12 | T1 exact recovery target binding and T2 explicit workflow contract completed; handovers validate. | W13 | f7843a4 + 8c1b32e |
 | 2026-11-12 | Wave 1 checks pass after dependency-backed verification: 564 backend tests (536 pass, 28 skipped), 149 frontend tests, typecheck, lint, contract, workflow checker, plan lint, and diff check. | W13 | pending state commit |
+| 2026-11-12 | T3 restored the protected push-main production workflow with pinned Actions, least-privilege checkout, migration wrapper, and post-migration Deploy Hook; workflow and repository checks pass. | W13 | 5e4e9c0 |
+| 2026-11-12 | Wave 2 verification passes: 538 backend tests with 28 skipped, 149 frontend tests, typecheck, lint, contract, workflow checker, handover lint, and diff check. | W13 | pending state commit |
 
 ### D~7 — Full typecheck unavailable during Wave 1
 
