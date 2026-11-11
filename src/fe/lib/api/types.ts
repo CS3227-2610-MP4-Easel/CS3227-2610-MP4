@@ -1,4 +1,5 @@
 // Shapes follow docs/architecture/contracts.md until packages/contracts exists.
+export type User = { id: string; email: string; displayName: string; role: 'PM' | 'DEV_LEAD' | 'DEVELOPER' };
 export type TaskStatus = 'todo' | 'prog' | 'rev' | 'done';
 export type SprintStatus = 'PLANNED' | 'ACTIVE' | 'CLOSED';
 export type Person = 'pn' | 'ml' | 'wo';

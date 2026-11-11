@@ -75,6 +75,16 @@ test("patch cannot clear a task from its current closed sprint", async () => {
   await assert.rejects(() => createTasks(db as any, access()).patch({ userId, role: "PM" }, taskId, { sprintId: null, version: 1 }), /CONFLICT_STATE/);
 });
 
+test("patch cannot move a task from a closed sprint to an active sprint", async () => {
+  const db = { $transaction: async (work: (tx: any) => Promise<unknown>) => work({
+    task: { findFirst: async () => row({ sprintId: "closed", storyPoints: 3 }), updateMany: async () => { throw new Error("must not update"); } },
+    epic: { findFirst: async () => ({ id: epicId }) },
+    sprint: { findFirst: async ({ where }: any) => ({ id: where.id, status: where.id === "closed" ? "CLOSED" : "ACTIVE" }) },
+    project: { update: async () => ({}) },
+  }) };
+  await assert.rejects(() => createTasks(db as any, access()).patch({ userId, role: "PM" }, taskId, { sprintId: "active", version: 1 }), /CONFLICT_STATE/);
+});
+
 test("status preserves omitted block fields", async () => {
   let reads = 0;
   const db = { $transaction: async (work: (tx: any) => Promise<unknown>) => work({ task: { findFirst: async () => ++reads === 1 ? row({ blocked: true, blockedReason: "Waiting" }) : row({ status: "IN_PROGRESS", blocked: true, blockedReason: "Waiting", version: 2 }), updateMany: async () => ({ count: 1 }) }, taskEvent: { create: async () => undefined } }) };

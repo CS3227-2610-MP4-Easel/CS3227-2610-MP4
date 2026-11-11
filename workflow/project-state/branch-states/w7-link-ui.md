@@ -5,7 +5,7 @@ describes `INT`; read it for context and write here instead of editing it.
 `sync-project-state` folds this file in after the branch merges.
 
 - **Branch:** w7-link-ui (from `w7-implement-pm-plan-flow` at `1bc7384`; stacked, so it merges after that branch and after W5 PR 23)
-- **Base:** 1bc7384 (tip of `w7-implement-pm-plan-flow`; `INT` last merged there at `faa1c08` plus W5)
+- **Base:** 3519ff077de611e79be28b1c3743a027675260c9 (development, integrated through W7 and W7b)
 - **Owner:** Xiao-Congchen (PM)
 - **Status:** Building
 - **Last updated:** 2026-11-08 by Claude Sonnet 5.5 — branch and worktree created, scope survey done, no UI code yet
@@ -29,6 +29,8 @@ describes `INT`; read it for context and write here instead of editing it.
 | s2 | 2026-11-10 | Codex | W7c, W7-UI | Blocked — live outline | PM history wired and reviewed; W5/W14/W16 remain with their owners; D~8 remains | Diagnose D~8; verify backlog conflict/project switching and complete E36 and live 10-epic measurement | 2026-11-11 |
 
 **Upstream check (2026-11-11):** origin/main remains at the initial commit and is already an ancestor; a fast-forward-only pull was a no-op. origin/development has 59 commits absent from this branch; eight files changed on both sides. Do not merge or rebase without the required branch review and integration decision. The published parent stops at 1bc7384; its 30 W7b commits are local only.
+
+**Integration (2026-11-11):** Development integrated through the W7 and W7b stack. The PM UI now uses the Firebase-backed authenticated API client; the previous fixed frontend dev token is no longer used. Verify real sign-in, live PM calls, session behavior, project switching and sign-out before review; frontend typecheck and tests could not run because Firebase and Vitest dependencies were unavailable in the isolated checkout. W12-paths remains included in this slice pending extraction.
 
 **Remaining**
 

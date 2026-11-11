@@ -1,0 +1,20 @@
+{
+  "task": "T2",
+  "status": "done",
+  "summary": "authMode(env) added and /api/as now 404s outside prototype mode and redirects only to same-origin paths.",
+  "commit": "adb72b1",
+  "produces": [
+    {"kind": "symbol", "name": "authMode, AuthMode, FIREBASE_KEYS", "where": "src/fe/lib/auth/mode.ts", "note": "server-only; never import from a 'use client' file (import type only)"},
+    {"kind": "route", "name": "/api/as", "where": "src/fe/app/api/as/route.ts", "note": "404 unless prototype mode; to is same-origin checked"}
+  ],
+  "next": [
+    "T4: call authMode(process.env) in layout.tsx and [[...slug]]/page.tsx only; pass as prop.",
+    "T7: mode.ts is the module rule six protects."
+  ],
+  "deviations": [
+    {"what": "Follow-up commit af955c8 used commit -a and also included the orchestrator's branch-state edit", "why": "recording the sha needed a second commit", "needs": "none"},
+    {"what": "Build run by the orchestrator, not the implementer: pass", "why": "not run in the task", "needs": "none"}
+  ],
+  "edge_cases": ["E56", "E57", "E58", "E84", "E85", "E59", "E86", "E87"],
+  "checks": {"build": "pass", "tests": "pass (fe 6 files, 43 tests)", "lint": "pass"}
+}

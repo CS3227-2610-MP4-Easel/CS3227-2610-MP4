@@ -4,30 +4,19 @@
 // through the contracts client; the signatures stay. Fixtures are used only inside this folder.
 import { StoryPointsSchema } from '@agile/contracts';
 import { read, write } from './store';
-import { call, LiveError, openProjectId } from './live';
-import type { Checkpoint, CheckpointDraft, Epic, EpicPatch, LiveCheckpoint, LiveEpic, LiveMember, LiveSprint, LiveProject, LiveTask, Member, Page, PlanApproved, PlanEpic, PlanProposal, Sprint, Standup, Task, TaskStatus } from './types';
+import { LiveError, openProjectId } from './live';
+import { ApiError } from './errors';
+import { apiFetch } from './http';
+import type { Checkpoint, CheckpointDraft, Epic, EpicPatch, LiveCheckpoint, LiveEpic, LiveMember, LiveSprint, LiveProject, LiveTask, Member, Page, PlanApproved, PlanEpic, PlanProposal, Sprint, Standup, Task, TaskStatus, User } from './types';
 
 export { useDb, reset as resetPrototypeData } from './store';
 export { isLive, ModeProvider } from './mode';
 export * from './types';
+export { ApiError } from './errors';
 
 const wait = (ms = 250) => new Promise((r) => setTimeout(r, ms));
 
-export class ApiError extends Error {
-  constructor(public code: string, message: string) {
-    super(message);
-  }
-}
-
-// Plan flow, live only (LLM_MODE=live, see ./mode). Calls go to /api; failures become ApiError with the server's message.
-const live = async <T,>(method: 'GET' | 'POST' | 'PATCH' | 'DELETE', path: string, body?: unknown): Promise<T> => {
-  try {
-    return await call<T>(method, path, body);
-  } catch (e) {
-    if (e instanceof LiveError) throw new ApiError(e.code, e.message);
-    throw new ApiError('NETWORK', 'Could not reach the server. Try again.');
-  }
-};
+const live = <T,>(method: 'GET' | 'POST' | 'PATCH' | 'DELETE', path: string, body?: unknown): Promise<T> => apiFetch<T>(`/api${path}`, { method, body });
 
 // The project of the open page, as an ApiError when the page has none.
 const pid = (): string => {
@@ -415,4 +404,21 @@ export async function listTeamStandups_55(date: string, person?: import('./types
 // 56: the signed-in user's AI sessions with token and cost totals.
 export async function listAiSessions_56(): Promise<import('./types').AiSession[]> {
   return read().aiSessions;
+}
+
+export type ApiRole = 'PM' | 'DEV_LEAD' | 'DEVELOPER';
+
+// 2: check a registration code (no session yet)
+export async function checkCode_2(role: ApiRole, code: string): Promise<void> {
+  await apiFetch<unknown>('/api/auth/check-code', { method: 'POST', body: { role, code: code.trim() }, auth: false });
+}
+
+// 3: register the signed-in Firebase user with a role code
+export async function register_3(role: ApiRole, code: string, displayName: string): Promise<User> {
+  return apiFetch<User>('/api/auth/register', { method: 'POST', body: { role, code: code.trim(), displayName: displayName.trim() } });
+}
+
+// 4: the signed-in user's profile
+export async function me_4(): Promise<User> {
+  return apiFetch<User>('/api/me');
 }
