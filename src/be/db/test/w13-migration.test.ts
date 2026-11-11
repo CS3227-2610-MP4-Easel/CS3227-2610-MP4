@@ -12,7 +12,7 @@ const RUNBOOK = new URL("../../../../docs/operations/w13-deployment.md", import.
 const WORKFLOW = new URL("../../../../.github/workflows/w13-production.yml", import.meta.url);
 const VERCEL_CONFIG = new URL("../../../../vercel.json", import.meta.url);
 
-const env = { APP_TIER: "prod", DIRECT_DATABASE_URL: "postgresql://user:password@ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech/neondb", NEON_HOST: "ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech", NEON_PROJECT: "super-sunset-36592949", DATABASE_URL: "postgresql://user:password@ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech/neondb", VERCEL_TOKEN: "must-not-pass" };
+const env = { APP_TIER: "prod", DIRECT_DATABASE_URL: "postgresql://user:password@ep-summer-heart-b3767eul.c-4.ap-southeast-1.aws.neon.tech/neondb", NEON_HOST: "ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech", NEON_PROJECT: "super-sunset-36592949", DATABASE_URL: "postgresql://user:password@ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech/neondb", VERCEL_TOKEN: "must-not-pass" };
 
 test("E8/E18/E24 manifest matches every committed migration checksum", async () => {
   const sql = await readFile(new URL("../prisma/migrations/00000000000000_init/migration.sql", import.meta.url));
@@ -28,6 +28,8 @@ test("E17/E28 direct migration inputs require the canonical production target", 
   assert.doesNotThrow(() => validateMigrationInputs(env));
   assert.throws(() => validateMigrationInputs({ ...env, APP_TIER: "dev" }), /APP_TIER/);
   assert.throws(() => validateMigrationInputs({ ...env, DIRECT_DATABASE_URL: "postgresql://user:password@ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb", NEON_HOST: "ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech", NEON_PROJECT: "super-sunset-36592949" }), /target|observations/i);
+  assert.throws(() => validateMigrationInputs({ ...env, DIRECT_DATABASE_URL: env.DATABASE_URL }), /target|observations/i);
+  assert.throws(() => validateMigrationInputs({ ...env, NEON_HOST: undefined }), /target|observations/i);
   assert.deepEqual(buildMigrationCommand(), ["npm", "--workspace", "@agile/db", "exec", "prisma", "migrate", "deploy", "--", "--schema", "prisma/schema.prisma"]);
 });
 

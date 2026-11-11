@@ -1,47 +1,40 @@
 {
   "task": "T3",
   "status": "done",
-  "summary": "Restored the protected W13 production migration-before-deployment workflow and added workflow contract coverage.",
-  "commit": "daa2880f2ac41f741d14f6a9477927d98a44f9ab",
+  "summary": "Separated pooled production runtime targeting from direct production migration targeting; migration now requires the direct host and pooled NEON_HOST observation while recovery remains unchanged.",
+  "commit": "dc7667c",
   "produces": [
     {
-      "kind": "file",
-      "name": "protected production workflow",
-      "where": ".github/workflows/w13-production.yml",
-      "note": "Pushes only main, uses the production environment and serialized concurrency, checks out github.sha, builds without secrets, runs the exact migration wrapper, then requests the deploy hook only after success."
+      "kind": "symbol",
+      "name": "validateDirectMigrationTarget",
+      "where": "src/be/db/src/tier-targets.ts",
+      "note": "Accepts only the code-owned non-pooled production migration host, database, project, and pooled NEON_HOST observation."
     },
     {
       "kind": "file",
-      "name": "production workflow contract tests",
-      "where": "tests/w13/production-workflow.test.ts",
-      "note": "Covers trigger, environment, identity variables, immutable checkout, protected secret names, ordering, and forbidden token or direct migration paths."
+      "name": "production target manifest",
+      "where": "workflow/deployment/tier-manifest.json",
+      "note": "Records pooled neonHost and separate directMigrationHost for production."
     },
     {
-      "kind": "compatibility",
-      "name": "migration wrapper checker support",
-      "where": "scripts/check-workflows.mjs",
-      "note": "The production contract recognizes the mandated node --import tsx wrapper command."
+      "kind": "file",
+      "name": "target and migration regression tests",
+      "where": "src/be/db/test/tier-targets.test.ts, src/be/db/test/seed.test.ts, src/be/db/test/w13-migration.test.ts",
+      "note": "Covers pooled runtime DATABASE_URL acceptance, direct migration URL acceptance, pooled-host rejection for migration URLs, and required pooled observation."
     }
   ],
-  "next": "T4 can document the exact wrapper command, workflow secret names, and the owner-side Vercel Git auto-deploy-disabled evidence gate.",
-  "deviations": [
-    {
-      "what": "The shared T2 checker regex did not recognize the mandated node --import tsx wrapper form.",
-      "why": "The workflow contract otherwise rejected the exact command required by T3, so its matcher was extended narrowly to accept the required form.",
-      "needs": "none"
-    }
-  ],
+  "next": "T4 can use the exact wrapper command and the unchanged protected workflow; production runtime remains pooled while DIRECT_DATABASE_URL is direct.",
+  "deviations": [],
   "edge_cases": ["E4", "E5", "E6", "E9", "E10"],
   "checks": {
     "build": "pass",
-    "focused-tests": "538 pass, 0 fail, 28 skipped; frontend focused suite 149 pass",
-    "production-workflow": "2 pass",
-    "workflow-security": "23 pass",
-    "workflow-checker": "pass",
-    "agent-policy": "pass",
+    "focused-tests": "543 backend pass, 28 skipped; 149 frontend pass",
+    "full-tests": "543 backend pass, 28 skipped; 149 frontend pass",
     "typecheck": "pass",
     "lint": "pass",
     "contract": "7 pass",
+    "workflow-checker": "pass",
+    "secret-scan": "pass; no leaks found",
     "git-diff-check": "pass"
   }
 }

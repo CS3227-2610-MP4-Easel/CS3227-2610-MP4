@@ -18,6 +18,7 @@ test("E1/E2 canonical dev and prod targets use the confirmed values", () => {
   assert.equal(prod.firebaseProjectId, "agile-platform-prod");
   assert.equal(prod.neonProject, "super-sunset-36592949");
   assert.equal(prod.neonHost, "ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech");
+  assert.equal(prod.directMigrationHost, "ep-summer-heart-b3767eul.c-4.ap-southeast-1.aws.neon.tech");
   assert.equal(prod.databaseName, "neondb");
 });
 
