@@ -4,13 +4,14 @@ import { createPredicateEvaluator } from "./middleware/predicates.js";
 
 /** Wires auth into the policy gate. Membership and resource resolution are W5's (spec SD15); until W5 replaces these
  * placeholders they fail closed, so every MEMBER-scoped route is a 404. */
-export function createAppDependencies(auth: Pick<AuthRuntime, "resolvePrincipal" | "lookupRegisteredUser">): AuthDependencies {
+export function createAppDependencies(auth: Pick<AuthRuntime, "resolvePrincipal" | "lookupRegisteredUser">, core?: Pick<AuthDependencies, "resolveResource" | "requireMember">): AuthDependencies {
   const requireMember: AuthDependencies["requireMember"] = async () => { throw new Error("NOT_FOUND"); };
+  const membership = core?.requireMember ?? requireMember;
   return {
     resolvePrincipal: auth.resolvePrincipal,
     lookupRegisteredUser: auth.lookupRegisteredUser,
-    resolveResource: async () => null,
-    requireMember,
-    evaluatePredicate: createPredicateEvaluator(requireMember),
+    resolveResource: core?.resolveResource ?? (async () => null),
+    requireMember: membership,
+    evaluatePredicate: createPredicateEvaluator(membership),
   };
 }

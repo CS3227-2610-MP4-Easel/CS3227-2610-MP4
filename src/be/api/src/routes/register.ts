@@ -2,7 +2,7 @@ import type { Hono } from "hono";
 import type { z } from "zod/v3";
 import { policyForRoute, validateRouteRegistration, type ApiContext, type RouteDefinition } from "@agile/contracts";
 import { parseInput, parseJsonBody } from "../errors.js";
-import { authorizeRequest, type AuthDependencies } from "../middleware/auth.js";
+import { authorizeAdder, authorizeRequest, type AuthDependencies } from "../middleware/auth.js";
 
 export type ApiEnv = { Variables: { requestId: string } };
 
@@ -36,7 +36,7 @@ export function registerRoute(app: Hono<ApiEnv>, route: RouteDefinition, deps?: 
       }
     }
     // Authorization runs before input parsing, so a malformed protected request without a valid token is a 401, not a 422.
-    const scope = await authorizeRequest(policy, deps as AuthDependencies, c.req.header("authorization"), request);
+    const scope = await authorizeRequest(policy, deps as AuthDependencies, c.req.header("authorization"), request, policy.predicate === "ADDER");
     let settled = false;
     try {
       const input = {
@@ -44,6 +44,10 @@ export function registerRoute(app: Hono<ApiEnv>, route: RouteDefinition, deps?: 
         query: isSchema(route.querySchema) ? parseInput(route.querySchema, Object.fromEntries(url.searchParams)) : Object.fromEntries(url.searchParams),
         body: isSchema(route.bodySchema) ? parseInput(route.bodySchema, await parseJsonBody(c.req.raw)) : undefined,
       };
+      if (policy.predicate === "ADDER" && scope.principal && "userId" in scope.principal) {
+        request.body = input.body;
+        await authorizeAdder(deps as AuthDependencies, policy, scope.principal, request, scope.tx);
+      }
       const principal = scope.principal && "userId" in scope.principal ? scope.principal : undefined;
       // TOKEN routes have a verified token but possibly no users row, so they get the identity instead of a principal.
       const email = scope.principal && !("userId" in scope.principal) ? scope.principal.tokenClaims.email : undefined;

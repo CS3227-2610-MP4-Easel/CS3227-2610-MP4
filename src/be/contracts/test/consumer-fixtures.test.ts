@@ -11,4 +11,5 @@ const consumers: { W2: LlmGateway; W4: Sessions; W5: Core; W6: AiContext } = {
 
 test("F8/E12 later workstreams consume only frozen public interfaces", () => {
   assert.deepEqual(Object.keys(consumers).sort(), ["W2", "W4", "W5", "W6"]);
+  assert.deepEqual(Object.keys(consumers.W5).sort(), ["applyPlan", "applyReplan", "assertWritable", "progress", "requireMember", "velocity"]);
 });

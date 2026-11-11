@@ -4,6 +4,7 @@ import { InvalidToken, type TokenVerifier } from "./token-verifier.js";
 
 export type TokenPrincipal = { firebaseUid: string; tokenClaims: { email: string } };
 export type RegisteredPrincipal = { firebaseUid: string; userId: string; role: UserRole };
+export type UserLookup = { userId: string };
 
 /** One `Bearer` header, any case, one or more spaces; two headers arrive joined with ", " and fail the pattern. */
 const BEARER = /^Bearer +(\S+)$/i;
@@ -29,5 +30,21 @@ export function createLookupRegisteredUser(db: FilteredDbClient): (firebaseUid: 
     const row = await db.user.findUnique({ where: { firebaseUid }, select: { id: true, role: true } });
     if (!row) throw new Error("USER_NOT_REGISTERED");
     return { firebaseUid, userId: row.id, role: row.role };
+  };
+}
+
+/** Auth owns user-directory reads so API composition never queries the user table directly. */
+export function createLookupUserByEmail(db: FilteredDbClient): (email: string) => Promise<UserLookup | null> {
+  return async (email) => {
+    const row = await db.user.findFirst({ where: { email: email.trim().toLowerCase() }, select: { id: true } });
+    return row ? { userId: row.id } : null;
+  };
+}
+
+/** The stored role is authoritative; callers must not infer it from request input. */
+export function createLookupUserRole(db: FilteredDbClient): (userId: string) => Promise<UserRole | null> {
+  return async (userId) => {
+    const row = await db.user.findFirst({ where: { id: userId }, select: { role: true } });
+    return row?.role ?? null;
   };
 }

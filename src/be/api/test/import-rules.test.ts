@@ -23,3 +23,10 @@ test("AD-01b/N4/E19 request-facing sources do not import Prisma or raw SQL", asy
     assert.doesNotMatch(source, /(?:\.\.\/|\.\/)[^\n"']*(?:\/db\/|\/prisma\/)/);
   }
 });
+
+test("E19 production composition owns core assembly and its required context-source registration", async () => {
+  const source = await readFile(join(process.cwd(), "src/be/api/src/core-composition.ts"), "utf8");
+  assert.match(source, /registerCore\(core\);/);
+  assert.match(source, /registerCoreContextSources\(db as never, registerContextSource\);/);
+  assert.ok(source.indexOf("registerCore(core)") < source.lastIndexOf("registerCoreContextSources"));
+});

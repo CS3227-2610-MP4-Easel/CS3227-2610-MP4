@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { FilteredDbClient } from "@agile/db";
-import { createLookupRegisteredUser, createResolvePrincipal, InvalidToken, VerifierUnavailable, type TokenVerifier } from "../src/index.js";
+import { createLookupRegisteredUser, createLookupUserByEmail, createLookupUserRole, createResolvePrincipal, InvalidToken, VerifierUnavailable, type TokenVerifier } from "../src/index.js";
 
 const verifier = (result: () => Promise<{ uid: string; email: string | null }>) => {
   const seen: string[] = [];
@@ -36,4 +36,15 @@ test("E6 principal role is the stored role", async () => {
   const lookup = createLookupRegisteredUser(db);
   assert.deepEqual(await lookup("known"), { firebaseUid: "known", userId: "user-1", role: "DEV_LEAD" });
   await assert.rejects(() => lookup("unknown"), { message: "USER_NOT_REGISTERED" });
+});
+
+test("user directory lookups normalize email and obtain role from storage", async () => {
+  const db = { user: { findFirst: async ({ where }: { where: { email?: string; id?: string } }) => {
+    if (where.email === "lead@example.test") return { id: "user-1" };
+    if (where.id === "user-1") return { role: "DEV_LEAD" };
+    return null;
+  } } } as unknown as FilteredDbClient;
+  assert.deepEqual(await createLookupUserByEmail(db)(" Lead@Example.Test "), { userId: "user-1" });
+  assert.equal(await createLookupUserRole(db)("user-1"), "DEV_LEAD");
+  assert.equal(await createLookupUserRole(db)("unknown"), null);
 });

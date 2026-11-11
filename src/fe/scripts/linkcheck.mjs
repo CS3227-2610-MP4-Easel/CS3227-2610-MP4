@@ -1,3 +1,4 @@
+// Prototype mode only: run with APP_TIER=preview and no NEXT_PUBLIC_FIREBASE_* values; it signs in with the role cookie.
 // Crawls the running prototype (npm run start) for each role, following every internal link.
 // Fails on a dead link ("#", missing screen, or a screen the role cannot open) and lists
 // screens the crawl never reached and controls that look like buttons but go nowhere.
