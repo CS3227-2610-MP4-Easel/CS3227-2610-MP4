@@ -5,11 +5,11 @@ describes `INT`; read it for context and write here instead of editing it.
 `sync-project-state` folds this file in after the branch merges.
 
 - **Branch:** w7-implement-pm-plan-flow (from `INT` at `7caa23d`)
-- **Base:** faa1c08
+- **Base:** 3519ff07
 - **Owner:** Xiao-Congchen (PM)
 - **Status:** In review
 - **Approved:** W7 prior review only; W7b branch review pending
-- **Last updated:** 2026-11-09 by Claude Sonnet 5.5 — W7b (PM plan editing) spec drafted and in review; W5 merge addition from 2026-11-08 still needs the operator's confirmation
+- **Last updated:** 2026-11-11 by Codex — merged development; W7b owner review and verification remain.
 
 **Untouched:** Conventions (Architecture Now blocks for pm, core and proposals are written at the fold; see Close-out)
 
@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| Codex integration | 2026-11-11 | Codex | W7/W7b | Active | Integrating development and preparing PR | Merge origin/development, resolve conflicts, verify and document scope | 2026-11-11 |
+
 
 **Remaining**
 
@@ -34,7 +34,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] Build T1-T11 (plan close-out lint clean).
 - [ ] Gate 3: the operator reviews the branch; then ask whether to push and open the PR (nothing pushed).
 - [ ] **Handover W2 owner (Developer):** spec SD3 changes `Sessions.assertUsable` (a `PM_PLAN_OUTLINE` session also admits `PM_PLAN_EXPAND`) and amends contracts §5.3; their agreement is recorded in T1 (AD-11, as C59); not yet obtained.
-- [x] **W5 (Dev Lead) integrated 2026-11-08:** `origin/w5-core-planning` (PR 23, not yet merged to `INT`) is merged into this branch; W5 supplies `requireMember`, `Core.assertWritable` and a `PM_PLAN_CREATE` project resolver that reads `id`; W7 registers the four proposal resolvers in `core-composition.ts`; both `applyPlan` implementations exist (see Known Gaps). This branch now depends on PR 23 merging first.
+- [x] **W5 (Dev Lead) integrated 2026-11-08:** `origin/w5-core-planning` (PR 23, not yet merged to `INT`) is merged into this branch; W5 supplies `requireMember`, `Core.assertWritable` and a `PM_PLAN_CREATE` project resolver that reads `id`; W7 registers the four proposal resolvers in `core-composition.ts`; both `applyPlan` implementations exist (see Known Gaps). PR 23 is now merged to development.
 - [x] W5's owner estimate: no longer needed, W5 is in PR 23.
 - [ ] **W7b branch review:** T1–T8 implemented; see D~10 for remaining suite failures and coverage-audit.md for evidence. Owner review is required before approval.
 - [ ] Carry STATE.md Upcoming items addressed to W7 into the spec: W6 sources and `assembleWith` (`pm.similarItems`, titles only, at most 5, filtered by member projects); W3 section rules, blocked-input handling (`BLOCKED_INPUT` to 422 `VALIDATION_FAILED`, `REQUEST_REFUSED` to 422) and output schemas without URLs or angle brackets; W2 mock responses, static sections and `assertStaticSectionsFit`; W7 proposal resolvers.
@@ -54,6 +54,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-11 | Merged development 3519ff07; regenerated lockfile against merged manifests; typecheck, lint and contract tests pass. Full suite needs a correctly configured integration database; owner review remains. W7c and UI integration continue on w7-link-ui. | W7/W7b | e756143 |
 | 2026-11-09 | W7b T1 contracts, policy, OpenAPI and documentation implemented; focused and contract tests pass; review placement finding fixed | W7b | 1bdeca0, c304835 |
 | 2026-11-09 | W7b T2 editing store implemented; review fixed strict-parse storage and deterministic lock races; 11 edit integration tests pass | W7b | 9bc5ec2, 8a5ed46 |
 | 2026-11-09 | W7b T5 approval outcome and replay implemented; 21 database tests pass; review clean | W7b | f3c4564 |
