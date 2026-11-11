@@ -2,7 +2,7 @@
   "task": "T4",
   "status": "done",
   "summary": "Added the CI-only W13 production runbook, repository-owned Vercel main auto-deploy gate, and migration wrapper failure-safety regression coverage.",
-  "commit": "3f527b5",
+  "commit": "8c75309e50997314102759794db0a32e05bccdeb",
   "produces": [
     {
       "kind": "file",
