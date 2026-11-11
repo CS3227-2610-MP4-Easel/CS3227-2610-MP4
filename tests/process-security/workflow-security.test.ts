@@ -6,6 +6,7 @@ import {
   BOOTSTRAP_BASE_SHA,
   resolveActionPins,
   validateCiWorkflowContract,
+  validateProductionWorkflowContract,
   validateWorkflowDirectory,
   validateWorkflowText,
 } from "../../scripts/check-workflows.mjs";
@@ -166,7 +167,7 @@ test("F7/F11 parse YAML structure instead of trusting quoted keys or block scala
     "      - run: |",
     "          on:",
     "            pull_request:",
-    "on: push",
+    "on: workflow_dispatch",
   ].join("\n");
 
   const quotedErrors = validateWorkflowText(quotedKeys, { actions: {} }, "quoted.yml");
@@ -239,4 +240,27 @@ test("F16 CLI rejects an invalid base revision instead of ignoring the option", 
 
 test("F15 trusted review workflow passes the real workflow-directory validator", async () => {
   assert.deepEqual(await validateWorkflowDirectory(".", { baseSha: process.env.BASE_SHA ?? "8c19768157bdd3d4998961fafddcbe6aefd8885e", baseBranch: "development", prNumber: "9", bootstrapPrNumber: "9" }), []);
+});
+
+test("E8 former and alternate production filenames receive baseline checks", () => {
+  const privileged = ["on:", "  push:", "  workflow_dispatch:", "jobs:", "  deploy:", "    environment: production"].join("\n");
+  for (const file of [".github/workflows/w13-production.yml", ".github/workflows/renamed-production.yml"]) {
+    assert.match(validateWorkflowText(privileged, BOOTSTRAP_ACTION_PINS, file).join("\n"), /unexpected workflow trigger/);
+  }
+  const pullRequestEnvironment = ["on: pull_request", "jobs:", "  deploy:", "    environment: production"].join("\n");
+  assert.match(validateWorkflowText(pullRequestEnvironment, BOOTSTRAP_ACTION_PINS, "renamed.yml").join("\n"), /environment/);
+  assert.match(validateProductionWorkflowContract(privileged, ".github/workflows/renamed-production.yml").join("\n"), /restricted/);
+});
+
+test("E9 production contract rejects unsafe actions and ordering", () => {
+  const workflow = [
+    "on:", "  push:", "    branches: [main]", "concurrency:", "  group: production", "  cancel-in-progress: false",
+    "jobs:", "  deploy:", "    environment: production", "    steps:",
+    "      - uses: actions/checkout@v4", "        with:", "          ref: main",
+    "      - run: curl -X POST \"$VERCEL_DEPLOY_HOOK_URL\"", "      - run: node scripts/w13/migrate-production.mjs",
+  ].join("\n");
+  const errors = validateProductionWorkflowContract(workflow);
+  assert.match(errors.join("\n"), /production Action repository|full commit SHA/);
+  assert.match(errors.join("\n"), /checkout must use github.sha/);
+  assert.match(errors.join("\n"), /follow the migration wrapper/);
 });

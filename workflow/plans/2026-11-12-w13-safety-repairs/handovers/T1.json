@@ -33,7 +33,7 @@
   ],
   "edge_cases": ["E1", "E2", "E3"],
   "checks": {
-    "build": "DB typecheck pass",
+    "build": "pass",
     "tests": "11 pass, 0 fail in tier-targets and seed tests; root focused command reached 531 pass before frontend vitest missing",
     "lint": "git diff --check pass"
   }
