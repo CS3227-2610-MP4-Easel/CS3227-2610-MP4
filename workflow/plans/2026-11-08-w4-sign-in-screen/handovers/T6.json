@@ -1,0 +1,21 @@
+{
+  "task": "T6",
+  "status": "done",
+  "summary": "Register flow at /register after review round 1: separate displayName error, cooldown enforced in run, account inputs locked; 39 register tests, fe suite 6.1s.",
+  "commit": "d034112",
+  "produces": [
+    { "kind": "symbol", "name": "Register", "where": "src/fe/components/live/register.tsx", "note": "default export, no props; steps in state, URL stays /register" },
+    { "kind": "file", "name": "register.test.tsx", "where": "src/fe/test/register.test.tsx", "note": "covers all assigned E IDs under the real SessionProvider and a routed fetch stub" }
+  ],
+  "next": [
+    "T7: register.tsx imports lib/auth/firebase and lib/api only; no fetch, location.assign, process.env or dangerouslySetInnerHTML.",
+    "Accepted: a 403 or 422 role/code error at Create account returns the user to step 1; a displayName error is kept and shown on step 2.",
+    "Email and Password are disabled once the Firebase account exists in this instance."
+  ],
+  "deviations": [
+    { "what": "Edited two text queries in src/fe/test/gate.test.tsx (T4 file)", "why": "they asserted the placeholder heading 'Create your account'; real screens show 'Pick your role' (step 1) and 'Finish setting up' (unregistered)", "needs": "none" },
+    { "what": "Fake timers fake only setInterval/clearInterval, not userEvent advanceTimers", "why": "full fake timers hung act/userEvent in vitest", "needs": "none" }
+  ],
+  "edge_cases": ["E32","E33","E34","E39","E52a","E52b","E52c","E52d","E52e","E52f","E52g","E52h","E53","E55","E73","E74","E75","E76","E80","E81","E100","E101","E102","E103","E104"],
+  "checks": { "build": "pass", "tests": "pass", "lint": "pass" }
+}
