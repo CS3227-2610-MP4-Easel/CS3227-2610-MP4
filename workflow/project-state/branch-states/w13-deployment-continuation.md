@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| *(none)* | — | — | — | — | Branch work is complete and awaiting Gate 3 review | Operator reviews the branch; do not push or merge until approved | 2026-11-12 |
+| S4 | 2026-11-12 | Codex | W13 | Done | Replaced the unauthenticated release-SHA lookup with an authenticated read-only GitHub API check and reran close-out checks | Ask the operator for Gate 3 branch review before push or merge | 2026-11-12 |
 
 **Remaining**
 
@@ -100,6 +100,8 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-12 | Operator confirmed production runtime must remain pooled while `DIRECT_DATABASE_URL` uses the verified non-pooled host; the W13 spec and T3 task were amended accordingly. | W13 | 541dbe8 |
 | 2026-11-12 | T3 target correction completed: runtime validation remains pooled, migration validation requires the verified direct host, and all close-out checks pass. | W13 | ca06561 |
 | 2026-11-12 | Owner reports the Vercel Deploy Hook and protected GitHub production Environment with both secrets are configured; values remain unrecorded. | W13 | owner report |
+| 2026-11-12 | Gate 3 review identified that the pre-hook SHA check used unauthenticated `git ls-remote`; the repair replaced it with an authenticated read-only GitHub API check using `github.token`. | W13 | resolved by 1c22eb9 |
+| 2026-11-12 | Replaced the unauthenticated `git ls-remote` release-SHA guard with a `contents: read` GitHub refs API check using `github.token`, `pipefail`, and a fail-closed JSON SHA comparison; focused and full close-out checks pass. | W13 | 1c22eb9 |
 
 ### D~8 — Deploy Hook cannot carry an exact commit SHA
 

@@ -1,8 +1,8 @@
 {
   "task": "T3",
   "status": "done",
-  "summary": "Separated pooled production runtime targeting from direct production migration targeting; migration now requires the direct host and pooled NEON_HOST observation while recovery remains unchanged.",
-  "commit": "ca06561c36f4bd2c7b5f8cb30980df0af1922612",
+  "summary": "Release-SHA guard now uses the read-only GitHub refs API with checkout credentials disabled; pooled runtime and direct migration targeting remain separate.",
+  "commit": "1c22eb98b29bd2976c5ec54d5edfb1eddf483fdc",
   "produces": [
     {
       "kind": "symbol",
@@ -23,7 +23,7 @@
       "note": "Covers pooled runtime DATABASE_URL acceptance, direct migration URL acceptance, pooled-host rejection for migration URLs, and required pooled observation."
     }
   ],
-  "next": "T4 can use the exact wrapper command and the unchanged protected workflow; production runtime remains pooled while DIRECT_DATABASE_URL is direct.",
+  "next": "T4 can use the exact wrapper command and protected workflow; production runtime remains pooled while DIRECT_DATABASE_URL is direct, and the pre-hook release-SHA check is authenticated.",
   "deviations": [],
   "edge_cases": ["E4", "E5", "E6", "E9", "E10"],
   "checks": {
