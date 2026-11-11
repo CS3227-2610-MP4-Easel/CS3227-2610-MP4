@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S3 | 2026-11-12 | Codex | W13 | Active | Operator confirmed separate pooled runtime and non-pooled migration hosts; T3 target correction is in progress | Dispatch T3 target-map repair, rerun tests, and reconcile the revised spec/plan | 2026-11-12 |
+| *(none)* | — | — | — | — | Branch work is complete and awaiting Gate 3 review | Operator reviews the branch; do not push or merge until approved | 2026-11-12 |
 
 **Remaining**
 
@@ -38,7 +38,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | In review | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md); [safety repairs](../../specs/2026-11-12-w13-safety-repairs-design.md) (approved 2026-11-12) | [safety repairs plan](../../plans/2026-11-12-w13-safety-repairs/plan.md) (approved 2026-11-12) | T1-T4 complete; Gate 3 review pending | — |
+| W13 | Environments, seed data and deployment | In review | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md); [safety repairs](../../specs/2026-11-12-w13-safety-repairs-design.md) (amended and approved 2026-11-12) | [safety repairs plan](../../plans/2026-11-12-w13-safety-repairs/plan.md) (approved 2026-11-12) | T1-T4 complete; Gate 3 review pending | — |
 
 ---
 
@@ -97,7 +97,9 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-12 | Final close-out verification passes: 543 backend tests with 28 skipped, 149 frontend tests, typecheck, lint, contract, workflow checker, plan closeout, handover lint, and branch/worktree diff checks. | W13 | pending state commit |
 | 2026-11-12 | Owner reports the Vercel `main` Deploy Hook and protected GitHub `production` Environment are configured with `DIRECT_DATABASE_URL` and `VERCEL_DEPLOY_HOOK_URL`; secret values are not recorded. | W13 | owner report |
 | 2026-11-12 | Neon production console shows the non-pooled direct host `ep-summer-heart-b3767eul.c-4.ap-southeast-1.aws.neon.tech`; repository validation still expects the pooled `-pooler` host. | W13 | operator confirmation required |
-| 2026-11-12 | Operator confirmed production runtime must remain pooled while `DIRECT_DATABASE_URL` uses the verified non-pooled host; the W13 spec and T3 task were amended accordingly. | W13 | pending metadata commit |
+| 2026-11-12 | Operator confirmed production runtime must remain pooled while `DIRECT_DATABASE_URL` uses the verified non-pooled host; the W13 spec and T3 task were amended accordingly. | W13 | 541dbe8 |
+| 2026-11-12 | T3 target correction completed: runtime validation remains pooled, migration validation requires the verified direct host, and all close-out checks pass. | W13 | ca06561 |
+| 2026-11-12 | Owner reports the Vercel Deploy Hook and protected GitHub production Environment with both secrets are configured; values remain unrecorded. | W13 | owner report |
 
 ### D~8 — Deploy Hook cannot carry an exact commit SHA
 
