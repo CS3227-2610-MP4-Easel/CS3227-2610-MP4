@@ -25,7 +25,11 @@ W13 workflow. The owner does not run Prisma or the migration wrapper locally. Be
 3. Confirm that the `main` push starts the protected workflow. Its migration action is the sole CI
    entry point and runs `node --import tsx scripts/w13/migrate-production.mjs`; the direct database
    URL is supplied only to that process environment.
-4. Inspect the successful migration evidence and then the successful deployment evidence. A target,
+4. Before the hook, the workflow rechecks that remote `main` still equals `github.sha`. This closes
+   the ordinary branch-advance race, but Vercel Deploy Hooks do not accept a commit SHA, so the hook
+   itself cannot provide exact SHA binding; Vercel may resolve the branch after this check. An exact
+   binding requires a Vercel API/token design, which is outside the approved tokenless boundary.
+5. Inspect the successful migration evidence and then the successful deployment evidence. A target,
    manifest, checksum, command, or deploy-hook failure is failed release evidence: stop and record no
    successful migration or deployment outcome. No down migration is used.
 

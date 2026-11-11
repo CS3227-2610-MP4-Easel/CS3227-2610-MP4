@@ -86,4 +86,3 @@ cd /Users/trevortan/.codex/worktrees/w5-core-planning/CS3227-2610-MP4
 | ID | Date | What / consequence | Action needed |
 |---|---|---|---|
 | D~1 | 2026-11-08 | T1 review round 2 still found `PROJECT_MEMBER_ADD` mapped as `PROJECT` instead of frozen `MEMBERSHIP`, and PROJECT_LIST did not filter archived projects. Both violate the approved T1 contract. | Operator approved contained corrections on 2026-11-08; corrective pass in progress. |
-

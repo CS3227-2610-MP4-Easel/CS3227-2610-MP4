@@ -4,7 +4,8 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { buildMigrationCommand, runProductionMigration, validateMigrationInputs, validateMigrationManifest } from "../../../../scripts/w13/migrate-production.mjs";
+import { spawnSync } from "node:child_process";
+import { buildMigrationCommand, runProductionMigration, runProductionMigrationCli, validateMigrationInputs, validateMigrationManifest } from "../../../../scripts/w13/migrate-production.mjs";
 import { validateRecoveryEvidence } from "../../../../scripts/w13/recovery-evidence.mjs";
 
 const RUNBOOK = new URL("../../../../docs/operations/w13-deployment.md", import.meta.url);
@@ -98,6 +99,28 @@ test("E4 executor failure prevents a successful migration outcome", async () => 
     throw new Error("migration command failed");
   }), /migration command failed/);
   assert.equal(calls, 1);
+});
+
+test("production migration CLI redacts executor failures", async () => {
+  const secret = "postgresql://user:password@host.example/secret";
+  const output: string[] = [];
+  const exitCode = await runProductionMigrationCli({
+    env: { ...env, GITHUB_ACTIONS: "true" },
+    executor: async () => { throw Object.assign(new Error(secret), { stderr: secret }); },
+    writeError: (message: string) => output.push(message),
+  });
+  assert.equal(exitCode, 1);
+  assert.deepEqual(output, ["production migration failed"]);
+  assert.doesNotMatch(output.join("\n"), /postgresql|password|secret/);
+});
+
+test("production migration CLI rejects direct local invocation", () => {
+  const result = spawnSync(process.execPath, ["--import", "tsx", new URL("../../../../scripts/w13/migrate-production.mjs", import.meta.url).pathname], {
+    env: { ...process.env, GITHUB_ACTIONS: "false" },
+    encoding: "utf8",
+  });
+  assert.equal(result.status, 1);
+  assert.equal(result.stderr.trim(), "production migration CLI is available only in GitHub Actions");
 });
 
 test("wrong migration checksum rejects before invoking Prisma", async () => {

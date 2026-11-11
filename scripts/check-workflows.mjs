@@ -193,6 +193,7 @@ export function validateProductionWorkflowContract(text, file = ".github/workflo
   const deployIndex = runs.findIndex((run) => /deploy hook|DEPLOY_HOOK|VERCEL_DEPLOY_HOOK/i.test(run));
   if (deployIndex >= 0 && migrationIndex >= 0 && deployIndex < migrationIndex) errors.push(`${file}: deployment trigger must follow the migration wrapper`);
   if (deployIndex < 0) errors.push(`${file}: deployment trigger is required`);
+  if (deployIndex >= 0 && !/\bcurl\s+--fail\b/i.test(runs[deployIndex])) errors.push(`${file}: deploy hook must use curl --fail`);
   return errors;
 }
 

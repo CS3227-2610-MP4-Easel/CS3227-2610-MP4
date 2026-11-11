@@ -39,6 +39,13 @@ jobs:
         env:
           DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
         run: node --import tsx scripts/w13/migrate-production.mjs
+      - name: Verify main still points at release SHA
+        if: success()
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          remote_sha="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
+          test "$remote_sha" = "$EXPECTED_SHA"
       - name: Request Vercel deploy hook
         if: success()
         env:

@@ -73,4 +73,20 @@ export async function runProductionMigration(env = process.env, root = process.c
   return { migrations: checksums, outcome: "pass" };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) runProductionMigration().catch((error) => { console.error(error instanceof Error ? error.message : error); process.exitCode = 1; });
+export async function runProductionMigrationCli({ env = process.env, root = process.cwd(), executor, writeError = console.error } = {}) {
+  if (env.GITHUB_ACTIONS !== "true") {
+    writeError("production migration CLI is available only in GitHub Actions");
+    return 1;
+  }
+  try {
+    await runProductionMigration(env, root, executor);
+    return 0;
+  } catch {
+    writeError("production migration failed");
+    return 1;
+  }
+}
+
+if (process.argv[1] && import.meta.url === new URL(process.argv[1], "file:").href) {
+  runProductionMigrationCli().then((exitCode) => { process.exitCode = exitCode; });
+}

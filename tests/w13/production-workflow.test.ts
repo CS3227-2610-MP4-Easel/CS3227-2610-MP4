@@ -41,9 +41,14 @@ test("production workflow checks out github.sha and gates the deploy hook on mig
 
   const runs = steps.map((step) => String(step.run ?? ""));
   const migrationIndex = runs.indexOf("node --import tsx scripts/w13/migrate-production.mjs");
+  const shaGuardIndex = runs.findIndex((run) => run.includes("git ls-remote origin refs/heads/main"));
   const hookIndex = runs.findIndex((run) => run.includes("VERCEL_DEPLOY_HOOK_URL"));
   assert.ok(migrationIndex >= 0);
+  assert.ok(shaGuardIndex > migrationIndex);
   assert.ok(hookIndex > migrationIndex);
+  assert.ok(shaGuardIndex < hookIndex);
+  assert.equal(steps[shaGuardIndex].if, "success()");
+  assert.match(runs[hookIndex], /curl\s+--fail/);
   assert.equal(steps[hookIndex].if, "success()");
   assert.equal(steps[migrationIndex].env.DIRECT_DATABASE_URL, "${{ secrets.DIRECT_DATABASE_URL }}");
   assert.equal(steps[hookIndex].env.VERCEL_DEPLOY_HOOK_URL, "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}");
