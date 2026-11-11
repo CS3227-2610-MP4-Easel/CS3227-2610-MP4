@@ -5,7 +5,10 @@ import { Worker } from "node:worker_threads";
 import { buildSync } from "esbuild";
 import { SESSION_CAPS } from "@agile/contracts";
 import { defaultGuards } from "../../src/be/llm-gateway/src/guards.js";
+import { createLlmGateway } from "../../src/be/llm-gateway/src/gateway.js";
+import { LIMITS } from "../../src/be/llm-gateway/src/config.js";
 import { createSessions, SessionCapReached } from "../../src/be/llm-gateway/src/sessions.js";
+import { loadGatewaySettings } from "../../src/be/llm-gateway/src/settings.js";
 import { dispatchCorpusCase, runCorpus, assertCorpusContract } from "./attack-corpus/runner.js";
 import { createHit } from "../../src/be/auth/src/rate-limit.js";
 import { createUser } from "../../src/be/auth/src/registration.js";
@@ -58,18 +61,58 @@ test("E13 registration replay uses the existing auth route and has no side effec
   assert.equal(rows.length, count);
 });
 
-test("E14 limiter barrier admits exactly its cap", async () => {
-  const cap = 3;
+test("E14 gateway limiter barrier maps excess to AI_BUSY", async () => {
+  const userId = "00000000-0000-4000-8000-000000000001";
+  const sessionId = "00000000-0000-4000-8000-000000000002";
+  const projectId = "00000000-0000-4000-8000-000000000003";
+  const calls: Array<{ id: string; status: string }> = [];
+  const state = new Map<string, unknown>();
+  const db = {
+    aiSession: { findUnique: async () => ({ projectId }) },
+    llmGatewayState: {
+      findUnique: async ({ where }: { where: { key: string } }) => state.has(where.key) ? { value: state.get(where.key) } : null,
+      upsert: async ({ where, update }: { where: { key: string }; update: { value: unknown } }) => { state.set(where.key, update.value); return {}; },
+    },
+    llmCall: {
+      aggregate: async () => ({ _sum: { costMicrousd: 0n } }),
+      create: async () => { const row = { id: `call-${calls.length + 1}`, status: "IN_FLIGHT" }; calls.push(row); return { id: row.id }; },
+      updateMany: async ({ where, data }: { where: { id?: string }; data: { status?: string } }) => {
+        const row = where.id === undefined ? undefined : calls.find((candidate) => candidate.id === where.id);
+        if (row && data.status) row.status = data.status;
+        return { count: row ? 1 : 0 };
+      },
+    },
+  } as never;
   const counts = new Map<string, number>();
   const hit = createHit(async (key) => {
     const count = (counts.get(key) ?? 0) + 1;
     counts.set(key, count);
     return { count, remainingSeconds: 60 };
   });
-  const results = await Promise.all(Array.from({ length: cap + 2 }, () => hit("synthetic-client", 60, cap)));
-  assert.equal(results.filter((result) => result.allowed).length, cap);
-  assert.equal(results.filter((result) => !result.allowed).length, 2);
-  assert.deepEqual(results.slice(cap).map((result) => result.retryAfterSeconds), [60, 60]);
+  const gateway = createLlmGateway({
+    settings: loadGatewaySettings({ APP_TIER: "test", LLM_MODE: "mock" }),
+    db,
+    hit,
+    sessions: { assertUsable: async () => {}, touch: async () => {} },
+    provider: { complete: async () => ({ text: "safe", promptTokens: 1, completionTokens: 1 }) },
+    mockResponses: new Map([["DEV_STANDUP", () => "safe"]]),
+    boundary: () => "0123456789abcdef",
+  });
+  const call = {
+    feature: "DEV_STANDUP",
+    caller: { userId, role: "DEVELOPER" },
+    sessionId,
+    projectId,
+    sections: [
+      { name: "rules", kind: "STATIC", priority: 0, budgetTokens: 200, text: "Write a standup.", trusted: true },
+      { name: "items", kind: "DYNAMIC", priority: 1, budgetTokens: 400, text: "Fixed the login bug.", trusted: false },
+    ],
+    output: { kind: "text", maxChars: 500 },
+    inputHash: "synthetic-hash",
+  } as const;
+  const results = await Promise.all(Array.from({ length: LIMITS.windows.userMin.limit + 1 }, () => gateway.run(call)));
+  assert.equal(results.filter((result) => result.ok).length, LIMITS.windows.userMin.limit);
+  assert.deepEqual(results.at(-1), { ok: false, code: "AI_BUSY", retryAfterSeconds: 60 });
 });
 
 test("E15 session barrier admits exactly its cap and rejects excess", async () => {
@@ -101,7 +144,7 @@ test("E22 three isolated runs stay below the five second hard timeout", async ()
   const runnerUrl = new URL("./attack-corpus/runner.ts", import.meta.url).href;
   const runnerSource = buildSync({ entryPoints: [fileURLToPath(runnerUrl)], bundle: true, format: "esm", platform: "node", target: "node20", write: false }).outputFiles[0].text;
   const workerRun = () => new Promise<void>((resolve, reject) => {
-    const worker = new Worker(`${runnerSource}\nimport { parentPort } from "node:worker_threads"; runCorpus().then(() => parentPort.postMessage("done")).catch((error) => parentPort.postMessage({ error: String(error) }));`, { eval: true, type: "module", execArgv: [], env: { ...process.env, NODE_OPTIONS: "" } });
+    const worker = new Worker(`${runnerSource}\nimport { parentPort } from "node:worker_threads"; runCorpus().then(() => parentPort.postMessage("done")).catch((error) => parentPort.postMessage({ error: String(error) }));`, { eval: true, type: "module", execArgv: ["--import", "tsx", "--import", fileURLToPath(new URL("./w11-network-deny.setup.ts", import.meta.url))], env: { ...process.env, NODE_OPTIONS: "" } });
     const timer = setTimeout(() => { void worker.terminate(); reject(new Error("W11_TIMEOUT")); }, 5_000);
     worker.on("message", (message) => { clearTimeout(timer); void worker.terminate(); if (message === "done") resolve(); else reject(new Error(message.error)); });
     worker.on("error", (error) => { clearTimeout(timer); reject(error); });
@@ -111,4 +154,19 @@ test("E22 three isolated runs stay below the five second hard timeout", async ()
     await workerRun();
     assert.ok(performance.now() - started <= 5_000);
   }
+});
+
+test("E22 isolated workers install the network deny setup", async () => {
+  const setupPath = fileURLToPath(new URL("./w11-network-deny.setup.ts", import.meta.url));
+  const result = await new Promise<string>((resolve, reject) => {
+    const worker = new Worker("import { parentPort } from 'node:worker_threads'; import('node:dns/promises').then(() => parentPort.postMessage('imported')).catch((error) => parentPort.postMessage(String(error)))", {
+      eval: true,
+      type: "module",
+      execArgv: ["--import", "tsx", "--import", setupPath],
+      env: { ...process.env, NODE_OPTIONS: "" },
+    });
+    worker.on("message", (message) => { void worker.terminate(); resolve(String(message)); });
+    worker.on("error", reject);
+  });
+  assert.match(result, /W11_FORBIDDEN_NETWORK_OR_PROCESS/);
 });

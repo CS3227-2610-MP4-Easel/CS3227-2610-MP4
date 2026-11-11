@@ -28,6 +28,7 @@ test("W11 protected corpus remains declarative data", () => {
 
 test("W11 limiter and session barriers call production seams", () => {
   assert.match(corpusTest, /import\s+\{\s*createHit\s*\}\s+from .*rate-limit\.js/);
+  assert.match(corpusTest, /import\s+\{\s*createLlmGateway\s*\}\s+from .*gateway\.js/);
   assert.match(corpusTest, /import\s+\{\s*createSessions/);
   assert.doesNotMatch(corpusTest, /const reserve =/);
   assert.doesNotMatch(corpusTest, /const openSession =/);
