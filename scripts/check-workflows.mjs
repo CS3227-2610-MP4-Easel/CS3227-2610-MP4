@@ -187,7 +187,7 @@ export function validateProductionWorkflowContract(text, file = ".github/workflo
   if (/(?:VERCEL_API_TOKEN|VERCEL_TOKEN)/i.test(text)) errors.push(`${file}: Vercel API tokens are forbidden`);
   const checkoutRefs = steps.filter((step) => step?.uses?.startsWith("actions/checkout@")).map((step) => step.with?.ref);
   if (checkoutRefs.length === 0 || checkoutRefs.some((ref) => ref !== "${{ github.sha }}")) errors.push(`${file}: checkout must use github.sha`);
-  const migrationIndex = runs.findIndex((run) => /node scripts\/w13\/migrate-production\.mjs|npm run [^\n]*production-migration/i.test(run));
+  const migrationIndex = runs.findIndex((run) => /node(?:\s+--import\s+tsx)?\s+scripts\/w13\/migrate-production\.mjs|npm run [^\n]*production-migration/i.test(run));
   if (migrationIndex < 0) errors.push(`${file}: production migration wrapper is required`);
   if (runs.some((run) => /\bprisma\s+migrate\s+deploy\b/i.test(run))) errors.push(`${file}: direct Prisma migration is forbidden`);
   const deployIndex = runs.findIndex((run) => /deploy hook|DEPLOY_HOOK|VERCEL_DEPLOY_HOOK/i.test(run));

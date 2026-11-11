@@ -1,0 +1,46 @@
+{
+  "task": "T3",
+  "status": "done",
+  "summary": "Restored the protected W13 production migration-before-deployment workflow and added workflow contract coverage.",
+  "commit": "pending handover commit",
+  "produces": [
+    {
+      "kind": "file",
+      "name": "protected production workflow",
+      "where": ".github/workflows/w13-production.yml",
+      "note": "Pushes only main, uses the production environment and serialized concurrency, checks out github.sha, builds without secrets, runs the exact migration wrapper, then requests the deploy hook only after success."
+    },
+    {
+      "kind": "file",
+      "name": "production workflow contract tests",
+      "where": "tests/w13/production-workflow.test.ts",
+      "note": "Covers trigger, environment, identity variables, immutable checkout, protected secret names, ordering, and forbidden token or direct migration paths."
+    },
+    {
+      "kind": "compatibility",
+      "name": "migration wrapper checker support",
+      "where": "scripts/check-workflows.mjs",
+      "note": "The production contract recognizes the mandated node --import tsx wrapper command."
+    }
+  ],
+  "next": "T4 can document the exact wrapper command, workflow secret names, and the owner-side Vercel Git auto-deploy-disabled evidence gate.",
+  "deviations": [
+    {
+      "what": "The shared T2 checker regex did not recognize the mandated node --import tsx wrapper form.",
+      "why": "The workflow contract otherwise rejected the exact command required by T3, so its matcher was extended narrowly to accept the required form.",
+      "needs": "none"
+    }
+  ],
+  "edge_cases": ["E4", "E5", "E6", "E9", "E10"],
+  "checks": {
+    "focused-tests": "538 pass, 0 fail, 28 skipped; frontend focused suite 149 pass",
+    "production-workflow": "2 pass",
+    "workflow-security": "23 pass",
+    "workflow-checker": "pass",
+    "agent-policy": "pass",
+    "typecheck": "pass",
+    "lint": "pass",
+    "contract": "7 pass",
+    "git-diff-check": "pass"
+  }
+}
