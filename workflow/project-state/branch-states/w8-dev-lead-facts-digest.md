@@ -37,6 +37,7 @@ sources, and their guarded gateway integration.
 | S9 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | Amended W8 for durable `factsAsOf` ordering and migration | Owner review of the uncommitted change set | 2026-11-09 |
 | S10 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | Implementer, tester, and attacker reviews of schema, migrations, and digest flow | — | 2026-11-09 |
 | S11 | 2026-11-10 | Codex (orchestrator) | W8 | Complete | Final verification and owner handover | Request final Gate 3 review and monitor PR CI | 2026-11-10 |
+| S12 | 2026-11-12 | Codex | W8 | Active | Repairing five PR #28 review findings and diagnosing the failing CI check | Reproduce the failing check, add red regressions, then implement and verify repairs | 2026-11-12 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human` (name the question).
 
