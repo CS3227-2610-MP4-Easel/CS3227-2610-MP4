@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S3 | 2026-11-12 | Codex | W13 | Blocked | Owner reports the Vercel Deploy Hook and GitHub production Environment are configured; Neon direct host is observed but target-map confirmation is pending | Confirm changing production from the pooled host to `ep-summer-heart-b3767eul.c-4.ap-southeast-1.aws.neon.tech`, then update mappings and rerun checks | 2026-11-12 |
+| S3 | 2026-11-12 | Codex | W13 | Active | Operator confirmed separate pooled runtime and non-pooled migration hosts; T3 target correction is in progress | Dispatch T3 target-map repair, rerun tests, and reconcile the revised spec/plan | 2026-11-12 |
 
 **Remaining**
 
@@ -97,6 +97,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-12 | Final close-out verification passes: 543 backend tests with 28 skipped, 149 frontend tests, typecheck, lint, contract, workflow checker, plan closeout, handover lint, and branch/worktree diff checks. | W13 | pending state commit |
 | 2026-11-12 | Owner reports the Vercel `main` Deploy Hook and protected GitHub `production` Environment are configured with `DIRECT_DATABASE_URL` and `VERCEL_DEPLOY_HOOK_URL`; secret values are not recorded. | W13 | owner report |
 | 2026-11-12 | Neon production console shows the non-pooled direct host `ep-summer-heart-b3767eul.c-4.ap-southeast-1.aws.neon.tech`; repository validation still expects the pooled `-pooler` host. | W13 | operator confirmation required |
+| 2026-11-12 | Operator confirmed production runtime must remain pooled while `DIRECT_DATABASE_URL` uses the verified non-pooled host; the W13 spec and T3 task were amended accordingly. | W13 | pending metadata commit |
 
 ### D~8 — Deploy Hook cannot carry an exact commit SHA
 
@@ -173,6 +174,14 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Decision:** Add the root `vercel.json` configuration with `git.deploymentEnabled.main = false`; production deployments are initiated only by the protected post-migration Deploy Hook.
 - **Why:** The Vercel dashboard exposes the `main` branch tracking but no separate automatic-production-deployment switch; repository configuration provides an auditable, reviewable gate that preserves preview deployments.
 - **Rejected:** Disabling custom-domain assignment, disconnecting the Git repository, or retaining automatic production deployment.
+
+### C~15 — Separate production runtime and migration endpoints
+
+- **Date:** 2026-11-12
+- **Who asked:** operator, after confirming the Neon production connection details.
+- **Decision:** Keep `ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech` for application runtime and use `ep-summer-heart-b3767eul.c-4.ap-southeast-1.aws.neon.tech` for `DIRECT_DATABASE_URL` migrations.
+- **Why:** Runtime traffic benefits from pooling, while Prisma migrations require the stable direct endpoint; the Neon console confirms the non-pooled host.
+- **Rejected:** Using the pooled host for `DIRECT_DATABASE_URL` or using the recovery host for production.
 
 ### T4 redacted evidence
 

@@ -2,7 +2,7 @@
 
 - **Status:** Approved (operator, 2026-11-12)
 - **Format:** v2
-- **Spec:** [W13 safety repairs](../../specs/2026-11-12-w13-safety-repairs-design.md) | **Spec hash:** 81f096d17e05
+- **Spec:** [W13 safety repairs](../../specs/2026-11-12-w13-safety-repairs-design.md) | **Spec hash:** 83f153d1e802
 - **Workstream:** W13
 
 ## Scope
@@ -23,6 +23,7 @@
 **Rules for every task**
 - AD-32/C~12: production migration and deployment run only from protected CI.
 - C~13: recovery is exactly `falling-rice-06970921 / w13-recovery-baseline / ep-purple-shape-aohygd1w.c-2.ap-southeast-1.aws.neon.tech / neondb`.
+- C~15: production runtime remains pooled at `ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech`; production migrations use direct host `ep-summer-heart-b3767eul.c-4.ap-southeast-1.aws.neon.tech`.
 - No secret or credential values in source, tests, logs, or evidence.
 - The production workflow uses only pinned approved Actions and no pull-request or manual-dispatch production path.
 
@@ -34,7 +35,7 @@
 |---|---|---|---|---|---|---|---|
 | T1 Exact recovery target binding | `tasks/T1.md` | - | - | 1 | complex | full | Done |
 | T2 Workflow checker contracts | `tasks/T2.md` | - | - | 1 | complex | full | Done |
-| T3 Protected production workflow | `tasks/T3.md` | T2 | - | 2 | complex | full | Done |
+| T3 Protected production workflow | `tasks/T3.md` | T2 | - | 2 | complex | full | In progress |
 | T4 Runbook and migration regression coverage | `tasks/T4.md` | T1, T3 | - | 3 | standard | full | Done |
 
 ## Traceability
