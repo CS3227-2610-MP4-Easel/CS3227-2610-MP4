@@ -2,7 +2,7 @@
   "task": "T3",
   "status": "done",
   "summary": "Restored the protected W13 production migration-before-deployment workflow and added workflow contract coverage.",
-  "commit": "pending handover commit",
+  "commit": "5145c27",
   "produces": [
     {
       "kind": "file",
