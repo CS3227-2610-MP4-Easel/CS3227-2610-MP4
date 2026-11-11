@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| *(none)* | — | — | — | — | Branch work is complete and awaiting Gate 3 review | Operator reviews the branch; do not push or merge until approved | 2026-11-12 |
+| S3 | 2026-11-12 | Codex | W13 | Blocked | Owner reports the Vercel Deploy Hook and GitHub production Environment are configured; Neon direct host is observed but target-map confirmation is pending | Confirm changing production from the pooled host to `ep-summer-heart-b3767eul.c-4.ap-southeast-1.aws.neon.tech`, then update mappings and rerun checks | 2026-11-12 |
 
 **Remaining**
 
@@ -95,6 +95,8 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-12 | T4 completed with the CI-only runbook, migration failure-safety tests, and root `vercel.json` disabling Git deployments for `main`; handover and task checks pass. | W13 | bc5e075 |
 | 2026-11-12 | Final hardening redacts CLI failures, rejects local wrapper execution, checks the remote `main` SHA before the Deploy Hook, and asserts `curl --fail`; branch-diff whitespace was normalized. | W13 | 2be871b |
 | 2026-11-12 | Final close-out verification passes: 543 backend tests with 28 skipped, 149 frontend tests, typecheck, lint, contract, workflow checker, plan closeout, handover lint, and branch/worktree diff checks. | W13 | pending state commit |
+| 2026-11-12 | Owner reports the Vercel `main` Deploy Hook and protected GitHub `production` Environment are configured with `DIRECT_DATABASE_URL` and `VERCEL_DEPLOY_HOOK_URL`; secret values are not recorded. | W13 | owner report |
+| 2026-11-12 | Neon production console shows the non-pooled direct host `ep-summer-heart-b3767eul.c-4.ap-southeast-1.aws.neon.tech`; repository validation still expects the pooled `-pooler` host. | W13 | operator confirmation required |
 
 ### D~8 — Deploy Hook cannot carry an exact commit SHA
 
