@@ -17,6 +17,7 @@ test("production workflow is push-only, serialized, and protected", async () => 
   const { workflow } = await loadWorkflow();
   assert.deepEqual(Object.keys(workflow.on), ["push"]);
   assert.deepEqual(workflow.on.push.branches, ["main"]);
+  assert.deepEqual(workflow.permissions, { contents: "read" });
   assert.deepEqual(workflow.concurrency, { group: "production", "cancel-in-progress": false });
 
   const jobs = Object.values(workflow.jobs) as Array<Record<string, any>>;

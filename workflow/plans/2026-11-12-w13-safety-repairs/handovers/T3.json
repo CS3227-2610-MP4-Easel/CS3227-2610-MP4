@@ -33,6 +33,7 @@
   ],
   "edge_cases": ["E4", "E5", "E6", "E9", "E10"],
   "checks": {
+    "build": "pass",
     "focused-tests": "538 pass, 0 fail, 28 skipped; frontend focused suite 149 pass",
     "production-workflow": "2 pass",
     "workflow-security": "23 pass",
