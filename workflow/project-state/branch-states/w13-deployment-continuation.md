@@ -26,7 +26,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
 | S1 | 2026-11-09 00:00 | Codex | W13 | In review | PR #26 is open into `development`; immutable tier map and Firebase tier configuration are recorded | Owner reviews/merges PR #26, then redeploys `development` and verifies health/auth/tier checks | 2026-11-09 03:35 |
-| S2 | 2026-11-12 | Codex | W13 | Active | Gate 1 safety-repair spec and Gate 2 four-task plan approved; execution is starting | Execute T1 exact recovery target, then T2 checker, T3 workflow, and T4 runbook | 2026-11-12 |
+| S2 | 2026-11-12 | Codex | W13 | Active | Wave 1 T1/T2 complete; all dependency-backed checks pass | Dispatch T3 protected production workflow | 2026-11-12 |
 
 **Remaining**
 
@@ -89,6 +89,15 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Final review found a sequencing race: Vercel's automatic `main` deployment can start before the protected migration workflow completes; T6 is blocked until tokenless sequencing is chosen. | W13 | this commit |
 | 2026-11-12 | Drafted and linted the high-risk safety-repair spec covering exact recovery targeting, AD-32-preserving production CI, workflow-contract validation, and runbook sequencing; Implementer, Tester/QA, Attacker, and Maintainer reviews completed. | W13 | pending Gate 1 approval |
 | 2026-11-12 | Operator approved Gate 1 and Gate 2; four-task safety-repair plan is ready for execution. | W13 | 23321e2 + plan commit |
+| 2026-11-12 | T1 exact recovery target binding and T2 explicit workflow contract completed; handovers validate. | W13 | f7843a4 + 8c1b32e |
+| 2026-11-12 | Wave 1 checks pass after dependency-backed verification: 564 backend tests (536 pass, 28 skipped), 149 frontend tests, typecheck, lint, contract, workflow checker, plan lint, and diff check. | W13 | pending state commit |
+
+### D~7 — Full typecheck unavailable during Wave 1
+
+- **Found:** 2026-11-12 during T1/T2 close-out.
+- **What:** The repository-wide typecheck could not resolve existing frontend dependencies (`@firebase/*`, `vitest`, and `@testing-library/*`) in the current checkout; DB and workflow-specific checks passed.
+- **Consequence:** Initially blocked Wave 1 verification.
+- **Action:** Resolved 2026-11-12 by installing locked dependencies and regenerating Prisma Client; the full Wave 1 checks now pass.
 
 ### Handover — post-merge production execution
 
