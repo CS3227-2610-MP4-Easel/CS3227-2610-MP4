@@ -54,7 +54,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-11 | Merged development 3519ff07; regenerated lockfile against merged manifests; typecheck, lint and contract tests pass. Full suite needs a correctly configured integration database; owner review remains. W7c and UI integration continue on w7-link-ui. | W7/W7b | e756143 |
+| 2026-11-11 | Merged development 3519ff07; regenerated lockfile against merged manifests; typecheck, lint and contract tests pass. Full suite: 506 pass, 18 fail, 125 skip with placeholder DB target; rerun with correct configuration and investigate failures. Draft PR #30; owner review remains. W7c and UI integration continue on w7-link-ui. | W7/W7b | e756143 |
 | 2026-11-09 | W7b T1 contracts, policy, OpenAPI and documentation implemented; focused and contract tests pass; review placement finding fixed | W7b | 1bdeca0, c304835 |
 | 2026-11-09 | W7b T2 editing store implemented; review fixed strict-parse storage and deterministic lock races; 11 edit integration tests pass | W7b | 9bc5ec2, 8a5ed46 |
 | 2026-11-09 | W7b T5 approval outcome and replay implemented; 21 database tests pass; review clean | W7b | f3c4564 |
