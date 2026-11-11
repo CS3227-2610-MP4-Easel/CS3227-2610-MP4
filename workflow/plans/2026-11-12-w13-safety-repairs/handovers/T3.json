@@ -2,7 +2,7 @@
   "task": "T3",
   "status": "done",
   "summary": "Separated pooled production runtime targeting from direct production migration targeting; migration now requires the direct host and pooled NEON_HOST observation while recovery remains unchanged.",
-  "commit": "dc7667c",
+  "commit": "ca06561c36f4bd2c7b5f8cb30980df0af1922612",
   "produces": [
     {
       "kind": "symbol",
