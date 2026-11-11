@@ -26,7 +26,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
 | S1 | 2026-11-09 00:00 | Codex | W13 | In review | PR #26 is open into `development`; immutable tier map and Firebase tier configuration are recorded | Owner reviews/merges PR #26, then redeploys `development` and verifies health/auth/tier checks | 2026-11-09 03:35 |
-| S2 | 2026-11-12 | Codex | W13 | Active | Wave 2 checks pass; T4 runbook and migration regression coverage is starting | Dispatch T4 implementer; owner evidence gate remains before relying on production CI | 2026-11-12 |
+| S2 | 2026-11-12 | Codex | W13 | Blocked | T4 runbook and migration regression coverage are implemented and verified; owner evidence gate is open | Provide redacted evidence that Vercel Production Branch auto-deploy for `main` is disabled, then commit T4 handover and run close-out | 2026-11-12 |
 
 **Remaining**
 
@@ -93,6 +93,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-12 | Wave 1 checks pass after dependency-backed verification: 564 backend tests (536 pass, 28 skipped), 149 frontend tests, typecheck, lint, contract, workflow checker, plan lint, and diff check. | W13 | pending state commit |
 | 2026-11-12 | T3 restored the protected push-main production workflow with pinned Actions, least-privilege checkout, migration wrapper, and post-migration Deploy Hook; workflow and repository checks pass. | W13 | 5e4e9c0 |
 | 2026-11-12 | Wave 2 verification passes: 538 backend tests with 28 skipped, 149 frontend tests, typecheck, lint, contract, workflow checker, handover lint, and diff check. | W13 | pending state commit |
+| 2026-11-12 | T4 implementation is complete in the worktree and focused checks pass, but execution pauses at the required owner gate for redacted evidence that Vercel Production Branch auto-deploy for `main` is disabled; no T4 commit or handover exists yet. | W13 | owner action required |
 
 ### D~7 — Full typecheck unavailable during Wave 1
 
