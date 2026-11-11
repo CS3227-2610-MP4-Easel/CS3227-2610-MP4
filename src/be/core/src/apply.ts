@@ -54,9 +54,9 @@ async function applied(tx: ApplyDb, id: string | undefined, actorId: string, ver
 
 async function validatePlanTasks(tx: ApplyDb, projectId: string, epics: Array<{ tasks?: Array<{ storyPoints?: number | null; assigneeId?: string | null; sprintId?: string | null }>; expansion?: { tasks: Array<{ storyPoints?: number | null; assigneeId?: string | null; sprintId?: string | null }> | null } }>): Promise<void> {
   for (const epic of epics) for (const item of epic.tasks ?? epic.expansion?.tasks ?? []) {
-    if (item.storyPoints == null) throw new Error("VALIDATION_FAILED");
     if (item.assigneeId && !await tx.projectMember?.findFirst({ where: { projectId, userId: item.assigneeId } })) throw new Error("VALIDATION_FAILED");
     if (item.sprintId) {
+      if (item.storyPoints == null) throw new Error("VALIDATION_FAILED");
       const sprint = await tx.sprint?.findFirst({ where: { id: item.sprintId, projectId } });
       if (!sprint) throw new Error("VALIDATION_FAILED");
       if (sprint.status === "CLOSED") throw new Error("CONFLICT_STATE");
@@ -101,6 +101,7 @@ export function createApply() {
       const parsed = replanSchema.safeParse(value);
       if (!parsed.success) throw new Error("VALIDATION_FAILED");
       const tx = transaction as ApplyDb;
+      await tx.project?.update?.({ where: { id: projectId }, data: { version: { increment: 0 } } });
       await actor(tx, actorId, "DEV_LEAD"); await projectAccess(tx, actorId, projectId); await proposal(tx, parsed.data.id, projectId, "REPLAN", parsed.data.version);
       for (const item of parsed.data.suggestions) {
         if (item.type === "MOVE_CHECKPOINT_DATE") {
