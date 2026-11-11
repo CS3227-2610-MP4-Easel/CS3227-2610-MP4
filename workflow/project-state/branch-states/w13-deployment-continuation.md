@@ -25,8 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-09 00:00 | Codex | W13 | In review | PR #26 is open into `development`; immutable tier map and Firebase tier configuration are recorded | Owner reviews/merges PR #26, then redeploys `development` and verifies health/auth/tier checks | 2026-11-09 03:35 |
-| S2 | 2026-11-12 | Codex | W13 | Active | Operator chose the repository-owned Vercel `main` deployment rule; T4 is resuming | Add `vercel.json`, commit T4 handover, run close-out checks and review | 2026-11-12 |
+| *(none)* | — | — | — | — | Branch work is complete and awaiting Gate 3 review | Operator reviews the branch; do not push or merge until approved | 2026-11-12 |
 
 **Remaining**
 
@@ -39,7 +38,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | Planned | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md); [safety repairs](../../specs/2026-11-12-w13-safety-repairs-design.md) (approved 2026-11-12) | [safety repairs plan](../../plans/2026-11-12-w13-safety-repairs/plan.md) (approved 2026-11-12) | T1/T2/T3 complete; T4 resumed with repository-owned Vercel gate | — |
+| W13 | Environments, seed data and deployment | In review | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md); [safety repairs](../../specs/2026-11-12-w13-safety-repairs-design.md) (approved 2026-11-12) | [safety repairs plan](../../plans/2026-11-12-w13-safety-repairs/plan.md) (approved 2026-11-12) | T1-T4 complete; Gate 3 review pending | — |
 
 ---
 
@@ -93,7 +92,16 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-12 | Wave 1 checks pass after dependency-backed verification: 564 backend tests (536 pass, 28 skipped), 149 frontend tests, typecheck, lint, contract, workflow checker, plan lint, and diff check. | W13 | pending state commit |
 | 2026-11-12 | T3 restored the protected push-main production workflow with pinned Actions, least-privilege checkout, migration wrapper, and post-migration Deploy Hook; workflow and repository checks pass. | W13 | 5e4e9c0 |
 | 2026-11-12 | Wave 2 verification passes: 538 backend tests with 28 skipped, 149 frontend tests, typecheck, lint, contract, workflow checker, handover lint, and diff check. | W13 | pending state commit |
-| 2026-11-12 | T4 resumed after the operator chose a repository-owned `vercel.json` rule disabling Git deployments for `main`; the prior owner evidence gate is replaced by the checked-in configuration and verification. | W13 | pending state commit |
+| 2026-11-12 | T4 completed with the CI-only runbook, migration failure-safety tests, and root `vercel.json` disabling Git deployments for `main`; handover and task checks pass. | W13 | bc5e075 |
+| 2026-11-12 | Final hardening redacts CLI failures, rejects local wrapper execution, checks the remote `main` SHA before the Deploy Hook, and asserts `curl --fail`; branch-diff whitespace was normalized. | W13 | 2be871b |
+| 2026-11-12 | Final close-out verification passes: 543 backend tests with 28 skipped, 149 frontend tests, typecheck, lint, contract, workflow checker, plan closeout, handover lint, and branch/worktree diff checks. | W13 | pending state commit |
+
+### D~8 — Deploy Hook cannot carry an exact commit SHA
+
+- **Found:** 2026-11-12 during final Attacker review.
+- **What:** Vercel Deploy Hooks are branch-bound and accept no commit payload; the workflow therefore cannot cryptographically bind the hook request to `${{ github.sha }}` without introducing a Vercel API credential or a writable deployment branch.
+- **Consequence:** A new push to `main` in the narrow interval after the remote-SHA check and before the hook request could theoretically make the hook deploy a newer commit than the migrated one.
+- **Action:** Added the strongest tokenless mitigation in scope: immediately before the hook, CI compares `refs/heads/main` with `${{ github.sha }}` and fails closed if they differ; concurrency remains serialized and the next queued run migrates the newer commit. Exact SHA binding remains a post-merge operational limitation of the approved Deploy Hook design.
 
 ### D~7 — Full typecheck unavailable during Wave 1
 
