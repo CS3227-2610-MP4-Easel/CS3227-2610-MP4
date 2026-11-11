@@ -36,18 +36,27 @@ test("production workflow checks out github.sha and gates the deploy hook on mig
   const steps = (Object.values(workflow.jobs)[0] as Record<string, any>).steps as Array<Record<string, any>>;
   const checkout = steps.find((step) => typeof step.uses === "string" && step.uses.startsWith("actions/checkout@"));
   assert.equal(checkout?.with?.ref, "${{ github.sha }}");
+  assert.equal(checkout?.with?.["persist-credentials"], false);
   assert.equal(checkout?.uses, "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683");
   assert.ok(steps.some((step) => step.uses === "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020"));
 
   const runs = steps.map((step) => String(step.run ?? ""));
   const migrationIndex = runs.indexOf("node --import tsx scripts/w13/migrate-production.mjs");
-  const shaGuardIndex = runs.findIndex((run) => run.includes("git ls-remote origin refs/heads/main"));
+  const shaGuardIndex = runs.findIndex((run) => run.includes("git/ref/heads/main"));
   const hookIndex = runs.findIndex((run) => run.includes("VERCEL_DEPLOY_HOOK_URL"));
   assert.ok(migrationIndex >= 0);
   assert.ok(shaGuardIndex > migrationIndex);
   assert.ok(hookIndex > migrationIndex);
   assert.ok(shaGuardIndex < hookIndex);
   assert.equal(steps[shaGuardIndex].if, "success()");
+  assert.equal(steps[shaGuardIndex].env.EXPECTED_SHA, "${{ github.sha }}");
+  assert.equal(steps[shaGuardIndex].env.GH_TOKEN, "${{ github.token }}");
+  assert.equal(steps[shaGuardIndex].env.GITHUB_API_URL, "${{ github.api_url }}");
+  assert.equal(steps[shaGuardIndex].env.GITHUB_REPOSITORY, "${{ github.repository }}");
+  assert.match(runs[shaGuardIndex], /set -o pipefail/);
+  assert.match(runs[shaGuardIndex], /Authorization: Bearer \$GH_TOKEN/);
+  assert.match(runs[shaGuardIndex], /GITHUB_API_URL\/repos\/\$GITHUB_REPOSITORY\/git\/ref\/heads\/main/);
+  assert.doesNotMatch(text, /git\s+ls-remote/);
   assert.match(runs[hookIndex], /curl\s+--fail/);
   assert.equal(steps[hookIndex].if, "success()");
   assert.equal(steps[migrationIndex].env.DIRECT_DATABASE_URL, "${{ secrets.DIRECT_DATABASE_URL }}");
