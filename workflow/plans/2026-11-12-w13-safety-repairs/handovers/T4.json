@@ -1,8 +1,8 @@
 {
   "task": "T4",
   "status": "done",
-  "summary": "Added the CI-only W13 production runbook, repository-owned Vercel main auto-deploy gate, and migration wrapper failure-safety regression coverage.",
-  "commit": "8c75309e50997314102759794db0a32e05bccdeb",
+  "summary": "Added the CI-only W13 production runbook, repository-owned Vercel main auto-deploy gate, migration wrapper failure-safety coverage, and final CLI/deploy-hook hardening.",
+  "commit": "2be871b91676e26dbd9fa57461907ae962fd16fc",
   "produces": [
     {
       "kind": "file",
@@ -29,12 +29,16 @@
   "checks": {
     "build": "pass",
     "focused-tests": "backend 541 pass, 0 fail, 28 skipped; frontend 149 pass, 0 fail",
-    "migration-test": "9 pass, 0 fail",
+    "migration-test": "11 pass, 0 fail",
     "full-tests": "backend 541 pass, 0 fail, 28 skipped; frontend 149 pass, 0 fail",
     "typecheck": "pass",
     "lint": "pass",
     "contract": "7 pass, 0 fail",
     "workflow-checker": "pass",
+    "cli-ci-guard": "pass",
+    "redacted-cli-errors": "pass",
+    "sha-guard-before-hook": "pass",
+    "deploy-hook-curl-fail": "pass",
     "secret-scan": "676 commits scanned; no leaks found",
     "git-diff-check": "pass"
   }
