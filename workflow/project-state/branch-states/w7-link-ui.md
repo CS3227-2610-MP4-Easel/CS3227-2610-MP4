@@ -30,7 +30,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 **Upstream check (2026-11-11):** origin/main remains at the initial commit and is already an ancestor; a fast-forward-only pull was a no-op. origin/development has 59 commits absent from this branch; eight files changed on both sides. Do not merge or rebase without the required branch review and integration decision. The published parent stops at 1bc7384; its 30 W7b commits are local only.
 
-**Integration (2026-11-11):** Development integrated through the W7 and W7b stack. The PM UI now uses the Firebase-backed authenticated API client; the previous fixed frontend dev token is no longer used. Verify real sign-in, live PM calls, session behavior, project switching and sign-out before review; frontend typecheck and tests could not run because Firebase and Vitest dependencies were unavailable in the isolated checkout. W12-paths remains included in this slice pending extraction.
+**Integration (2026-11-11):** Development integrated through the W7 and W7b stack. The PM UI now uses the Firebase-backed authenticated API client; the previous fixed frontend dev token is no longer used. Verify real sign-in, live PM calls, session behavior, project switching and sign-out before review; frontend typecheck and tests could not run because Firebase and Vitest dependencies were unavailable in the isolated checkout. W12-paths was extracted to codex/w12-paths; its independent PR must land separately.
 
 **Remaining**
 
@@ -53,7 +53,6 @@ describes `INT`; read it for context and write here instead of editing it.
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
 | W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 10/10 tasks done; live E36 and measurement blocked by D~8 | — |
-| W12-paths | Process-security external path classification | Building | [approved spec](../../specs/2026-11-11-process-security-paths-design.md) | Skipped by operator | Implemented and reviewed; full suite 780 passed, 0 skipped | — |
 | W7-UI | PM plan screens and live backlog editing | Building | [backlog editing draft](../../specs/2026-11-11-live-backlog-editing-design.md) | none yet | PM history wired; conflict/project-switch verification remains | — |
 
 ## 3. Changes
@@ -71,10 +70,6 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-11 | Close-out review: fixed stale UI after bulk failure (bb7b5ed), independently reviewed; found T5 skipped-row timestamp conflict D~6. E36 and live measurement pending; browser automation timed out. | W7c | bb7b5ed |
 | 2026-11-11 | T9 complete (62d1145); old-scale scan passed and Implementer review corrected formula wording; wave build checks pass. | W7c | 62d1145 |
 | 2026-11-11 | T7 complete (13ea6a2); full suite 780 passed, 0 failed, 0 skipped; full review resolved E28/E29 coverage gaps; wave build checks pass. | W7c | 13ea6a2 |
-| 2026-11-11 | W12-paths implemented directly from approved spec: process-security suite 63 passed, 0 failed, 0 skipped; Implementer, Tester and Attacker reviews complete, test coverage finding fixed. Existing broader Known Gaps remain. | W12-paths | this commit |
-| 2026-11-11 | Operator approved security fix spec and directed implementation without a plan (C~7); tests and security review retained. | W12-paths | this commit |
-| 2026-11-11 | Operator deferred additional cwd issue as Known Gap; security draft narrowed to literal absolute-path failures and re-reviewed by Implementer, Tester, Maintainer and Attacker. Other detected security limitations recorded for handover. Awaiting Gate 1. | W12-paths | this commit |
-| 2026-11-11 | W12-paths security fix spec drafted and reviewed twice; Q1 remains on obtaining trusted execution cwd before relative paths can be classified. Security implementation not started. | W12-paths | this commit |
 | 2026-11-11 | D~5 migration checksum fixed locally by restoring tracked LF checkout; W13 migration tests 6 passed, 0 failed, 0 skipped. Checkout-only fix will need repeating if Git converts line endings again. Security path fix being specified under W12-paths. | W7c | working tree |
 | 2026-11-11 | Operator clarified T7 E28/E34 (C~6): mock provider is allowed, live provider is not; non-creator receives 404 via existing ownership check. Task corrected; T7 resumed. | W7c | this commit |
 | 2026-11-11 | T8 complete (1d2bc12); FE typecheck and data-layer lint pass, 8 validation self-check cases pass; reviewer found and confirmed fix for missing bulk loading copy. Manual E36 pending. | W7c | 1d2bc12 |
@@ -276,10 +271,6 @@ Project members can read checkpoints, epics, tasks, members and sprints. Project
 - **Action:** Focused reruns: gateway suites 46 passed, 0 failed, 0 skipped (full-run cause unproven). Migration checksum reproduces because tracked LF migration is checked out CRLF. Four process-security failures reproduce: scripts/agent-pre-tool-hook.mjs isExternalPath overlooks absolute paths when path and parent do not exist; this merits security review. No tests weakened. T7 handover and .ws/t7-tests.log preserve details.
 
 ## Known Gaps
-
-- **Shell working-directory assumption (Handover):** The pre-tool hook resolves relative paths against the Git repository root without establishing the requested shell's execution working directory. Compound commands can change directory; this may misclassify later paths. Found in W12-paths spec review, not flagged by the full-suite failures. On 2026-11-11 the operator asked to log additional issues and move on; follow up under process security with an authoritative cwd contract and tests. This is not fixed by the absolute-path correction.
-
-- **Other shell-mediation limitations (Handover):** Security review identified that command-script effects such as sed read/write/execute commands, shell expansion and symlink handling, and normalization of absolute protected write targets are not comprehensively handled by this correction. In particular absolute repository paths may miss root-relative protected-path matching. These are additional issues outside the reported full-suite failures; follow up under process security. Do not treat the literal-path fix as closing them.
 
 ### D~6 — T5 stale epic lock changes skipped row
 

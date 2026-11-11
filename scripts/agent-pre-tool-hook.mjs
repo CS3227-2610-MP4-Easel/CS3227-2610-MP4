@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
-import { isAbsolute, relative, resolve, sep } from "node:path";
+import { existsSync } from "node:fs";
+import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { mediateAgentOperation } from "../workflow/tools/agent-mediation.mjs";
 
@@ -23,11 +24,13 @@ function firstInputValue(input, keys) {
 const unquote = (token) => token.replace(/^['"]|['"]$/g, "");
 const tokenize = (text) => (text.match(/(?:"[^"]*"|'[^']*'|[^\s]+)/g) ?? []).map(unquote);
 
-/** True when a path token names a path outside the repository; `/dev/null` is always allowed. */
+/** True when a token names a path outside the repository. An absolute token counts only if it or its directory exists,
+ * so regex and URL arguments such as `/^model/` are not mistaken for paths; `/dev/null` is always allowed. */
 function isExternalPath(value, root) {
   if (!value || value === "/dev/null") return false;
   if (value.startsWith("~")) return true;
   if (!value.includes("/") && !value.includes("\\")) return false;
+  if (isAbsolute(value) && !existsSync(value) && !existsSync(dirname(value))) return false;
   return repoRelative(value, root).scope === "external";
 }
 
@@ -49,18 +52,7 @@ function classifySegment(segment, root) {
   const tokens = tokenize(segment);
   while (tokens.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(tokens[0])) tokens.shift();
   const [program = "", ...args] = tokens;
-  const expressions = new Set();
-  if (program === "sed" && args[0] === "-n" && /^\/[^/\\;\n]+\/,\/[^/\\;\n]+\/p$/.test(args[1] ?? "")) expressions.add(1);
-  if (program === "grep" || program === "rg") {
-    const explicit = args.includes("-e") || args.includes("-f");
-    let positional = false;
-    for (let i = 0; i < args.length; i++) {
-      if (args[i] === "-e") { if (++i < args.length) expressions.add(i); }
-      else if (args[i] === "-f") i++;
-      else if (!explicit && !positional && !args[i].startsWith("-")) { expressions.add(i); positional = true; }
-    }
-  }
-  const paths = args.map((arg, index) => expressions.has(index) ? "" : (arg.startsWith("-") && arg.includes("=") ? arg.slice(arg.indexOf("=") + 1) : arg));
+  const paths = args.map((arg) => (arg.startsWith("-") && arg.includes("=") ? arg.slice(arg.indexOf("=") + 1) : arg));
   const operands = paths.filter((arg) => !arg.startsWith("-"));
   let operation;
   let written = [];
