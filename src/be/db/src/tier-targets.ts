@@ -32,7 +32,12 @@ export function parseDatabaseTarget(databaseUrl: string): { protocol: string; ho
   let parsed: URL;
   try { parsed = new URL(databaseUrl); } catch { throw new Error("DATABASE_URL is malformed"); }
   if (parsed.protocol !== "postgres:" && parsed.protocol !== "postgresql:") throw new Error("DATABASE_URL must use postgres protocol");
-  const databaseName = decodeURIComponent(parsed.pathname.replace(/^\//, ""));
+  let databaseName: string;
+  try {
+    databaseName = decodeURIComponent(parsed.pathname.replace(/^\//, ""));
+  } catch {
+    throw new Error("DATABASE_URL target is malformed");
+  }
   if (!parsed.hostname || !databaseName) throw new Error("DATABASE_URL target is incomplete");
   return { protocol: parsed.protocol, host: parsed.hostname, databaseName };
 }
