@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** In review
 - **Approved:** —
-- **Last updated:** 2026-11-09 by Codex — PR #26 opened into `development`; redeploy and runtime verification remain
+- **Last updated:** 2026-11-12 by Codex — operator kept AD-32; W13 production CI restoration is now required
 
 **Untouched:** Architecture, Conventions, Known Gaps
 
@@ -26,6 +26,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
 | S1 | 2026-11-09 00:00 | Codex | W13 | In review | PR #26 is open into `development`; immutable tier map and Firebase tier configuration are recorded | Owner reviews/merges PR #26, then redeploys `development` and verifies health/auth/tier checks | 2026-11-09 03:35 |
+| S2 | 2026-11-12 | Codex | W13 | Active | AD-32-preserving safety-fix spec is being tightened around the confirmed direct recovery host and protected CI | Finish Gate 1 spec review, request operator approval, then write the implementation plan | 2026-11-12 |
 
 **Remaining**
 
@@ -38,7 +39,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W13 | Environments, seed data and deployment | In review | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md) | [follow-up plan](../../plans/2026-11-06-w13-deployment.md) | T4 and T5 done; T6 retired by operator; production remains a manual handover | — |
+| W13 | Environments, seed data and deployment | Spec'd | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md); [safety repairs](../../specs/2026-11-12-w13-safety-repairs-design.md) (Gate 1 pending) | [follow-up plan](../../plans/2026-11-06-w13-deployment.md) | Safety-repair spec drafted and reviewed; awaiting Gate 1 approval before plan | — |
 
 ---
 
@@ -86,6 +87,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | Owner verified Vercel Git integration is connected to `CS3227-2610-MP4-Easel/CS3227-2610-MP4`; Production Branch is `main`, and Vercel reports every commit pushed to `main` creates a Production Deployment. | W13 | this commit |
 | 2026-11-08 | T6 close-out passed: 488 tests (462 passed, 26 skipped), typecheck, lint, contract, Prisma validation, workflow validation, agent-policy, secret scan, and diff check; branch is ready for owner review. | W13 | this commit |
 | 2026-11-08 | Final review found a sequencing race: Vercel's automatic `main` deployment can start before the protected migration workflow completes; T6 is blocked until tokenless sequencing is chosen. | W13 | this commit |
+| 2026-11-12 | Drafted and linted the high-risk safety-repair spec covering exact recovery targeting, AD-32-preserving production CI, workflow-contract validation, and runbook sequencing; Implementer, Tester/QA, Attacker, and Maintainer reviews completed. | W13 | pending Gate 1 approval |
 
 ### Handover — post-merge production execution
 
@@ -124,6 +126,22 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Who asked:** operator.
 - **Decision:** `APP_TIER=dev` requires host `ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech` together with project `falling-rice-06970921`; production retains its existing host and project `super-sunset-36592949`.
 - **Why:** The development project identity changed, but the confirmed pooled endpoint remains the active dev database host; both fields must be validated together to prevent cross-tier substitutions.
+
+### C~12 — Keep AD-32 and restore protected production CI
+
+- **Date:** 2026-11-12
+- **Who asked:** operator.
+- **Decision:** Keep AD-32. Production migrations and deployments must run from protected CI; reverse W13 C~9's owner-operated manual handover. Restore a protected production workflow, run the checked-in migration wrapper there, and trigger production deployment only after migration succeeds.
+- **Why:** The manual runbook and Vercel auto-deploy race can expose new application code to an old schema; CI provides the required ordering and review boundary.
+- **Rejected:** Manual owner execution of the migration wrapper or direct Prisma commands, and retaining Vercel's unrestricted automatic production deployment.
+
+### C~13 — Bind recovery to the confirmed direct host
+
+- **Date:** 2026-11-12
+- **Who asked:** operator, by supplying the recovery connection host.
+- **Decision:** Amend C~3 so the W13 recovery exception accepts only project `falling-rice-06970921`, branch `w13-recovery-baseline`, database `neondb`, and direct host `ep-purple-shape-aohygd1w.c-2.ap-southeast-1.aws.neon.tech`. The URL host and supplied observations must equal this code-owned entry; pooled hosts are not accepted for recovery seed/migration operations.
+- **Why:** Labels beside an arbitrary URL are not proof of Neon branch identity; the owner-confirmed direct host gives the recovery operation one exact target.
+- **Rejected:** C~3's former acceptance of any non-production host with matching operator-supplied labels, and using the synthetic test host as production configuration.
 
 ### T4 redacted evidence
 
