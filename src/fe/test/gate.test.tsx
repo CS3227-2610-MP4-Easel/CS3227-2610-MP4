@@ -240,6 +240,13 @@ describe('gate', () => {
     }
   });
 
+  it('E95b ready Developer on /sign-in replaces to My Work', async () => {
+    fetchMock.mockImplementation(async () => me('DEVELOPER'));
+    mount('/sign-in');
+    await act(async () => fbCb!(fb));
+    expect(replace).toHaveBeenCalledWith('/my-work');
+  });
+
   it('E96 error on /sign-in and /register shows the error view with Retry', async () => {
     fetchMock.mockImplementation(async () => err(500, 'INTERNAL'));
     for (const p of ['/sign-in', '/register']) {

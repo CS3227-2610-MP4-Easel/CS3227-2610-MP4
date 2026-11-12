@@ -30,7 +30,7 @@ export default function AuthGate({ pathname, view }: { pathname: string; view?: 
 
   let target: string | null = null;
   if (!isOpen) {
-    if (status === 'ready' && (isRoot || isSignIn || isRegister)) target = session?.user && isRoot ? HOME[toRole(session.user.role)] : '/projects';
+    if (status === 'ready' && (isRoot || isSignIn || isRegister)) target = session?.user && (isRoot || isSignIn) ? HOME[toRole(session.user.role)] : '/projects';
     else if (status === 'unregistered' && !isRegister) target = '/register';
     else if (status === 'signed-out' && !isSignIn && !isRegister) target = '/sign-in';
   }

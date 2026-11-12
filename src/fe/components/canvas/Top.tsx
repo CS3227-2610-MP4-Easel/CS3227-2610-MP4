@@ -32,7 +32,7 @@ name: m.name, email: m.email, initials: m.initials, avClass: m.av, roleClass: m.
 }
 
 export default function Top(props: any = {}) {
-  const role = useRole();
+  const role = props.role ?? useRole();
   const route = useProjectRoute();
   const [open, setOpen] = useState(false);
   const session = useSession();

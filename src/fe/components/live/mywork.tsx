@@ -25,7 +25,11 @@ export function LiveMyWork() {
     let active = true;
     setLoading(true); setError(null);
     listProjectsLive_6(0, 100).then(async (page) => {
-      const rows = await Promise.all(page.items.map(async (project) => ({ project, tasks: (await listTasksLive_20(project.id, 0, 100, { assigneeId: userId })).items.filter((task) => task.status !== 'DONE') })));
+      const results = await Promise.allSettled(page.items.map(async (project) => {
+        const tasks = await listTasksLive_20(project.id, 0, 100);
+        return { project, tasks: tasks.items.filter((task) => task.assigneeId === userId && task.status !== 'DONE') };
+      }));
+      const rows = results.flatMap((result) => result.status === 'fulfilled' ? [result.value] : []);
       if (active) setProjects(rows.filter((row) => row.tasks.length));
     }).catch((e: unknown) => { if (active) setError(e instanceof ApiError ? e.message : 'Something went wrong. Try again.'); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
