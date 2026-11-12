@@ -1,7 +1,7 @@
 {
   "task": "T1",
   "status": "done",
-  "summary": "Finished T1 review fixes with request-generation tokens for Health, prototype-to-live masking, AuthGate 401 replacement, rendered UUID links, status-based safe errors, idToken handling, and explicit auth-code regressions; 169 tests pass.",
+  "summary": "Closed T1 route/error review gaps; 169 frontend tests pass.",
   "commit": "c24a958",
   "produces": [
     { "kind": "file", "name": "project-mode.ts", "where": "src/fe/lib/api/project-mode.ts", "note": "Exports isProjectUuid, projectRoute, ProjectRouteContext, and useProjectRoute." },

@@ -31,8 +31,8 @@ files and write the named handover JSON. No task changes backend contracts or Pr
 ## Task order
 | Task | File | Depends on | Concurrent with | Wave | Weight | Review | Status |
 |---|---|---|---|---|---|---|---|
-| T1 Route identity and shared error seam | `tasks/T1.md` | - | - | 1 | complex | full | Not started |
-| T2 W5 typed API clients and DTOs | `tasks/T2.md` | - | - | 1 | complex | full | Not started |
+| T1 Route identity and shared error seam | `tasks/T1.md` | - | - | 1 | complex | full | Done |
+| T2 W5 typed API clients and DTOs | `tasks/T2.md` | - | - | 1 | complex | full | Done |
 | T3 Project list and overview surfaces | `tasks/T3.md` | T1,T2 | - | 2 | complex | full | Not started |
 | T4 Board, backlog, checkpoints, members and task mutations | `tasks/T4.md` | T1,T2 | - | 2 | complex | full | Not started |
 | T5 Focused integration verification and closeout repairs | `tasks/T5.md` | T3,T4 | - | 3 | complex | full | Not started |
