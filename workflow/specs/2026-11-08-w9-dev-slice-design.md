@@ -1,6 +1,6 @@
 # W9 Developer Upload, Summaries and Standup Design
 
-- **Status:** Approved (ludannnn, 2026-11-08); amended 2026-11-09 after W5 merged (§ 4.1, § 4.6, F8, SD11, SD16), re-approved (ludannnn, 2026-11-09); SD16 lock amended and approved (ludannnn, 2026-11-09); amended 2026-11-11 for the PR #29 review (F4 blockers, § 4.2 `content_hash`, E20), approved (ludannnn, 2026-11-11)
+- **Status:** Approved (ludannnn, 2026-11-08); amended 2026-11-09 after W5 merged (§ 4.1, § 4.6, F8, SD11, SD16), re-approved (ludannnn, 2026-11-09); SD16 lock amended and approved (ludannnn, 2026-11-09); amended 2026-11-11 for the PR #29 review (F4 blockers, § 4.2 `content_hash`, E20), approved (ludannnn, 2026-11-11); E76 amended 2026-11-12 for the PR #29 review (an empty window still assembles current blockers), approved (ludannnn, 2026-11-12)
 - **Format:** v2
 - **Risk tier:** High - untrusted uploaded text reaches the model, every row is owned by one developer, the Dev Lead reads other users' standups, and each endpoint relies on project membership.
 - **Workstream:** W9 | **Plan:** —
@@ -213,7 +213,7 @@ None: backend only (C~1). The follow-up wires S20 and S18 (W10 spec screens-dev.
 | E73 | F3 | 10 items of 2,000-character bodies | each row cut to 900 code points; one `run`; `truncated` false | integration |
 | E74 | F7 | A Dev Lead member's own standup row (seeded) | not listed (not a `DEVELOPER`) | integration |
 | E75 | F3 | Two batches within 30 min | the second reuses the first's DEV_SUMMARY session | integration |
-| E76 | F4 | `now` is 00:00 SGT exactly and `date` is tomorrow | the window is empty; no `assembleWith`; content `[]` | unit |
+| E76 | F4 | `now` is 00:00 SGT exactly and `date` is tomorrow | the window is empty (`from` equals `to`) and is still passed to `assembleWith`, which accepts it; no item summaries or task events; the caller's current blocked tasks are in `blockers`; with no blocked tasks, content `[]` and no `run` | unit |
 
 ## 6. Security
 

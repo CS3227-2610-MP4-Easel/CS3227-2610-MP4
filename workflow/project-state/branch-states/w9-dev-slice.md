@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** ludannnn (Developer member)
 - **Status:** Approved
 - **Approved:** ludannnn 2026-11-11 (re-approval after the PR #29 review fixes; first approved 2026-11-09)
-- **Last updated:** 2026-11-11 by Claude Opus 5.5 — Gate 3 re-approved by the owner
+- **Last updated:** 2026-11-12 by Claude Opus 5.5 — midnight-blockers fix (C~11); Gate 3 re-approved by the owner
 
 **Untouched:** Architecture, Conventions
 
@@ -41,6 +41,8 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] Push and open the PR into `development` (PR #29).
 - [x] Gate 3 again: ludannnn approved the PR #29 review fixes and the 2026-11-11 spec amendment (C~10, D~1) on 2026-11-11 ("yes").
 - [x] Push the fixes to PR #29 (`c846ace`, pushed by ludannnn 2026-11-11).
+- [x] Gate 3 again: ludannnn approved the midnight-blockers fix and the spec E76 amendment (C~11, D~2) on 2026-11-12 ("yes").
+- [ ] Push the fix to PR #29 (owner).
 - [ ] **Handover:** to the Dev Lead (W5): `core.blockedTasks` now ignores `options.window` and lists every task assigned to the caller that is blocked now (D~1); `context-sources.test.ts` was updated to match (the W5 spec names no window for this source, so it is unchanged). DEV_STANDUP is its only consumer.
 - [ ] **Handover:** to the W4 owner (this owner): the 413 counter moved to `src/be/api/src/body-limit.ts`; `auth.ts` keeps 4,096 bytes. To the W1 owners: `RouteDefinition.bodyLimitBytes` (plan P1) reads the body after authorisation; endpoints 49 (1 MiB), 50 and 51 (16 KiB) use it.
 - [ ] **Handover:** test follow-ups (two-round limit): poll `pg_locks` instead of a 300 ms wait in the E47 lock test, and await the pending write before cleanup on failure (`src/be/dev/test/dev-integration.test.ts`).
@@ -92,6 +94,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-09 | Close-out fixes: preview tier now gives 503 AI_DISABLED on 50/51, and a failing usage row on a standup cache hit is ignored; checks green | W9 | `e2e1e00` |
 | 2026-11-09 | Gate 3 asked; the operator asked for the concurrency fix first (C~9): `inDevWrite` maps exhausted serialization retries to 429 `RATE_LIMITED` with `Retry-After: 1`; unit, route and Postgres tests updated. Checks: typecheck green, `npm test` 811/811 (0 skipped) + fe 149/149 | W9 | `1a38dcd` |
 | 2026-11-11 | PR #29 review fixes (C~10): `content_hash` includes `bodyTruncated`, so a longer body with the same first 2000 characters gets a new, flagged summary and standup; endpoint 50 re-reads after the insert and returns the stored one-liner when a concurrent request saved first; `core.blockedTasks` ignores the window (D~1). Spec F4, § 4.2 and E20 amended. Tests: the reviewer's truncation sequence, a concurrent unit test and a Postgres E20 with different model answers, and a Postgres older-blocked-task test; all 8 affected tests fail with the fixes stashed. Checks: typecheck, lint green; `npm test` 813/813 (0 skipped) + fe 149/149 | W9 | PR #29 fixes |
+| 2026-11-12 | PR #29 review, second round (C~11, D~2): at 00:00 SGT with tomorrow's date the window is empty and `generateStandup` skipped `assembleWith`, so current blockers were dropped. Now it always assembles; W6's DEV_STANDUP option schema accepts `from == to` (still rejects `to` before `from`). Spec E76 amended. Tests: E76 midnight with a blocked task gives that blocker; midnight with none stores `[]` without a run; non-member at midnight gets NOT_FOUND; ai-context accepts an empty window and passes it to the sources. Checks: typecheck green; backend `npm test` 814/814 (0 skipped) | W9 | PR #29 fixes |
 
 ---
 
@@ -172,6 +175,12 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Why:** without (1) a truncated body loses its warning through the old summary and the standup cache; without (2) two concurrent callers can see an answer never saved; without (3) a task created before the window and blocked now is missing from the blockers.
 - **Rejected:** checking the item's `flagged` in `summaryFlagged` instead of rehashing (the standup's input hash would not change, so the cached unflagged standup would still be served); filtering blocked tasks in `@agile/dev` (`assembleWith` passes one options object to every source).
 
+### C~11 An empty standup window still includes current blockers
+- **Date:** 2026-11-12 · **Asked by:** ludannnn (operator), passing on a PR #29 reviewer finding: "can you fix this?"
+- **Decision:** `generateStandup` always calls `assembleWith`; the DEV_STANDUP window may be empty (`from <= to`). Spec E76 now expects current blockers at midnight.
+- **Why:** F4 (amended under C~10) includes blocked tasks whenever they were created; skipping assembly on an empty window dropped them.
+- **Rejected:** a 1 ms fake window (would pick up events at exactly midnight); a W9-only blocked-tasks read outside ai-context (bypasses the allow-list and scope checks).
+
 ## 8. Deviations
 
 > Legend: `D` = Deviation, where reality diverged from a spec or plan. Not to be confused with
@@ -183,6 +192,12 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Change:** `src/be/core/src/context-sources.ts` drops the window from `blockedTasks`; ordering (newest creation first) and the 50-row cap are unchanged; `src/be/core/test/context-sources.test.ts` asserts no `createdAt` filter.
 - **Impact:** a standup's input hash now changes when any assigned task becomes blocked or unblocked, which is the intended regeneration. DEV_STANDUP is the only feature with the `blocked-tasks` section.
 - **Handover:** the Dev Lead (W5) owns the source; see How to Resume.
+
+### D~2 W9 relaxes W6's DEV_STANDUP window check to allow an empty window
+- **Date:** 2026-11-12 · **Found by:** PR #29 review (second round)
+- **What diverged:** W6's `OPTION_SCHEMAS.DEV_STANDUP` required `from < to`, and spec E76 said an empty window skips `assembleWith`.
+- **Change:** `src/be/ai-context/src/allow-list.ts` refines with `from <= to`; `assemble.test.ts` drops "from equal to to" from the invalid cases and adds it to E40 (accepted, passed to the sources). The windowed sources (`core.taskEvents`, `dev.itemSummaries`) use `gte from, lt to`, so they return nothing.
+- **Impact:** none beyond DEV_STANDUP; W6 is this owner's workstream.
 
 ## Lessons
 
