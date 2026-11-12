@@ -1,8 +1,10 @@
 'use client';
 
+export type ApiErrorDetail = { field: string; message: string; suggestionIds?: string[] };
+
 export class ApiError extends Error {
   status: number;
-  details: { field: string; message: string }[];
+  details: ApiErrorDetail[];
   requestId: string | null;
   retryAfterSeconds: number | null;
   constructor(
@@ -10,7 +12,7 @@ export class ApiError extends Error {
     message: string,
     opts: {
       status?: number;
-      details?: { field: string; message: string }[];
+      details?: ApiErrorDetail[];
       requestId?: string | null;
       retryAfterSeconds?: number | null;
     } = {},

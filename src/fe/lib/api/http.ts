@@ -1,6 +1,6 @@
 'use client';
 import { idToken, signOutUser } from '../auth/firebase';
-import { ApiError } from './errors';
+import { ApiError, type ApiErrorDetail } from './errors';
 
 const PATH_OK = /^\/api\/[A-Za-z0-9._~\-/?=&%]*$/;
 
@@ -16,13 +16,21 @@ function samePath(path: string): boolean {
 const DOTS = ['.', '..', '%2e', '.%2e', '%2e.', '%2e%2e'];
 const cut = (v: string, n: number) => v.slice(0, n);
 
-function boundDetails(d: unknown): { field: string; message: string }[] {
-  if (!Array.isArray(d)) return [];
-  const out: { field: string; message: string }[] = [];
-  for (const x of d) {
+function boundDetails(d: unknown): ApiErrorDetail[] {
+  const candidates = Array.isArray(d) ? d : d && typeof d === 'object' ? [d] : [];
+  const out: ApiErrorDetail[] = [];
+  for (const x of candidates) {
     if (out.length >= 50) break;
     if (x && typeof x === 'object' && typeof (x as { field?: unknown }).field === 'string' && typeof (x as { message?: unknown }).message === 'string') {
       out.push({ field: cut((x as { field: string }).field, 200), message: cut((x as { message: string }).message, 500) });
+      continue;
+    }
+    if (x && typeof x === 'object' && Array.isArray((x as { suggestionIds?: unknown }).suggestionIds)) {
+      const suggestionIds = (x as { suggestionIds: unknown[] }).suggestionIds
+        .filter((id): id is string => typeof id === 'string')
+        .slice(0, 100)
+        .map((id) => cut(id, 100));
+      out.push({ field: 'suggestionIds', message: 'The selected suggestions are not valid.', suggestionIds });
     }
   }
   return out;

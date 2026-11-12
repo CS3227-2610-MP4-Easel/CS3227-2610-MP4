@@ -15,6 +15,11 @@ import type {
   LiveMember,
   LiveProgress,
   LiveProjectDetail,
+  LiveSprint,
+  LiveSprintCloseInput,
+  LiveSprintCreateInput,
+  LiveSprintPage,
+  LiveSprintPatchInput,
   LiveTask,
   LiveTaskCreateInput,
   LiveTaskListFilters,
@@ -22,6 +27,9 @@ import type {
   LiveTaskUpdateInput,
   Page,
   Member,
+  ReplanApproval,
+  ReplanProposalPage,
+  ReplanRejection,
   Sprint,
   Standup,
   Task,
@@ -273,7 +281,7 @@ export function getProjectLive_7(projectId: string): Promise<LiveProjectDetail> 
   });
 }
 
-export function getProgressLive_33(projectId: string): Promise<LiveProgress> {
+export function readProgressLive_33(projectId: string): Promise<LiveProgress> {
   return apiFetch<LiveProgress>(`/api/projects/${encodeURIComponent(projectId)}/progress`);
 }
 
@@ -349,9 +357,68 @@ export function setTaskStatusLive_24(taskId: string, input: LiveTaskStatusInput)
   return apiFetch<LiveTask>(`/api/tasks/${encodeURIComponent(taskId)}/status`, { method: 'POST', body });
 }
 
+// W14: live sprint lifecycle and paged project progress clients. These names are
+// intentionally separate from the fixture helpers above so existing W10 screens
+// retain their current behavior while live consumers migrate independently.
+export function listSprintsLive_27(projectId: string, page: number, size: number): Promise<LiveSprintPage> {
+  return apiFetch<LiveSprintPage>(`/api/projects/${encodeURIComponent(projectId)}/sprints?${pageParams(page, size)}`);
+}
+
+export function createSprintLive_28(projectId: string, input: LiveSprintCreateInput): Promise<LiveSprint> {
+  return apiFetch<LiveSprint>(`/api/projects/${encodeURIComponent(projectId)}/sprints`, {
+    method: 'POST',
+    body: { name: input.name, startDate: input.startDate, endDate: input.endDate },
+  });
+}
+
+export function patchSprintLive_29(sprintId: string, input: LiveSprintPatchInput): Promise<LiveSprint> {
+  const body: Record<string, unknown> = {};
+  if (input.name !== undefined) body.name = input.name;
+  if (input.startDate !== undefined) body.startDate = input.startDate;
+  if (input.endDate !== undefined) body.endDate = input.endDate;
+  body.version = input.version;
+  return apiFetch<LiveSprint>(`/api/sprints/${encodeURIComponent(sprintId)}`, { method: 'PATCH', body });
+}
+
+export function startSprintLive_30(sprintId: string, version: number): Promise<LiveSprint> {
+  return apiFetch<LiveSprint>(`/api/sprints/${encodeURIComponent(sprintId)}/start`, { method: 'POST', body: { version } });
+}
+
+export function closeSprintLive_31(sprintId: string, input: LiveSprintCloseInput): Promise<LiveSprint> {
+  return apiFetch<LiveSprint>(`/api/sprints/${encodeURIComponent(sprintId)}/close`, {
+    method: 'POST',
+    body: { version: input.version, carryOver: input.carryOver.map(({ taskId, to }) => ({ taskId, to })) },
+  });
+}
+
+export function deleteSprintLive_32(sprintId: string, version: number): Promise<void> {
+  const query = new URLSearchParams({ version: String(version) });
+  return apiFetch<void>(`/api/sprints/${encodeURIComponent(sprintId)}?${query.toString()}`, { method: 'DELETE' });
+}
+
+export function listProposalsLive_46(projectId: string, page: number, size: number, status?: ReplanProposalPage['items'][number]['status']): Promise<ReplanProposalPage> {
+  const query = pageParams(page, size, status === undefined ? undefined : { status });
+  return apiFetch<ReplanProposalPage>(`/api/lead/projects/${encodeURIComponent(projectId)}/proposals?${query}`);
+}
+
+export function approveProposalLive(proposalId: string, version: number, suggestionIds: string[]): Promise<ReplanApproval> {
+  return apiFetch<ReplanApproval>(`/api/lead/proposals/${encodeURIComponent(proposalId)}/approve`, {
+    method: 'POST',
+    body: { version, suggestionIds: [...suggestionIds] },
+  });
+}
+
+export function rejectProposalLive(proposalId: string, version: number): Promise<ReplanRejection> {
+  return apiFetch<ReplanRejection>(`/api/lead/proposals/${encodeURIComponent(proposalId)}/reject`, {
+    method: 'POST',
+    body: { version },
+  });
+}
+
 export const listProjects_6 = listProjectsLive_6;
 export const getProject_7 = getProjectLive_7;
-export const getProgress_33 = getProgressLive_33;
+export const getProgressLive_33 = readProgressLive_33;
+export const getProgress_33 = readProgressLive_33;
 
 // 47 and 48: apply or dismiss re-plan suggestions
 export async function applySuggestions_47(ids: string[]): Promise<number> {
