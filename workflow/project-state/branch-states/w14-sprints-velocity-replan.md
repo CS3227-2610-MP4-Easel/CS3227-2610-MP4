@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — committed backlog toolbar alignment and live board mutations
+- **Last updated:** 2026-11-13 by Codex — diagnosed live 409s on closed-sprint task mutations
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | Backlog toolbar and live task mutations | Await owner review of commit `15ec2be` | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Active | Live 409 diagnosis for closed-sprint task mutations | Await owner decision whether closed-sprint tasks should become mutable | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -118,6 +118,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-13 | Fixed live Board task cards to pass the live mutation flag; status and block/unblock now call endpoint 24 for UUID tasks instead of the fixture endpoint | W14 | T6 UI follow-up |
 | 2026-11-13 | Verified typecheck, 236 frontend tests, diff check and live browser toolbar/board rendering | W14 | T6 UI follow-up |
 | 2026-11-13 | Committed toolbar alignment, filter cursor styling and live board mutation routing as `15ec2be` | W14 | T6 close-out |
+| 2026-11-13 | Checked the live first two backlog tasks: both belong to closed sprints, and endpoint 24 correctly returns `CONFLICT_STATE`/409 for status or block changes | W14 | T6 diagnostic |
 
 ## 4. Decisions
 
