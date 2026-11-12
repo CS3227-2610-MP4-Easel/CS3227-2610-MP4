@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** ludannnn (Developer member)
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Claude Opus 5.5 — T0 merged development; T1 in progress
+- **Last updated:** 2026-11-13 by Claude Opus 5.5 — T1 done; T2 next
 
 **Untouched:** Architecture, Conventions, Deviations
 
@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-13 | Claude Opus 5.5 | W~1 | Active | T1 | T1: `src/fe/lib/api/dev.ts`, `useProjectId`, date helpers, example file, `AuthModeCtx` export, `LiveTestProvider`; done when `src/fe/test/dev-api.test.ts` (E1, E2, E8, E16) passes | 2026-11-12 |
+| S1 | 2026-11-13 | Claude Opus 5.5 | W~1 | Paused | T1 done; T2 next | T2: `LiveStandupScreen` upload and summaries panels in `src/fe/components/live/standup-live.tsx`, switched on in `canvas/Standup.tsx`; done when `src/fe/test/standup-live.test.tsx` (E3-E7, E14, E17) passes | 2026-11-13 |
 
 **Remaining**
 
@@ -39,7 +39,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W~1 | W9 screen wiring (S20, S18) | Spec'd | [spec](../../specs/2026-11-12-w9-screen-wiring-design.md) (approved 2026-11-12) | in the spec (Medium) | Spec approved; T1 next | — |
+| W~1 | W9 screen wiring (S20, S18) | Spec'd | [spec](../../specs/2026-11-12-w9-screen-wiring-design.md) (approved 2026-11-12) | in the spec (Medium) | T0-T1 done; T2 next | — |
 
 ---
 
@@ -48,6 +48,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
 | 2026-11-12 | Branch created from `development`; S20/S18 wiring spec drafted (Medium, 18 edge cases, 6 tasks); Implementer review round 1: 3 blocking, 10 should-fix, 4 nits, all applied. Spec is 12 KB against the ~4 KB Medium target (logged with `ws feedback`); approved at Gate 1 by ludannnn | W~1 | `4fdb179` |
+| 2026-11-13 | T1 done: `src/fe/lib/api/dev.ts` (endpoints 9, 49-52, 55; `useProjectId`/`projectIdFrom`; `todaySgt`, `nextStandupDate`), exported as `live`; `AuthModeCtx` exported; `LiveTestProvider`; the example file is now valid `ActivityItemInput` (it used `kind/text/at`, which the server rejects). Tests: `dev-api.test.ts` (E1, E2, E8, E16, paths and bodies). Checks: typecheck green; fe 155/155 | W~1 | this commit |
 | 2026-11-13 | T0: merged `development` at `465c8fe` (W9, W7 backend, W8, PR #34); only `skill-feedback.md` conflicted (kept both rows) | W~1 | merge commit |
 
 ---
