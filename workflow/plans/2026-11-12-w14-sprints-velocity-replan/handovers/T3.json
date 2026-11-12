@@ -1,14 +1,14 @@
 {
   "task": "T3",
   "status": "done",
-  "summary": "Added the injected ProposalService REPLAN lifecycle, transaction-aware session close adapter, immutable applied suggestion IDs and domain-only Core.applyReplan while preserving PM applyPlan lifecycle.",
-  "commit": "3ef50f8",
+  "summary": "Tightened the ProposalService transaction seam and verified atomic REPLAN approval/rejection with domain-only Core.applyReplan.",
+  "commit": "6a0e0ce",
   "produces": [
     {
       "kind": "symbol",
       "name": "createProposalService",
       "where": "src/be/proposals/src/service.ts",
-      "note": "Provides list, createReplan, createReplanInTransaction, approve and reject with project/proposal/session transaction ordering, supersession, replay and selected full suggestion ordering."
+      "note": "Provides list, createReplan, createReplanInTransaction, approve and reject with project/proposal/session/domain transaction ordering, supersession, replay and selected full suggestion ordering."
     },
     {
       "kind": "symbol",
@@ -30,14 +30,22 @@
     }
   ],
   "deviations": [
-    "The llm-gateway test suite has one pre-existing environment/network failure in E46 live SoCLaaS fetch; the new T3 adapter typechecks and does not alter that provider path.",
-    "Uncommitted concurrent changes in core.ts, core derived/index/sprints, proposals locks, and proposals service were present after T3 and were not staged or modified by T3."
+    {
+      "what": "The llm-gateway suite has a pre-existing E46 live SoCLaaS fetch failure.",
+      "why": "The environment returned fetch failed; the T3 adapter typechecks and does not alter that provider path.",
+      "needs": "none"
+    },
+    {
+      "what": "Concurrent T2 changes remain uncommitted in core composition/derived/index/sprints.",
+      "why": "They were present in the shared worktree and were intentionally not staged by T3.",
+      "needs": "orchestrator"
+    }
   ],
   "checks": {
-    "build": "pass: npm run typecheck",
+    "build": "pass",
     "service_tests": "pass: 2/2 via node --import tsx --test src/be/proposals/test/service.test.ts",
     "core_tests": "pass: 11/11 via node --import tsx --test src/be/core/test/apply.test.ts",
-    "proposals_tests": "pass: 3 passed, 33 skipped (integration URL absent)",
+    "proposals_tests": "not rerun; prior handover recorded 3 passed, 33 skipped (integration URL absent)",
     "gateway_tests": "known failure: E46 live SoCLaaS fetch expected LIVE_SOCLAAS_IN_TESTS but environment returned fetch failed",
     "diff_check": "pass: git diff --check"
   },
