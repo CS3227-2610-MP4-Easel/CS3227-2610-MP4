@@ -2,7 +2,7 @@
   "task": "T1",
   "status": "done",
   "summary": "Added bounded W14 pagination, sprint/proposal page envelopes, strict sprint-close and replan decision bodies, endpoint-48 owner metadata, and matching OpenAPI contracts; 37 contract tests pass.",
-  "commit": "a8808ae",
+  "commit": "4bea8a2",
   "produces": [
     {
       "kind": "symbol",
