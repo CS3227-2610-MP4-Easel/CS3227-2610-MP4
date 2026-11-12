@@ -1,13 +1,14 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
-import { A, r } from '../../lib/nav';
+import { A, r, useRoute } from '../../lib/nav';
 import { ApiError, archiveProject_8, closeSprint_31, removeMember_11, useDb } from '../../lib/api';
 import { toast } from './toast';
 
 // A button that runs a data-layer call, shows the result as a toast and then goes to another screen.
 export function DoThen({ className, children, run, ok, then }: { className: string; children: ReactNode; run: () => Promise<unknown>; ok: (res: any) => string; then: string }) {
   const router = useRouter();
+  const route = useRoute();
   const [busy, setBusy] = useState(false);
   return (
     <button
@@ -18,7 +19,7 @@ export function DoThen({ className, children, run, ok, then }: { className: stri
         try {
           const res = await run();
           toast(ok(res));
-          router.push(r(then));
+          router.push(route(then));
         } catch (e) {
           toast(e instanceof ApiError ? e.message : 'Something went wrong.', 'bad');
           setBusy(false);
@@ -49,6 +50,7 @@ export function ArchiveButton({ className, children }: { className: string; chil
 export function RemoveMemberDialog({ memberId }: { memberId: string }) {
   const db = useDb();
   const router = useRouter();
+  const route = useRoute();
   const m = db.members.find((x) => x.id === memberId);
   const [err, setErr] = useState('');
   const open = m ? db.tasks.filter((t) => t.status !== 'done' && t.assignee && matches(t.assignee, m.name)).length : 0;
@@ -60,7 +62,7 @@ export function RemoveMemberDialog({ memberId }: { memberId: string }) {
     }
     await removeMember_11(m.id);
     toast(`${m.name} removed.`);
-    router.push(r('Members.dc.html'));
+    router.push(route('Members.dc.html'));
   };
   const first = m.name.split(' ')[0];
   return (
