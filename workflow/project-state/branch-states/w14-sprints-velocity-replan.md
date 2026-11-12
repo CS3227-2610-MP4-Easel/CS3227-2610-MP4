@@ -5,11 +5,11 @@ describes `INT`; read it for context and write here instead of editing it.
 `sync-project-state` folds this file in after the branch merges.
 
 - **Branch:** w14-sprints-velocity-replan (from W8 at `6db7a0021c75c83fe89739961a9bdfac3f6607d9`)
-- **Base:** 2c5dd9f0b1c8f23610af5b6638818110f3bc5b02
+- **Base:** f0456148784400639cde87c3ac3d8a9feb406cb6
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — fixed checkpoint modal close behavior
+- **Last updated:** 2026-11-13 by Codex — merged development into W14
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | Live backlog/checkpoint/velocity UI polish | Await owner review of the latest W14 UI commit | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Active | Development merged cleanly; validating combined branch | Review merged test results and continue W14 | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -129,6 +129,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-13 | Left-aligned live velocity columns and moved sprint names into a matching row below the chart baseline; verified typecheck, 237 tests and diff check | W14 | T6 UI follow-up |
 | 2026-11-13 | Removed the redundant empty-backlog/read-only footer from both lead and developer backlog pages; verified typecheck, 237 tests and diff check | W14 | T6 UI follow-up |
 | 2026-11-13 | Fixed the checkpoint modal X button to close through ModalCtx, added a regression assertion, and verified typecheck, 237 tests and diff check | W14 | T6 UI follow-up |
+| 2026-11-13 | Merged `development` at `f045614` into W14 as merge commit `9e09ec1`; no conflicts required resolution | W14 | branch integration |
 
 ## 4. Decisions
 
