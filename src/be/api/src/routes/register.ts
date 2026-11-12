@@ -21,7 +21,7 @@ async function parseLimitedJson(request: Request, maxBytes: number, options: { s
   try { return JSON.parse(read.text); } catch { throw new HttpError("BAD_REQUEST", options.strict ? 422 : 400, "Request body is not valid JSON."); }
 }
 
-/** Routes registered on `app` through `registerRoute`; `apiApp` must contain nothing else. */
+/** Routes registered on the process-wide app through `registerRoute`; the app must contain nothing else. */
 export function registeredRoutes(app: Hono<ApiEnv>): readonly RouteDefinition[] { return registered.get(app) ?? []; }
 
 /** Every route goes through the policy map: authorize, parse, run the handler, then commit or roll back

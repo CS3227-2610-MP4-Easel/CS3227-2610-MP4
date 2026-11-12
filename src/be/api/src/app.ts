@@ -40,4 +40,10 @@ export function createApiApp(deps?: AuthDependencies, routes?: readonly RouteDef
   return app;
 }
 
-export const apiApp = createApiApp();
+let cachedApiApp: ReturnType<typeof createApiApp> | undefined;
+
+/** Build the process-wide API only when the first request needs it.
+ * This keeps framework build-time route collection free of runtime credential validation. */
+export function getApiApp() {
+  return (cachedApiApp ??= createApiApp());
+}
