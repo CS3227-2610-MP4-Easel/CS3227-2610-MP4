@@ -1,0 +1,8 @@
+{
+  "id": "pilot-pinned-note",
+  "base_commit": "160053ce006b6a54bc85d87f9cf380242fdef95a",
+  "brief_file": "brief.md",
+  "sheet_file": "answer-sheet.md",
+  "issues_file": "seeded-issues.json",
+  "stage": "specplan"
+}

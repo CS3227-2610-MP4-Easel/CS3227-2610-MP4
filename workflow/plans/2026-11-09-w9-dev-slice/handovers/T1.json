@@ -1,0 +1,18 @@
+{
+  "task": "T1",
+  "status": "done",
+  "summary": "Added standupActivityWindowFor, shared body-limit helpers (auth.ts uses them), RouteDefinition.bodyLimitBytes read after authorization, and the core lock export.",
+  "commit": "7e008d9",
+  "produces": [
+    { "kind": "symbol", "name": "standupActivityWindowFor(date: string, now: Date): { from: Date; to: Date }", "where": "src/be/contracts/src/date-rules.ts, exported from @agile/contracts", "note": "from = 00:00 SGT of last Mon-Fri day before date; to = now; from >= to means empty" },
+    { "kind": "symbol", "name": "contentLengthTooLarge(request, maxBytes): boolean", "where": "src/be/api/src/body-limit.ts", "note": "never reads the body" },
+    { "kind": "symbol", "name": "readLimitedBody(request, maxBytes): Promise<{tooLarge:true}|{tooLarge:false;text:string}>", "where": "src/be/api/src/body-limit.ts", "note": "streamed byte count; exactly maxBytes accepted" },
+    { "kind": "symbol", "name": "bodyTooLarge(request, maxBytes): Promise<boolean>", "where": "src/be/api/src/body-limit.ts", "note": "counts over request.clone()" },
+    { "kind": "symbol", "name": "RouteDefinition.bodyLimitBytes?: number", "where": "src/be/contracts/src/routes.ts", "note": "registerRoute reads body via readLimitedBody after authorization; 413 PAYLOAD_TOO_LARGE" },
+    { "kind": "symbol", "name": "lockProjectForMutation", "where": "src/be/core/src/index.ts (from core.ts)", "note": "importable from @agile/core" }
+  ],
+  "next": "T3: import lockProjectForMutation from @agile/core.\nT9: route 49 sets bodyLimitBytes 1_048_576 plus a before hook using contentLengthTooLarge.\nT5/T7/T8: use standupActivityWindowFor; from >= to is empty.",
+  "deviations": [],
+  "edge_cases": ["E23", "E24", "E76", "N1"],
+  "checks": { "build": "pass", "tests": "npm test 575 pass, 0 fail", "lint": "n/a" }
+}

@@ -1,0 +1,7 @@
+# Keep vendored skills and generated adapters byte-identical across platforms (skills.lock checksums)
+workflow/** text eol=lf
+.claude/** text eol=lf
+.codex/** text eol=lf
+.githooks/* text eol=lf
+AGENTS.md text eol=lf
+CLAUDE.md text eol=lf

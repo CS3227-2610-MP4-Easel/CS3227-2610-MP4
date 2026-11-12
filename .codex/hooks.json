@@ -1,0 +1,18 @@
+{
+  "description": "W12 agent policy enforcement.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|apply_patch|Read|Write|Edit|Grep|Glob|Search|WebFetch|WebSearch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/scripts/agent-pre-tool-hook.mjs\"",
+            "timeout": 10,
+            "statusMessage": "Checking agent policy"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "_comment": "Copy to workflow/models.json. The only place model names appear. Defaults are UNVALIDATED suggestions: every tier uses the tool default until the model-routing experiment (project-state/experiments.md) says otherwise. The team picks the model for each tier. Run `ws adapters claude|codex` after editing.",
+  "tiers": {
+    "strong": { "claude": "claude-sonnet-5-5", "codex": "gpt-6.1-sol" },
+    "mid":    { "claude": "claude-sonnet-5-5", "codex": "gpt-6.1-sol" },
+    "cheap":  { "claude": "claude-sonnet-5-5", "codex": "gpt-6.1-sol" }
+  },
+  "reasoning": { "high": {}, "medium": {}, "low": {} },
+  "roles": {
+    "reviewer": { "tier": "mid", "reasoning": "medium" }
+  },
+  "overrides": {}
+}

@@ -1,0 +1,9 @@
+{
+  "name": "@agile/dev",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "test": "tsx --test \"test/**/*.test.ts\"", "typecheck": "tsc -p tsconfig.json --noEmit" },
+  "dependencies": { "@agile/ai-context": "*", "@agile/contracts": "*", "@agile/core": "*", "@agile/db": "*", "@agile/llm-gateway": "*", "zod": "^4.6.6" }
+}

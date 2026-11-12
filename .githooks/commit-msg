@@ -1,0 +1,4 @@
+#!/bin/sh
+command -v node >/dev/null 2>&1 || exit 0
+node "workflow/tools/ws.mjs" hook commit-msg "$1"
+exit 0

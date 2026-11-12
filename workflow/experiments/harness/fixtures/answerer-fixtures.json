@@ -1,0 +1,13 @@
+{
+  "sheet": "# Answer sheet\n\n- The PM is the user whose role is `PM`; there is one PM role.\n- Epic ids are UUIDs, like every other id in the API.\n- The note appears at the top of the epic detail page, above the task list.\n- Notes are plain text, no formatting, no attachments.\n- Authentication is the existing Firebase session.\n",
+  "covered": [
+    "Who counts as the PM?",
+    "What format do epic ids have?",
+    "Where on the epic page should the note be shown?"
+  ],
+  "silent": [
+    "What is the maximum length of a note?",
+    "May a note be seen by people who are not members of the project?",
+    "What happens to a pinned note when its epic is deleted?"
+  ]
+}

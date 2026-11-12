@@ -1,0 +1,22 @@
+{
+  "name": "@agile/auth",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./registration": "./src/registration.ts",
+    "./rate-limit": "./src/rate-limit.ts",
+    "./runtime": "./src/runtime.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@agile/contracts": "*",
+    "@agile/db": "*",
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
+    "firebase-admin": "^13.10.0"
+  }
+}

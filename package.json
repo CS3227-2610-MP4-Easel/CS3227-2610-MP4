@@ -1,0 +1,31 @@
+{
+  "name": "agile-platform",
+  "private": true,
+  "packageManager": "npm@10",
+  "workspaces": [
+    "src/fe",
+    "src/be/*"
+  ],
+  "scripts": {
+    "pretest": "npm --workspace @agile/db run prisma:generate",
+    "test": "node --import tsx scripts/discover-tests.mjs && npm --workspace easel-fe run test",
+    "typecheck": "tsc -b && npm --prefix src/fe run typecheck",
+    "lint": "tsc -b --pretty false",
+    "contract": "node --import tsx --test src/be/api/test/openapi-parity.test.ts src/be/contracts/test/openapi.test.ts",
+    "seed:verify": "node --import tsx --test src/be/db/test/seed.test.ts",
+    "scan:secrets": "node scripts/scan-secrets.mjs",
+    "setup:hooks": "node scripts/setup-hooks.mjs",
+    "check:workflows": "node scripts/check-workflows.mjs",
+    "check:agent-policy": "node scripts/check-agent-policy.mjs",
+    "mediate:agent": "node scripts/mediate-agent-operation.mjs",
+    "check:security-review": "node scripts/check-security-review.mjs",
+    "audit:dependencies": "npm audit --audit-level=high"
+  },
+  "devDependencies": {
+    "react": "^19.1.0",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "yaml": "2.9.1"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "project-state": {
+    "checksum": "1a1c33f9c482e32970b777dea2cfe343a9de667d53f839cc3f9ca5d6a45e862d"
+  },
+  "branch-state": {
+    "checksum": "362bb84b91cc42b05e0c450a53a4b1d86bf512280625a53df95b1d90b59bda0d"
+  },
+  "sync-project-state": {
+    "checksum": "94c880654b452b0061d4073098c0d7f481356afd35522eca586ea1e658a1dfd5"
+  },
+  "writing-specs-lite": {
+    "checksum": "837df0306e4bb4eba79590f963f7b5106bd6553d91a82fc388806fa98e9ea90b"
+  },
+  "writing-plans-lite": {
+    "checksum": "fca4baca5d0cb39034397e4cb4c5ca17b9b2ce1da9957d1ffa9d5d787368c229"
+  },
+  "executing-plans-lite": {
+    "checksum": "f86a48c988275b1609795610f67074766b30b02d3e016b99db36c6d9cd9f98c5"
+  },
+  "writing-specs-lite-v2": {
+    "checksum": "a697d2e9e89b56854dd0837728d50b109a7965006e7ca9b0403a92e56443c935"
+  },
+  "writing-plans-lite-v2": {
+    "checksum": "aa9ec66f04ab4241443475d84dade6b7295f6d8b575c140042bc61ffc90289af"
+  },
+  "executing-plans-lite-v2": {
+    "checksum": "258ac06b3dcaa7ec422d3541b934f76ba026ce3a88a837b74477c1ba587a76fd"
+  },
+  "update-documentation": {
+    "checksum": "0dbdb2bad08695216540ec09b6bfc6c172ac5e6b60ce0aa96a2028f2f3e1142f"
+  },
+  "slicing-architecture": {
+    "checksum": "f5146b6eea7117905ce87988affe7403f328191c34fb67edb3344870dc09731a"
+  },
+  "drafting-interfaces": {
+    "checksum": "dbf46db6b8ac3271c7f824b431ebea0bce0fcf9b5a70df0047a259a374de8ff7"
+  },
+  "authoring-tests": {
+    "checksum": "a8c42d07bb3f41d0652bc6dd73cf3e9fd48ff8136f830bece6359806396cb4e3"
+  },
+  "architecting-systems": {
+    "checksum": "b1d6bdc8f22abb0973a50b837c74f17f3e95058dfd2e5bccd009e6a28b501929"
+  }
+}

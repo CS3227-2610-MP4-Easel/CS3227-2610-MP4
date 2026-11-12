@@ -1,0 +1,18 @@
+{
+  "id": "impl-pilot-001",
+  "stage": "implementation",
+  "task_id": "pilot-pinned-note-impl",
+  "implementer_arm_id": "implementer-cheap",
+  "plans": [
+    { "source_experiment_id": "pilot-001", "plan_id": "superpowers-r2", "snapshot_sha256": "da2baf62cafb3172b13a6d43fcb3c0d879a580f689025eee10366eae9412ed7d" },
+    { "source_experiment_id": "pilot-001", "plan_id": "lite-r2", "snapshot_sha256": "a4a04de9d98ad4f619c2aef76cb8126466150058b5e505ca9d7c90650ea747d4" },
+    { "source_experiment_id": "pilot-001", "plan_id": "full-r2", "snapshot_sha256": "5cbd7dde393b1a0a25251a4585f0ae66318a999c9c04316e9497e37d2ffbed26" }
+  ],
+  "samples": 2,
+  "attempts": 2,
+  "max_questions": 5,
+  "max_parallel": 1,
+  "run_ceiling_usd": 10,
+  "batch_ceiling_usd": 70,
+  "answer_mode": "fixed"
+}

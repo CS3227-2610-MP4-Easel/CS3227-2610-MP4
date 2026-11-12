@@ -1,0 +1,7 @@
+experiment_id,task_id,arm_id,n,n_aborted,med_arm_cost_usd,med_agent_s,med_in_tok,med_out_tok,med_peak_prompt_tok,med_questions,med_issues_found,med_lint_errors_spec,med_lint_errors_plan,med_rubric_spec,med_rubric_plan,med_rubric_total,med_review_rounds,med_fix_iterations,min_arm_cost_usd,max_arm_cost_usd,min_rubric_total,max_rubric_total,gm_arm_cost_usd,gm_agent_s,gm_total_tok,gm_excluded,single_task,verdict
+pilot-001,pilot-pinned-note,full,3,1,4.4948,1460,230,199925,259103,3,7,0,1,17.5,17,34.5,1,0,0.3793,8.8095,33.5,35.5,,,,,,
+pilot-001,*,full,3,1,,,,,,,,,,,,,,,,,,,4.4948,1460.0000,10565190.0000,,single_task,full vs lite: inconclusive; full vs superpowers: inconclusive
+pilot-001,pilot-pinned-note,lite,3,0,1.6251,614,84,68385,140914,1,7,0,1,16.5,16,32.5,1,1,1.4362,1.7406,32,33,,,,,,
+pilot-001,*,lite,3,0,,,,,,,,,,,,,,,,,,,1.6251,614.0000,3401857.0000,,single_task,lite vs full: inconclusive; lite vs superpowers: tradeoff
+pilot-001,pilot-pinned-note,superpowers,3,0,0.3056,124,20,11860,53955,1,7,,,16.5,13.5,28.5,0,0,0.2833,0.346,28.5,31,,,,,,
+pilot-001,*,superpowers,3,0,,,,,,,,,,,,,,,,,,,0.3056,124.0000,404196.0000,,single_task,superpowers vs full: inconclusive; superpowers vs lite: tradeoff

@@ -1,0 +1,21 @@
+{
+  "id": "full",
+  "stage": "specplan",
+  "prompt": "Follow this repository's AGENTS.md. Delegate the spec to the spec-writer agent, review it with the reviewer agent through the lenses that match its risk tier (Implementer and Tester, plus Attacker when security-sensitive), fix the findings, then delegate the plan to the planner agent. Task id: {{task_id}}.\n\n{{brief}}",
+  "plugins": [],
+  "skills": ["writing-specs-lite", "writing-plans-lite"],
+  "agents": ["spec-writer", "reviewer", "planner"],
+  "mcp": [],
+  "allowed_tools": ["Read", "Write", "Edit", "Bash", "Glob", "Grep", "Skill", "Task", "Agent"],
+  "disallowed_tools": ["WebFetch", "WebSearch"],
+  "permission_mode": "acceptEdits",
+  "model": { "main": "claude-sonnet-5-5", "spec-writer": "claude-sonnet-5-5", "reviewer": "claude-sonnet-5-5", "planner": "claude-sonnet-5-5" },
+  "instruction_files": ["AGENTS.md", "CLAUDE.md"],
+  "artifact_globs": {
+    "spec": ["workflow/specs/**/*.md"],
+    "plan": ["workflow/plans/**/*.md"]
+  },
+  "lint": true,
+  "review": { "lenses": ["Implementer", "Tester", "Attacker"], "agent_types": ["reviewer"], "max_rounds": 2 },
+  "phase_map": { "writing-specs-lite": "spec", "writing-plans-lite": "plan", "spec-writer": "spec", "planner": "plan", "reviewer": "review" }
+}

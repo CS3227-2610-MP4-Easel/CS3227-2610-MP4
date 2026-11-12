@@ -1,0 +1,24 @@
+{
+  "task": "T6",
+  "status": "done",
+  "summary": "Added live W14 sprint, progress and proposal client types/helpers with paged envelopes, bounded query fields, strict mutation bodies, session outcomes and typed suggestion-ID validation details.",
+  "commit": "534791a1bf36e0d450e7035f2038dd1dd9577511",
+  "produces": [
+    { "kind": "symbol", "name": "listSprintsLive_27 / listProposalsLive_46", "where": "src/fe/lib/api/index.ts", "note": "Live paged clients preserve {items,page,size,total}; proposal listing forwards the optional proposal status filter." },
+    { "kind": "symbol", "name": "createSprintLive_28 / patchSprintLive_29 / startSprintLive_30 / closeSprintLive_31 / deleteSprintLive_32", "where": "src/fe/lib/api/index.ts", "note": "Live sprint mutation helpers use the exact W14 paths and allowlisted request bodies." },
+    { "kind": "symbol", "name": "readProgressLive_33 / approveProposalLive / rejectProposalLive", "where": "src/fe/lib/api/index.ts", "note": "Progress keeps percent as 0-100 points; proposal mutation return types expose sessionOutcome." },
+    { "kind": "symbol", "name": "LiveSprintPage / ReplanSuggestion / ReplanProposal / ReplanApproval", "where": "src/fe/lib/api/types.ts", "note": "Frontend contracts mirror the T1/T5 W14 response envelopes and discriminated suggestion variants." },
+    { "kind": "other", "name": "ApiErrorDetail.suggestionIds", "where": "src/fe/lib/api/errors.ts and src/fe/lib/api/http.ts", "note": "Bounded suggestion-ID validation details survive parsing alongside existing field/message details." }
+  ],
+  "next": "No dependent task. Run W14 close-out checks and branch review.",
+  "deviations": [],
+  "edge_cases": ["E19", "E21"],
+  "checks": {
+    "build": "pass",
+    "frontend_tests": "pass: 17 files, 234 tests",
+    "frontend_typecheck": "pass: npm --prefix src/fe run typecheck",
+    "typecheck": "pass: npm run typecheck",
+    "diff_check": "pass: git diff --check",
+    "secret_scan": "pass: commit hook"
+  }
+}
