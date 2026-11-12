@@ -12,6 +12,9 @@ export const FEATURES: Record<Feature, FeatureConfig> = {
   DEV_STANDUP: { role: "DEVELOPER", model: "llama3.1:8b", maxTokens: 800, maxPromptTokens: 4000, temperature: 0.2, reasoningEffort: "none" },
 };
 
+/** A session opened for the value admits calls of every feature that maps to it (spec SD3); other features map to themselves. */
+export const SESSION_FEATURE: Partial<Record<Feature, Feature>> = { PM_PLAN_EXPAND: "PM_PLAN_OUTLINE" };
+
 // Ratios are code points per token from the 2026-10-28 probe; prices are µ$ per million tokens from the integration guide.
 export const MODELS: Record<string, ModelRecord> = {
   "llama3.1:8b": { contextTokens: 65_536, reasoningEfforts: [], tokenRatio: 4.0, priceIn: 20_000, priceOut: 30_000 },

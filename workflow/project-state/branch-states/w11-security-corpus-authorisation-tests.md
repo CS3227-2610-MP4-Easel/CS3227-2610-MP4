@@ -5,11 +5,11 @@ describes `INT`; read it for context and write here instead of editing it.
 `sync-project-state` folds this file in after the branch merges.
 
 - **Branch:** w11-security-corpus-authorisation-tests (from `origin/development` at `3519ff077de611e79be28b1c3743a027675260c9`)
-- **Base:** `3519ff077de611e79be28b1c3743a027675260c9`
+- **Base:** `465c8fe0e64995c80b19d0757694706555398357`
 - **Owner:** Dev Lead
 - **Status:** In review
 - **Approved:** — (project owner only)
-- **Last updated:** 2026-11-12 by Codex — hardened filesystem isolation and restored package boundaries
+- **Last updated:** 2026-11-13 by Codex — merged current development and verified the integrated branch
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -75,6 +75,8 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-12 | Bundled the deny setup and imported it as an isolated worker module so Node 20 CI protects E22 workers; workspace tests and lint pass | W11 | 59c0d71 |
 | 2026-11-12 | Closed the isolation and repeated-registration review blockers: deny bare child-process imports and filesystem promise/write APIs, and drive 21 attempts through the registered auth route; full verification passes | W11 | e0ac907 |
 | 2026-11-12 | Hardened filesystem containment against traversal and stream/copy writes, exposed auth subpaths through the package boundary, and added regressions | W11 | b110ade |
+| 2026-11-13 | Merged current `development` into W11; combined the auth package-boundary imports with the shared route/body-limit helpers, accepted the lockfile merge, and updated the route-source test for centralized route metadata | W11 | 05f0f4a |
+| 2026-11-13 | Reinstalled workspace links and passed full tests (878 backend, 149 frontend), typecheck, lint, contract, workflow, agent-policy, secret-scan, and diff checks | W11 | verification |
 
 ## 4. Decisions
 

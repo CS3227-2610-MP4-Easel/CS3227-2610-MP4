@@ -10,7 +10,7 @@ const sources = readRouteSources(routesDir);
 const handlerSources = sources.filter(({ file }) => file !== "register.ts" && file !== "index.ts" && file !== "health.ts");
 
 test("W11 scans exactly the route-handler source set", () => {
-  assert.ok(sources.every(({ file, source }) => file === "index.ts" || source.includes("operationId") || source.includes("policyKey") || source.includes("registerRoute") || source.includes("policyForRoute")));
+  assert.ok(sources.every(({ file, source }) => file === "index.ts" || source.includes("operationId") || source.includes("policyKey") || source.includes("registerRoute") || source.includes("policyForRoute") || source.includes('from "./shared.js"')));
 });
 
 test("W11 discovers a new route file without an allow-list update", () => {
