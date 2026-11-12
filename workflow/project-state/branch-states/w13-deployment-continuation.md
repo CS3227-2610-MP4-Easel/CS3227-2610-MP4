@@ -113,6 +113,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-12 | Operator approved Gate 3 after the E34 timer repair and verification. | W13 | owner approval |
 | 2026-11-13 | Merged current `origin/development` (including W11) into W13; reconciled the deployment runbook with the expand/contract rollback guidance and retained both skill-feedback entries. | W13 | 21ebeb0 |
 | 2026-11-13 | Full tests, typecheck, lint, contract, workflow, agent-policy, secret-scan, and diff checks pass after the merge. | W13 | verification |
+| 2026-11-13 | Fixed the CI-only E48 concurrency test failure: the test now asserts the W7 contract (exactly one winner and one `CONFLICT_STATE`) without assuming database lock queue order. | W13 | pending verification |
 
 ### D~8 — Deploy Hook cannot carry an exact commit SHA
 
