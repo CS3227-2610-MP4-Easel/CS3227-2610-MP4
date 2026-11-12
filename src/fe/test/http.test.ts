@@ -322,6 +322,7 @@ describe('error body mapping', () => {
       [409, 'CONFLICT_VERSION', 'This changed elsewhere. Reload before trying again.'],
       [422, 'VALIDATION_FAILED', 'Check the highlighted fields.'],
       [429, 'RATE_LIMITED', 'Please wait before trying again.'],
+      [503, 'AI_DISABLED', 'AI features are disabled.'],
       [500, 'SERVER_SECRET', 'Something went wrong. Try again.'],
     ];
     for (const [status, code, message] of cases) {

@@ -32,6 +32,7 @@ import type {
 export { useDb, reset as resetPrototypeData } from './store';
 export * from './types';
 export { ApiError } from './errors';
+export * as live from './dev';
 
 const wait = (ms = 250) => new Promise((r) => setTimeout(r, ms));
 
@@ -412,9 +413,11 @@ export async function acceptStandup_54(): Promise<Standup> {
 export function exampleActivityFile_49(): string {
   return JSON.stringify(
     {
+      // The ActivityItemInput shape endpoint 49 accepts; the upload panel sends a file's items unchanged.
       items: [
-        { kind: 'COMMIT', text: 'Fix image sizing on small phones', at: '2026-11-02T17:20:00+08:00' },
-        { kind: 'NOTE', text: 'Menu API returns prices in cents', at: '2026-11-02T16:05:00+08:00' },
+        { type: 'COMMIT', repo: 'menu-app', externalId: '3f9a1c2', title: 'Fix image sizing on small phones', body: 'Scale the menu card below 360 px so the price stays visible.', timestamp: '2026-11-02T17:20:00+08:00', files: ['src/menu/card.css'] },
+        { type: 'COMMIT', repo: 'menu-app', externalId: '8b04d7e', title: 'Note that the menu API returns prices in cents', timestamp: '2026-11-02T16:05:00+08:00', files: [] },
+        { type: 'PR', repo: 'menu-app', externalId: '42', title: 'Add menu item detail layout', body: 'Detail page with photo, allergens and an add-to-cart button.', timestamp: '2026-11-02T18:40:00+08:00', url: 'https://github.com/example/menu-app/pull/42', files: ['src/menu/detail.tsx', 'src/menu/detail.css'] },
       ],
     },
     null,
