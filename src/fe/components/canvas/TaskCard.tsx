@@ -6,6 +6,7 @@ import { useProjectRoute } from '../../lib/api/project-mode';
 import { toast } from '../live/toast';
 
 const ROWS = [['todo', 'To do', '#i-circle'], ['prog', 'In progress', '#i-half'], ['rev', 'In review', '#i-eye'], ['done', 'Done', '#i-check']];
+const mutationError = (error: unknown) => error instanceof ApiError && error.code === 'CONFLICT_STATE' ? 'This task is in a closed sprint and cannot be changed.' : error instanceof ApiError ? error.message : 'Something went wrong.';
 
 export default function TaskCard(props: any = {}) {
   const [open, setOpen] = useState(false);
@@ -32,7 +33,7 @@ export default function TaskCard(props: any = {}) {
       props.onStatus?.(updated);
       setOpen(false);
     } catch (e) {
-      toast(e instanceof ApiError ? e.message : 'Something went wrong.', 'bad');
+      toast(mutationError(e), 'bad');
     } finally { setBusy(false); }
   };
   return <div style={css(solo ? 'padding: 24px 24px 150px; background: var(--bg); width: 360px; box-sizing: border-box' : '')}>

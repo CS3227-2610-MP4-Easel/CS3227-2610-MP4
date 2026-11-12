@@ -12,6 +12,7 @@ import { WHO } from './people';
 
 const LABEL: Record<TaskStatus, string> = { todo: 'To do', prog: 'In progress', rev: 'In review', done: 'Done' };
 const LIVE_STATUS: Record<string, 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE'> = { todo: 'TODO', prog: 'IN_PROGRESS', rev: 'IN_REVIEW', done: 'DONE' };
+const mutationMessage = (error: unknown) => error instanceof ApiError && error.code === 'CONFLICT_STATE' ? 'This task is in a closed sprint and cannot be changed.' : error instanceof ApiError ? error.message : 'Something went wrong.';
 
 function Drawer({ projectId }: { projectId?: string | null }) {
   const searchParams = useSearchParams();
@@ -37,6 +38,7 @@ function LiveDrawer({ taskId, projectId }: { taskId: string; projectId: string }
   const [desc, setDesc] = useState('');
   const [pts, setPts] = useState('');
   const [err, setErr] = useState('');
+  const [reloadable, setReloadable] = useState(false);
   const load = useCallback(() => {
     const request = ++generation.current;
     let active = true;
@@ -65,7 +67,7 @@ function LiveDrawer({ taskId, projectId }: { taskId: string; projectId: string }
   const canMutate = role === 'lead' || (role === 'dev' && task.assigneeId === session?.user?.id);
   const save = async () => {
     try { const updated = await updateTaskLive_23(task.id, { title, description: desc, storyPoints: pts ? Number(pts) as any : null, version: task.version }); setTask(updated); setEditing(false); setErr(''); window.dispatchEvent(new Event('easel-board-refresh')); toast('Task saved.'); }
-    catch (e) { setErr(e instanceof ApiError ? e.message : 'Something went wrong.'); }
+    catch (e) { setErr(mutationMessage(e)); setReloadable(e instanceof ApiError && e.code === 'CONFLICT_VERSION'); }
   };
   const status = ({ TODO: 'todo', IN_PROGRESS: 'prog', IN_REVIEW: 'rev', DONE: 'done' } as any)[task.status] as TaskStatus;
   const assignee = task.assigneeId ? members.find((member) => member.userId === task.assigneeId) : null;
@@ -73,10 +75,10 @@ function LiveDrawer({ taskId, projectId }: { taskId: string; projectId: string }
   const assigneeInitials = assigneeName ? assigneeName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase() : '';
   const changeStatus = async (next: TaskStatus, blocked = task.blocked, blockedReason?: string | null) => {
     try { const updated = await setTaskStatusLive_24(task.id, { status: LIVE_STATUS[next], blocked, blockedReason, version: task.version }); setTask(updated); window.dispatchEvent(new Event('easel-board-refresh')); toast(`Moved to ${LABEL[next]}.`); }
-    catch (e) { setErr(e instanceof ApiError ? e.message : 'Something went wrong.'); }
+    catch (e) { setErr(mutationMessage(e)); setReloadable(e instanceof ApiError && e.code === 'CONFLICT_VERSION'); }
   };
   return <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="tt"><div className="row between"><span className="small muted">Epic {task.epicId}</span><div className="row">{canMutate && !editing && <button className="btn sm" onClick={() => { setTitle(task.title); setDesc(task.description ?? ''); setPts(task.storyPoints ? String(task.storyPoints) : ''); setEditing(true); }}>Edit</button>}{canMutate && editing && <button className="btn sm p" onClick={save}>Save</button>}<A className="btn g sm ib" href={r('Board.dc.html')} aria-label="Close"><svg className="ic" aria-hidden="true"><use href="#i-x" /></svg></A></div></div>
-    {err && <div className="banner b-bad" role="alert"><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg><span>{err}</span><button className="btn sm" type="button" onClick={load}>Reload</button></div>}
+    {err && <div className="banner b-bad" role="alert"><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg><span>{err}</span>{reloadable && <button className="btn sm" type="button" onClick={load}>Reload</button>}</div>}
     {editing ? <div className="field"><input className={`in${err ? ' err' : ''}`} aria-label="Title" value={title} onChange={(e) => setTitle(e.target.value)} />{err && <span className="err-t">{err}</span>}</div> : <h2 id="tt">{task.title}</h2>}
     <div className="row wrap"><StatusChip status={status} />{task.blocked && <span className="chip c-bad"><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg>Blocked</span>}</div>
     {task.blocked && <div className="banner b-bad"><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg><div><div className="b">Blocked</div>{task.blockedReason || 'This task is blocked.'}</div></div>}

@@ -251,6 +251,16 @@ describe('W5 live planning surfaces', () => {
     expect(updateTask).toHaveBeenCalledTimes(1);
   });
 
+  it('explains closed-sprint task conflicts without offering a misleading reload', async () => {
+    setStatus.mockRejectedValue(new ApiError('CONFLICT_STATE', 'This changed elsewhere. Reload before trying again.', { status: 409 }));
+    render(liveView(<TaskDrawer />));
+    expect(await screen.findByRole('heading', { name: 'Live task' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'prog' } });
+    await act(async () => {});
+    expect(screen.getByRole('alert').textContent).toContain('This task is in a closed sprint and cannot be changed.');
+    expect(screen.queryByRole('button', { name: 'Reload' })).toBeNull();
+  });
+
   it('E7 shows a safe retryable task-load error and rejects a task from another project', async () => {
     getTask.mockRejectedValueOnce(new Error('server detail must stay hidden'));
     render(liveView(<TaskDrawer projectId={PROJECT} />));
