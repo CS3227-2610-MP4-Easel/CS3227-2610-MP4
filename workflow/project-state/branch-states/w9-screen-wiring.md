@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** ludannnn (Developer member)
 - **Status:** Approved
 - **Approved:** ludannnn 2026-11-13
-- **Last updated:** 2026-11-13 by Codex — repaired the PR workspace-test assertion
+- **Last updated:** 2026-11-13 by Codex — repaired the PR workspace-test and frontend AI error mapping
 
 **Untouched:** Architecture, Conventions
 
@@ -59,6 +59,8 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-13 | T1 done: `src/fe/lib/api/dev.ts` (endpoints 9, 49-52, 55; `useProjectId`/`projectIdFrom`; `todaySgt`, `nextStandupDate`), exported as `live`; `AuthModeCtx` exported; `LiveTestProvider`; the example file is now valid `ActivityItemInput` (it used `kind/text/at`, which the server rejects). Tests: `dev-api.test.ts` (E1, E2, E8, E16, paths and bodies). Checks: typecheck green; fe 155/155 | W~1 | `f36cbe0` |
 | 2026-11-13 | T0: merged `development` at `465c8fe` (W9, W7 backend, W8, PR #34); only `skill-feedback.md` conflicted (kept both rows) | W~1 | merge commit |
 | 2026-11-13 | Fixed the S18 live standup test to assert the API client's intentional generic 5xx message (`Something went wrong. Try again.`), resolving the stale `server broke` expectation in workspace CI | W~1 | CI repair |
+| 2026-11-13 | Preserved `AI_DISABLED` in the frontend API error allow-list and added its fixed message, so S20 can render the specified disabled-AI state | W~1 | CI repair |
+| 2026-11-13 | Preserved `AI_BUSY`/`AI_UNAVAILABLE` codes for the S20 retry and degraded-AI paths, and aligned its stale 500 assertion with the fixed HTTP error copy | W~1 | CI repair |
 
 ---
 

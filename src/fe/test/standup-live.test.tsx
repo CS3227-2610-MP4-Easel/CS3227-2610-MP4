@@ -267,7 +267,7 @@ describe('S20 live: standup (F4)', () => {
     let first = true;
     stub({ mine: () => (first ? ((first = false), err(500, 'INTERNAL_ERROR')) : ok(standup())) });
     view();
-    expect(await screen.findByText('server says INTERNAL_ERROR')).toBeTruthy();
+    expect(await screen.findByText('Something went wrong. Try again.')).toBeTruthy();
     expect(screen.queryByText('Loading…')).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByText('Fixed the menu card')).toBeTruthy();
