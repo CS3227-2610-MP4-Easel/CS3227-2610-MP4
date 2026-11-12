@@ -82,6 +82,36 @@ function transactionalDatabase(initialSprints: Record<string, any>[], initialTas
   return { state, db };
 }
 
+function barrierRaceDatabase(initialSprints: Record<string, any>[]) {
+  const sprints = initialSprints.map((item) => ({ ...item }));
+  let activeReads = 0;
+  let release!: () => void;
+  const bothActiveReads = new Promise<void>((resolve) => { release = resolve; });
+  const db = {
+    $transaction: async (work: (tx: any) => Promise<unknown>) => work({
+      project: { update: async () => ({}) },
+      sprint: {
+        findFirst: async ({ where }: any) => {
+          if (where.status === "ACTIVE" && where.id?.not) {
+            activeReads++;
+            if (activeReads === 2) release();
+            await bothActiveReads;
+          }
+          return sprints.find((item) => matches(item, where)) ?? null;
+        },
+        updateMany: async ({ where, data }: any) => {
+          if (data.status === "ACTIVE" && sprints.some((item) => item.status === "ACTIVE")) return { count: 0 };
+          const item = sprints.find((candidate) => matches(candidate, where));
+          if (!item) return { count: 0 };
+          for (const [key, value] of Object.entries(data)) item[key] = value && typeof value === "object" && "increment" in value ? item[key] + (value as any).increment : value;
+          return { count: 1 };
+        },
+      },
+    }),
+  };
+  return { sprints, db };
+}
+
 test("sprint list is paginated, stable, and hides deleted rows", async () => {
   const deleted = row({ id: "deleted", deletedAt: new Date() });
   const state = database([row(), deleted]);
@@ -145,10 +175,10 @@ test("E3 rejects mutations of active, closed, and deleted sprints without changi
   assert.ok(state.sprints.find((item) => item.id === deletedId)?.deletedAt);
 });
 
-test("E4 serializes two starts so one wins and the loser sees CONFLICT_STATE", async () => {
+test("E4 barrier-controlled starts race before either sees an active sprint", async () => {
   const firstId = "first-sprint";
   const secondId = "second-sprint";
-  const state = transactionalDatabase([row({ id: firstId }), row({ id: secondId, startDate: new Date("2026-02-01T00:00:00.000Z"), endDate: new Date("2026-02-14T00:00:00.000Z") })], []);
+  const state = barrierRaceDatabase([row({ id: firstId }), row({ id: secondId, startDate: new Date("2026-02-01T00:00:00.000Z"), endDate: new Date("2026-02-14T00:00:00.000Z") })]);
   const service = createSprintService(state.db as any, access);
   const results = await Promise.allSettled([
     service.start({ userId: actorId, role: "DEV_LEAD" }, firstId, { version: 1 }),
@@ -156,7 +186,7 @@ test("E4 serializes two starts so one wins and the loser sees CONFLICT_STATE", a
   ]);
   assert.equal(results.filter((result) => result.status === "fulfilled").length, 1);
   assert.equal(results.filter((result) => result.status === "rejected" && (result.reason as Error).message === "CONFLICT_STATE").length, 1);
-  assert.equal(state.state.sprints.filter((item) => item.status === "ACTIVE").length, 1);
+  assert.equal(state.sprints.filter((item) => item.status === "ACTIVE").length, 1);
 });
 
 test("E5-E7 reject incomplete, invalid-target, and DONE-task carry-over without mutation", async () => {
@@ -231,6 +261,8 @@ test("E21 returns live sprint pages with bounded metadata and rejects out-of-ran
   assert.equal(second.total, 2);
   assert.equal(first.items.length, 1);
   assert.equal(second.items.length, 1);
+  assert.equal(first.items[0]?.id, sprintId);
+  assert.equal(second.items[0]?.id, "live-two");
   await assert.rejects(() => service.list({ userId: actorId, role: "PM" }, projectId, { page: -1, size: 1 }), /VALIDATION_FAILED/);
   await assert.rejects(() => service.list({ userId: actorId, role: "PM" }, projectId, { page: 10_001, size: 1 }), /VALIDATION_FAILED/);
 });
@@ -242,6 +274,31 @@ test("E10 and E22 keep zero totals safe and report 25 percent for one of four po
   });
   assert.deepEqual(await derived.progress(projectId), { pointsTotal: 4, pointsDone: 1, percent: 25, unestimatedTasks: 0 });
   assert.deepEqual(await derived.velocity(projectId, 3), []);
+});
+
+test("E11 velocity requests the newest three with deterministic ordering and maps sprint ids", async () => {
+  let query: any;
+  const derived = createDerived({ sprint: { findMany: async (args) => { query = args; return [{ id: "newest", name: "Newest", completedPoints: 8 }, { id: "tie-low", name: "Tie low", completedPoints: 5 }, { id: "tie-high", name: "Tie high", completedPoints: 3 }]; } } });
+  assert.deepEqual(await derived.velocity(projectId, 3), [
+    { sprintId: "newest", name: "Newest", completedPoints: 8 },
+    { sprintId: "tie-low", name: "Tie low", completedPoints: 5 },
+    { sprintId: "tie-high", name: "Tie high", completedPoints: 3 },
+  ]);
+  assert.deepEqual(query.orderBy, [{ endDate: "desc" }, { id: "asc" }]);
+  assert.equal(query.take, 3);
+});
+
+test("close accepts exactly 1000 carry-over entries and rejects 1001 before mutation", async () => {
+  const tasks = Array.from({ length: 1000 }, (_, index) => ({ id: `task-${index}`, projectId, sprintId, status: "TODO", storyPoints: 1, version: 1, deletedAt: null }));
+  const accepted = transactionalDatabase([row({ status: "ACTIVE" })], tasks);
+  await createSprintService(accepted.db as any, access).close({ userId: actorId, role: "DEV_LEAD" }, sprintId, { version: 1, carryOver: tasks.map((task) => ({ taskId: task.id, to: "BACKLOG" as const })) });
+  assert.equal(accepted.state.events.length, 1000);
+  assert.equal(accepted.state.sprints[0]?.status, "CLOSED");
+
+  const rejected = transactionalDatabase([row({ status: "ACTIVE" })], tasks);
+  const before = JSON.stringify(rejected.state);
+  await assert.rejects(() => createSprintService(rejected.db as any, access).close({ userId: actorId, role: "DEV_LEAD" }, sprintId, { version: 1, carryOver: [...tasks.map((task) => ({ taskId: task.id, to: "BACKLOG" as const })), { taskId: "extra-task", to: "BACKLOG" as const }] }), /VALIDATION_FAILED/);
+  assert.equal(JSON.stringify(rejected.state), before);
 });
 
 test("E26 rejects a carry-over task outside the source sprint or project without changes", async () => {

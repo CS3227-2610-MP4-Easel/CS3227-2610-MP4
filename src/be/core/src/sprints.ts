@@ -141,7 +141,10 @@ export function createSprintService(db: SprintDb, gate: SprintAccess, derived: D
         const active = await tx.sprint.findFirst({ where: { projectId: current.projectId, status: "ACTIVE", deletedAt: null, id: { not: sprintId } } });
         if (active) throw new Error("CONFLICT_STATE");
         const updated = await tx.sprint.updateMany({ where: { id: sprintId, version, status: "PLANNED", deletedAt: null }, data: { status: "ACTIVE", version: { increment: 1 } } });
-        if (!updated.count) throw new Error("CONFLICT_VERSION");
+        if (!updated.count) {
+          const winner = await tx.sprint.findFirst({ where: { projectId: current.projectId, status: "ACTIVE", deletedAt: null, id: { not: sprintId } } });
+          throw new Error(winner ? "CONFLICT_STATE" : "CONFLICT_VERSION");
+        }
         return sprint(await readSprint(tx, sprintId));
       });
     },

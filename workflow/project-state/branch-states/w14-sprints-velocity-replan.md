@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — T2 review follow-up committed and handed over
+- **Last updated:** 2026-11-13 by Codex — T2 second-review race and assertion gaps fixed; commit pending
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | T2 review follow-up committed and handed over | Continue with T3 review follow-up acceptance | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Active | T2 second-review race and assertion gaps fixed; commit pending | Commit T2 follow-up, then return the validated handover JSON | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -77,6 +77,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-13 | T1 completed shared W14 contracts; T2 and T3 started after T1 handover | W14 | commits `4bea8a2`, `29e8dea` |
 | 2026-11-13 | Tester review of diff `416b4fb..HEAD` found T2/T3 assigned edge cases without corresponding race, rollback, authorization and lifecycle tests; no source or test edits made | W14 | review |
 | 2026-11-13 | Added focused T2 rollback/race/lifecycle/close-validation/pagination/progress tests and made planned-sprint deletion clear assigned tasks atomically | W14 | T2 review follow-up |
+| 2026-11-13 | Replaced serialized E4 coverage with a barrier-controlled race and added direct E21, velocity ordering, progress, and 1000-item bound assertions | W14 | T2 second-review follow-up |
 
 ## 4. Decisions
 
