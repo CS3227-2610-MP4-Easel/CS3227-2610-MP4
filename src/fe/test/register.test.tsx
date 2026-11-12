@@ -146,11 +146,11 @@ describe('register step 1', () => {
     const next = () => screen.getByRole('button', { name: 'Next' }) as HTMLButtonElement;
     expect(screen.getByText('Too many attempts. Try again in 3 seconds.')).toBeTruthy();
     expect(next().disabled).toBe(true);
-    await act(async () => { vi.advanceTimersByTime(1000); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
     expect(screen.getByText('Too many attempts. Try again in 2 seconds.')).toBeTruthy();
-    await act(async () => { vi.advanceTimersByTime(1000); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
     expect(screen.getByText('Too many attempts. Try again in 1 second.')).toBeTruthy();
-    await act(async () => { vi.advanceTimersByTime(1000); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
     expect(screen.queryByText(/Too many attempts/)).toBeNull();
     expect(next().disabled).toBe(false);
   });
