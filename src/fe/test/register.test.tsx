@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -506,8 +506,10 @@ describe('finish setup', () => {
     await u.type(screen.getByLabelText('Display name'), 'Ana');
     await u.click(screen.getByRole('button', { name: 'Finish' }));
     expect(signUp).not.toHaveBeenCalled();
-    expect(replace).toHaveBeenCalledTimes(1);
-    expect(replace).toHaveBeenCalledWith('/projects');
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledTimes(1);
+      expect(replace).toHaveBeenCalledWith('/projects');
+    });
   });
 
   it('E52h a 500 at Finish then Retry reaches /projects', async () => {
