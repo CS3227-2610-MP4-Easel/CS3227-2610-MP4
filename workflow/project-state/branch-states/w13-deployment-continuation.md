@@ -7,9 +7,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w13-deployment-continuation (from `INT` at `dc3447f`)
 - **Base:** dc3447f
 - **Owner:** operator / repository owner
-- **Status:** In review
+- **Status:** Approved
 - **Approved:** operator / repository owner, 2026-11-12
-- **Last updated:** 2026-11-12 by Codex — corrected the production approval sequence in the runbook; review required again
+- **Last updated:** 2026-11-12 by Codex — Gate 3 re-approved by operator after checker hardening and runbook correction
 
 **Untouched:** Architecture, Conventions, Known Gaps
 
@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S5 | 2026-11-12 | Codex | W13 | Done | Restricted privileged push triggers to the exact W13 production workflow and completed full verification | Request renewed Gate 3 approval before pushing or merging | 2026-11-12 |
+| *(none)* | — | — | — | — | Branch approved; no active session | Push the approved tip when requested; do not fold until merged | 2026-11-12 |
 
 **Remaining**
 
@@ -106,6 +106,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-12 | Corrected the runbook so the owner merges to `main`, observes the workflow pause, and then approves the protected `production` Environment for that run. | W13 | pending renewed Gate 3 |
 | 2026-11-12 | Review found the generic workflow checker accepts an arbitrary push-only workflow with a protected environment; only the exact W13 filename receives the production contract, so a regression fix is required. | W13 | blocker pending |
 | 2026-11-12 | Restricted `push` triggers to the exact W13 production workflow and added a regression test for arbitrary push-only privileged workflows; full tests, typecheck, lint, contract, workflow checker, secret scan, and diff checks pass. | W13 | 44f88a8 |
+| 2026-11-12 | Operator re-approved Gate 3 after the checker hardening and runbook correction. | W13 | owner approval |
 
 ### D~8 — Deploy Hook cannot carry an exact commit SHA
 
