@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — clarified closed-sprint mutation errors
+- **Last updated:** 2026-11-13 by Codex — cleared local non-user database data for empty-state testing
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | Closed-sprint mutation error copy | Await owner review of commit `71b4c08` | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Active | Local empty-state database test setup | Run seed only if the owner requests sample data restoration | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -122,6 +122,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-13 | Mapped `CONFLICT_STATE` task mutations to “This task is in a closed sprint and cannot be changed.” and reserved Reload for true `CONFLICT_VERSION`; added regression coverage | W14 | T6 UI follow-up |
 | 2026-11-13 | Verified frontend typecheck, 237 tests and diff check | W14 | T6 UI follow-up |
 | 2026-11-13 | Committed closed-sprint error copy and reload gating as `71b4c08` | W14 | T6 close-out |
+| 2026-11-13 | Cleared all non-user rows from the verified local `agile_platform` database; preserved all 4 users and confirmed projects, tasks, sessions, digests, rate counters and gateway state are empty | W14 | local test setup |
 
 ## 4. Decisions
 
