@@ -95,6 +95,21 @@ describe('S18 live (F5)', () => {
     expect(await screen.findByText('No developers have been added. Add them in Members.')).toBeTruthy();
   });
 
+  it('a failed standups load shows its message and Try again reloads', async () => {
+    let first = true;
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.endsWith('/members')) return ok([member('a', 'Ann')]);
+      if (first) { first = false; return new Response(JSON.stringify({ error: { code: 'INTERNAL_ERROR', message: 'server broke' } }), { status: 500 }); }
+      return ok({ items: [standup('a')] });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    view();
+    expect(await screen.findByText('server broke')).toBeTruthy();
+    expect(screen.queryByText('Loading…')).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByText('a yesterday')).toBeTruthy();
+  });
+
   it('a 404 from members shows the not-found text', async () => {
     stub(new Response(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'm' } }), { status: 404 }));
     view();

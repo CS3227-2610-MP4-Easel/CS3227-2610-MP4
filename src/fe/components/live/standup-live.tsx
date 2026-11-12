@@ -120,27 +120,30 @@ function SummariesPanel({ screen, ids }: { screen: Screen; ids: string[] }) {
   const [failed, setFailed] = useState<string[]>([]);
   const [running, setRunning] = useState(false);
   const [note, setNote] = useState<string | null>(null);
-  const alive = useRef(true);
+  // One token per mount: a cleared token stops its own run even if a later mount (StrictMode) starts another.
+  const mounted = useRef({ alive: false });
   const screenRef = useRef(screen);
   screenRef.current = screen;
 
-  const runAll = async (list: string[]) => {
+  const runAll = async (list: string[], t: { alive: boolean }) => {
     setRunning(true);
+    setNote(null);
     setFailed((f) => f.filter((id) => !list.includes(id)));
     const lost = (rest: string[]) => setFailed((f) => [...f, ...rest]);
-    for (let i = 0; i < list.length && alive.current; i += BATCH) {
+    for (let i = 0; i < list.length && t.alive; i += BATCH) {
       const batch = list.slice(i, i + BATCH);
       for (;;) {
         try {
           const res = await summaries_50(screenRef.current.projectId, batch);
-          if (!alive.current) return;
+          if (!t.alive) return;
           setLines((l) => [...l, ...res.summaries.map((s) => s.oneLiner)]);
           if (res.failed.length) lost(res.failed);
           break;
         } catch (e) {
-          if (!alive.current) return;
+          if (!t.alive) return;
           if (e instanceof ApiError && e.code === 'AI_BUSY') {
-            for (let s = wait(e); s > 0 && alive.current; s--) { setNote(`AI is busy. Resuming in ${s} s.`); await sleep(1000); }
+            for (let s = wait(e); s > 0 && t.alive; s--) { setNote(`AI is busy. Resuming in ${s} s.`); await sleep(1000); }
+            if (!t.alive) return;
             setNote(null);
             continue;
           }
@@ -157,13 +160,14 @@ function SummariesPanel({ screen, ids }: { screen: Screen; ids: string[] }) {
         }
       }
     }
-    if (alive.current) setRunning(false);
+    if (t.alive) setRunning(false);
   };
 
   useEffect(() => {
-    alive.current = true;
-    void runAll(ids);
-    return () => { alive.current = false; };
+    const t = { alive: true };
+    mounted.current = t;
+    void runAll(ids, t);
+    return () => { t.alive = false; };
     // Runs once per upload; the parent remounts this panel (new key) for the next one.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -184,7 +188,7 @@ function SummariesPanel({ screen, ids }: { screen: Screen; ids: string[] }) {
       <div className="row between">
         <span className="small muted">The standup can still be generated without the missing summaries.</span>
         {failed.length > 0 && (
-          <button className="btn sm" disabled={running || screen.archived} onClick={() => void runAll(failed)}>{icon('refresh')}{`Retry failed (${failed.length})`}</button>
+          <button className="btn sm" disabled={running || screen.archived} onClick={() => void runAll(failed, mounted.current)}>{icon('refresh')}{`Retry failed (${failed.length})`}</button>
         )}
       </div>
     </section>
@@ -214,6 +218,8 @@ function StandupPanel({ screen }: { screen: Screen }) {
   const [note, setNote] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [holdUntil, setHoldUntil] = useState(0);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
   const current = useRef(date);
   current.current = date;
   const screenRef = useRef(screen);
@@ -223,16 +229,17 @@ function StandupPanel({ screen }: { screen: Screen }) {
     let live = true;
     setNote(null);
     setProblem(null);
+    setLoadError(null);
     myStandup_52(screen.projectId, date).then(
       (s) => { if (live) setLoaded({ date, s }); },
-      (e) => { if (live && !screenRef.current.fail(e)) toast(e instanceof ApiError ? e.message : 'Something went wrong.', 'bad'); },
+      (e) => { if (live && !screenRef.current.fail(e)) setLoadError(e instanceof ApiError ? e.message : 'Something went wrong.'); },
     );
     return () => { live = false; };
-  }, [screen.projectId, date]);
+  }, [screen.projectId, date, reload]);
 
   useEffect(() => {
     if (!holdUntil) return;
-    const t = setTimeout(() => setHoldUntil(0), Math.max(0, holdUntil - Date.now()));
+    const t = setTimeout(() => { setHoldUntil(0); setProblem(null); }, Math.max(0, holdUntil - Date.now()));
     return () => clearTimeout(t);
   }, [holdUntil]);
 
@@ -283,7 +290,10 @@ function StandupPanel({ screen }: { screen: Screen }) {
         </div>
       </div>
       {problem && <div className="banner b-warn" role="alert">{icon('alert')}<span>{problem}</span></div>}
-      {s === undefined && <p className="muted">Loading…</p>}
+      {s === undefined && loadError && (
+        <div className="row between"><span className="muted">{loadError}</span><button className="btn sm" onClick={() => setReload((n) => n + 1)}>Try again</button></div>
+      )}
+      {s === undefined && !loadError && <p className="muted">Loading…</p>}
       {s === null && (
         <div className="row between">
           <span className="muted">{`No standup for ${dayLabel(date)} yet.`}</span>

@@ -1,3 +1,4 @@
+import { StrictMode } from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -148,13 +149,44 @@ describe('S20 live: summaries (F3)', () => {
     expect(screen.queryByRole('button', { name: /Retry failed/ })).toBeNull();
   });
 
-  it('a 429 RATE_LIMITED stops the run and marks the rest failed', async () => {
-    const s = stub({ uploads: () => ok(uploadRes({ needsSummary: ids(15) })), summaries: () => err(429, 'RATE_LIMITED', { 'Retry-After': '30' }) });
+  it('a 429 RATE_LIMITED stops the run and marks the rest failed; Retry clears the note', async () => {
+    let limited = true;
+    const s = stub({
+      uploads: () => ok(uploadRes({ needsSummary: ids(15) })),
+      summaries: (body) => (limited ? err(429, 'RATE_LIMITED', { 'Retry-After': '30' }) : ok({ summaries: body.itemIds.map((itemId: string) => ({ itemId, oneLiner: 'x', cached: false })), failed: [] })),
+    });
     view();
     await choose(fileOf(items(15)));
     expect(await screen.findByText('Too many AI requests. Try again in 30 s.')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Retry failed (15)' })).toBeTruthy();
     expect(s.summaryCalls()).toHaveLength(1);
+    limited = false;
+    await userEvent.click(screen.getByRole('button', { name: 'Retry failed (15)' }));
+    expect(await screen.findByText('Summarised 15 of 15')).toBeTruthy();
+    expect(screen.queryByText(/Too many AI requests/)).toBeNull();
+  });
+
+  it('unmounting during the AI_BUSY countdown sends no further request', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const s = stub({ uploads: () => ok(uploadRes({ needsSummary: ids(3) })), summaries: () => err(429, 'AI_BUSY', { 'Retry-After': '2' }) });
+    const { unmount } = view();
+    await choose(fileOf(items(3)));
+    await screen.findByText('AI is busy. Resuming in 2 s.');
+    unmount();
+    await act(async () => { await vi.advanceTimersByTimeAsync(3000); });
+    expect(s.summaryCalls()).toHaveLength(1);
+  });
+
+  it('under StrictMode a second mount does not duplicate later batches or lines', async () => {
+    const s = stub({
+      uploads: () => ok(uploadRes({ needsSummary: ids(12) })),
+      summaries: (body) => ok({ summaries: body.itemIds.map((itemId: string) => ({ itemId, oneLiner: `did ${itemId}`, cached: false })), failed: [] }),
+    });
+    render(<StrictMode><LiveTestProvider><LiveStandupScreen /></LiveTestProvider></StrictMode>);
+    await choose(fileOf(items(12)));
+    expect(await screen.findByText('Summarised 12 of 12')).toBeTruthy();
+    // The first batch is already in flight when StrictMode remounts; only the live run continues.
+    expect(s.summaryCalls()).toEqual([ids(12).slice(0, 10), ids(12).slice(0, 10), ids(12).slice(10)]);
+    expect(screen.getAllByText('did id-0')).toHaveLength(1);
   });
 
   it('E14 untrusted one-liners render as literal text, duplicates included', async () => {
@@ -218,12 +250,34 @@ describe('S20 live: standup (F4)', () => {
     expect(today()).not.toBe(next());
   });
 
-  it('a 429 on generate shows the wait and holds Regenerate', async () => {
+  it('a 429 on generate shows the wait, holds Regenerate, then releases it and clears the banner', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
     stub({ mine: () => ok(standup()), generate: () => err(429, 'AI_BUSY', { 'Retry-After': '5' }) });
     view();
     await userEvent.click(await screen.findByRole('button', { name: 'Regenerate' }));
     expect(await screen.findByText('AI is busy. Try again in 5 s.')).toBeTruthy();
-    expect((screen.getByRole('button', { name: 'Regenerate' }) as HTMLButtonElement).disabled).toBe(true);
+    const regen = () => screen.getByRole('button', { name: 'Regenerate' }) as HTMLButtonElement;
+    expect(regen().disabled).toBe(true);
+    await act(async () => { await vi.advanceTimersByTimeAsync(5100); });
+    expect(regen().disabled).toBe(false);
+    expect(screen.queryByText(/AI is busy/)).toBeNull();
+  });
+
+  it('a failed load shows its message and Try again reloads', async () => {
+    let first = true;
+    stub({ mine: () => (first ? ((first = false), err(500, 'INTERNAL_ERROR')) : ok(standup())) });
+    view();
+    expect(await screen.findByText('server says INTERNAL_ERROR')).toBeTruthy();
+    expect(screen.queryByText('Loading…')).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByText('Fixed the menu card')).toBeTruthy();
+  });
+
+  it('an accepted standup shows the accepted banner and no Edited badge', async () => {
+    stub({ mine: () => ok(standup({ outcome: 'ACCEPTED' })) });
+    view();
+    expect(await screen.findByText('You accepted this standup as written.')).toBeTruthy();
+    expect(screen.queryByText('Edited')).toBeNull();
   });
 
   it('a 422 and a 503 AI_DISABLED on generate show their messages', async () => {
@@ -246,12 +300,14 @@ describe('S20 live: standup (F4)', () => {
     expect((screen.getByRole('button', { name: 'Copy' }) as HTMLButtonElement).disabled).toBe(false);
   });
 
-  it('E14 standup lines render as literal text', async () => {
+  it('E14 standup lines render as literal text, keyed without duplicate-key warnings', async () => {
     const evil = '<img src=x onerror=alert(1)>';
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
     stub({ mine: () => ok(standup({ content: { yesterday: [evil, evil], today: [], blockers: [evil] } })) });
     const { container } = view();
     await waitFor(() => expect(screen.getAllByText(evil)).toHaveLength(3));
     expect(container.querySelector('img')).toBeNull();
+    expect(errors.mock.calls.filter((c) => String(c[0]).includes('same key'))).toEqual([]);
   });
 });
 

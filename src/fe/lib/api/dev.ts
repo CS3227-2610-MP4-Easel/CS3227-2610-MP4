@@ -50,7 +50,8 @@ export const summaries_50 = (projectId: string, itemIds: string[]) =>
 export const standup_51 = (projectId: string, date: string) =>
   apiFetch<LiveStandup>(`/api/dev/projects/${p(projectId)}/standups`, { method: 'POST', body: { date } });
 
-/** Endpoint 52; null when there is no standup for that date yet (404). */
+/** Endpoint 52; null when there is no standup for that date yet (404). A non-member also gets 404 here,
+ * so S20 shows "No standup yet" until a write (49-51) returns its own 404 (spec E2). */
 export async function myStandup_52(projectId: string, date: string): Promise<LiveStandup | null> {
   try {
     return await apiFetch<LiveStandup>(`/api/dev/projects/${p(projectId)}/standups/mine?date=${date}`);
