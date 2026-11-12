@@ -248,6 +248,19 @@ describe('apiFetch', () => {
 });
 
 describe('error body mapping', () => {
+  it('E90 retains only the approved bounded auth compatibility codes', async () => {
+    const cases: [number, string][] = [
+      [401, 'UNAUTHENTICATED'],
+      [403, 'USER_NOT_REGISTERED'],
+      [403, 'REGISTRATION_CODE_INVALID'],
+      [409, 'ALREADY_REGISTERED'],
+    ];
+    for (const [status, code] of cases) {
+      reply(status, JSON.stringify({ error: { code, message: 'must not escape' } }));
+      expect((await fail(apiFetch('/api/x'))).code).toBe(code);
+    }
+  });
+
   it('E7 maps bodyless and malformed responses by status', async () => {
     const cases: [number, string, string, string][] = [
       [401, '', 'UNAUTHENTICATED', 'Authentication is required.'],

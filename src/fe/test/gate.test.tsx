@@ -6,6 +6,7 @@ let fbCb: ((u: { uid: string; email: string | null } | null) => void) | null = n
 let configured = true;
 const replace = vi.fn();
 const router = { replace };
+const signOutUser = vi.fn(async () => {});
 let pathname = '/projects';
 
 vi.mock('../lib/auth/firebase', () => ({
@@ -17,7 +18,7 @@ vi.mock('../lib/auth/firebase', () => ({
   },
   signIn: vi.fn(),
   signUp: vi.fn(),
-  signOutUser: vi.fn(async () => {}),
+  signOutUser: () => signOutUser(),
   idToken: async () => 't',
 }));
 vi.mock('../lib/auth/navigate', () => ({ hardNavigate: vi.fn() }));
@@ -34,6 +35,8 @@ import { currentUser } from '../lib/auth/firebase';
 import { AuthRoot } from '../lib/auth/mode-context';
 import { useSession } from '../lib/auth/session';
 import { HOME, resolve } from '../lib/screens';
+import { A } from '../lib/nav';
+import { ProjectRouteContext, projectRoute } from '../lib/api/project-mode';
 
 const fetchMock = vi.fn();
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status });
@@ -54,6 +57,8 @@ beforeEach(() => {
   fbCb = null;
   configured = true;
   replace.mockReset();
+  signOutUser.mockReset();
+  signOutUser.mockResolvedValue(undefined);
   vi.mocked(currentUser).mockReset();
   fetchMock.mockReset();
   vi.stubGlobal('fetch', fetchMock);
@@ -88,6 +93,18 @@ describe('gate', () => {
     expect(replace).toHaveBeenCalledTimes(1);
     expect(replace).toHaveBeenCalledWith('/sign-in');
     expect(screen.queryByText('Something went wrong.')).toBeNull();
+  });
+
+  it('E3 an authenticated 401 signs out and replaces the protected page', async () => {
+    vi.mocked(currentUser).mockReturnValue(fb as never);
+    fetchMock.mockImplementation(async () => err(401, 'UNAUTHENTICATED'));
+    signOutUser.mockImplementation(async () => { fbCb?.(null); });
+    mount('/projects');
+    await act(async () => fbCb!(fb));
+    expect(signOutUser).toHaveBeenCalledTimes(1);
+    expect(replace).toHaveBeenCalledWith('/sign-in');
+    expect(screen.getByText('Loading…')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Projects' })).toBeNull();
   });
 
   it('E81 setUser while a 403 me_4 is in flight leaves ready and never replaces to /register', async () => {
@@ -267,6 +284,15 @@ describe('gate', () => {
     );
     expect(screen.getByText('Prototype: sign in as')).toBeTruthy();
     expect(screen.getByRole('group', { name: 'Prototype role' })).toBeTruthy();
+  });
+
+  it('N1 a rendered project link replaces default p1 with the active UUID', () => {
+    render(
+      <ProjectRouteContext.Provider value={projectRoute('/projects/550e8400-e29b-41d4-a716-446655440000/board')}>
+        <A href="/projects/p1/board">Board</A>
+      </ProjectRouteContext.Provider>,
+    );
+    expect(screen.getByRole('link', { name: 'Board' }).getAttribute('href')).toBe('/projects/550e8400-e29b-41d4-a716-446655440000/board');
   });
 
   it('E79 unconfigured, and firebase with firebaseConfigured() false, show only the one line', () => {

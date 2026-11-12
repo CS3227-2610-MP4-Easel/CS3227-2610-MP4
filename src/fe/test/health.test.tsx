@@ -48,6 +48,14 @@ function view(projectId: string) {
   );
 }
 
+function prototypeView() {
+  return (
+    <ProjectRouteContext.Provider value={projectRoute('/projects/p1/health')}>
+      <RoleCtx.Provider value="lead"><Health /></RoleCtx.Provider>
+    </ProjectRouteContext.Provider>
+  );
+}
+
 beforeEach(() => {
   getFacts.mockReset();
   getLatestDigest.mockReset();
@@ -55,27 +63,52 @@ beforeEach(() => {
 
 describe('Health route identity', () => {
   it('E3 ignores stale project responses after a live route change', async () => {
-    const factsA = deferred<ReturnType<typeof facts>>();
-    const digestA = deferred<ReturnType<typeof digest>>();
+    const factsA1 = deferred<ReturnType<typeof facts>>();
+    const digestA1 = deferred<ReturnType<typeof digest>>();
     const factsB = deferred<ReturnType<typeof facts>>();
     const digestB = deferred<ReturnType<typeof digest>>();
-    getFacts.mockImplementation((id: string) => id === A ? factsA.promise : factsB.promise);
-    getLatestDigest.mockImplementation((id: string) => id === A ? digestA.promise : digestB.promise);
+    const factsA2 = deferred<ReturnType<typeof facts>>();
+    const digestA2 = deferred<ReturnType<typeof digest>>();
+    const aFacts = [factsA1, factsA2];
+    const aDigests = [digestA1, digestA2];
+    getFacts.mockImplementation((id: string) => id === A ? aFacts.shift()!.promise : factsB.promise);
+    getLatestDigest.mockImplementation((id: string) => id === A ? aDigests.shift()!.promise : digestB.promise);
 
     const rendered = render(view(A));
     await act(async () => {});
     rendered.rerender(view(B));
+    await act(async () => {});
+    rendered.rerender(view(A));
+    await act(async () => {});
     await act(async () => {
-      factsB.resolve(facts(20));
-      digestB.resolve(digest(B, 'B digest'));
+      factsA1.resolve(facts(99));
+      digestA1.resolve(digest(A, 'A stale digest'));
     });
-    expect(screen.getByText('B digest')).toBeTruthy();
+    expect(screen.queryByText('A stale digest')).toBeNull();
 
     await act(async () => {
-      factsA.resolve(facts(99));
-      digestA.resolve(digest(A, 'A stale digest'));
+      factsA2.resolve(facts(20));
+      digestA2.resolve(digest(A, 'A current digest'));
     });
-    expect(screen.getByText('B digest')).toBeTruthy();
-    expect(screen.queryByText('A stale digest')).toBeNull();
+    expect(screen.getByText('A current digest')).toBeTruthy();
+
+    await act(async () => {
+      factsB.resolve(facts(88));
+      digestB.resolve(digest(B, 'B stale digest'));
+    });
+    expect(screen.getByText('A current digest')).toBeTruthy();
+    expect(screen.queryByText('B stale digest')).toBeNull();
+  });
+
+  it('F7 never renders prototype data while a live UUID route is loading', async () => {
+    getFacts.mockImplementation(() => new Promise(() => {}));
+    getLatestDigest.mockImplementation(() => new Promise(() => {}));
+    const rendered = render(prototypeView());
+    expect(screen.getByText(/Progress is steady and all three checkpoints/)).toBeTruthy();
+    rendered.rerender(view(A));
+    await act(async () => {});
+    expect(screen.queryByText(/Progress is steady and all three checkpoints/)).toBeNull();
+    expect(screen.queryByText('Suggested changes (3)')).toBeNull();
+    expect(document.querySelector('.sk')).toBeTruthy();
   });
 });
