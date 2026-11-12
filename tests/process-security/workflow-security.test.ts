@@ -247,6 +247,8 @@ test("E8 former and alternate production filenames receive baseline checks", () 
   for (const file of [".github/workflows/w13-production.yml", ".github/workflows/renamed-production.yml"]) {
     assert.match(validateWorkflowText(privileged, BOOTSTRAP_ACTION_PINS, file).join("\n"), /unexpected workflow trigger/);
   }
+  const pushOnlyPrivileged = ["on:", "  push:", "    branches: [main]", "jobs:", "  deploy:", "    environment: production"].join("\n");
+  assert.match(validateWorkflowText(pushOnlyPrivileged, BOOTSTRAP_ACTION_PINS, ".github/workflows/renamed-production.yml").join("\n"), /unexpected workflow trigger/);
   const pullRequestEnvironment = ["on: pull_request", "jobs:", "  deploy:", "    environment: production"].join("\n");
   assert.match(validateWorkflowText(pullRequestEnvironment, BOOTSTRAP_ACTION_PINS, "renamed.yml").join("\n"), /environment/);
   assert.match(validateProductionWorkflowContract(privileged, ".github/workflows/renamed-production.yml").join("\n"), /restricted/);

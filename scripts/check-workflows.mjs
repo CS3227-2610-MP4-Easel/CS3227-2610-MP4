@@ -88,8 +88,10 @@ export function validateWorkflowText(text, pins, file = "workflow.yml") {
   if (triggers.some((trigger) => ["deployment", "deployment_status"].includes(trigger))) {
     errors.push(`${file}: deployment trigger is forbidden in pull-request workflows`);
   }
-  const allowedTriggers = trustedReviewWorkflow ? ["pull_request", "pull_request_review"] : ["pull_request", "push"];
-  const pushConfiguration = triggerValue && typeof triggerValue === "object" && !Array.isArray(triggerValue) ? triggerValue.push : null;
+  const productionWorkflow = file === ".github/workflows/w13-production.yml";
+  const allowedTriggers = trustedReviewWorkflow
+    ? ["pull_request", "pull_request_review"]
+    : productionWorkflow ? ["push"] : ["pull_request"];
   if (triggers.length === 0 || triggers.some((trigger) => !allowedTriggers.includes(trigger))) {
     errors.push(`${file}: unexpected workflow trigger (found: ${triggers.join(", ") || "none"})`);
   }
