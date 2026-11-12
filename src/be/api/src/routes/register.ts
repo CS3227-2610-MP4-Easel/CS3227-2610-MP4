@@ -1,6 +1,7 @@
 import type { Hono } from "hono";
 import type { z } from "zod/v3";
 import { policyForRoute, validateRouteRegistration, type ApiContext, type RouteDefinition } from "@agile/contracts";
+import { readLimitedBody } from "../body-limit.js";
 import { HttpError, parseInput, parseJsonBody } from "../errors.js";
 import { authorizeAdder, authorizeRequest, type AuthDependencies } from "../middleware/auth.js";
 
@@ -12,6 +13,14 @@ const registered = new WeakMap<object, RouteDefinition[]>();
 const isSchema = (value: unknown): value is z.ZodTypeAny => Boolean(value) && typeof (value as { safeParse?: unknown }).safeParse === "function";
 const EDIT_BODY_KEYS = new Set(["endpoint-38", "endpoint-39", "endpoint-58", "endpoint-59", "endpoint-61"]);
 const honoPath = (path: string) => path.replace(/\{(\w+)\}/g, ":$1");
+
+/** Body read with a byte cap (413), then the same content-type and JSON rules as `parseJsonBody`. */
+async function parseLimitedJson(request: Request, maxBytes: number, options: { strict?: boolean } = {}): Promise<unknown> {
+  if (!(request.headers.get("content-type") ?? "").toLowerCase().startsWith("application/json")) throw new HttpError("BAD_REQUEST", options.strict ? 415 : 400, "Request content type must be application/json.");
+  const read = await readLimitedBody(request, maxBytes);
+  if (read.tooLarge) throw new HttpError("PAYLOAD_TOO_LARGE", 413, "The request body is too large.");
+  try { return JSON.parse(read.text); } catch { throw new HttpError("BAD_REQUEST", options.strict ? 422 : 400, "Request body is not valid JSON."); }
+}
 
 /** Routes registered on `app` through `registerRoute`; `apiApp` must contain nothing else. */
 export function registeredRoutes(app: Hono<ApiEnv>): readonly RouteDefinition[] { return registered.get(app) ?? []; }
@@ -43,7 +52,7 @@ export function registerRoute(app: Hono<ApiEnv>, route: RegisteredRoute, deps?: 
     let settled = false;
     try {
       const parseBody = async () => {
-        try { return await parseJsonBody(c.req.raw, { strict: route[STRICT_BODY_PARSER] === true }); } catch (error) {
+        try { return route.bodyLimitBytes === undefined ? await parseJsonBody(c.req.raw, { strict: route[STRICT_BODY_PARSER] === true }) : await parseLimitedJson(c.req.raw, route.bodyLimitBytes, { strict: route[STRICT_BODY_PARSER] === true }); } catch (error) {
           if (EDIT_BODY_KEYS.has(route.policyKey) && (c.req.header("content-type") ?? "").toLowerCase().startsWith("application/json") && error instanceof HttpError && error.code === "BAD_REQUEST") throw new HttpError("VALIDATION_FAILED", 422, "The request body is not valid.");
           throw error;
         }
@@ -70,6 +79,11 @@ export function registerRoute(app: Hono<ApiEnv>, route: RegisteredRoute, deps?: 
       return response;
     } catch (error) {
       if (scope.tx && !settled) await scope.tx.rollback();
+      if (route.method !== "GET") {
+        const code = error instanceof HttpError ? error.code : error instanceof Error && /^[A-Z][A-Z0-9_]+$/.test(error.message) ? error.message : "INTERNAL_ERROR";
+        const status = error instanceof HttpError ? error.status : 500;
+        console.info("API mutation outcome", { requestId: c.get("requestId"), operation: route.operationId, status, code });
+      }
       throw error;
     }
   });

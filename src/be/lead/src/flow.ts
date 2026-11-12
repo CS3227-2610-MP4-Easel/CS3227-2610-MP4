@@ -9,19 +9,50 @@ import type { Digest } from "@agile/contracts";
 type Db = any;
 type FactService = { target(projectId: string): Promise<Facts>; caller(callerId: string, projectId: string): Promise<Facts> };
 type Caller = { userId: string; role: "DEV_LEAD" };
-type FlowDeps = { db: Db; facts: FactService; binding: LeadGatewayBinding; context?: AiContextWith; now?: () => Date; requireMember?: (userId: string, projectId: string) => Promise<void> };
+export type LeadProposalService = {
+  createReplanInTransaction(tx: Db, input: {
+    projectId: string;
+    sessionId: string;
+    creatorId: string;
+    suggestions: DigestOutput["suggestions"];
+    explanation: string;
+    flagged: boolean;
+  }): Promise<{ proposalId: string; supersededProposalIds: string[] }>;
+};
+export type LeadFlowDependencies = { db: Db; facts: FactService; binding: LeadGatewayBinding; proposalService?: LeadProposalService; context?: AiContextWith; now?: () => Date; requireMember?: (userId: string, projectId: string) => Promise<void> };
 const degraded = (facts: Facts, id?: string, flagged = false) => ({ id: id ?? "", projectId: "", facts, explanation: null, degraded: true, flagged, proposalId: null, cached: false, createdAt: new Date().toISOString() });
 const publicDigest = (digest: any, cached: boolean): Digest => ({ id: digest.id, projectId: digest.projectId, facts: digest.facts, explanation: digest.explanation ?? null, degraded: digest.degraded, flagged: digest.flagged, proposalId: digest.proposalId ?? null, cached, createdAt: digest.createdAt instanceof Date ? digest.createdAt.toISOString() : String(digest.createdAt) });
 
-export function createLeadFlow(deps: FlowDeps) {
+export function createLeadFlow(deps: LeadFlowDependencies) {
   const context = deps.context ?? getAiContext(); const now = deps.now ?? (() => new Date());
-  async function persist(projectId: string, actorId: string, facts: Facts, factsHash: string, output: DigestOutput | null, sessionId: string | null, flagged: boolean, degradedFlag: boolean) {
+  async function persist(projectId: string, actorId: string, facts: Facts, factsHash: string, output: DigestOutput | null, sessionId: string | null, flagged: boolean, degradedFlag: boolean, admittedSessionId: string | null = sessionId) {
     return deps.db.$transaction(async (tx: Db) => {
       const digest = await tx.projectDigest.create({ data: { projectId, facts, factsAsOf: new Date(facts.asOf), factsHash, explanation: output?.explanation ?? null, degraded: degradedFlag, flagged, sessionId } });
       let proposalId: string | null = null;
       if (output && output.suggestions.length) {
-        const proposal = await tx.aiProposal.create({ data: { projectId, kind: "REPLAN", status: "PENDING", payload: { suggestions: output.suggestions, explanation: output.explanation }, sessionId, createdBy: actorId, flagged }, select: { id: true } });
-        proposalId = proposal.id; await tx.projectDigest.update({ where: { id: digest.id }, data: { proposalId } });
+        if (!sessionId || !deps.proposalService) throw new Error("PROPOSAL_SERVICE_NOT_INITIALIZED");
+        const proposal = await deps.proposalService.createReplanInTransaction(tx, {
+          projectId,
+          sessionId,
+          creatorId: actorId,
+          suggestions: output.suggestions,
+          explanation: output.explanation,
+          flagged,
+        });
+        proposalId = proposal.proposalId;
+        await tx.projectDigest.update({ where: { id: digest.id }, data: { proposalId } });
+      } else if (admittedSessionId) {
+        // A degraded/no-proposal session still closes atomically with its digest.
+        if (!deps.binding.sessionCloser) throw new Error("TRANSACTION_SESSION_CLOSER_NOT_INITIALIZED");
+        await deps.binding.sessionCloser.closeInTransaction(tx, {
+          sessionId: admittedSessionId,
+          proposalId: null,
+          projectId,
+          feature: "LEAD_DIGEST",
+          ownerId: actorId,
+          outcome: "REJECTED",
+          actorId,
+        });
       }
       return { digest, proposalId };
     });
@@ -73,13 +104,7 @@ export function createLeadFlow(deps: FlowDeps) {
       if (result.ok) { const parsed = DigestOutputSchema.safeParse(result.value); if (parsed.success && await validOutput(parsed.data, facts, projectId)) output = parsed.data; }
     } catch { /* failure is represented by the degraded digest below */ }
     let saved: Awaited<ReturnType<typeof persist>>;
-    let outcome: "ACCEPTED" | "REJECTED" = "REJECTED";
-    try {
-      saved = await persist(projectId, caller.userId, facts, factsHash, output, persistSessionId, flagged, !output);
-      outcome = output ? "ACCEPTED" : "REJECTED";
-    } finally {
-      await deps.binding.sessions.close(sessionId, outcome, caller.userId);
-    }
+    saved = await persist(projectId, caller.userId, facts, factsHash, output, persistSessionId, flagged, !output, sessionId);
     return output ? publicDigest({ ...saved.digest, projectId, facts, explanation: output.explanation, degraded: false, flagged, proposalId: saved.proposalId }, false) : { ...degraded(facts, saved.digest.id, flagged), id: saved.digest.id, projectId };
   }
   return {

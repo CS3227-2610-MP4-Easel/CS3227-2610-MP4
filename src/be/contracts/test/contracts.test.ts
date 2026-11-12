@@ -3,6 +3,11 @@ import { test } from "node:test";
 import {
   ErrorEnvelopeSchema,
   PageQuerySchema,
+  SprintPageSchema,
+  ProposalPageSchema,
+  SprintCloseBodySchema,
+  ReplanApprovalBodySchema,
+  ReplanRejectionBodySchema,
   ProjectSchema,
   ProjectInputSchema,
   PlanProposalSchema,
@@ -37,8 +42,29 @@ test("E2 rejects server-managed fields instead of stripping them", () => {
 test("N2 enforces pagination bounds", () => {
   assert.equal(PageQuerySchema.safeParse({ page: 0, size: 100 }).success, true);
   assert.equal(PageQuerySchema.safeParse({ page: 0, size: 101 }).success, false);
+  assert.equal(PageQuerySchema.safeParse({ page: 10000, size: 1 }).success, true);
+  assert.equal(PageQuerySchema.safeParse({ page: 10001, size: 1 }).success, false);
   assert.equal(ProjectSchema.safeParse({ id: "not-a-uuid" }).success, false);
   assert.equal(UserInputSchema.safeParse({ displayName: "Lee", role: "ADMIN" }).success, false);
+});
+
+test("W14 page envelopes and mutation bodies enforce their shared bounds", () => {
+  const id = "00000000-0000-0000-0000-000000000001";
+  const sprint = { id, projectId: id, name: "Sprint 1", startDate: "2026-11-01", endDate: "2026-11-14", status: "PLANNED", completedPoints: null, version: 1 };
+  const proposal = { id, projectId: id, kind: "REPLAN", status: "PENDING", suggestions: [], explanation: "Explanation", flagged: false, createdAt: "2026-11-02T00:00:00Z", version: 1 };
+  assert.equal(SprintPageSchema.safeParse({ items: [sprint], page: 10000, size: 100, total: 1 }).success, true);
+  assert.equal(SprintPageSchema.safeParse({ items: [sprint], page: 10001, size: 100, total: 1 }).success, false);
+  assert.equal(ProposalPageSchema.safeParse({ items: [proposal], page: 0, size: 1, total: 1 }).success, true);
+  assert.equal(SprintCloseBodySchema.safeParse({ version: 1, carryOver: [{ taskId: id, to: "BACKLOG" }, { taskId: id, to: id }] }).success, true);
+  assert.equal(SprintCloseBodySchema.safeParse({ version: 1, carryOver: [{ taskId: id, to: "not-a-target" }] }).success, false);
+  assert.equal(SprintCloseBodySchema.safeParse({ version: 1, carryOver: Array.from({ length: 1001 }, () => ({ taskId: id, to: "BACKLOG" })) }).success, false);
+  assert.equal(ReplanApprovalBodySchema.safeParse({ version: 1, suggestionIds: Array.from({ length: 100 }, () => id) }).success, true);
+  assert.equal(ReplanApprovalBodySchema.safeParse({ version: 1, suggestionIds: Array.from({ length: 101 }, () => id) }).success, false);
+  const suggestion = { id, type: "MOVE_CHECKPOINT_DATE", checkpointId: id, newTargetDate: "2026-11-15", rationale: "Keep the checkpoint date aligned." };
+  assert.equal(ReplanProposalSchema.safeParse({ id, projectId: id, kind: "REPLAN", status: "PENDING", suggestions: Array.from({ length: 101 }, () => suggestion), explanation: "Explanation", flagged: false, createdAt: "2026-11-02T00:00:00Z", version: 1 }).success, true);
+  assert.equal(ReplanApprovalSchema.safeParse({ proposalId: id, status: "APPROVED", applied: Array.from({ length: 101 }, () => id), sessionOutcome: "ACCEPTED" }).success, true);
+  assert.equal(ReplanRejectionBodySchema.safeParse({ version: 1 }).success, true);
+  assert.equal(ReplanRejectionBodySchema.safeParse({ version: 1, suggestionIds: [] }).success, false);
 });
 
 test("error envelope preserves stable error codes and request id", () => {
@@ -72,7 +98,7 @@ test("F2 normative AI response schemas cover proposal, facts, digest, standup, a
   assert.equal(SummaryResponseSchema.safeParse({ summaries: [], failed: [] }).success, true);
   assert.equal(PlanApprovalSchema.safeParse({ proposalId: id, status: "APPROVED", created: { checkpoints: 1, epics: 3, tasks: 9 } }).success, true);
   assert.equal(PlanApprovalSchema.safeParse({ proposalId: id, status: "APPROVED", created: { checkpoints: [], epics: [], tasks: [] } }).success, false);
-  assert.equal(ReplanApprovalSchema.safeParse({ proposalId: id, status: "APPROVED", applied: [] }).success, true);
+  assert.equal(ReplanApprovalSchema.safeParse({ proposalId: id, status: "APPROVED", applied: [], sessionOutcome: "ACCEPTED" }).success, true);
   assert.equal(LeadOverviewSchema.safeParse([{ project: { id, name: "Project", brief: null, status: "ACTIVE", createdBy: id, createdAt: instant, updatedAt: instant, version: 1 }, facts: { pointsTotal: 0, pointsDone: 0, pointsRemaining: 0, projectedCompletionDate: null }, latestDigest: { status: "NONE" } }]).success, true);
   assert.equal(UsageSummarySchema.safeParse([]).success, true);
 });

@@ -94,13 +94,14 @@ textarea.in{height:auto;padding:10px 12px;resize:none}
 .b-bad{background:var(--danger-s);border-color:var(--b-bad-line);color:var(--b-bad-t)}
 .b-ok{background:var(--ok-s);border-color:var(--b-ok-line);color:var(--b-ok-t)}
 .toast{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--fill);color:var(--ink);padding:12px 16px;border-radius:10px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
-.scrim{position:absolute;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:24px;z-index:20}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:24px;z-index:20}
 .scrim.end{justify-content:flex-end;padding:0;align-items:stretch}
 .dialog{background:var(--surface);border-radius:14px;width:min(520px,100%);box-shadow:0 20px 50px rgba(0,0,0,.3);padding:24px;display:flex;flex-direction:column;gap:16px}
 .drawer{width:min(540px,100%);background:var(--surface);padding:24px;overflow:auto;display:flex;flex-direction:column;gap:18px;box-shadow:-12px 0 40px rgba(0,0,0,.2)}
 .dfoot{display:flex;justify-content:flex-end;gap:8px}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;padding:3px;background:var(--surface);gap:2px}
-.seg a,.seg span{padding:5px 12px;border-radius:7px;font-weight:600;font-size:13px;color:var(--muted)}
+.seg a,.seg span,.seg button{padding:5px 12px;border-radius:7px;font-weight:600;font-size:13px;color:var(--muted)}
+.seg button{border:0;background:none;font-family:inherit;cursor:pointer}
 .seg .on{background:var(--accent);color:#fff}
 .cols{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;align-items:start}
 .col{background:var(--sunk);border-radius:12px;padding:12px}
@@ -116,7 +117,7 @@ textarea.in{height:auto;padding:10px 12px;resize:none}
 .sk{background:var(--fill);border-radius:6px;height:12px}
 .empty{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;padding:48px 24px;color:var(--muted)}
 .empty .ico{width:44px;height:44px;border-radius:12px;background:var(--accent-s);color:var(--accent-t);display:flex;align-items:center;justify-content:center}
-.sel{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:1px solid var(--input-line);border-radius:8px;background:var(--surface);font-weight:600;font-size:12px}
+.sel{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:1px solid var(--input-line);border-radius:8px;background:var(--surface);font-weight:600;font-size:12px;cursor:pointer}
 .check{width:18px;height:18px;border:1.5px solid var(--check-line);border-radius:5px;background:var(--surface);flex:none;display:inline-flex;align-items:center;justify-content:center;color:#fff}
 .check.on{background:var(--accent);border-color:var(--accent-t)}
 .stepper{display:flex;gap:8px;align-items:center}

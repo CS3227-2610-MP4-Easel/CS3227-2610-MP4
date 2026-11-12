@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 let fbCb: ((u: { uid: string; email: string | null } | null) => void) | null = null;
@@ -28,9 +28,13 @@ vi.mock('next/navigation', () => ({
 
 import RoleBar from '../components/role-bar';
 import Top from '../components/canvas/Top';
+import Projects from '../components/canvas/Projects';
 import { AuthRoot } from '../lib/auth/mode-context';
+import { ProjectRouteContext, projectRoute } from '../lib/api/project-mode';
+import { RoleCtx } from '../lib/nav';
 
 const fetchMock = vi.fn();
+const A = '550e8400-e29b-41d4-a716-446655440000';
 
 async function mountAs(role: string, displayName: string, email = 'p@x.io') {
   fetchMock.mockImplementation(async () => new Response(JSON.stringify({ id: 'u1', email, displayName, role }), { status: 200 }));
@@ -58,6 +62,82 @@ afterEach(() => {
 });
 
 describe('top bar', () => {
+  it('F1 E1 renders live UUID project rows and preserves each project id in links', async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({
+      items: [{
+        id: '550e8400-e29b-41d4-a716-446655440000', name: 'Live Campus', brief: 'Live brief', status: 'ACTIVE',
+        createdBy: 'u1', createdAt: '2026-11-12T00:00:00Z', updatedAt: '2026-11-12T00:00:00Z', version: 1,
+        progress: { pointsTotal: 10, pointsDone: 4, percent: 33.333333, unestimatedTasks: 0 },
+      }], page: 0, size: 20, total: 1,
+    }), { status: 200 }));
+    render(
+      <ProjectRouteContext.Provider value={projectRoute('/projects/550e8400-e29b-41d4-a716-446655440000')}>
+        <RoleCtx.Provider value="pm"><Projects /></RoleCtx.Provider>
+      </ProjectRouteContext.Provider>,
+    );
+    expect(await screen.findByRole('heading', { name: 'Live Campus' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: /Live Campus/ }).getAttribute('href')).toBe('/projects/550e8400-e29b-41d4-a716-446655440000');
+    expect(screen.getByText('4 of 10 · 34%')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Campus Eats Mobile App' })).toBeNull();
+  });
+
+  it('F7 keeps prototype project rows on a non-UUID route', () => {
+    render(<Projects />);
+    expect(screen.getByRole('heading', { name: 'Campus Eats Mobile App' })).toBeTruthy();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('closes the project switcher when clicking outside it', async () => {
+    await mountAs('DEV_LEAD', 'Dev Lead');
+    fireEvent.click(screen.getByRole('button', { name: 'Switch project' }));
+    expect(screen.getByRole('menu')).toBeTruthy();
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  it('preserves each live project link while already inside a project', async () => {
+    const B = '660e8400-e29b-41d4-a716-446655440001';
+    fetchMock
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'u1', email: 'p@x.io', displayName: 'PM', role: 'PM' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ items: [
+        { id: A, name: 'Current project', brief: null, status: 'ACTIVE', createdBy: 'u1', createdAt: '', updatedAt: '', version: 1, progress: { pointsTotal: 0, pointsDone: 0, percent: 0, unestimatedTasks: 0 } },
+        { id: B, name: 'Other project', brief: null, status: 'ACTIVE', createdBy: 'u1', createdAt: '', updatedAt: '', version: 1, progress: { pointsTotal: 0, pointsDone: 0, percent: 0, unestimatedTasks: 0 } },
+      ], page: 0, size: 100, total: 2 }), { status: 200 }));
+    render(<AuthRoot mode="firebase"><ProjectRouteContext.Provider value={projectRoute(`/projects/${A}`)}><Top /></ProjectRouteContext.Provider></AuthRoot>);
+    await act(async () => fbCb!({ uid: 'a', email: 'p@x.io' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Switch project' }));
+    expect(screen.getByRole('menuitem', { name: /Current project/ }).getAttribute('href')).toBe(`/projects/${A}`);
+    expect(screen.getByRole('menuitem', { name: /Other project/ }).getAttribute('href')).toBe(`/projects/${B}`);
+  });
+
+  it('E1 keeps the live list in loading state before the first response and then shows its empty state', async () => {
+    let resolve!: (response: Response) => void;
+    fetchMock.mockReturnValue(new Promise<Response>((r) => { resolve = r; }));
+    render(<ProjectRouteContext.Provider value={projectRoute(`/projects/${A}`)}><RoleCtx.Provider value="pm"><Projects /></RoleCtx.Provider></ProjectRouteContext.Provider>);
+    expect(screen.queryByText('No projects yet.')).toBeNull();
+    expect(document.querySelector('.sk')).toBeTruthy();
+    await act(async () => resolve(new Response(JSON.stringify({ items: [], page: 0, size: 20, total: 0 }), { status: 200 })));
+    expect(screen.getByText('No projects yet.')).toBeTruthy();
+  });
+
+  it('E7 retries a live list API error without rendering server text', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ error: { code: 'INTERNAL', message: 'secret server detail' } }), { status: 500 }));
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ items: [{ id: A, name: 'Recovered', brief: null, status: 'ACTIVE', createdBy: 'u1', createdAt: '', updatedAt: '', version: 1, progress: { pointsTotal: 0, pointsDone: 0, percent: 0, unestimatedTasks: 0 } }], page: 0, size: 20, total: 1 }), { status: 200 }));
+    render(<ProjectRouteContext.Provider value={projectRoute(`/projects/${A}`)}><RoleCtx.Provider value="pm"><Projects /></RoleCtx.Provider></ProjectRouteContext.Provider>);
+    expect(await screen.findByText('Something went wrong. Try again.')).toBeTruthy();
+    expect(screen.queryByText('secret server detail')).toBeNull();
+    await act(async () => screen.getByRole('button', { name: 'Try again' }).click());
+    expect(await screen.findByRole('heading', { name: 'Recovered' })).toBeTruthy();
+  });
+
+  it('E3 lets a live list 401 follow the apiFetch sign-out boundary', async () => {
+    fetchMock.mockResolvedValue(new Response('', { status: 401 }));
+    render(<ProjectRouteContext.Provider value={projectRoute(`/projects/${A}`)}><RoleCtx.Provider value="pm"><Projects /></RoleCtx.Provider></ProjectRouteContext.Provider>);
+    await act(async () => {});
+    expect(signOutUser).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Something went wrong. Try again.')).toBeNull();
+  });
+
   it('E77 shows the user, initials, role label and no role bar', async () => {
     const cases: [string, string, string, string, string, string][] = [
       ['DEVELOPER', 'Ana Lee', 'AL', 'Developer', 'r-dev', 'a3'],

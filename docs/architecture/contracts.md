@@ -22,7 +22,7 @@ Decisions cited as AD-nn are in [decision-log.md](decision-log.md); tags A-nn ar
 | `Project` | `id`, `name` (1 to 200), `brief` (null or at most 4000), `status` (`ACTIVE` / `ARCHIVED`), `createdBy`, `createdAt`, `updatedAt`, `version` |
 | `ProjectDetail` | `Project` plus `progress`: `{ pointsTotal, pointsDone, percent, unestimatedTasks }` |
 | `PageProjectDetail` | `{ items: ProjectDetail[], page, size, total }` |
-| `Member` | `userId`, `displayName`, `role`, `addedAt` |
+| `Member` | `userId`, `email`, `displayName`, `role`, `addedAt` |
 | `Checkpoint` | `id`, `projectId`, `name` (1 to 200), `targetDate`, `createdAt`, `updatedAt`, `version` |
 | `Epic` | `id`, `projectId`, `checkpointId` (null), `title` (1 to 200), `description` (null, at most 4000), `position`, `taskCount`, `pointsTotal`, `createdAt`, `updatedAt`, `version` |
 | `Task` | `id`, `projectId`, `epicId`, `sprintId` (null), `assigneeId` (null), `title` (1 to 200), `description` (null, at most 4000), `acceptanceCriteria` (list of strings, at most 12, each at most 300), `status` (`TODO` / `IN_PROGRESS` / `IN_REVIEW` / `DONE`), `blocked`, `blockedReason` (null, at most 500), `storyPoints` (null or a whole number from 1 to 20), `doneAt` (null), `createdAt`, `updatedAt`, `version` |

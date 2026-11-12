@@ -1,13 +1,14 @@
 import type { AuthRuntime } from "@agile/auth";
 import { registerContextSource, registerCore } from "@agile/ai-context";
 import { NotMember, type ResolvedResource } from "@agile/contracts";
-import { createCheckpoints, createCore, createCoreResourceResolvers, createEpics, createProjects, createSprints, createTasks, registerCoreContextSources, resolveCoreResource } from "@agile/core";
-import { createProposalResolvers } from "@agile/proposals";
-import { getLeadRuntime, initLeadRuntime } from "@agile/lead";
+import { createCheckpoints, createCore, createCoreResourceResolvers, createEpics, createProjects, createTasks, registerCoreContextSources, resolveCoreResource } from "@agile/core";
+import { createProposalResolvers, createProposalService } from "@agile/proposals";
+import { initLeadRuntime } from "@agile/lead";
+import { createTransactionSessionCloser } from "@agile/llm-gateway";
 import type { AuthDependencies } from "./middleware/auth.js";
 import { createW5Routes, type W5RouteServices } from "./routes/index.js";
 
-const PROPOSAL_OPERATIONS = new Set(["PM_PROPOSAL_READ", "PM_EPIC_EXPAND", "PM_PROPOSAL_APPROVE", "PM_PROPOSAL_REJECT", "PM_EPIC_UPDATE", "PM_EPIC_REGENERATE", "PM_PROPOSAL_CHECKPOINTS_UPDATE", "PM_PROPOSAL_EPIC_CREATE", "PM_PROPOSAL_EPIC_DELETE", "PM_PROPOSAL_EXPAND_ALL"]);
+const PROPOSAL_OPERATIONS = new Set(["PM_PROPOSAL_READ", "PM_EPIC_EXPAND", "PM_PROPOSAL_APPROVE", "PM_PROPOSAL_REJECT", "PM_EPIC_UPDATE", "PM_EPIC_REGENERATE", "PM_PROPOSAL_CHECKPOINTS_UPDATE", "PM_PROPOSAL_EPIC_CREATE", "PM_PROPOSAL_EPIC_DELETE", "PM_PROPOSAL_EXPAND_ALL", "LEAD_PROPOSAL_LIST", "LEAD_PROPOSAL_APPROVE", "LEAD_PROPOSAL_REJECT"]);
 
 export type CoreComposition = Pick<AuthDependencies, "resolveResource" | "requireMember"> & { routes: ReturnType<typeof createW5Routes> };
 
@@ -16,6 +17,7 @@ export function createCoreComposition(auth: Pick<AuthRuntime, "db" | "lookupUser
   // Core's narrow structural ports deliberately accept only the delegates each service uses.
   const db = auth.db as unknown as Record<string, unknown>;
   const core = createCore({ db: db as never, archivedMembership: auth.lookupArchivedMembership });
+  const proposalService = createProposalService({ db: auth.db, core, sessionCloser: createTransactionSessionCloser() });
   // The HTTP policy layer deliberately speaks only the anti-oracle NOT_FOUND sentinel.
   const requireMember: AuthDependencies["requireMember"] = async (userId, projectId) => {
     try { await core.requireMember(userId, projectId); } catch (error) {
@@ -47,16 +49,13 @@ export function createCoreComposition(auth: Pick<AuthRuntime, "db" | "lookupUser
     const targetRole = user ? await auth.lookupUserRole(user.userId) : null;
     return targetRole ? { ...resolved, targetRole } : resolved;
   };
-  const leadRuntime = () => {
-    try { return getLeadRuntime(db as never); } catch (error) {
-      if (!(error instanceof Error) || error.message !== "LEAD_RUNTIME_NOT_INITIALIZED") throw error;
-      return initLeadRuntime(db as never);
-    }
-  };
+  const leadRuntime = () => initLeadRuntime(db as never, undefined, { proposalService });
   const services: W5RouteServices = {
     projects: createProjects(db as never, access),
     checkpoints: createCheckpoints(db as never, access),
-    planning: { epics: createEpics(db as never, access), tasks: createTasks(db as never, access), sprints: createSprints(db as never, access) },
+    planning: { epics: createEpics(db as never, access), tasks: createTasks(db as never, access) },
+    sprints: { sprints: core.sprints },
+    proposals: { proposals: proposalService },
     lead: { runtime: leadRuntime },
   };
 

@@ -1,6 +1,6 @@
 'use client';
 import { idToken, signOutUser } from '../auth/firebase';
-import { ApiError } from './errors';
+import { ApiError, type ApiErrorDetail } from './errors';
 
 const PATH_OK = /^\/api\/[A-Za-z0-9._~\-/?=&%]*$/;
 
@@ -16,13 +16,21 @@ function samePath(path: string): boolean {
 const DOTS = ['.', '..', '%2e', '.%2e', '%2e.', '%2e%2e'];
 const cut = (v: string, n: number) => v.slice(0, n);
 
-function boundDetails(d: unknown): { field: string; message: string }[] {
-  if (!Array.isArray(d)) return [];
-  const out: { field: string; message: string }[] = [];
-  for (const x of d) {
+function boundDetails(d: unknown): ApiErrorDetail[] {
+  const candidates = Array.isArray(d) ? d : d && typeof d === 'object' ? [d] : [];
+  const out: ApiErrorDetail[] = [];
+  for (const x of candidates) {
     if (out.length >= 50) break;
     if (x && typeof x === 'object' && typeof (x as { field?: unknown }).field === 'string' && typeof (x as { message?: unknown }).message === 'string') {
       out.push({ field: cut((x as { field: string }).field, 200), message: cut((x as { message: string }).message, 500) });
+      continue;
+    }
+    if (x && typeof x === 'object' && Array.isArray((x as { suggestionIds?: unknown }).suggestionIds)) {
+      const suggestionIds = (x as { suggestionIds: unknown[] }).suggestionIds
+        .filter((id): id is string => typeof id === 'string')
+        .slice(0, 100)
+        .map((id) => cut(id, 100));
+      out.push({ field: 'suggestionIds', message: 'The selected suggestions are not valid.', suggestionIds });
     }
   }
   return out;
@@ -34,7 +42,43 @@ function retryAfter(h: string | null): number | null {
   return n >= 1 && n <= 3600 ? n : null;
 }
 
-const GENERIC = 'Something went wrong.';
+const GENERIC = 'Something went wrong. Try again.';
+const SAFE_CODES = new Set([
+  'FORBIDDEN_ROLE', 'FORBIDDEN', 'NOT_FOUND', 'CONFLICT_VERSION', 'CONFLICT_STATE',
+  'VALIDATION_FAILED', 'RATE_LIMITED', 'NETWORK', 'INTERNAL', 'INTERNAL_ERROR',
+  'AI_BUSY', 'AI_UNAVAILABLE', 'AI_DISABLED',
+  // Auth flows use these bounded codes to select their fixed UI state.
+  'UNAUTHENTICATED', 'USER_NOT_REGISTERED', 'REGISTRATION_CODE_INVALID', 'ALREADY_REGISTERED',
+]);
+
+function errorCode(status: number, code: unknown): string {
+  if (typeof code === 'string' && SAFE_CODES.has(code)) return code;
+  if (status === 401) return 'UNAUTHENTICATED';
+  if (status === 403) return 'FORBIDDEN';
+  if (status === 404) return 'NOT_FOUND';
+  if (status === 409) return 'CONFLICT_STATE';
+  if (status === 422) return 'VALIDATION_FAILED';
+  if (status === 429) return 'RATE_LIMITED';
+  return status >= 500 ? 'INTERNAL' : 'INTERNAL_ERROR';
+}
+
+function errorMessage(status: number, code: string): string {
+  if (code === 'AI_DISABLED') return 'AI features are disabled.';
+  if (status >= 500 || code === 'NETWORK' || code === 'INTERNAL' || code === 'INTERNAL_ERROR') return GENERIC;
+  if (status === 401) return 'Authentication is required.';
+  if (status === 403) return 'You do not have permission to view this.';
+  if (status === 404) return 'This project or task was not found.';
+  if (status === 409) return 'This changed elsewhere. Reload before trying again.';
+  if (status === 422) return 'Check the highlighted fields.';
+  if (status === 429) return 'Please wait before trying again.';
+  if (code === 'UNAUTHENTICATED') return 'Authentication is required.';
+  if (code === 'FORBIDDEN' || code === 'FORBIDDEN_ROLE') return 'You do not have permission to view this.';
+  if (code === 'NOT_FOUND') return 'This project or task was not found.';
+  if (code === 'CONFLICT_VERSION' || code === 'CONFLICT_STATE' || code === 'ALREADY_REGISTERED') return 'This changed elsewhere. Reload before trying again.';
+  if (code === 'VALIDATION_FAILED') return 'Check the highlighted fields.';
+  if (code === 'RATE_LIMITED') return 'Please wait before trying again.';
+  return GENERIC;
+}
 
 export async function apiFetch<T>(
   path: string,
@@ -44,7 +88,12 @@ export async function apiFetch<T>(
   const useAuth = init.auth ?? true;
   const headers: Record<string, string> = {};
   if (useAuth) {
-    const t = await idToken();
+    let t: string | null;
+    try {
+      t = await idToken();
+    } catch {
+      throw new ApiError('NETWORK', GENERIC, { status: 0 });
+    }
     if (t === null) throw new ApiError('UNAUTHENTICATED', 'Authentication is required.', { status: 401 });
     headers.Authorization = `Bearer ${t}`;
   }
@@ -78,13 +127,15 @@ export async function apiFetch<T>(
     parsed = null;
   }
   const e = (parsed as { error?: { code?: unknown; message?: unknown; details?: unknown; requestId?: unknown } } | null)?.error;
-  if (e && typeof e.code === 'string' && typeof e.message === 'string') {
-    throw new ApiError(cut(e.code, 100), cut(e.message, 500), {
+  if (e && typeof e.code === 'string') {
+    const code = errorCode(status, e.code);
+    throw new ApiError(code, errorMessage(status, code), {
       status,
       details: boundDetails(e.details),
       requestId: typeof e.requestId === 'string' ? cut(e.requestId, 100) : null,
       retryAfterSeconds: ra,
     });
   }
-  throw new ApiError('INTERNAL', GENERIC, { status, retryAfterSeconds: ra });
+  const code = errorCode(status, null);
+  throw new ApiError(code, errorMessage(status, code), { status, retryAfterSeconds: ra });
 }

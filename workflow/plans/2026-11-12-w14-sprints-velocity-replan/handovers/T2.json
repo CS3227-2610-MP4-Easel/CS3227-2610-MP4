@@ -1,0 +1,23 @@
+{
+  "task": "T2",
+  "status": "done",
+  "summary": "Kept the barrier E4 race and added E21, zero-progress, real newest-three/deleted velocity, overlap no-mutation, and 1000/1001 bound assertions.",
+  "commit": "d09dd4d",
+  "produces": [
+    { "kind": "symbol", "name": "createSprintService/createSprints", "where": "src/be/core/src/sprints.ts", "note": "Actor-aware list/create/patch/start/close/remove/delete plus progress and velocity; mutations use RepeatableRead inMutationTransaction and project locking." },
+    { "kind": "symbol", "name": "SprintService", "where": "src/be/core/src/index.ts", "note": "Public service and input/query types exported from @agile/core." },
+    { "kind": "symbol", "name": "CoreServices.sprints", "where": "src/be/core/src/core.ts", "note": "Composes the SprintService on the factory result without changing the frozen Core contract." },
+    { "kind": "symbol", "name": "Derived.velocity", "where": "src/be/core/src/derived.ts", "note": "Returns { sprintId, name, completedPoints } ordered by endDate descending then id ascending, excluding deleted sprints." }
+  ],
+  "next": "T5 can consume CoreServices.sprints or createSprintService directly. Sprint close returns stable domain errors and writes SPRINT_CHANGED events atomically.",
+  "deviations": [],
+  "edge_cases": ["E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9", "E10", "E11", "E18", "E21", "E22", "E26"],
+  "checks": {
+    "build": "pass",
+    "core_tests": "pass: node --import tsx --test src/be/core/test/*.test.ts (81 pass, 2 skipped)",
+    "touched_tests": "pass: 22 focused sprint/derived tests",
+    "npm_test": "pass: 896 backend tests, 117 skipped; frontend 230 tests passed",
+    "workspace_wrapper": "not run: npm --workspace @agile/core test is blocked by tsx IPC pipe EPERM; equivalent node --import tsx command passed",
+    "diff_check": "pass: git diff --check"
+  }
+}

@@ -1,8 +1,10 @@
 # W13 PR #18 Safety Fixes Implementation Plan
 
-- **Status:** Approved (operator, 2026-11-07)
+- **Status:** Approved (operator, 2026-11-08)
 
 > **For agents:** tick each checkbox as it is completed, in this plan commit. Keep the W13 branch state current. Spec: [W13 PR #18 safety-fix design](../specs/2026-11-07-w13-pr18-safety-fixes-design.md).
+
+**Amended 2026-11-08:** T4 now distinguishes generic/fork PR previews from Vercel's protected `development` branch scope, preserving AD-53. No code task, dependency, or other task boundary changes.
 
 ## Scope
 
@@ -27,7 +29,7 @@
 | T1 Canonical target and shared preview policy | - | - | 1 | Done |
 | T2 Runtime database enforcement | T1 | - | 2 | Done |
 | T3 Migration boundary, fixtures, and whitespace | T1 | - | 2 | Done |
-| T4 Protected preview provisioning check | T1 | - | 2 | Post-merge |
+| T4 Protected preview provisioning check | T1 | - | 2 | Done |
 | T5 Close-out | T2, T3 | - | 3 | Done |
 
 ## Traceability
@@ -195,20 +197,23 @@ The implementation must call this before `new PrismaClient(...)`; the test seams
 
 ### T4: Protected preview provisioning check
 
-**Delivers:** Credential-free preview provisioning is verified at the trusted Vercel environment boundary; runtime checks remain defense-in-depth | **Satisfies:** F3, F6, E11, N2 | **Depends on:** T1 | **Wave:** 2
+**Delivers:** Credential-free generic/fork PR provisioning is verified at the trusted Vercel environment boundary, while the AD-53 development exception is proved to be exact-branch scoped; runtime checks remain defense-in-depth | **Satisfies:** F3, F6, E11, N2 | **Depends on:** T1 | **Wave:** 2
 
 **Files**
 
 | Action | Path | What changes |
 |---|---|---|
-| Modify | `workflow/project-state/branch-states/w13-deployment.md` | Record the owner verification result and any deviation; keep the trusted provisioning boundary distinct from runtime detection. |
-| Post-merge check | Vercel project environment configuration | `GATE:` owner verifies preview deployments receive `APP_TIER=preview` and allowed identity fields only, with none of the exact forbidden names from the spec, including empty values. The owner records the date and redacted result; no credentials are copied into the repository. |
+| Modify | `workflow/project-state/branch-states/w13-deployment-continuation.md` | Record the owner verification result and any deviation; keep the trusted provisioning boundary distinct from runtime detection. |
+| Post-merge check | Vercel project environment configuration and GitHub branch protection | `GATE:` owner verifies generic/fork PR previews receive `APP_TIER=preview` and allowed identity fields only, with none of the exact forbidden names from the spec, including empty values; every dev-tier variable is Preview + exact Git Branch `development` only, never wildcard/generic Preview; the Vercel project remains linked to the expected repository; and `development` retains required-review/no-force-push protection. The owner records the date and redacted result; no credentials are copied into the repository. |
 
 **Checklist**
 
-- [ ] 1. `GATE:` After the branch is merged, inspect the protected Vercel preview project/environment configuration.
-- [ ] 2. Confirm each forbidden name from the spec is absent from preview configuration and that development/main identity is not injected into previews.
-- [ ] 3. Record the redacted owner result in the branch state before the development push check is treated as complete.
+- [x] 1. `GATE:` After the branch is merged, inspect the Vercel project's variable names and scopes without revealing values.
+- [x] 2. Confirm generic/fork PR Preview has only the spec's allowed identity fields and no forbidden name, including an empty or whitespace value.
+- [x] 3. Confirm every dev-tier variable is restricted to Preview plus exact Git Branch `development`, never wildcard/generic Preview, and that the Vercel project is linked to `CS3227-2610-MP4-Easel/CS3227-2610-MP4`.
+- [x] 4. Confirm GitHub still protects `development` with required review and no force-push; record the redacted owner result in the branch state before T4 is marked complete.
+
+**Amendment review 2026-11-08:** Implementer-plan review found and corrected the obsolete reference to the removed W13 development verification workflow. No remaining blocking findings.
 
 ### T5: Close-out
 

@@ -7,12 +7,44 @@ import { read, write } from './store';
 import { LiveError, openProjectId } from './live';
 import { ApiError } from './errors';
 import { apiFetch } from './http';
-import type { Checkpoint, CheckpointDraft, Epic, EpicPatch, LiveCheckpoint, LiveEpic, LiveMember, LiveSprint, LiveProject, LiveTask, Member, Page, PlanApproved, PlanEpic, PlanProposal, Sprint, Standup, Task, TaskStatus, User } from './types';
+import type {
+  Checkpoint,
+  CheckpointDraft, EpicPatch, LiveProject, PlanApproved, PlanEpic, PlanProposal,
+  Epic,
+  LiveCheckpoint,
+  LiveCheckpointCreateInput,
+  LiveEpic,
+  LiveEpicCreateInput,
+  LiveMember,
+  LiveProgress,
+  LiveProjectDetail,
+  LiveSprint,
+  LiveSprintCloseInput,
+  LiveSprintCreateInput,
+  LiveSprintPage,
+  LiveSprintPatchInput,
+  LiveTask,
+  LiveTaskCreateInput,
+  LiveTaskListFilters,
+  LiveTaskStatusInput,
+  LiveTaskUpdateInput,
+  Page,
+  Member,
+  ReplanApproval,
+  ReplanProposalPage,
+  ReplanRejection,
+  Sprint,
+  Standup,
+  Task,
+  TaskStatus,
+  User,
+} from './types';
 
 export { useDb, reset as resetPrototypeData } from './store';
 export { isLive, ModeProvider } from './mode';
 export * from './types';
 export { ApiError } from './errors';
+export * as live from './dev';
 
 const wait = (ms = 250) => new Promise((r) => setTimeout(r, ms));
 
@@ -285,6 +317,181 @@ export async function refreshDigest_44(): Promise<{ cached: boolean }> {
   return { cached };
 }
 
+// W8: Dev Lead facts and digest endpoints.
+export async function getFacts_42(projectId: string): Promise<import('./types').Facts> {
+  return apiFetch<import('./types').Facts>(`/api/projects/${encodeURIComponent(projectId)}/facts`);
+}
+
+export async function createDigest_44(projectId: string): Promise<import('./types').LeadDigest> {
+  return apiFetch<import('./types').LeadDigest>(`/api/lead/projects/${encodeURIComponent(projectId)}/digests`, { method: 'POST', body: {} });
+}
+
+export async function getLatestDigest_45(projectId: string): Promise<import('./types').LeadDigest> {
+  return apiFetch<import('./types').LeadDigest>(`/api/lead/projects/${encodeURIComponent(projectId)}/digests/latest`);
+}
+
+// W5: typed live project, planning, membership and progress clients.
+const pageParams = (page: number, size: number, filters?: Record<string, string | boolean | undefined>) => {
+  const params = new URLSearchParams({ page: String(page), size: String(size) });
+  for (const [key, value] of Object.entries(filters ?? {})) if (value !== undefined) params.set(key, String(value));
+  return params.toString();
+};
+
+export function listProjectsLive_6(page = 0, size = 20): Promise<Page<LiveProjectDetail>> {
+  return apiFetch<Page<LiveProjectDetail>>(`/api/projects?${pageParams(page, size)}`);
+}
+
+export function getProjectLive_7(projectId: string): Promise<LiveProjectDetail> {
+  return apiFetch<LiveProjectDetail>(`/api/projects/${encodeURIComponent(projectId)}`).catch(async (error: unknown) => {
+    // Some local API builds expose the project collection before the detail route.
+    // Keep the live overview usable while that route is being rebuilt.
+    if (!(error instanceof ApiError) || error.status !== 404) throw error;
+    const page = await listProjectsLive_6(0, 100);
+    const project = page.items.find((item) => item.id === projectId);
+    if (!project) throw error;
+    return project;
+  });
+}
+
+export function readProgressLive_33(projectId: string): Promise<LiveProgress> {
+  return apiFetch<LiveProgress>(`/api/projects/${encodeURIComponent(projectId)}/progress`);
+}
+
+export async function listMembersLive_9(projectId: string): Promise<LiveMember[]> {
+  const members = await apiFetch<LiveMember[]>(`/api/projects/${encodeURIComponent(projectId)}/members`);
+  return [...members.reduce((unique, member) => unique.has(member.userId) ? unique : unique.set(member.userId, member), new Map<string, LiveMember>()).values()];
+}
+
+export async function addMemberLive_10(projectId: string, email: string): Promise<LiveMember> {
+  const added = await apiFetch<LiveMember>(`/api/projects/${encodeURIComponent(projectId)}/members`, { method: 'POST', body: { email } });
+  let members: LiveMember[];
+  try {
+    members = await listMembersLive_9(projectId);
+  } catch {
+    return added;
+  }
+  return members.find((member) => member.userId === added.userId) ?? added;
+}
+
+export function listCheckpointsLive_12(projectId: string): Promise<LiveCheckpoint[]> {
+  return apiFetch<LiveCheckpoint[]>(`/api/projects/${encodeURIComponent(projectId)}/checkpoints`);
+}
+
+export function createCheckpointLive_13(projectId: string, input: LiveCheckpointCreateInput): Promise<LiveCheckpoint> {
+  return apiFetch<LiveCheckpoint>(`/api/projects/${encodeURIComponent(projectId)}/checkpoints`, {
+    method: 'POST',
+    body: { name: input.name, targetDate: input.targetDate },
+  });
+}
+
+export function listEpicsLive_16(projectId: string, page = 0, size = 20): Promise<Page<LiveEpic>> {
+  return apiFetch<Page<LiveEpic>>(`/api/projects/${encodeURIComponent(projectId)}/epics?${pageParams(page, size)}`);
+}
+
+export function createEpicLive_17(projectId: string, input: LiveEpicCreateInput): Promise<LiveEpic> {
+  const body: Record<string, unknown> = { title: input.title };
+  if (input.description !== undefined) body.description = input.description;
+  if (input.checkpointId !== undefined) body.checkpointId = input.checkpointId;
+  return apiFetch<LiveEpic>(`/api/projects/${encodeURIComponent(projectId)}/epics`, { method: 'POST', body });
+}
+
+export function listTasksLive_20(projectId: string, page = 0, size = 20, filters?: LiveTaskListFilters): Promise<Page<LiveTask>> {
+  const query = filters && { status: filters.status, epicId: filters.epicId, assigneeId: filters.assigneeId, sprintId: filters.sprintId, blocked: filters.blocked };
+  return apiFetch<Page<LiveTask>>(`/api/projects/${encodeURIComponent(projectId)}/tasks?${pageParams(page, size, query)}`);
+}
+
+export function createTaskLive_21(projectId: string, input: LiveTaskCreateInput): Promise<LiveTask> {
+  const body: Record<string, unknown> = {};
+  for (const key of ['epicId', 'title', 'description', 'acceptanceCriteria', 'storyPoints', 'assigneeId'] as const) {
+    if (input[key] !== undefined) body[key] = input[key];
+  }
+  return apiFetch<LiveTask>(`/api/projects/${encodeURIComponent(projectId)}/tasks`, { method: 'POST', body });
+}
+
+export function getTaskLive_22(taskId: string): Promise<LiveTask> {
+  return apiFetch<LiveTask>(`/api/tasks/${encodeURIComponent(taskId)}`);
+}
+
+export function updateTaskLive_23(taskId: string, input: LiveTaskUpdateInput): Promise<LiveTask> {
+  const body: Record<string, unknown> = {};
+  for (const key of ['title', 'description', 'acceptanceCriteria', 'storyPoints', 'assigneeId'] as const) {
+    if (input[key] !== undefined) body[key] = input[key];
+  }
+  body.version = input.version;
+  return apiFetch<LiveTask>(`/api/tasks/${encodeURIComponent(taskId)}`, { method: 'PATCH', body });
+}
+
+export function setTaskStatusLive_24(taskId: string, input: LiveTaskStatusInput): Promise<LiveTask> {
+  const body: Record<string, unknown> = { status: input.status };
+  if (input.blocked !== undefined) body.blocked = input.blocked;
+  if (input.blockedReason !== undefined) body.blockedReason = input.blockedReason;
+  body.version = input.version;
+  return apiFetch<LiveTask>(`/api/tasks/${encodeURIComponent(taskId)}/status`, { method: 'POST', body });
+}
+
+// W14: live sprint lifecycle and paged project progress clients. These names are
+// intentionally separate from the fixture helpers above so existing W10 screens
+// retain their current behavior while live consumers migrate independently.
+export function listSprintsLive_27(projectId: string, page: number, size: number): Promise<LiveSprintPage> {
+  return apiFetch<LiveSprintPage>(`/api/projects/${encodeURIComponent(projectId)}/sprints?${pageParams(page, size)}`);
+}
+
+export function createSprintLive_28(projectId: string, input: LiveSprintCreateInput): Promise<LiveSprint> {
+  return apiFetch<LiveSprint>(`/api/projects/${encodeURIComponent(projectId)}/sprints`, {
+    method: 'POST',
+    body: { name: input.name, startDate: input.startDate, endDate: input.endDate },
+  });
+}
+
+export function patchSprintLive_29(sprintId: string, input: LiveSprintPatchInput): Promise<LiveSprint> {
+  const body: Record<string, unknown> = {};
+  if (input.name !== undefined) body.name = input.name;
+  if (input.startDate !== undefined) body.startDate = input.startDate;
+  if (input.endDate !== undefined) body.endDate = input.endDate;
+  body.version = input.version;
+  return apiFetch<LiveSprint>(`/api/sprints/${encodeURIComponent(sprintId)}`, { method: 'PATCH', body });
+}
+
+export function startSprintLive_30(sprintId: string, version: number): Promise<LiveSprint> {
+  return apiFetch<LiveSprint>(`/api/sprints/${encodeURIComponent(sprintId)}/start`, { method: 'POST', body: { version } });
+}
+
+export function closeSprintLive_31(sprintId: string, input: LiveSprintCloseInput): Promise<LiveSprint> {
+  return apiFetch<LiveSprint>(`/api/sprints/${encodeURIComponent(sprintId)}/close`, {
+    method: 'POST',
+    body: { version: input.version, carryOver: input.carryOver.map(({ taskId, to }) => ({ taskId, to })) },
+  });
+}
+
+export function deleteSprintLive_32(sprintId: string, version: number): Promise<void> {
+  const query = new URLSearchParams({ version: String(version) });
+  return apiFetch<void>(`/api/sprints/${encodeURIComponent(sprintId)}?${query.toString()}`, { method: 'DELETE' });
+}
+
+export function listProposalsLive_46(projectId: string, page: number, size: number, status?: ReplanProposalPage['items'][number]['status']): Promise<ReplanProposalPage> {
+  const query = pageParams(page, size, status === undefined ? undefined : { status });
+  return apiFetch<ReplanProposalPage>(`/api/lead/projects/${encodeURIComponent(projectId)}/proposals?${query}`);
+}
+
+export function approveProposalLive(proposalId: string, version: number, suggestionIds: string[]): Promise<ReplanApproval> {
+  return apiFetch<ReplanApproval>(`/api/lead/proposals/${encodeURIComponent(proposalId)}/approve`, {
+    method: 'POST',
+    body: { version, suggestionIds: [...suggestionIds] },
+  });
+}
+
+export function rejectProposalLive(proposalId: string, version: number): Promise<ReplanRejection> {
+  return apiFetch<ReplanRejection>(`/api/lead/proposals/${encodeURIComponent(proposalId)}/reject`, {
+    method: 'POST',
+    body: { version },
+  });
+}
+
+export const listProjects_6 = listProjectsLive_6;
+export const getProject_7 = getProjectLive_7;
+export const getProgressLive_33 = readProgressLive_33;
+export const getProgress_33 = readProgressLive_33;
+
 // 47 and 48: apply or dismiss re-plan suggestions
 export async function applySuggestions_47(ids: string[]): Promise<number> {
   await wait();
@@ -344,9 +551,11 @@ export async function acceptStandup_54(): Promise<Standup> {
 export function exampleActivityFile_49(): string {
   return JSON.stringify(
     {
+      // The ActivityItemInput shape endpoint 49 accepts; the upload panel sends a file's items unchanged.
       items: [
-        { kind: 'COMMIT', text: 'Fix image sizing on small phones', at: '2026-11-02T17:20:00+08:00' },
-        { kind: 'NOTE', text: 'Menu API returns prices in cents', at: '2026-11-02T16:05:00+08:00' },
+        { type: 'COMMIT', repo: 'menu-app', externalId: '3f9a1c2', title: 'Fix image sizing on small phones', body: 'Scale the menu card below 360 px so the price stays visible.', timestamp: '2026-11-02T17:20:00+08:00', files: ['src/menu/card.css'] },
+        { type: 'COMMIT', repo: 'menu-app', externalId: '8b04d7e', title: 'Note that the menu API returns prices in cents', timestamp: '2026-11-02T16:05:00+08:00', files: [] },
+        { type: 'PR', repo: 'menu-app', externalId: '42', title: 'Add menu item detail layout', body: 'Detail page with photo, allergens and an add-to-cart button.', timestamp: '2026-11-02T18:40:00+08:00', url: 'https://github.com/example/menu-app/pull/42', files: ['src/menu/detail.tsx', 'src/menu/detail.css'] },
       ],
     },
     null,
