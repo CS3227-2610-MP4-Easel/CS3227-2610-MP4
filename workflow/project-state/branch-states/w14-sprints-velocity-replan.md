@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — completed backlog sprint, refresh and filter fixes
+- **Last updated:** 2026-11-13 by Codex — committed backlog sprint, refresh and filter fixes
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | Backlog sprint display, sidebar refresh and controls | Await owner review of the backlog follow-up commit | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Active | Backlog sprint display, sidebar refresh and controls | Await owner review of commit `0578524` | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -113,6 +113,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-13 | Operator reported missing backlog sprint labels, stale backlog after task block/unblock, and non-functional search/filter controls; started the smallest live-backlog correction | W14 | T6 UI follow-up |
 | 2026-11-13 | Added live backlog sprint lookup with `Sprint <number>` labels, functional title search and Unscheduled/Unassigned/No estimate filters, and a refresh listener for task sidebar mutations | W14 | T6 UI follow-up |
 | 2026-11-13 | Removed duplicate generated backlog controls, added live regression coverage, and verified typecheck, 236 frontend tests, diff check and live browser rendering | W14 | T6 UI follow-up |
+| 2026-11-13 | Committed backlog sprint labels, sidebar refresh listener and working controls as `0578524` | W14 | T6 close-out |
 
 ## 4. Decisions
 
