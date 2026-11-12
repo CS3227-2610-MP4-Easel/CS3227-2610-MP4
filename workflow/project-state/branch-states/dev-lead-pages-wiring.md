@@ -26,7 +26,7 @@ pages. W14 sprint/re-plan interactions remain out of scope.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W5 | — | Closed | Gate 3 branch review requested from project operator | 2026-11-12 |
+| S1 | 2026-11-12 | Codex | W5/W8 | Active | Modal and overview fixes complete; digest HTTP 500 remains a local runtime blocker | Inspect the running API error for digest persistence failure | 2026-11-12 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human` (name the question).
 
@@ -34,7 +34,8 @@ Session status: `Active` · `Paused` · `Blocked — needs human` (name the ques
 
 - [x] Obtain Gate 1 approval for the revised W5 UI design spec covering blockers 1–7.
 - [x] Obtain Gate 2 approval for the five-task W5 implementation plan.
-- [ ] Implement approved W5 frontend API clients and screen wiring.
+- [x] Implement approved W5 frontend API clients and screen wiring.
+- [ ] Resolve browser-found overview, digest, and modal defects; rerun focused tests and browser retest.
 - [ ] **Handover:** Add focused frontend coverage and rerun the required typechecks after the managed worktree permits `src/fe/tsconfig.tsbuildinfo` writes.
 
 ## 2. Workstreams
@@ -55,6 +56,7 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-12 | Completed and reviewed Wave 1 route/error and typed-client tasks; Wave 2 is unblocked | W5 | this commit |
 | 2026-11-12 | Completed and reviewed Wave 2 project, board, backlog, checkpoint, member, and task wiring; T5 is now in flight | W5 | 8cdbff5 |
 | 2026-11-12 | Added the F1-F8/N1-N3/E1-E15 verification matrix; required typechecks pass with repository cache-write access | W5 | 560ac31 |
+| 2026-11-12 | Kept live project overview data independent per request and moved W5 route dialogs onto their base pages with Escape/X close behavior | W5/W8 | working tree |
 
 ## Decisions
 
@@ -71,3 +73,9 @@ One line per change on this branch: what changed and why, with a commit as the r
 - **What:** `npm --prefix src/fe run typecheck` and `npm run typecheck` fail with TS5033/EPERM opening `src/fe/tsconfig.tsbuildinfo`.
 - **Consequence:** The managed sandbox required escalated repository cache-write access; the commands pass when run with that access.
 - **What was done:** The focused matrix, full frontend tests, frontend lint, root lint, and non-incremental frontend typecheck pass; no production repair was made.
+
+### Q~2 — Local digest POST still returns HTTP 500
+
+- **What:** Browser verification still shows `POST /api/lead/projects/{id}/digests` returning the generic error toast, while facts and latest-digest reads load.
+- **Consequence:** The UI remains usable and reports the backend failure, but digest persistence/generation cannot be claimed fixed without the running API's server-side exception.
+- **What was done:** Confirmed the local database has both W8 digest migrations; no speculative fallback was added that would hide a persistence failure.

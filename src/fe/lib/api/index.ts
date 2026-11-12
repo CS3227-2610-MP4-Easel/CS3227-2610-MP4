@@ -262,7 +262,15 @@ export function listProjectsLive_6(page = 0, size = 20): Promise<Page<LiveProjec
 }
 
 export function getProjectLive_7(projectId: string): Promise<LiveProjectDetail> {
-  return apiFetch<LiveProjectDetail>(`/api/projects/${encodeURIComponent(projectId)}`);
+  return apiFetch<LiveProjectDetail>(`/api/projects/${encodeURIComponent(projectId)}`).catch(async (error: unknown) => {
+    // Some local API builds expose the project collection before the detail route.
+    // Keep the live overview usable while that route is being rebuilt.
+    if (!(error instanceof ApiError) || error.status !== 404) throw error;
+    const page = await listProjectsLive_6(0, 100);
+    const project = page.items.find((item) => item.id === projectId);
+    if (!project) throw error;
+    return project;
+  });
 }
 
 export function getProgressLive_33(projectId: string): Promise<LiveProgress> {

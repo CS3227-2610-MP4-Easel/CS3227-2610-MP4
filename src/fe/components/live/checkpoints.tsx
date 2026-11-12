@@ -89,7 +89,7 @@ export function AddCheckpointForm({ dialog = false }: { dialog?: boolean } = {})
   };
   return (
     <div className={dialog ? 'dialog' : 'card flat'} style={{ borderStyle: dialog ? undefined : 'dashed' }}>
-      <div className="row between"><h3>Add checkpoint</h3>{dialog && <span className="small muted">Required fields</span>}</div>
+      <div className="row between"><h3>Add checkpoint</h3>{dialog ? <button className="btn g sm ib" type="button" aria-label="Close" onClick={() => router.push(routeFor('Checkpoints.dc.html'))}><svg className="ic" aria-hidden="true"><use href="#i-x" /></svg></button> : <span className="small muted">Required fields</span>}</div>
       <div className="field" style={{ marginBottom: 12 }}>
         <label htmlFor="cn">Name</label>
         <input id="cn" className="in" value={name} onChange={(e) => setName(e.target.value)} placeholder="Pilot with two canteens" />

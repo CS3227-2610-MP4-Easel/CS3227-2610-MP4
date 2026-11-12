@@ -80,6 +80,11 @@ beforeEach(() => {
 });
 
 describe('W5 live planning surfaces', () => {
+  it('renders a close button for the checkpoint dialog', () => {
+    render(liveView(<AddCheckpointForm dialog />));
+    expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy();
+  });
+
   it('F3 F6 E1 E2 loads UUID board data, maps supported filters, resets pagination, and renders no sprint control', async () => {
     listTasks.mockResolvedValue({ items: [task], page: 0, size: 20, total: 21 });
     render(liveView(<BoardView role="lead" />));

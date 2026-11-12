@@ -25,7 +25,17 @@ export default function OverviewLead() {
     if (!live || !projectId) { setProject(null); setProgress(null); setCheckpoints([]); setMembers([]); setError(null); setLoading(false); return; }
     const current = ++request.current;
     setProject(null); setProgress(null); setCheckpoints([]); setMembers([]); setError(null); setLoading(true);
-    Promise.all([getProjectLive_7(projectId), getProgressLive_33(projectId), listCheckpointsLive_12(projectId), listMembersLive_9(projectId)]).then(([p, progressData, checkpointData, memberData]) => { if (request.current === current) { setProject(p); setProgress(progressData); setCheckpoints(checkpointData); setMembers(memberData); } }).catch((e: unknown) => { if (request.current === current && !(e instanceof ApiError && e.status === 401)) setError(safeError(e)); }).finally(() => { if (request.current === current) setLoading(false); });
+    Promise.allSettled([getProjectLive_7(projectId), getProgressLive_33(projectId), listCheckpointsLive_12(projectId), listMembersLive_9(projectId)]).then((results) => {
+      if (request.current !== current) return;
+      const [projectResult, progressResult, checkpointsResult, membersResult] = results;
+      if (projectResult.status === 'fulfilled') setProject(projectResult.value);
+      if (projectResult.status === 'rejected' && !(projectResult.reason instanceof ApiError && projectResult.reason.status === 401)) setError(safeError(projectResult.reason));
+      if (progressResult.status === 'fulfilled') setProgress(progressResult.value);
+      if (checkpointsResult.status === 'fulfilled') setCheckpoints(checkpointsResult.value);
+      if (membersResult.status === 'fulfilled') setMembers(membersResult.value);
+      const failure = results.find((result) => result.status === 'rejected') as PromiseRejectedResult | undefined;
+      if (failure && results.every((result) => result.status === 'rejected') && !(failure.reason instanceof ApiError && failure.reason.status === 401)) setError(safeError(failure.reason));
+    }).finally(() => { if (request.current === current) setLoading(false); });
   }, [live, projectId, retry]);
   const reload = () => setRetry((n) => n + 1);
   const pending = live && (loading || (!project && !error));
