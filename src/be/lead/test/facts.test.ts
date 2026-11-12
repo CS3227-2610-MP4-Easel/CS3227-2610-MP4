@@ -160,6 +160,7 @@ test("a completed checkpoint is ON_TRACK without sprint history", async () => {
   const result = await service.target(target);
   assert.equal(result.avgVelocity, null);
   assert.equal(result.checkpoints[0].remainingPoints, 0);
+  assert.equal(result.checkpoints[0].projectedDate, null);
   assert.equal(result.checkpoints[0].risk, "ON_TRACK");
 });
 
