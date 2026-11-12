@@ -45,7 +45,7 @@ export const SuggestionSchema = z.discriminatedUnion("type", [
   z.object({ id: uuid, type: z.literal("REASSIGN_TASK"), taskId: uuid, assigneeId: uuid, rationale: z.string().max(300) }).strict(),
 ]);
 export const ReplanProposalSchema = z.object({
-  id: uuid, projectId: uuid, kind: z.literal("REPLAN"), status: ProposalStatusSchema, suggestions: z.array(SuggestionSchema).max(100), explanation: z.string(), flagged: z.boolean(), createdAt: instant, version: z.number().int().positive(),
+  id: uuid, projectId: uuid, kind: z.literal("REPLAN"), status: ProposalStatusSchema, suggestions: z.array(SuggestionSchema), explanation: z.string(), flagged: z.boolean(), createdAt: instant, version: z.number().int().positive(),
 }).strict();
 export const SprintPageSchema = pageSchema(SprintSchema);
 export const ProposalPageSchema = pageSchema(ReplanProposalSchema);
@@ -73,7 +73,7 @@ export const ReplanApprovalBodySchema = z.object({ version: z.number().int().min
 export const ReplanRejectionBodySchema = ProposalVersionBodySchema;
 const count = z.number().int().nonnegative();
 export const PlanApprovalSchema = z.object({ proposalId: uuid, status: z.literal("APPROVED"), created: z.object({ checkpoints: count, epics: count, tasks: count }).strict() }).strict();
-export const ReplanApprovalSchema = z.object({ proposalId: uuid, status: z.literal("APPROVED"), applied: z.array(uuid).max(100) }).strict();
+export const ReplanApprovalSchema = z.object({ proposalId: uuid, status: z.literal("APPROVED"), applied: z.array(uuid) }).strict();
 export const LeadOverviewSchema = z.array(z.object({ project: ProjectSchema, facts: FactsSchema.pick({ pointsTotal: true, pointsDone: true, pointsRemaining: true, projectedCompletionDate: true }).strict(), latestDigest: z.object({ status: z.enum(["AVAILABLE", "NONE"]) }).strict() }).strict());
 export const UsageSummarySchema = z.array(z.object({ feature: FeatureSchema, model: z.string().min(1), calls: z.number().int().nonnegative(), promptTokens: z.number().int().nonnegative(), completionTokens: z.number().int().nonnegative(), costMicroUsd: z.number().int().nonnegative(), cacheHits: z.number().int().nonnegative(), avgLatencyMs: z.number().nonnegative(), schemaFailures: z.number().int().nonnegative(), estimateErrorPercent: z.number().nonnegative() }).strict());
 

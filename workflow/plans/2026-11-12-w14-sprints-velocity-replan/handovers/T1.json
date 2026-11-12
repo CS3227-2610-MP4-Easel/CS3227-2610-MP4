@@ -1,7 +1,7 @@
 {
   "task": "T1",
   "status": "done",
-  "summary": "Added bounded W14 pagination, sprint/proposal page envelopes, strict sprint-close and replan decision bodies, endpoint-48 owner metadata, and matching OpenAPI contracts; 37 contract tests pass.",
+  "summary": "Added bounded W14 pagination, sprint/proposal page envelopes, strict sprint-close and replan decision bodies, endpoint-48 owner metadata, and matching OpenAPI contracts; preserved existing replan response array schemas.",
   "commit": "4bea8a2",
   "produces": [
     {
@@ -20,7 +20,7 @@
       "kind": "symbol",
       "name": "SprintCloseBodySchema / ReplanApprovalBodySchema / ReplanRejectionBodySchema",
       "where": "src/be/contracts/src/schemas.ts",
-      "note": "Carry-over is capped at 1000; selected suggestion IDs are capped at 100."
+      "note": "Carry-over is capped at 1000; request-selected suggestion IDs are capped at 100 while response arrays remain unchanged."
     },
     {
       "kind": "other",

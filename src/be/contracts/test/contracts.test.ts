@@ -60,6 +60,9 @@ test("W14 page envelopes and mutation bodies enforce their shared bounds", () =>
   assert.equal(SprintCloseBodySchema.safeParse({ version: 1, carryOver: Array.from({ length: 1001 }, () => ({ taskId: id, to: "BACKLOG" })) }).success, false);
   assert.equal(ReplanApprovalBodySchema.safeParse({ version: 1, suggestionIds: Array.from({ length: 100 }, () => id) }).success, true);
   assert.equal(ReplanApprovalBodySchema.safeParse({ version: 1, suggestionIds: Array.from({ length: 101 }, () => id) }).success, false);
+  const suggestion = { id, type: "MOVE_CHECKPOINT_DATE", checkpointId: id, newTargetDate: "2026-11-15", rationale: "Keep the checkpoint date aligned." };
+  assert.equal(ReplanProposalSchema.safeParse({ id, projectId: id, kind: "REPLAN", status: "PENDING", suggestions: Array.from({ length: 101 }, () => suggestion), explanation: "Explanation", flagged: false, createdAt: "2026-11-02T00:00:00Z", version: 1 }).success, true);
+  assert.equal(ReplanApprovalSchema.safeParse({ proposalId: id, status: "APPROVED", applied: Array.from({ length: 101 }, () => id) }).success, true);
   assert.equal(ReplanRejectionBodySchema.safeParse({ version: 1 }).success, true);
   assert.equal(ReplanRejectionBodySchema.safeParse({ version: 1, suggestionIds: [] }).success, false);
 });
