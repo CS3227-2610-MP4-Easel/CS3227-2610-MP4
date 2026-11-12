@@ -1,8 +1,8 @@
 {
   "task": "T1",
   "status": "done",
-  "summary": "Added UUID project route context, id-preserving navigation, forbidden resolution, Health race protection, and fixed safe API error mapping; 162 tests pass.",
-  "commit": "bae8254",
+  "summary": "Closed T1 review gaps with context-aware imperative routes, status-based malformed/bodyless error mapping, safe idToken handling, 401 coverage, and Health stale-response coverage; 165 tests pass.",
+  "commit": "c9c9268",
   "produces": [
     { "kind": "file", "name": "project-mode.ts", "where": "src/fe/lib/api/project-mode.ts", "note": "Exports isProjectUuid, projectRoute, ProjectRouteContext, and useProjectRoute." },
     { "kind": "symbol", "name": "routeOf", "where": "src/fe/lib/screens.ts", "note": "Accepts an optional project id and preserves it in generated project URLs." },
@@ -10,11 +10,13 @@
     { "kind": "symbol", "name": "apiFetch", "where": "src/fe/lib/api/http.ts", "note": "Maps HTTP failures to fixed safe messages while retaining bounded retry and field details." }
   ],
   "next": "T3 should consume useProjectRoute for project surfaces. T4 should use the same live/prototype seam for collections and mutations. T5 should run route/error regressions.",
-  "deviations": [],
+  "deviations": [
+    { "what": "Retained the bounded auth-only codes UNAUTHENTICATED, USER_NOT_REGISTERED, REGISTRATION_CODE_INVALID, and ALREADY_REGISTERED in addition to the task allowlist.", "why": "Existing AuthGate and registration flows branch on these codes; all server messages remain fixed safe text and arbitrary codes are still reduced by status.", "needs": "none" }
+  ],
   "edge_cases": ["F7", "F8", "N1", "N2", "E3", "E7", "E8", "E14"],
   "checks": {
-    "build": "frontend typecheck passes with --incremental false; exact npm run typecheck is blocked by EPERM writing pre-existing tsconfig.tsbuildinfo",
-    "tests": "162 pass, 0 fail",
+    "build": "pass",
+    "tests": "165 pass, 0 fail",
     "lint": "pass"
   }
 }
