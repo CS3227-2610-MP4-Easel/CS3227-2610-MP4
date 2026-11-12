@@ -16,5 +16,5 @@ renderVals() { return {}; }
 
 export default function Backlog(props: any = {}) {
   const v = new Logic(props).renderVals();
-  return (<><div className="app"><Top role={"lead"} project={"1"} /><div className="body"><main className="main"><ProjectHead role={"lead"} active={"backlog"} /><div className="wide stack" style={{gap: "16px"}}><div className="row wrap between"><span /><div className="row"><A className="btn" href={r("BacklogAddEpic.dc.html")}>Add epic</A><A className="btn p" href={r("BacklogAddTask.dc.html")}>Add task</A></div></div><BacklogList /><p className="small muted">Developers see this screen read-only. Empty backlog: <b>The backlog is empty.</b></p></div></main></div></div></>);
+  return (<><div className="app"><Top role={"lead"} project={"1"} /><div className="body"><main className="main"><ProjectHead role={"lead"} active={"backlog"} /><div className="wide stack" style={{gap: "16px"}}><BacklogList actions={<><A className="btn" href={r("BacklogAddEpic.dc.html")}>Add epic</A><A className="btn p" href={r("BacklogAddTask.dc.html")}>Add task</A></>} /><p className="small muted">Developers see this screen read-only. Empty backlog: <b>The backlog is empty.</b></p></div></main></div></div></>);
 }
