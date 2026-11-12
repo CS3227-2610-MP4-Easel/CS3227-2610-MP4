@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { runSeed, seedDemoData, type SeedClient } from "../prisma/seed.js";
+import { runSeed, runSeedWithFactory, seedDemoData, type SeedClient } from "../prisma/seed.js";
 import { getTierTarget, parseDatabaseTarget, validateDatabaseTarget } from "../src/tier-targets.js";
 
 function fakeClient() {
@@ -44,8 +44,8 @@ test("E21/E28 seed rejects unsupported and production tiers before client constr
 });
 
 test("E5/E6/E15/E16/E23/E28 canonical targets reject every cross-tier database substitution", () => {
-  const dev = { APP_TIER: "dev", DATABASE_URL: "postgresql://user:placeholder@ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb", NEON_HOST: "ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech", NEON_PROJECT: "super-sunset-36592949" };
-  assert.deepEqual(getTierTarget("dev"), { tier: "dev", env: "dev", vercelEnv: "preview", branch: "development", neonHost: "ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech", neonProject: "super-sunset-36592949", databaseName: "neondb", vercelProject: "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd", vercelAlias: "development", firebaseProjectId: "agile-platform-dev", soclaasBaseUrl: "https://soclaas-api.comp.nus.edu.sg/v1" });
+  const dev = { APP_TIER: "dev", DATABASE_URL: "postgresql://user:placeholder@ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb", NEON_HOST: "ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech", NEON_PROJECT: "falling-rice-06970921" };
+  assert.deepEqual(getTierTarget("dev"), { tier: "dev", env: "dev", vercelEnv: "preview", branch: "development", neonHost: "ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech", directMigrationHost: null, neonProject: "falling-rice-06970921", databaseName: "neondb", vercelProject: "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd", vercelAlias: "development", firebaseProjectId: "agile-platform-dev", soclaasBaseUrl: "https://soclaas-api.comp.nus.edu.sg/v1" });
   assert.deepEqual(parseDatabaseTarget(dev.DATABASE_URL), { protocol: "postgresql:", host: "ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech", databaseName: "neondb" });
   assert.doesNotThrow(() => validateDatabaseTarget(dev, dev.APP_TIER));
   for (const key of ["DATABASE_URL", "NEON_HOST", "NEON_PROJECT"] as const) {
@@ -54,4 +54,20 @@ test("E5/E6/E15/E16/E23/E28 canonical targets reject every cross-tier database s
     assert.throws(() => validateDatabaseTarget(mismatch, "dev"), /target|observations/i);
   }
   assert.throws(() => validateDatabaseTarget({ ...dev, DATABASE_URL: "not-a-url" }, "dev"), /malformed|protocol/i);
+});
+
+test("E1 recovery target is rejected before seed client construction", async () => {
+  let constructed = false;
+  await assert.rejects(runSeedWithFactory({
+    APP_TIER: "dev",
+    W13_RECOVERY_REHEARSAL: "1",
+    NEON_BRANCH: "w13-recovery-baseline",
+    NEON_HOST: "ep-other-shape-aohygd1w.c-2.ap-southeast-1.aws.neon.tech",
+    NEON_PROJECT: "falling-rice-06970921",
+    DATABASE_URL: "postgresql://user:password@ep-other-shape-aohygd1w.c-2.ap-southeast-1.aws.neon.tech/neondb",
+  }, () => {
+    constructed = true;
+    throw new Error("client must not be constructed");
+  }), /target|observations/i);
+  assert.equal(constructed, false);
 });

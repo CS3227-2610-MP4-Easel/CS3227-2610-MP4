@@ -1,6 +1,8 @@
 import { z } from "zod/v3";
-import type { RouteDefinition } from "@agile/contracts";
-import { AlreadyRegistered, checkRegistrationCode, clientIpKey, createUser, getUser, type AuthRuntime, type RatePurpose } from "@agile/auth";
+import { policyForRoute, type RouteDefinition } from "@agile/contracts";
+import { AlreadyRegistered, checkRegistrationCode, createUser, getUser } from "@agile/auth/registration";
+import { clientIpKey, type RatePurpose } from "@agile/auth/rate-limit";
+import type { AuthRuntime } from "@agile/auth/runtime";
 import { errorResponse, HttpError } from "../errors.js";
 import { bodyTooLarge, route } from "./shared.js";
 

@@ -9,6 +9,8 @@
 - **No scheduled jobs, queues or background workers** — AI work is request-driven (AD-06).
 - **No restore, retention or deletion tooling** — restore is a manual DB task (AD-36, AD-42, AD-51).
 - **Unverified email at registration** — Firebase issues tokens to unverified emails unless blocking functions are set up, so someone holding a registration code could register an email they do not own (AD-57). Because endpoint 10 adds members by email, that impersonated account would receive the access meant for the real owner. Deliberate (C47, reconfirmed on PR #10); to close it, require `email_verified` in the verifier and turn on verification in Firebase.
+- **Sign-up reveals registered emails** — Firebase answers `auth/email-already-in-use` for an existing account and the register screen shows it (W4 ui.md), so anyone can test whether an email has a Firebase account; sits beside **Unverified email at registration** (AD-57).
+- **The web app's auth source scan is regex-based** — `src/fe/test/source-rules.test.ts` catches the usual import, `fetch(`, `location.assign(`, `process.env` and `dangerouslySetInnerHTML` forms but not deliberate evasion such as `window['location'].assign`, `fetch (` with a space, `process["env"]` or computed specifiers; review covers those.
 - **Disabled users keep access until token expiry** — a disabled user's ID token works for up to 1 hour, because revocation is not checked (AD-57).
 - **`rate_counters` rows are never cleaned up** — one row per key, with no scheduled jobs to remove them; IPv6 /64 grouping limits growth, and rows can be cleared by hand. An attacker holding many /64 prefixes (a /48 has 65,536) gets 20 attempts per prefix and adds one row per prefix; there is no global ceiling.
 - **Slow request bodies** — endpoints 2 and 3 read up to 4 KiB before authorization; a client sending it slowly holds the function until the platform timeout.
@@ -24,6 +26,12 @@
 - **AI context checks rows, not sources** — `assembleWith` catches inconsistent rows (wrong project, owner, type, size, unrequested items, free text in facts), not a source that lies about a row's `projectId` or `ownerId`; each source owner's tests must prove their rows (W5, W7-W9).
 - **The source scan cannot see data passed between unrelated files** — a route can query in one module and pass plain values into a gateway-calling file it does not import; review and the runtime checks cover it.
 - **The gap between `assembleWith` and the model call** — membership is checked before and after the reads, not at `run` time.
+- **Upload storage is unbounded** — endpoint 49 has no per-user rate limit or row cap and activity items are never deleted; spend is bounded by the session caps and AI windows, storage is not.
+- **A regeneration or summary retry can spend a session without storing anything** — `regenerate` counts before `run`, so a busy or refused standup call uses one of the five regenerations and stores nothing.
+- **Concurrent W9 writes to one project can exhaust the transaction retries** — writes queue on the project-row lock and each waiter is retried after a serialization error; `inMutationTransaction` allows 3 attempts, so four or more simultaneous uploads, summary inserts or standup writes on one project can fail (plan P6). Measured on Postgres: 5 concurrent uploads → 2 fail on every run, no partial writes; since C72 they get 429 `RATE_LIMITED` with `Retry-After: 1` instead of 500.
+- **An oversize `Content-Length` gets 413 before authentication** — endpoints 49-51 check the header (only the header; no body is read) before the token, so an unauthenticated client sees 413 instead of 401.
+- **A summary session is opened before context assembly** — if assembly fails (membership removed, a source error), the opened DEV_SUMMARY session stays OPEN and counts toward the caller's own caps.
+- **A Developer on four or more projects can hit the 3-open DEV_STANDUP cap** — W9 leaves standup sessions open for W16's edit and accept (53, 54), so a fourth standup within 30 minutes gets 429 `RATE_LIMITED`.
 - **Nested writes require explicit authorization** — callers must validate every connected resource inside the mutation transaction.
 
 ## Explicitly Out of Scope
