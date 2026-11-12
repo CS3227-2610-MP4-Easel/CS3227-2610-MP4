@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — T6 Sprints consumer wiring corrected; checks pass
+- **Last updated:** 2026-11-13 by Codex — live close, edit and delete sprint actions verified
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | T6 consumer correction complete | Run W14 close-out checks, review the branch diff and prepare Gate 3 | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Active | Live sprint actions complete | Run W14 close-out checks, review the branch diff and prepare Gate 3 | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -95,6 +95,9 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-13 | Completed T6 live frontend sprint/progress/proposal clients, strict request-body serialization, paged response types and typed suggestion-ID error details; fixture W10 helpers remain unchanged | W14 | commit `002528e`; handover `T6.json` |
 | 2026-11-13 | Operator reported the Sprints page still displayed fixture data; added a shared live Sprints loader for UUID project routes, live velocity, paged sprint rows and versioned start/delete actions without fixture task rows | W14 | T6 consumer correction |
 | 2026-11-13 | T6 consumer correction verified with frontend typecheck, 234 frontend tests and diff check; live start/delete refresh the server-backed page | W14 | T6 close-out |
+| 2026-11-13 | Operator requested the close-sprint modal be live too; started wiring active-sprint/task reads, carry-over choices and endpoint-31 submission for live project routes | W14 | T6 follow-up |
+| 2026-11-13 | Completed live close modal, sprint edit form and live task sprint filtering; endpoint 31 carries unfinished tasks to Backlog or another planned sprint, endpoint 29 uses the current sprint version, and endpoint 32 remains versioned | W14 | T6 follow-up |
+| 2026-11-13 | Verified sprint action follow-up with frontend typecheck, 234 frontend tests and diff check | W14 | T6 close-out |
 
 ## 4. Decisions
 

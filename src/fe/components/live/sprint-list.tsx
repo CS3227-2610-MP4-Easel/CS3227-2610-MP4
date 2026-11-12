@@ -58,7 +58,7 @@ export default function SprintList({ readOnly = false, live = false, projectId: 
                 {!readOnly && s.status === 'PLANNED' && (
                   <>
                     <button className={`btn sm${hasActive ? ' dis' : ''}`} disabled={hasActive || busy === s.id} title={hasActive ? 'Another sprint is active' : ''} aria-disabled={hasActive} onClick={() => run(s.id, () => live ? startSprintLive_30(s.id, s.version) : startSprint_30(s.id), `${s.name} started.`)}>Start</button>
-                    <A className="btn sm" href={r('SprintsNew.dc.html')}><svg className="ic" aria-hidden="true"><use href="#i-edit" /></svg>Edit</A>
+                    <A className="btn sm" href={`${r('SprintsNew.dc.html')}&sprint=${encodeURIComponent(s.id)}`}><svg className="ic" aria-hidden="true"><use href="#i-edit" /></svg>Edit</A>
                     <button className="btn sm" style={{ color: 'var(--danger)' }} disabled={busy === s.id} onClick={() => run(s.id, () => live ? deleteSprintLive_32(s.id, s.version) : deleteSprint_32(s.id), `${s.name} deleted. Its tasks are back in the backlog.`)}>
                       <svg className="ic" aria-hidden="true"><use href="#i-trash" /></svg>Delete
                     </button>

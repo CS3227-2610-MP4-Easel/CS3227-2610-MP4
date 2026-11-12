@@ -1,8 +1,8 @@
 'use client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import { A, r, useRoute } from '../../lib/nav';
-import { ApiError, createEpic_17, createEpicLive_17, createSprint_28, createTask_21, createTaskLive_21, listCheckpointsLive_12, listEpicsLive_16, listMembersLive_9, useDb, type LiveCheckpoint, type LiveEpic, type LiveMember, type Person } from '../../lib/api';
+import { ApiError, createEpic_17, createEpicLive_17, createSprint_28, createSprintLive_28, patchSprintLive_29, createTask_21, createTaskLive_21, listCheckpointsLive_12, listEpicsLive_16, listMembersLive_9, listSprintsLive_27, useDb, type LiveCheckpoint, type LiveEpic, type LiveMember, type LiveSprint, type Person } from '../../lib/api';
 import { useProjectRoute } from '../../lib/api/project-mode';
 import { toast } from './toast';
 
@@ -34,20 +34,48 @@ function useSubmit(back: string, ok: string) {
 }
 
 export function NewSprintForm() {
+  const route = useProjectRoute();
+  const params = useSearchParams();
+  const live = route.mode === 'live' && Boolean(route.projectId);
+  const editId = live ? params.get('sprint') : null;
+  const editing = Boolean(editId);
   const [name, setName] = useState('');
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
-  const f = useSubmit('Sprints.dc.html', 'Sprint created.');
+  const [loaded, setLoaded] = useState(!editing);
+  const [loadError, setLoadError] = useState('');
+  useEffect(() => {
+    if (!editing || !route.projectId || !editId) return;
+    listSprintsLive_27(route.projectId, 0, 100).then((page) => {
+      const sprint = page.items.find((item) => item.id === editId);
+      if (!sprint) throw new ApiError('NOT_FOUND', 'Sprint not found.');
+      setName(sprint.name); setStart(sprint.startDate.slice(0, 10)); setEnd(sprint.endDate.slice(0, 10));
+    }).catch((error: unknown) => setLoadError(error instanceof ApiError ? error.message : 'Unable to load sprint.')).finally(() => setLoaded(true));
+  }, [editing, editId, route.projectId]);
+  const f = useSubmit('Sprints.dc.html', editing ? 'Sprint updated.' : 'Sprint created.');
+  const submit = () => {
+    if (live && route.projectId) {
+      if (editing && editId) return listSprintsLive_27(route.projectId, 0, 100).then((page) => {
+        const sprint = page.items.find((item) => item.id === editId);
+        if (!sprint) throw new ApiError('NOT_FOUND', 'Sprint not found.');
+        return patchSprintLive_29(editId, { name: name.trim(), startDate: start, endDate: end, version: sprint.version });
+      });
+      return createSprintLive_28(route.projectId, { name: name.trim(), startDate: start, endDate: end });
+    }
+    return createSprint_28(name.trim(), start, end);
+  };
+  if (editing && !loaded) return <div className="dialog" role="dialog" aria-modal="true"><p className="muted">Loading sprint…</p></div>;
   return (
-    <form className="dialog" role="dialog" aria-modal="true" aria-labelledby="ns1" style={{ width: 'min(520px, 100%)' }} onSubmit={(e) => { e.preventDefault(); f.go(() => createSprint_28(name.trim(), start, end)); }}>
-      <div className="row between"><h2 id="ns1">New sprint</h2><Close to="Sprints.dc.html" /></div>
+    <form className="dialog" role="dialog" aria-modal="true" aria-labelledby="ns1" style={{ width: 'min(520px, 100%)' }} onSubmit={(e) => { e.preventDefault(); f.go(submit); }}>
+      <div className="row between"><h2 id="ns1">{editing ? 'Edit sprint' : 'New sprint'}</h2><Close to="Sprints.dc.html" /></div>
+      {loadError && <Err text={loadError} />}
       <div className="field"><label htmlFor="n4">Name <span style={{ color: 'var(--danger)' }}>*</span></label><input id="n4" className="in" value={name} onChange={(e) => setName(e.target.value)} placeholder="Sprint 4: Polish" required /></div>
       <div className="g2">
         <div className="field"><label htmlFor="s4">Start date <span style={{ color: 'var(--danger)' }}>*</span></label><input id="s4" className={`in${f.err ? ' err' : ''}`} value={start} onChange={(e) => setStart(e.target.value)} placeholder="2026-11-30" pattern="\d{4}-\d{2}-\d{2}" required /><span className="hint">YYYY-MM-DD</span></div>
         <div className="field"><label htmlFor="e4">End date (inclusive) <span style={{ color: 'var(--danger)' }}>*</span></label><input id="e4" className="in" value={end} onChange={(e) => setEnd(e.target.value)} placeholder="2026-12-11" pattern="\d{4}-\d{2}-\d{2}" required /><span className="hint">YYYY-MM-DD</span></div>
       </div>
       {f.err && <Err text={f.err} />}
-      <div className="dfoot"><A className="btn" href={r('Sprints.dc.html')}>Cancel</A><button className="btn p" disabled={f.busy}>Create sprint</button></div>
+      <div className="dfoot"><A className="btn" href={r('Sprints.dc.html')}>Cancel</A><button className="btn p" disabled={f.busy}>{editing ? 'Save changes' : 'Create sprint'}</button></div>
     </form>
   );
 }

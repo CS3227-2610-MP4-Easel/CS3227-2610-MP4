@@ -169,6 +169,7 @@ export type LiveTaskListFilters = {
   status?: LiveTaskStatus;
   epicId?: string;
   assigneeId?: string;
+  sprintId?: string;
   blocked?: boolean;
 };
 

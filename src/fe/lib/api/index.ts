@@ -324,7 +324,7 @@ export function createEpicLive_17(projectId: string, input: LiveEpicCreateInput)
 }
 
 export function listTasksLive_20(projectId: string, page = 0, size = 20, filters?: LiveTaskListFilters): Promise<Page<LiveTask>> {
-  const query = filters && { status: filters.status, epicId: filters.epicId, assigneeId: filters.assigneeId, blocked: filters.blocked };
+  const query = filters && { status: filters.status, epicId: filters.epicId, assigneeId: filters.assigneeId, sprintId: filters.sprintId, blocked: filters.blocked };
   return apiFetch<Page<LiveTask>>(`/api/projects/${encodeURIComponent(projectId)}/tasks?${pageParams(page, size, query)}`);
 }
 
