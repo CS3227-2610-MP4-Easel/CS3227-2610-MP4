@@ -2,7 +2,7 @@
   "task": "T2",
   "status": "done",
   "summary": "Added typed W5 live DTOs and apiFetch clients for projects, progress, members, checkpoints, epics and tasks. Live task create/update bodies allowlist fields and never serialize sprintId.",
-  "commit": "5229386",
+  "commit": "d0aa095",
   "produces": [
     { "kind": "symbol", "name": "listProjectsLive_6", "where": "src/fe/lib/api/index.ts", "note": "Typed live project page client." },
     { "kind": "symbol", "name": "getProjectLive_7", "where": "src/fe/lib/api/index.ts", "note": "Typed live project detail client." },
@@ -20,7 +20,7 @@
     { "kind": "symbol", "name": "setTaskStatusLive_24", "where": "src/fe/lib/api/index.ts", "note": "Typed live task status client." }
   ],
   "next": "T3 uses project list/detail/progress clients. T4 uses membership, checkpoint, epic and task clients. T5 uses the request-shape tests as its API baseline.",
-  "deviations": ["Review fixes: member add reloads and deduplicates by userId; checkpoint and epic mutation bodies are allowlisted; task null clears and omitted fields are covered by request tests."],
+  "deviations": [{ "what": "Review fixes added member reload/deduplication, allowlisted checkpoint/epic bodies, and null/omitted-field request tests.", "why": "These were required to close the T2 review findings before dependent UI tasks.", "needs": "none" }, { "what": "Task filter serialization now ignores runtime keys outside status, epicId, assigneeId, and blocked; member add returns the created member if reload fails.", "why": "Prevent unsupported query/body data and avoid making a successful POST appear retryable.", "needs": "none" }],
   "edge_cases": ["F1", "F2", "F3", "F4", "F5", "F6", "E4", "E9", "E11", "E12", "E13", "E15"],
-  "checks": { "build": "frontend typecheck pass with --incremental false", "tests": "170 pass, 0 fail", "lint": "pass" }
+  "checks": { "build": "frontend typecheck pass with --incremental false", "tests": "171 pass, 0 fail", "lint": "pass" }
 }
