@@ -1,0 +1,49 @@
+{
+  "task": "T1",
+  "status": "done",
+  "summary": "Added bounded W14 pagination, sprint/proposal page envelopes, strict sprint-close and replan decision bodies, endpoint-48 owner metadata, and matching OpenAPI contracts; 37 contract tests pass.",
+  "commit": "a8808ae",
+  "produces": [
+    {
+      "kind": "symbol",
+      "name": "PageQuerySchema",
+      "where": "src/be/contracts/src/pagination.ts",
+      "note": "Accepts page 0..10000 and size 1..100 with existing defaults."
+    },
+    {
+      "kind": "symbol",
+      "name": "SprintPageSchema / ProposalPageSchema",
+      "where": "src/be/contracts/src/schemas.ts",
+      "note": "Strict { items, page, size, total } envelopes with shared page bounds."
+    },
+    {
+      "kind": "symbol",
+      "name": "SprintCloseBodySchema / ReplanApprovalBodySchema / ReplanRejectionBodySchema",
+      "where": "src/be/contracts/src/schemas.ts",
+      "note": "Carry-over is capped at 1000; selected suggestion IDs are capped at 100."
+    },
+    {
+      "kind": "other",
+      "name": "endpoint-48 predicate",
+      "where": "src/be/contracts/src/policy.ts",
+      "note": "Proposal rejection uses SELF so the resolved proposal/session owner is required."
+    },
+    {
+      "kind": "other",
+      "name": "SPRINT_LISTResponse / LEAD_PROPOSAL_LISTResponse",
+      "where": "src/be/contracts/src/openapi-schemas.ts",
+      "note": "OpenAPI registry now exposes the paged W14 response envelopes and bounded request schemas."
+    }
+  ],
+  "next": "T2 consumes PageQuerySchema and SprintPageSchema. T3 consumes ProposalPageSchema and replan decision bodies. T5 uses endpoint-48 SELF metadata and the W14 response registry.",
+  "deviations": [],
+  "edge_cases": ["E19"],
+  "checks": {
+    "build": "pass",
+    "contracts": "pass: 37/37 via node --import tsx --test src/be/contracts/test/*.test.ts; npm workspace wrapper was EPERM on tsx IPC pipe",
+    "openapi_parity": "pass: src/be/api/test/openapi-parity.test.ts",
+    "typecheck": "pass: npm run typecheck and npm --workspace @agile/contracts run typecheck",
+    "diff_check": "pass: git diff --check",
+    "plan_lint": "blocked by pre-existing orchestrator marker: T1 status is in progress (laplace)"
+  }
+}

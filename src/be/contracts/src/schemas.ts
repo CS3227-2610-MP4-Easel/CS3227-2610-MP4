@@ -1,5 +1,6 @@
 import { z } from "zod/v3";
 import { ExpansionStatusSchema, FeatureSchema, ProjectStatusSchema, ProposalStatusSchema, SprintStatusSchema, TaskEventTypeSchema, TaskStatusSchema, UsageOutcomeSchema, UserRoleSchema } from "./enums.js";
+import { pageSchema } from "./pagination.js";
 
 const uuid = z.string().uuid();
 const instant = z.string().datetime({ offset: true });
@@ -11,7 +12,7 @@ export const UserInputSchema = z.object({ displayName: z.string().min(1).max(100
 export const ProjectSchema = z.object({ id: uuid, name: z.string().min(1).max(200), brief: optionalText(4000), status: ProjectStatusSchema, createdBy: uuid, createdAt: instant, updatedAt: instant, version: z.number().int().positive() }).strict();
 export const ProjectInputSchema = z.object({ name: z.string().min(1).max(200), brief: optionalText(4000) }).strict();
 export const ProjectDetailSchema = ProjectSchema.extend({ progress: z.object({ pointsTotal: z.number().nonnegative(), pointsDone: z.number().nonnegative(), percent: z.number().min(0).max(100), unestimatedTasks: z.number().int().nonnegative() }).strict() }).strict();
-export const PageProjectDetailSchema = z.object({ items: z.array(ProjectDetailSchema), page: z.number().int().nonnegative(), size: z.number().int().positive(), total: z.number().int().nonnegative() }).strict();
+export const PageProjectDetailSchema = pageSchema(ProjectDetailSchema);
 export const MemberSchema = z.object({ userId: uuid, displayName: z.string().min(1).max(100), role: UserRoleSchema, addedAt: instant }).strict();
 export const CheckpointSchema = z.object({ id: uuid, projectId: uuid, name: z.string().min(1).max(200), targetDate: date, createdAt: instant, updatedAt: instant, version: z.number().int().positive() }).strict();
 export const EpicSchema = z.object({ id: uuid, projectId: uuid, checkpointId: uuid.nullable(), title: z.string().min(1).max(200), description: optionalText(4000), position: z.number().int().nonnegative(), taskCount: z.number().int().nonnegative(), pointsTotal: z.number().nonnegative(), createdAt: instant, updatedAt: instant, version: z.number().int().positive() }).strict();
@@ -44,8 +45,12 @@ export const SuggestionSchema = z.discriminatedUnion("type", [
   z.object({ id: uuid, type: z.literal("REASSIGN_TASK"), taskId: uuid, assigneeId: uuid, rationale: z.string().max(300) }).strict(),
 ]);
 export const ReplanProposalSchema = z.object({
-  id: uuid, projectId: uuid, kind: z.literal("REPLAN"), status: ProposalStatusSchema, suggestions: z.array(SuggestionSchema), explanation: z.string(), flagged: z.boolean(), createdAt: instant, version: z.number().int().positive(),
+  id: uuid, projectId: uuid, kind: z.literal("REPLAN"), status: ProposalStatusSchema, suggestions: z.array(SuggestionSchema).max(100), explanation: z.string(), flagged: z.boolean(), createdAt: instant, version: z.number().int().positive(),
 }).strict();
+export const SprintPageSchema = pageSchema(SprintSchema);
+export const ProposalPageSchema = pageSchema(ReplanProposalSchema);
+export const PageSprintSchema = SprintPageSchema;
+export const ReplanProposalPageSchema = ProposalPageSchema;
 export const FactsSchema = z.object({
   asOf: instant, pointsTotal: z.number().nonnegative(), pointsDone: z.number().nonnegative(), pointsRemaining: z.number().nonnegative(), unestimatedTasks: z.number().int().nonnegative(),
   velocity: z.array(z.object({ sprintId: uuid, name: z.string().min(1), completedPoints: z.number().nonnegative() }).strict()), avgVelocity: z.number().nonnegative().nullable(), projectedCompletionDate: date.nullable(),
@@ -61,9 +66,14 @@ export const SummaryResponseSchema = z.object({ summaries: z.array(z.object({ it
 export const PlanCreateBodySchema = z.object({ idea: z.string().max(24000, "Must be 20 to 6000 characters.").refine((s) => [...s].length >= 20 && [...s].length <= 6000, "Must be 20 to 6000 characters.") }).strict();
 export const ProposalVersionBodySchema = z.object({ version: z.number().int().min(1).max(2147483647) }).strict();
 export const EmptyBodySchema = z.object({}).strict();
+const sprintCarryOverTarget = z.union([z.literal("BACKLOG"), uuid]);
+export const SprintCarryOverSchema = z.object({ taskId: uuid, to: sprintCarryOverTarget }).strict();
+export const SprintCloseBodySchema = z.object({ version: z.number().int().min(1).max(2147483647), carryOver: z.array(SprintCarryOverSchema).max(1000) }).strict();
+export const ReplanApprovalBodySchema = z.object({ version: z.number().int().min(1).max(2147483647), suggestionIds: z.array(uuid).max(100) }).strict();
+export const ReplanRejectionBodySchema = ProposalVersionBodySchema;
 const count = z.number().int().nonnegative();
 export const PlanApprovalSchema = z.object({ proposalId: uuid, status: z.literal("APPROVED"), created: z.object({ checkpoints: count, epics: count, tasks: count }).strict() }).strict();
-export const ReplanApprovalSchema = z.object({ proposalId: uuid, status: z.literal("APPROVED"), applied: z.array(uuid) }).strict();
+export const ReplanApprovalSchema = z.object({ proposalId: uuid, status: z.literal("APPROVED"), applied: z.array(uuid).max(100) }).strict();
 export const LeadOverviewSchema = z.array(z.object({ project: ProjectSchema, facts: FactsSchema.pick({ pointsTotal: true, pointsDone: true, pointsRemaining: true, projectedCompletionDate: true }).strict(), latestDigest: z.object({ status: z.enum(["AVAILABLE", "NONE"]) }).strict() }).strict());
 export const UsageSummarySchema = z.array(z.object({ feature: FeatureSchema, model: z.string().min(1), calls: z.number().int().nonnegative(), promptTokens: z.number().int().nonnegative(), completionTokens: z.number().int().nonnegative(), costMicroUsd: z.number().int().nonnegative(), cacheHits: z.number().int().nonnegative(), avgLatencyMs: z.number().nonnegative(), schemaFailures: z.number().int().nonnegative(), estimateErrorPercent: z.number().nonnegative() }).strict());
 
