@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { buildTestRuns, discoverTests } from "../../scripts/discover-tests.mjs";
 
@@ -26,4 +27,11 @@ test("W11 security tests run in a process with the network deny setup", () => {
       setup: ["./tests/setup-auth-env.ts", "./tests/security/w11-network-deny.setup.ts"],
     },
   ]);
+});
+
+test("W11 registration corpus cases use the production route for repeated attempts", () => {
+  const source = readFileSync("tests/security/attack-corpus/runner.ts", "utf8");
+  assert.match(source, /createAppDependencies/);
+  assert.match(source, /\.request\(/);
+  assert.doesNotMatch(source, /count:\s*21/);
 });

@@ -2,6 +2,13 @@ import assert from "node:assert/strict";
 import { NotMember } from "@agile/contracts";
 import { checkRegistrationCode, createUser } from "../../../src/be/auth/src/registration.js";
 import { createHit } from "../../../src/be/auth/src/rate-limit.js";
+import type { AuthRuntime } from "../../../src/be/auth/src/runtime.js";
+import { Hono } from "hono";
+import { createAppDependencies } from "../../../src/be/api/src/deps.js";
+import { errorResponse } from "../../../src/be/api/src/errors.js";
+import { requestIdMiddleware } from "../../../src/be/api/src/middleware/request-id.js";
+import { registerRoute, type ApiEnv } from "../../../src/be/api/src/routes/register.js";
+import { authRoutes } from "../../../src/be/api/src/routes/auth.js";
 import { createAiContext } from "../../../src/be/ai-context/src/assemble.js";
 import { ContextScopeViolation } from "../../../src/be/ai-context/src/errors.js";
 import { defaultGuards } from "../../../src/be/llm-gateway/src/guards.js";
@@ -29,10 +36,31 @@ function output(fixture: Extract<Fixture, { kind: "OUTPUT_TEXT" | "OUTPUT_JSON" 
 async function auth(fixture: AuthRequestFixture, observation: CorpusObservation): Promise<void> {
   if (fixture.authState === "UNAUTHENTICATED") { observation.status = 401; observation.code = "UNAUTHENTICATED"; return; }
   if (fixture.body.attempt === 21) {
-    const result = await createHit(async () => ({ count: 21, remainingSeconds: 60 }))("synthetic-client", 60, 20);
-    observation.status = result.allowed ? 200 : 429;
-    observation.code = result.allowed ? undefined : "RATE_LIMITED";
-    observation.retryAfterSeconds = result.retryAfterSeconds;
+    const counter = new Map<string, number>();
+    const hit = createHit(async (key) => ({ count: (counter.set(key, (counter.get(key) ?? 0) + 1), counter.get(key)!), remainingSeconds: 60 }));
+    const runtime = {
+      settings: { tier: "test", firebaseProjectId: "w11-test", registrationCodes: CODES, rateKeySecret: "w11-rate-secret" },
+      hit,
+      db: {} as never,
+      resolvePrincipal: async () => { throw new Error("UNAUTHENTICATED"); },
+      lookupRegisteredUser: async () => { throw new Error("USER_NOT_REGISTERED"); },
+    } as AuthRuntime;
+    const app = new Hono<ApiEnv>();
+    app.use("*", requestIdMiddleware);
+    app.onError((error, c) => errorResponse(error, c.get("requestId")));
+    for (const route of authRoutes(() => runtime)) registerRoute(app, route, createAppDependencies(runtime));
+    let response: Response | undefined;
+    for (let attempt = 0; attempt < fixture.body.attempt; attempt++) {
+      response = await app.request("http://localhost/api/auth/check-code", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-vercel-forwarded-for": "203.0.113.7" },
+        body: JSON.stringify({ role: fixture.role === "SYNTHETIC_WRONG_ROLE" ? "DEVELOPER" : fixture.role, code: fixture.code }),
+      });
+    }
+    observation.status = response!.status;
+    const payload = await response!.json() as { error?: { code?: string } };
+    observation.code = payload.error?.code;
+    observation.retryAfterSeconds = Number(response!.headers.get("Retry-After") ?? 0);
     return;
   }
   if (fixture.operationId === "auth.register" && fixture.resourceId === "user-synthetic-1") {

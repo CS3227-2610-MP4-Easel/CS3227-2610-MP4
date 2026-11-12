@@ -8,18 +8,21 @@ globalThis.fetch = (() => blocked("NETWORK")) as typeof fetch;
 const originalRequire = Module.prototype.require;
 const net = createRequire(import.meta.url)("node:net") as typeof import("node:net");
 Module.prototype.require = function (id: string, ...args: unknown[]) {
-  if (["node:http", "node:https", "node:tls", "node:dns", "node:dns/promises", "node:child_process"].includes(id)) blocked("NETWORK_OR_PROCESS");
+  if (["child_process", "node:http", "node:https", "node:tls", "node:dns", "node:dns/promises", "node:child_process"].includes(id)) blocked("NETWORK_OR_PROCESS");
   return originalRequire.call(this, id, ...args);
 };
 for (const name of ["connect", "createConnection"] as const) (net[name] as unknown as (...args: unknown[]) => unknown) = (...args: unknown[]) => blocked("NETWORK_OR_PROCESS");
 (net.Socket.prototype.connect as unknown as (...args: unknown[]) => unknown) = (...args: unknown[]) => blocked("NETWORK_OR_PROCESS");
 syncBuiltinESMExports();
-register(`data:text/javascript,${encodeURIComponent(`export async function resolve(specifier, context, nextResolve) { if (["node:http","node:https","node:tls","node:dns","node:dns/promises","node:child_process"].includes(specifier)) throw new Error("W11_FORBIDDEN_NETWORK_OR_PROCESS"); return nextResolve(specifier, context); }`)}`, import.meta.url);
+register(`data:text/javascript,${encodeURIComponent(`export async function resolve(specifier, context, nextResolve) { if (["child_process","node:http","node:https","node:tls","node:dns","node:dns/promises","node:child_process"].includes(specifier)) throw new Error("W11_FORBIDDEN_NETWORK_OR_PROCESS"); return nextResolve(specifier, context); }`)}`, import.meta.url);
 const fs = createRequire(import.meta.url)("node:fs") as Record<string, (...args: unknown[]) => unknown>;
+const promises = createRequire(import.meta.url)("node:fs/promises") as Record<string, (...args: unknown[]) => unknown>;
 const temporaryRoots = ["/node_modules/", "/private/tmp/", "/tmp/", tmpdir(), `/private${tmpdir()}`];
-for (const name of ["writeFile", "writeFileSync", "appendFile", "appendFileSync", "mkdir", "mkdirSync", "rm", "rmSync", "unlink", "unlinkSync"] as const) {
-  const original = fs[name];
-  fs[name] = (...args: unknown[]) => {
+const filesystemWrites = ["write", "writeFile", "writeFileSync", "appendFile", "appendFileSync", "open", "openSync", "mkdir", "mkdirSync", "rm", "rmSync", "unlink", "unlinkSync", "rename", "renameSync", "copyFile", "copyFileSync", "link", "linkSync", "symlink", "symlinkSync", "truncate", "truncateSync", "chmod", "chmodSync", "chown", "chownSync", "utimes", "utimesSync", "lutimes", "lutimesSync"];
+for (const targetModule of [fs, promises]) for (const name of filesystemWrites) {
+  const original = targetModule[name];
+  if (typeof original !== "function") continue;
+  targetModule[name] = (...args: unknown[]) => {
     const target = typeof args[0] === "string" ? args[0] : "";
     if (temporaryRoots.some((root) => target.includes(root) || target.startsWith(root))) return original(...args);
     return blocked("FILESYSTEM");
