@@ -40,6 +40,7 @@ sources, and their guarded gateway integration.
 | S12 | 2026-11-12 | Codex | W8 | Complete | Repaired five PR #28 findings and the failing CI frontend check | Owner review of the isolated repair branch | 2026-11-12 |
 | S13 | 2026-11-12 | Codex | W8 | Complete | Re-reviewed the repaired W8 branch and found the E33 async assertion still unfixed | Move the waitFor assertion from E32 to E33 before merge | 2026-11-12 |
 | S14 | 2026-11-12 | Codex | W8 | Complete | Moved the async assertion to E33 and re-reviewed the complete branch | Owner review of the amended W8 branch | 2026-11-12 |
+| S15 | 2026-11-12 | Codex | W8 | Complete | Corrected completed-checkpoint projected dates to preserve the formula under zero velocity | Owner review of the amended W8 branch | 2026-11-12 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human` (name the question).
 
@@ -79,6 +80,7 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-09 | Attacker review found the two migration phases still deploy together before the new writer and the documented production path has no down migration; query bounds, tenant scoping, and session-cap mapping otherwise passed | W8 | pending task commit |
 | 2026-11-09 | Resolved review findings with compatibility-triggered expand/contract migration, forward-only restore recovery, offset-bearing backfill validation, final non-null Prisma shape, migration manifest updates, and a CI-gated PostgreSQL migration regression; full suite passed | W8 | 9975055 |
 | 2026-11-12 | Repaired caller-scoped endpoint-42 facts, bounded trusted numeric formatting, latest-row digest caching, captured-facts assembly, completed-checkpoint risk, and the asynchronous registration CI assertion; added regressions | W8 | this commit |
+| 2026-11-12 | Preserved the formula-derived null projected date for completed checkpoints without velocity while retaining `ON_TRACK` risk; added the missing assertion | W8 | this commit |
 
 ## 4. Deviations
 
