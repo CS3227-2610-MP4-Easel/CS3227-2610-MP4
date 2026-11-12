@@ -60,9 +60,10 @@ async function ensureNoOverlap(tx: any, projectId: string, startDate: string, en
   if (overlap) throw new Error("VALIDATION_FAILED");
 }
 
-async function readSprint(tx: any, id: string, projectId?: string) {
-  const row = await tx.sprint?.findFirst({ where: { id, ...(projectId ? { projectId } : {}), deletedAt: null } });
+async function readSprint(tx: any, id: string, projectId?: string, includeDeleted = false) {
+  const row = await tx.sprint?.findFirst({ where: { id, ...(projectId ? { projectId } : {}), ...(includeDeleted ? {} : { deletedAt: null }) } });
   if (!row) throw new Error("NOT_FOUND");
+  if (includeDeleted && row.deletedAt) throw new Error("CONFLICT_STATE");
   return row;
 }
 
@@ -103,13 +104,13 @@ export function createSprintService(db: SprintDb, gate: SprintAccess, derived: D
     async patch(actor: Actor, sprintId: string, input: SprintPatch) {
       actorCanWrite(actor);
       return inMutationTransaction(db, async (tx: any) => {
-        const current = await readSprint(tx, sprintId);
+        const current = await readSprint(tx, sprintId, undefined, true);
         await lockProjectForMutation(tx, current.projectId);
       }, async (tx: any) => {
-        const current = await readSprint(tx, sprintId);
+        const current = await readSprint(tx, sprintId, undefined, true);
         await access(gate, actor, current.projectId, true, tx);
       }, async (tx: any) => {
-        const current = await readSprint(tx, sprintId);
+        const current = await readSprint(tx, sprintId, undefined, true);
         requireVersion(current, input.version);
         requirePlanned(current);
         const name = input.name ?? current.name;
@@ -128,13 +129,13 @@ export function createSprintService(db: SprintDb, gate: SprintAccess, derived: D
       actorCanWrite(actor);
       const version = typeof input === "number" ? input : input.version;
       return inMutationTransaction(db, async (tx: any) => {
-        const current = await readSprint(tx, sprintId);
+        const current = await readSprint(tx, sprintId, undefined, true);
         await lockProjectForMutation(tx, current.projectId);
       }, async (tx: any) => {
-        const current = await readSprint(tx, sprintId);
+        const current = await readSprint(tx, sprintId, undefined, true);
         await access(gate, actor, current.projectId, true, tx);
       }, async (tx: any) => {
-        const current = await readSprint(tx, sprintId);
+        const current = await readSprint(tx, sprintId, undefined, true);
         requireVersion(current, version);
         requirePlanned(current);
         const active = await tx.sprint.findFirst({ where: { projectId: current.projectId, status: "ACTIVE", deletedAt: null, id: { not: sprintId } } });
@@ -148,13 +149,13 @@ export function createSprintService(db: SprintDb, gate: SprintAccess, derived: D
     async close(actor: Actor, sprintId: string, input: SprintClose) {
       actorCanWrite(actor);
       return inMutationTransaction(db, async (tx: any) => {
-        const current = await readSprint(tx, sprintId);
+        const current = await readSprint(tx, sprintId, undefined, true);
         await lockProjectForMutation(tx, current.projectId);
       }, async (tx: any) => {
-        const current = await readSprint(tx, sprintId);
+        const current = await readSprint(tx, sprintId, undefined, true);
         await access(gate, actor, current.projectId, true, tx);
       }, async (tx: any) => {
-        const current = await readSprint(tx, sprintId);
+        const current = await readSprint(tx, sprintId, undefined, true);
         requireVersion(current, input.version);
         if (current.status !== "ACTIVE") throw new Error("CONFLICT_STATE");
         if (!Array.isArray(input.carryOver) || input.carryOver.length > 1000) throw new Error("VALIDATION_FAILED");
@@ -166,8 +167,9 @@ export function createSprintService(db: SprintDb, gate: SprintAccess, derived: D
         for (const item of input.carryOver) {
           if (item.to === "BACKLOG") { targets.set(item.taskId, null); continue; }
           if (typeof item.to !== "string" || item.to === sprintId || targets.has(item.taskId)) throw new Error("VALIDATION_FAILED");
-          const target = await tx.sprint.findFirst({ where: { id: item.to, projectId: current.projectId, deletedAt: null } });
+          const target = await tx.sprint.findFirst({ where: { id: item.to, projectId: current.projectId } });
           if (!target) throw new Error("VALIDATION_FAILED");
+          if (target.deletedAt) throw new Error("CONFLICT_STATE");
           if (target.status !== "PLANNED") throw new Error("CONFLICT_STATE");
           targets.set(item.taskId, target);
         }
@@ -189,15 +191,21 @@ export function createSprintService(db: SprintDb, gate: SprintAccess, derived: D
       actorCanWrite(actor);
       const version = typeof input === "number" ? input : input?.version;
       return inMutationTransaction(db, async (tx: any) => {
-        const current = await readSprint(tx, sprintId);
+        const current = await readSprint(tx, sprintId, undefined, true);
         await lockProjectForMutation(tx, current.projectId);
       }, async (tx: any) => {
-        const current = await readSprint(tx, sprintId);
+        const current = await readSprint(tx, sprintId, undefined, true);
         await access(gate, actor, current.projectId, true, tx);
       }, async (tx: any) => {
-        const current = await readSprint(tx, sprintId);
+        const current = await readSprint(tx, sprintId, undefined, true);
         requireVersion(current, version);
         requirePlanned(current);
+        const assignedTasks = await tx.task?.findMany({ where: { projectId: current.projectId, sprintId, deletedAt: null }, select: { id: true, version: true, sprintId: true } }) ?? [];
+        for (const task of assignedTasks) {
+          const cleared = await tx.task.updateMany({ where: { id: task.id, projectId: current.projectId, sprintId, version: task.version }, data: { sprintId: null, version: { increment: 1 } } });
+          if (!cleared.count) throw new Error("CONFLICT_VERSION");
+          await writeTaskEvent(tx, { taskId: task.id, projectId: current.projectId, actorId: actor.userId, type: "SPRINT_CHANGED", fromValue: sprintId, toValue: null });
+        }
         const deleted = await tx.sprint.updateMany({ where: { id: sprintId, deletedAt: null, status: "PLANNED", ...(version === undefined ? {} : { version }) }, data: { deletedAt: new Date(), version: { increment: 1 } } });
         if (!deleted.count) throw new Error(version === undefined ? "CONFLICT_STATE" : "CONFLICT_VERSION");
       });

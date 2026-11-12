@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — T1 review fixed; T2/T3 dispatched
+- **Last updated:** 2026-11-13 by Codex — T2 review follow-up tests complete; handover and commit pending
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | Orchestrating T2 core sprint work and T3 proposal/session work | Validate T2/T3 handovers and full reviews; then dispatch T4 | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Active | T2 review follow-up tests complete; handover and commit pending | Commit T2 follow-up, then return the validated handover JSON | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -75,6 +75,8 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-13 | Audited role wiring: board/backlog and member/checkpoint data have live seams, but PM/Developer overview and sprint screens still use fixture paths; W14 remains the owner of live sprint/re-plan wiring | W14 | this commit |
 | 2026-11-13 | Operator approved the six-task W14 implementation plan at Gate 2; execution begins with T1 | W14 | this commit |
 | 2026-11-13 | T1 completed shared W14 contracts; T2 and T3 started after T1 handover | W14 | commits `4bea8a2`, `29e8dea` |
+| 2026-11-13 | Tester review of diff `416b4fb..HEAD` found T2/T3 assigned edge cases without corresponding race, rollback, authorization and lifecycle tests; no source or test edits made | W14 | review |
+| 2026-11-13 | Added focused T2 rollback/race/lifecycle/close-validation/pagination/progress tests and made planned-sprint deletion clear assigned tasks atomically | W14 | T2 review follow-up |
 
 ## 4. Decisions
 

@@ -1,8 +1,8 @@
 {
   "task": "T2",
   "status": "done",
-  "summary": "Added the Core-owned SprintService with bounded pagination, lifecycle transitions, atomic close carry-over/event writes, progress, and deterministic velocity.",
-  "commit": "bce36e4",
+  "summary": "Added focused T2 coverage for rollback, races, lifecycle, close validation, deletion, pagination, progress, and out-of-scope carry-over; planned-sprint deletion now clears assigned tasks atomically.",
+  "commit": "TBD",
   "produces": [
     { "kind": "symbol", "name": "createSprintService/createSprints", "where": "src/be/core/src/sprints.ts", "note": "Actor-aware list/create/patch/start/close/remove/delete plus progress and velocity; mutations use RepeatableRead inMutationTransaction and project locking." },
     { "kind": "symbol", "name": "SprintService", "where": "src/be/core/src/index.ts", "note": "Public service and input/query types exported from @agile/core." },
@@ -14,8 +14,8 @@
   "edge_cases": ["E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9", "E10", "E11", "E18", "E21", "E22", "E26"],
   "checks": {
     "build": "pass",
-    "core_tests": "pass: node --import tsx --test src/be/core/test/*.test.ts (68 pass, 2 skipped)",
-    "touched_tests": "pass: sprint, derived, and concurrency tests",
+    "core_tests": "pass: node --import tsx --test src/be/core/test/*.test.ts (79 pass, 2 skipped)",
+    "touched_tests": "pass: 18 focused sprint/derived tests",
     "npm_test": "pass: 896 backend tests, 117 skipped; frontend 230 tests passed",
     "workspace_wrapper": "not run: npm --workspace @agile/core test is blocked by tsx IPC pipe EPERM; equivalent node --import tsx command passed",
     "diff_check": "pass: git diff --check"
