@@ -14,7 +14,7 @@ const secondSuggestionId = "00000000-0000-4000-8000-000000000006";
 const checkpointId = "00000000-0000-4000-8000-000000000007";
 const unknownSuggestionId = "00000000-0000-4000-8000-000000000099";
 
-type FixtureOptions = { failCore?: boolean; failCoreCode?: string; failCloser?: boolean; role?: "DEV_LEAD" | "PM"; members?: string[]; proposalProjectId?: string; projectStatus?: "ACTIVE" | "ARCHIVED"; session?: Partial<{ userId: string; projectId: string; feature: string; env: string; outcome: string }> };
+type FixtureOptions = { failCore?: boolean; failCoreCode?: string; failCloser?: boolean; role?: "DEV_LEAD" | "PM"; members?: string[]; memberProjects?: string[]; proposalProjectId?: string; projectStatus?: "ACTIVE" | "ARCHIVED"; session?: Partial<{ userId: string; projectId: string; feature: string; env: string; outcome: string }> };
 
 function fixture(options: FixtureOptions = {}) {
   const boundProjectId = options.proposalProjectId ?? projectId;
@@ -34,6 +34,7 @@ function fixture(options: FixtureOptions = {}) {
     applies: [] as unknown[],
   };
   const members = new Set(options.members ?? [ownerId, otherOwnerId]);
+  const memberProjects = new Set(options.memberProjects ?? [projectId, otherProjectId]);
   const missing = () => { throw Object.assign(new Error("missing"), { code: "P2025" }); };
   const matches = (where: any, expected: any) => Object.entries(where ?? {}).every(([key, value]) => expected[key] === value);
   const tx: any = {
@@ -63,7 +64,7 @@ function fixture(options: FixtureOptions = {}) {
     checkpoint: { findFirst: async ({ where }: any) => where.projectId === projectId && where.id === checkpointId ? ({ id: checkpointId, projectId }) : null, update: async () => ({}) },
     epic: { findFirst: async () => null, update: async () => ({}) },
     task: { findFirst: async () => null, update: async () => ({}) },
-    projectMember: { findFirst: async ({ where }: any) => where.projectId === projectId && members.has(where.userId) ? ({ projectId, userId: where.userId }) : null },
+    projectMember: { findFirst: async ({ where }: any) => memberProjects.has(where.projectId) && members.has(where.userId) ? ({ projectId: where.projectId, userId: where.userId }) : null },
     taskEvent: { create: async () => ({}) },
   };
   const db: any = {
@@ -77,8 +78,10 @@ function fixture(options: FixtureOptions = {}) {
     },
   };
   const closer = {
-    closeInTransaction: async (_transaction: unknown, input: { outcome: string }) => {
+    closeInTransaction: async (_transaction: unknown, input: { sessionId: string; proposalId: string; projectId: string; feature: string; ownerId: string; outcome: string }) => {
       if (options.failCloser) throw new Error("session close failed");
+      if (input.proposalId !== state.proposal.id || input.projectId !== state.proposal.projectId || input.sessionId !== state.proposal.sessionId || input.ownerId !== state.proposal.createdBy || input.feature !== "LEAD_DIGEST") throw new Error("CONFLICT_STATE");
+      if (state.session.id !== input.sessionId || state.session.projectId !== input.projectId || state.session.userId !== input.ownerId || state.session.feature !== input.feature || state.session.env !== "test" || state.session.outcome !== "OPEN") throw new Error("CONFLICT_STATE");
       state.session.outcome = input.outcome;
     },
   };
@@ -148,7 +151,8 @@ test("E23 session-close failure rolls back the approved proposal and domain muta
 });
 
 test("E16-E17 hide a foreign project and outsider from proposal approval/listing", async () => {
-  const foreign = fixture({ proposalProjectId: otherProjectId });
+  // The proposal is real and belongs to project A; the caller is only a member of project B.
+  const foreign = fixture({ proposalProjectId: projectId, members: [ownerId], memberProjects: [otherProjectId] });
   const foreignService = createProposalService({ db: foreign.db, core: foreign.core, sessionCloser: foreign.closer });
   assert.equal(await code(foreignService.approve({ proposalId, projectId: otherProjectId, version: 1, actorId: ownerId, suggestionIds: [firstSuggestionId] })), "NOT_FOUND");
 
@@ -191,18 +195,38 @@ test("terminal proposals and stale versions reject mutations", async () => {
   assert.equal(await code(staleService.approve({ proposalId, version: 2, actorId: ownerId, suggestionIds: [firstSuggestionId] })), "CONFLICT_VERSION");
 });
 
-test("concrete transaction session closer verifies proposal binding and closes the session", async () => {
+test("concrete transaction session closer honors all binding predicates", async (t) => {
+  const cases = [
+    { name: "mismatched owner", proposal: { createdBy: otherOwnerId }, input: { ownerId: otherOwnerId } },
+    { name: "wrong environment", session: { env: "prod" } },
+    { name: "wrong feature", session: { feature: "PM_PLAN_OUTLINE" } },
+    { name: "closed session", session: { outcome: "REJECTED" } },
+    { name: "zero-row update", zeroUpdate: true },
+  ] as const;
+
+  for (const scenario of cases) {
+    await t.test(scenario.name, async () => {
+      const session: any = { id: sessionId, projectId, userId: ownerId, feature: "LEAD_DIGEST", env: "test", outcome: "OPEN", ...scenario.session };
+      const proposal: any = { id: proposalId, projectId, sessionId, kind: "REPLAN", createdBy: ownerId, ...scenario.proposal };
+      const tx: any = {
+        aiProposal: { findFirst: async ({ where }: any) => Object.entries(where).every(([key, value]) => proposal[key] === value) ? proposal : null },
+        aiSession: {
+          findFirst: async () => session,
+          updateMany: async ({ data }: any) => { if (scenario.zeroUpdate) return { count: 0 }; session.outcome = data.outcome; session.endedAt = data.endedAt; return { count: 1 }; },
+        },
+      };
+      const closer = createTransactionSessionCloser({ env: "test" });
+      await assert.rejects(() => closer.closeInTransaction(tx, { sessionId, proposalId, projectId, feature: "LEAD_DIGEST", ownerId: scenario.input?.ownerId ?? ownerId, outcome: "ACCEPTED", actorId: ownerId }), /CONFLICT_STATE/);
+      assert.equal(session.outcome, scenario.session?.outcome ?? "OPEN");
+    });
+  }
+
   const session: any = { id: sessionId, projectId, userId: ownerId, feature: "LEAD_DIGEST", env: "test", outcome: "OPEN" };
   const proposal: any = { id: proposalId, projectId, sessionId, kind: "REPLAN", createdBy: ownerId };
   const tx: any = {
     aiProposal: { findFirst: async ({ where }: any) => Object.entries(where).every(([key, value]) => proposal[key] === value) ? proposal : null },
-    aiSession: {
-      findFirst: async () => session,
-      updateMany: async ({ data }: any) => { session.outcome = data.outcome; session.endedAt = data.endedAt; return { count: 1 }; },
-    },
+    aiSession: { findFirst: async () => session, updateMany: async ({ data }: any) => { session.outcome = data.outcome; return { count: 1 }; } },
   };
-  const closer = createTransactionSessionCloser({ env: "test" });
-  await closer.closeInTransaction(tx, { sessionId, proposalId, projectId, feature: "LEAD_DIGEST", ownerId, outcome: "ACCEPTED", actorId: ownerId });
+  await createTransactionSessionCloser({ env: "test" }).closeInTransaction(tx, { sessionId, proposalId, projectId, feature: "LEAD_DIGEST", ownerId, outcome: "ACCEPTED", actorId: ownerId });
   assert.equal(session.outcome, "ACCEPTED");
-  await assert.rejects(() => closer.closeInTransaction(tx, { sessionId, proposalId, projectId: otherProjectId, feature: "LEAD_DIGEST", ownerId, outcome: "REJECTED", actorId: ownerId }), /CONFLICT_STATE/);
 });
