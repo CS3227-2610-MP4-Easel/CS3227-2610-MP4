@@ -26,7 +26,7 @@ pages. W14 sprint/re-plan interactions remain out of scope.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W5/W8 | Active | Client-side modal host and fixed overlay behavior complete; live overview and project switcher remain complete | Owner review | 2026-11-12 |
+| S1 | 2026-11-12 | Codex | W5/W8 | Active | Client-side modal host and task-parameter handoff complete; live overview and project switcher remain complete | Owner review | 2026-11-12 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human` (name the question).
 
@@ -61,6 +61,7 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-12 | Restricted the PM `/projects` list to PMs and redirected authenticated non-PM visitors to their role home | W8 | working tree |
 | 2026-11-12 | Wired the Dev Lead navbar project switcher and overview table to live project, facts, and digest data | W8 | working tree |
 | 2026-11-12 | Opened modal links through a client-side modal host so the source page stays mounted; retained deep-link fallback and Escape/backdrop close | W5/W8 | working tree |
+| 2026-11-12 | Passed task and member query parameters through client-side modal state so live drawers load the selected database record without changing the source URL | W5 | working tree |
 
 ## Decisions
 

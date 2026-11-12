@@ -1,7 +1,7 @@
 'use client';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { A, r, useRoute } from '../../lib/nav';
+import { A, r, useModal, useRoute } from '../../lib/nav';
 import { ApiError, deleteTask_25, getTaskLive_22, setTaskStatus_24, setTaskStatusLive_24, updateTaskLive_23, updateTask_23, useDb, type LiveTask, type TaskStatus } from '../../lib/api';
 import { useProjectRoute } from '../../lib/api/project-mode';
 import { useRole } from '../../lib/nav';
@@ -14,7 +14,9 @@ const LABEL: Record<TaskStatus, string> = { todo: 'To do', prog: 'In progress', 
 const LIVE_STATUS: Record<string, 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE'> = { todo: 'TODO', prog: 'IN_PROGRESS', rev: 'IN_REVIEW', done: 'DONE' };
 
 function Drawer({ projectId }: { projectId?: string | null }) {
-  const id = useSearchParams().get('task') || 't5';
+  const searchParams = useSearchParams();
+  const modal = useModal();
+  const id = modal.modal?.params?.task || searchParams.get('task') || 't5';
   const route = useProjectRoute();
   if (route.mode === 'live' && route.projectId) return <LiveDrawer taskId={id} projectId={projectId ?? route.projectId} />;
   return <PrototypeDrawer id={id} />;

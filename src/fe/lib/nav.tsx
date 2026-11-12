@@ -7,7 +7,7 @@ import { routeOf, type Role } from './screens';
 export const RoleCtx = createContext<Role>('pm');
 export const useRole = () => useContext(RoleCtx);
 
-export type ModalRequest = { file: string; closeTo: string };
+export type ModalRequest = { file: string; closeTo: string; params?: Record<string, string> };
 type ModalContextValue = { modal: ModalRequest | null; open: (request: ModalRequest) => void; close: () => void };
 export const ModalCtx = createContext<ModalContextValue>({ modal: null, open: () => {}, close: () => {} });
 export const useModal = () => useContext(ModalCtx);
@@ -27,8 +27,10 @@ export function modalForHref(href: string): ModalRequest | null {
     close: path.endsWith('/sprints') ? 'SprintClose' : '',
     'close-done': path.endsWith('/sprints') ? 'SprintCloseDone' : '',
   };
-  if (view && viewFiles[view]) return { file: viewFiles[view], closeTo };
-  if (path.endsWith('/board') && url.searchParams.has('task')) return { file: 'TaskDetail', closeTo };
+  const params = Object.fromEntries(url.searchParams.entries());
+  delete params.view;
+  if (view && viewFiles[view]) return { file: viewFiles[view], closeTo, params };
+  if (path.endsWith('/board') && url.searchParams.has('task')) return { file: 'TaskDetail', closeTo, params };
   return null;
 }
 

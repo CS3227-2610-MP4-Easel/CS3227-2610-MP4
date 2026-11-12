@@ -20,8 +20,8 @@ describe('modal route behavior', () => {
   });
 
   it('identifies modal links without changing the underlying page route', () => {
-    expect(modalForHref('/projects/p1/backlog?view=add-task')).toEqual({ file: 'BacklogAddTask', closeTo: '/projects/p1/backlog' });
-    expect(modalForHref('/projects/p1/board?task=t5')).toEqual({ file: 'TaskDetail', closeTo: '/projects/p1/board' });
+    expect(modalForHref('/projects/p1/backlog?view=add-task')).toEqual({ file: 'BacklogAddTask', closeTo: '/projects/p1/backlog', params: {} });
+    expect(modalForHref('/projects/p1/board?task=t5')).toEqual({ file: 'TaskDetail', closeTo: '/projects/p1/board', params: { task: 't5' } });
     expect(modalForHref('/projects/p1/board')).toBeNull();
   });
 });
