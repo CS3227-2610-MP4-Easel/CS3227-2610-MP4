@@ -84,7 +84,43 @@ export type LiveProgress = {
   velocity: { sprintId: string; name: string; completedPoints: number }[];
 };
 
-export type LiveMember = { userId: string; displayName: string; role: LiveUserRole; addedAt: string };
+export type LiveSprintStatus = 'PLANNED' | 'ACTIVE' | 'CLOSED';
+export type LiveSprint = {
+  id: string;
+  projectId: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  status: LiveSprintStatus;
+  completedPoints: number | null;
+  version: number;
+};
+export type LiveSprintPage = Page<LiveSprint>;
+export type LiveSprintCreateInput = { name: string; startDate: string; endDate: string };
+export type LiveSprintPatchInput = { name?: string; startDate?: string; endDate?: string; version: number };
+export type LiveSprintCloseInput = { version: number; carryOver: { taskId: string; to: 'BACKLOG' | string }[] };
+
+export type ReplanStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUPERSEDED';
+export type ReplanSuggestion =
+  | { id: string; type: 'MOVE_CHECKPOINT_DATE'; checkpointId: string; newTargetDate: string; rationale: string }
+  | { id: string; type: 'MOVE_EPIC_TO_CHECKPOINT'; epicId: string; checkpointId: string | null; rationale: string }
+  | { id: string; type: 'REASSIGN_TASK'; taskId: string; assigneeId: string; rationale: string };
+export type ReplanProposal = {
+  id: string;
+  projectId: string;
+  kind: 'REPLAN';
+  status: ReplanStatus;
+  suggestions: ReplanSuggestion[];
+  explanation: string;
+  flagged: boolean;
+  createdAt: string;
+  version: number;
+};
+export type ReplanProposalPage = Page<ReplanProposal>;
+export type ReplanApproval = { proposalId: string; status: 'APPROVED'; applied: string[]; sessionOutcome: 'ACCEPTED' };
+export type ReplanRejection = ReplanProposal & { sessionOutcome: 'REJECTED' };
+
+export type LiveMember = { userId: string; email?: string; displayName: string; role: LiveUserRole; addedAt: string };
 
 export type LiveCheckpoint = {
   id: string;
@@ -133,6 +169,7 @@ export type LiveTaskListFilters = {
   status?: LiveTaskStatus;
   epicId?: string;
   assigneeId?: string;
+  sprintId?: string;
   blocked?: boolean;
 };
 

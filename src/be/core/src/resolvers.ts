@@ -7,6 +7,7 @@ type ResolverDb = {
   checkpoint?: { findFirst: FindFirst };
   epic?: { findFirst: FindFirst };
   task?: { findFirst: FindFirst };
+  sprint?: { findFirst: FindFirst };
   projectMember?: { findFirst: FindFirst; findMany: (args: Record<string, unknown>) => Promise<Row[]> };
 };
 type Request = { params?: Record<string, unknown>; body?: unknown; userId?: string };
@@ -20,7 +21,8 @@ const id = (request: Request, ...names: string[]) => {
 const projectState = (row: Row): "ACTIVE" | "ARCHIVED" => row.status === "ARCHIVED" || (row.project as Row | undefined)?.status === "ARCHIVED" ? "ARCHIVED" : "ACTIVE";
 const resource = (kind: Exclude<ResolvedResource["kind"], "PROJECT_SET">, row: Row, projectId: string, extra: Partial<ResolvedResource> = {}): ResolvedResource => ({ kind, projectId, state: projectState(row), ...extra } as ResolvedResource);
 
-const PROJECT_OPERATIONS = ["PROJECT_READ", "PM_PROJECT_UPDATE", "PROJECT_MEMBER_LIST", "CHECKPOINT_LIST", "CHECKPOINT_CREATE", "EPIC_LIST", "EPIC_CREATE", "TASK_LIST", "TASK_CREATE", "SPRINT_LIST", "SPRINT_CREATE", "PROJECT_PROGRESS_READ", "PM_PLAN_CREATE", "PROJECT_FACTS_READ", "LEAD_DIGEST_CREATE", "LEAD_DIGEST_LATEST_READ"];
+const PROJECT_OPERATIONS = ["PROJECT_READ", "PM_PROJECT_UPDATE", "PROJECT_MEMBER_LIST", "CHECKPOINT_LIST", "CHECKPOINT_CREATE", "EPIC_LIST", "EPIC_CREATE", "TASK_LIST", "TASK_CREATE", "SPRINT_LIST", "SPRINT_CREATE", "PROJECT_PROGRESS_READ", "PM_PLAN_CREATE", "PROJECT_FACTS_READ", "LEAD_DIGEST_CREATE", "LEAD_DIGEST_LATEST_READ", "LEAD_PROPOSAL_LIST"];
+const SPRINT_OPERATIONS = ["SPRINT_UPDATE", "SPRINT_START", "SPRINT_CLOSE", "SPRINT_DELETE"];
 const CHECKPOINT_OPERATIONS = ["CHECKPOINT_UPDATE", "CHECKPOINT_DELETE"];
 const EPIC_OPERATIONS = ["EPIC_UPDATE", "EPIC_DELETE"];
 const TASK_OPERATIONS = ["TASK_READ", "TASK_UPDATE", "TASK_STATUS_UPDATE", "TASK_DELETE", "TASK_EVENT_LIST"];
@@ -43,6 +45,14 @@ export function createCoreResourceResolvers(db: ResolverDb): CoreResourceResolve
     return resolve(operation, resource(kind, row, projectId, extra?.(row)));
   };
   const task = (operation: string) => child(operation, "TASK", db.task, (row) => typeof row.assigneeId === "string" ? { assigneeId: row.assigneeId } : {});
+  const sprint = (operation: string) => async (request: Request): Promise<ResolvedResource | null> => {
+    const sprintId = id(request, "id");
+    if (!sprintId) return null;
+    const row = await db.sprint?.findFirst({ where: { id: sprintId, ...(READ_OPERATIONS.has(operation) ? { deletedAt: null } : {}) }, select: { projectId: true, project: { select: { status: true } } } });
+    const projectId = row?.projectId;
+    if (!row || typeof projectId !== "string") return null;
+    return resolve(operation, resource("PROJECT", row, projectId));
+  };
   const membership = async (request: Request): Promise<ResolvedResource | null> => {
     const projectId = id(request, "projectId", "id");
     if (!projectId) return null;
@@ -72,6 +82,7 @@ export function createCoreResourceResolvers(db: ResolverDb): CoreResourceResolve
   for (const operation of CHECKPOINT_OPERATIONS) registry[operation] = child(operation, "PROJECT", db.checkpoint);
   for (const operation of EPIC_OPERATIONS) registry[operation] = child(operation, "PROJECT", db.epic);
   for (const operation of TASK_OPERATIONS) registry[operation] = task(operation);
+  for (const operation of SPRINT_OPERATIONS) registry[operation] = sprint(operation);
   registry.PROJECT_MEMBER_REMOVE = membership;
   return Object.freeze(registry);
 }

@@ -1,4 +1,5 @@
 import { runInTransactionScope } from "./transaction-scope.js";
+import type { FilteredTransactionClient } from "./client.js";
 
 export { isInTransaction } from "./transaction-scope.js";
 
@@ -21,6 +22,9 @@ export async function inCoreTransaction<T>(transaction: { $transaction: <R>(call
 export type MutationTransaction = {
   $transaction: <R>(callback: (tx: unknown) => Promise<R>, options?: { isolationLevel: "RepeatableRead" }) => Promise<R>;
 };
+
+/** The transaction client passed through a W5 mutation boundary. */
+export type MutationTransactionClient = FilteredTransactionClient;
 
 /** Callbacks can run up to three times; keep external side effects outside the transaction. */
 export async function inMutationTransaction<T>(transaction: MutationTransaction, lockResource: (tx: unknown) => Promise<void>, recheck: (tx: unknown) => Promise<void>, mutate: (tx: unknown) => Promise<T>): Promise<T> {

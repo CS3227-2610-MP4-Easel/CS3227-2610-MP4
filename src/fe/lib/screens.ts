@@ -5,7 +5,7 @@ export type Screen = { file: string; path: string; view?: string; roles?: Role[]
 
 export const PROJECT = 'p1';
 
-export const HOME: Record<Role, string> = { pm: '/projects', lead: '/lead/overview', dev: '/my-work' };
+export const HOME: Record<Role, string> = { pm: '/projects', lead: '/projects', dev: '/my-work' };
 
 const P = '/projects/:id';
 
@@ -18,7 +18,7 @@ export const SCREENS: Screen[] = [
   { file: 'Usage', path: '/usage' },
   { file: 'MyWork', path: '/my-work', roles: ['dev'] },
   { file: 'LeadOverview', path: '/lead/overview', roles: ['lead'] },
-  { file: 'Projects', path: '/projects', roles: ['pm'] },
+  { file: 'Projects', path: '/projects', roles: ['pm', 'lead'] },
   { file: 'ProjectsEmptyPM', path: '/projects', view: 'empty', roles: ['pm'] },
   { file: 'ProjectsEmptyDev', path: '/projects', view: 'empty', roles: ['lead', 'dev'] },
   { file: 'Projects1024', path: '/projects', view: 'narrow' },

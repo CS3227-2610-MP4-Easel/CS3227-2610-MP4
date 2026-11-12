@@ -147,12 +147,12 @@ function LiveBoard({ projectId, role = 'lead', archived = false }: { projectId: 
         <div className="cols" style={css(`grid-template-columns: repeat(${Math.max(grouped.length, 1)}, minmax(0, 1fr))`)}>
           {grouped.map((column) => <section className="col" aria-label={column.label} key={column.status}>
             <div className="col-h"><svg className="ic" aria-hidden="true"><use href={column.icon} /></svg><span className="b">{column.label}</span><span className="chip c-line">{column.tasks.length}</span><span className="sp" /><span className="small muted num">{column.tasks.reduce((sum, task) => sum + (task.storyPoints ?? 0), 0)} pts</span></div>
-            <div className="cards">{column.tasks.map((task) => <TaskCard key={task.id} id={task.id} epic={epicById.get(task.epicId) ?? task.epicId} title={task.title} points={task.storyPoints == null ? '' : String(task.storyPoints)} assigneeName={task.assigneeId ? memberById.get(task.assigneeId) : ''} status={LIVE_KEY[task.status]} liveStatus={task.status} version={task.version} blocked={task.blocked ? (task.blockedReason ?? 'Blocked') : ''} editable={!archived && canMutate(task) ? 'yes' : 'no'} live onStatus={() => { window.dispatchEvent(new Event('easel-board-refresh')); }} />)}</div>
+            <div className="cards">{column.tasks.map((task) => <TaskCard key={task.id} id={task.id} epic={epicById.get(task.epicId) ?? task.epicId} title={task.title} points={task.storyPoints == null ? '' : String(task.storyPoints)} assigneeName={task.assigneeId ? memberById.get(task.assigneeId) : ''} status={LIVE_KEY[task.status]} live={true} liveStatus={task.status} version={task.version} blocked={task.blocked ? (task.blockedReason ?? 'Blocked') : ''} editable={!archived && canMutate(task) ? 'yes' : 'no'} onStatus={() => { window.dispatchEvent(new Event('easel-board-refresh')); }} />)}</div>
           </section>)}
         </div>
       )}
       <div className="row between"><span className="small muted">Page {page + 1} of {pageCount}</span><div className="row"><button className="btn sm" disabled={page === 0 || loading} onClick={() => setPage((current) => current - 1)}>Previous</button><button className="btn sm" disabled={page + 1 >= pageCount || loading} onClick={() => setPage((current) => current + 1)}>Next</button></div></div>
-      <div className="banner b-info"><svg className="ic" aria-hidden="true"><use href="#i-info" /></svg><span>{role === 'pm' ? 'Project Manager view: status is read-only.' : 'Live project data.'}</span></div>
+      {role === 'pm' && <div className="banner b-info"><svg className="ic" aria-hidden="true"><use href="#i-info" /></svg><span>Project Manager view: status is read-only.</span></div>}
     </div>
   );
 }

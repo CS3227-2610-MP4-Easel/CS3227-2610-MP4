@@ -8,6 +8,7 @@ const listTasks = vi.fn();
 const listEpics = vi.fn();
 const listMembers = vi.fn();
 const listCheckpoints = vi.fn();
+const listSprints = vi.fn();
 const createCheckpoint = vi.fn();
 const getTask = vi.fn();
 const updateTask = vi.fn();
@@ -30,6 +31,7 @@ vi.mock('../lib/api', async () => {
     listEpicsLive_16: (...args: unknown[]) => listEpics(...args),
     listMembersLive_9: (...args: unknown[]) => listMembers(...args),
     listCheckpointsLive_12: (...args: unknown[]) => listCheckpoints(...args),
+    listSprintsLive_27: (...args: unknown[]) => listSprints(...args),
     createCheckpointLive_13: (...args: unknown[]) => createCheckpoint(...args),
     getTaskLive_22: (...args: unknown[]) => getTask(...args),
     updateTaskLive_23: (...args: unknown[]) => updateTask(...args),
@@ -69,6 +71,7 @@ beforeEach(() => {
   listEpics.mockReset().mockResolvedValue({ items: [{ id: 'epic-1', projectId: PROJECT, checkpointId: null, title: 'Live epic', description: null, position: 0, taskCount: 1, pointsTotal: 3, createdAt: '', updatedAt: '', version: 1 }], page: 0, size: 100, total: 1 });
   listMembers.mockReset().mockResolvedValue([{ userId: 'user-1', displayName: 'Ada Lead', role: 'DEVELOPER', addedAt: '' }, { userId: 'user-1', displayName: 'Ada Lead', role: 'DEVELOPER', addedAt: '' }]);
   listCheckpoints.mockReset().mockResolvedValue([]);
+  listSprints.mockReset().mockResolvedValue({ items: [{ id: 'sprint-must-not-be-used', projectId: PROJECT, name: 'Sprint 1: Test', status: 'ACTIVE', startDate: '', endDate: '', completedPoints: 0, version: 1 }], page: 0, size: 100, total: 1 });
   createCheckpoint.mockReset().mockResolvedValue({ id: 'checkpoint-1', projectId: PROJECT, name: 'Launch', targetDate: '2026-12-01', createdAt: '', updatedAt: '', version: 1 });
   getTask.mockReset().mockResolvedValue(task);
   updateTask.mockReset().mockResolvedValue({ ...task, title: 'Saved task', version: 5 });
@@ -83,6 +86,8 @@ describe('W5 live planning surfaces', () => {
   it('renders a close button for the checkpoint dialog', () => {
     render(liveView(<AddCheckpointForm dialog />));
     expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(router.push).toHaveBeenCalledWith(`/projects/${PROJECT}/checkpoints`);
   });
 
   it('F3 F6 E1 E2 loads UUID board data, maps supported filters, resets pagination, and renders no sprint control', async () => {
@@ -98,6 +103,15 @@ describe('W5 live planning surfaces', () => {
     fireEvent.change(screen.getByLabelText('Status filter'), { target: { value: 'IN_PROGRESS' } });
     await act(async () => {});
     expect(listTasks).toHaveBeenLastCalledWith(PROJECT, 0, 20, { status: 'IN_PROGRESS' });
+  });
+
+  it('closes a task status menu when clicking outside the task card', async () => {
+    render(liveView(<BoardView role="lead" />));
+    expect(await screen.findByText('Live task')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Change status' }));
+    expect(screen.getByRole('menu')).toBeTruthy();
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByRole('menu')).toBeNull();
   });
 
   it('F5 E11 E13 refetches the board after a live status mutation', async () => {
@@ -150,6 +164,19 @@ describe('W5 live planning surfaces', () => {
     render(liveView(<BacklogList />));
     expect(await screen.findByText('Live task')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Live task' }).getAttribute('href')).toBe(`/projects/${PROJECT}/board?task=task-1`);
+    expect(screen.getByText('Sprint 1')).toBeTruthy();
+  });
+
+  it('filters live backlog tasks by title and assignment state', async () => {
+    listTasks.mockResolvedValue({ items: [task, { ...task, id: 'task-2', title: 'Unscheduled task', sprintId: null, assigneeId: null, storyPoints: null }], page: 0, size: 100, total: 2 });
+    render(liveView(<BacklogList />));
+    expect(await screen.findByText('Unscheduled task')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Search by title'), { target: { value: 'Live task' } });
+    expect(screen.queryByText('Unscheduled task')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Search by title'), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Unassigned' }));
+    expect(screen.getByText('Unscheduled task')).toBeTruthy();
+    expect(screen.queryByText('Live task')).toBeNull();
   });
 
   it('F4 N1 E9 initializes live task creation from live epics and never sends sprintId', async () => {
@@ -233,6 +260,16 @@ describe('W5 live planning surfaces', () => {
     expect(screen.getByRole('alert').textContent).toContain('This changed elsewhere. Reload before trying again.');
     expect(screen.getByRole('button', { name: 'Reload' })).toBeTruthy();
     expect(updateTask).toHaveBeenCalledTimes(1);
+  });
+
+  it('explains closed-sprint task conflicts without offering a misleading reload', async () => {
+    setStatus.mockRejectedValue(new ApiError('CONFLICT_STATE', 'This changed elsewhere. Reload before trying again.', { status: 409 }));
+    render(liveView(<TaskDrawer />));
+    expect(await screen.findByRole('heading', { name: 'Live task' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'prog' } });
+    await act(async () => {});
+    expect(screen.getByRole('alert').textContent).toContain('This task is in a closed sprint and cannot be changed.');
+    expect(screen.queryByRole('button', { name: 'Reload' })).toBeNull();
   });
 
   it('E7 shows a safe retryable task-load error and rejects a task from another project', async () => {

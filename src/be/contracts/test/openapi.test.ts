@@ -51,3 +51,15 @@ test("F4/E22 identical schema registrations are idempotent", () => {
   const registry = createOpenApiSchemaRegistry([["SAME", { type: "string" }], ["SAME", { type: "string" }]]);
   assert.deepEqual(registry.SAME, { type: "string" });
 });
+
+test("W14 endpoint 27/46 pages and mutation bounds are represented in OpenAPI", () => {
+  const sprintPage = OPENAPI_SCHEMA_REGISTRY.SPRINT_LISTResponse as any;
+  const proposalPage = OPENAPI_SCHEMA_REGISTRY.LEAD_PROPOSAL_LISTResponse as any;
+  assert.equal(sprintPage.type, "object");
+  assert.equal(sprintPage.properties.page.maximum, 10000);
+  assert.equal(sprintPage.properties.size.maximum, 100);
+  assert.equal(proposalPage.type, "object");
+  assert.equal(proposalPage.properties.items.items.properties.kind.enum[0], "REPLAN");
+  assert.equal((OPENAPI_SCHEMA_REGISTRY.LEAD_PROPOSAL_APPROVERequest as any).properties.suggestionIds.maxItems, 100);
+  assert.equal((OPENAPI_SCHEMA_REGISTRY.SPRINT_CLOSERequest as any).properties.carryOver.maxItems, 1000);
+});

@@ -35,6 +35,15 @@ test("endpoint 43 is member-project scoped without a project path", () => {
   assert.equal(policy?.path, "/api/lead/overview");
 });
 
+test("W14 list responses are paged and rejection is member-gated before session-owner validation", () => {
+  const sprintList = getPolicyMap().find((entry) => entry.policyKey === "endpoint-27");
+  const proposalList = getPolicyMap().find((entry) => entry.policyKey === "endpoint-46");
+  const rejection = getPolicyMap().find((entry) => entry.policyKey === "endpoint-48");
+  assert.equal(sprintList?.responseSchema.$ref, "#/components/schemas/SPRINT_LISTResponse");
+  assert.equal(proposalList?.responseSchema.$ref, "#/components/schemas/LEAD_PROPOSAL_LISTResponse");
+  assert.equal(rejection?.predicate, "MEMBER");
+});
+
 test("F5/E10-E13 endpoint 42 adopts the PR #6 facts contract while endpoint 36 stays PM Tier 1", () => {
   const facts = getPolicyMap().find((entry) => entry.policyKey === "endpoint-42");
   assert.equal(facts?.operationId, "PROJECT_FACTS_READ");

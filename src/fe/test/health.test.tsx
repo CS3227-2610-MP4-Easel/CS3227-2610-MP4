@@ -36,8 +36,8 @@ function facts(pointsTotal: number) {
   };
 }
 
-function digest(projectId: string, explanation: string) {
-  return { id: projectId, projectId, facts: facts(10), explanation, degraded: false, flagged: false, proposalId: null, cached: false, createdAt: '2026-11-12T00:00:00.000Z' };
+function digest(projectId: string, explanation: string, overload: Array<{ userId: string; displayName: string; openPoints: number; avgCompletedPerSprint: number; projects: Array<{ projectId: string; name: string; openPoints: number }> }> = []) {
+  return { id: projectId, projectId, facts: { ...facts(10), overload }, explanation, degraded: false, flagged: false, proposalId: null, cached: false, createdAt: '2026-11-12T00:00:00.000Z' };
 }
 
 function view(projectId: string) {
@@ -110,5 +110,15 @@ describe('Health route identity', () => {
     expect(screen.queryByText(/Progress is steady and all three checkpoints/)).toBeNull();
     expect(screen.queryByText('Suggested changes (3)')).toBeNull();
     expect(document.querySelector('.sk')).toBeTruthy();
+  });
+
+  it('shows latest digest overload on the initial live health load', async () => {
+    getFacts.mockResolvedValue(facts(10));
+    getLatestDigest.mockResolvedValue(digest(A, 'Current digest', [{ userId: 'u1', displayName: 'Alex Member', openPoints: 9, avgCompletedPerSprint: 4, projects: [{ projectId: A, name: 'W13 Delivery Demo', openPoints: 9 }] }]));
+
+    render(view(A));
+    await act(async () => {});
+
+    expect(screen.getByText('Alex Member')).toBeTruthy();
   });
 });

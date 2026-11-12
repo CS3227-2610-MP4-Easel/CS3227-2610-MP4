@@ -72,6 +72,11 @@ export function registerRoute(app: Hono<ApiEnv>, route: RegisteredRoute, deps?: 
       return response;
     } catch (error) {
       if (scope.tx && !settled) await scope.tx.rollback();
+      if (route.method !== "GET") {
+        const code = error instanceof HttpError ? error.code : error instanceof Error && /^[A-Z][A-Z0-9_]+$/.test(error.message) ? error.message : "INTERNAL_ERROR";
+        const status = error instanceof HttpError ? error.status : 500;
+        console.info("API mutation outcome", { requestId: c.get("requestId"), operation: route.operationId, status, code });
+      }
       throw error;
     }
   });

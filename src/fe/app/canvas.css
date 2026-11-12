@@ -117,7 +117,7 @@ textarea.in{height:auto;padding:10px 12px;resize:none}
 .sk{background:var(--fill);border-radius:6px;height:12px}
 .empty{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;padding:48px 24px;color:var(--muted)}
 .empty .ico{width:44px;height:44px;border-radius:12px;background:var(--accent-s);color:var(--accent-t);display:flex;align-items:center;justify-content:center}
-.sel{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:1px solid var(--input-line);border-radius:8px;background:var(--surface);font-weight:600;font-size:12px}
+.sel{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:1px solid var(--input-line);border-radius:8px;background:var(--surface);font-weight:600;font-size:12px;cursor:pointer}
 .check{width:18px;height:18px;border:1.5px solid var(--check-line);border-radius:5px;background:var(--surface);flex:none;display:inline-flex;align-items:center;justify-content:center;color:#fff}
 .check.on{background:var(--accent);border-color:var(--accent-t)}
 .stepper{display:flex;gap:8px;align-items:center}

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { A, r, useRole } from '../../lib/nav';
 import { ApiError, listProjectsLive_6, type LiveProjectDetail, type Page } from '../../lib/api';
+import { useAuthMode } from '../../lib/auth/mode-context';
 import { useProjectRoute } from '../../lib/api/project-mode';
 import Top from './Top';
 
@@ -11,7 +12,8 @@ const isUnauthorized = (e: unknown) => e instanceof ApiError && e.status === 401
 
 function LiveRow({ project }: { project: LiveProjectDetail }) {
   const p = project.progress;
-  return <Link href={r('Overview.dc.html', project.id)} className="rowt" style={{ padding: '20px', borderBottom: '1px solid var(--line2)' }}><div style={{ flex: 1, minWidth: 0 }} className="stack8"><div className="row wrap"><h3 style={{ margin: 0 }}>{project.name}</h3><span className={`chip ${project.status === 'ARCHIVED' ? 'c-line' : 'c-ok'}`}><svg className="ic" aria-hidden="true"><use href={project.status === 'ARCHIVED' ? '#i-lock' : '#i-check'} /></svg>{project.status === 'ARCHIVED' ? 'Archived' : 'Active'}</span></div><p className="muted" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{project.brief ?? 'No project brief yet.'}</p></div><div style={{ width: 260 }} className="stack8"><div className="row between small"><span className="muted">Points done</span><span className="b num">{p.pointsDone} of {p.pointsTotal} · {p.percent}%</span></div><div className="bar big"><i style={{ width: `${p.percent}%` }} /></div></div><svg className="ic lg muted" aria-hidden="true" style={{ alignSelf: 'center' }}><use href="#i-right" /></svg></Link>;
+  const percent = Math.ceil(p.percent);
+  return <Link href={r('Overview.dc.html', project.id)} className="rowt" style={{ padding: '20px', borderBottom: '1px solid var(--line2)' }}><div style={{ flex: 1, minWidth: 0 }} className="stack8"><div className="row wrap"><h3 style={{ margin: 0 }}>{project.name}</h3><span className={`chip ${project.status === 'ARCHIVED' ? 'c-line' : 'c-ok'}`}><svg className="ic" aria-hidden="true"><use href={project.status === 'ARCHIVED' ? '#i-lock' : '#i-check'} /></svg>{project.status === 'ARCHIVED' ? 'Archived' : 'Active'}</span></div><p className="muted" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{project.brief ?? 'No project brief yet.'}</p></div><div style={{ width: 260 }} className="stack8"><div className="row between small"><span className="muted">Points done</span><span className="b num">{p.pointsDone} of {p.pointsTotal} · {percent}%</span></div><div className="bar big"><i style={{ width: `${percent}%` }} /></div></div><svg className="ic lg muted" aria-hidden="true" style={{ alignSelf: 'center' }}><use href="#i-right" /></svg></Link>;
 }
 
 function Prototype({ role }: { role: string }) {
@@ -20,7 +22,9 @@ function Prototype({ role }: { role: string }) {
 
 export default function Projects() {
   const role = useRole();
+  const authMode = useAuthMode();
   const { mode } = useProjectRoute();
+  const live = authMode === 'firebase' || mode === 'live';
   const [page, setPage] = useState(0);
   const [result, setResult] = useState<Page<LiveProjectDetail> | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -29,11 +33,10 @@ export default function Projects() {
   const request = useRef(0);
   useEffect(() => {
     const current = ++request.current;
-    if (mode !== 'live') { setPage(0); setResult(null); setError(null); setLoading(false); return; }
+    if (!live) { setPage(0); setResult(null); setError(null); setLoading(false); return; }
     setLoading(true); setResult(null); setError(null);
     listProjectsLive_6(page).then((next) => { if (request.current === current) setResult(next); }).catch((e: unknown) => { if (request.current === current && !isUnauthorized(e)) setError(safeError(e)); }).finally(() => { if (request.current === current) setLoading(false); });
-  }, [mode, page, retry]);
-  const live = mode === 'live';
+  }, [live, page, retry]);
   const total = result?.total ?? 0;
   const from = result && result.items.length ? page * result.size + 1 : 0;
   const to = result ? Math.min(page * result.size + result.items.length, total) : 0;

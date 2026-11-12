@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 let fbCb: ((u: { uid: string; email: string | null } | null) => void) | null = null;
@@ -67,7 +67,7 @@ describe('top bar', () => {
       items: [{
         id: '550e8400-e29b-41d4-a716-446655440000', name: 'Live Campus', brief: 'Live brief', status: 'ACTIVE',
         createdBy: 'u1', createdAt: '2026-11-12T00:00:00Z', updatedAt: '2026-11-12T00:00:00Z', version: 1,
-        progress: { pointsTotal: 10, pointsDone: 4, percent: 40, unestimatedTasks: 0 },
+        progress: { pointsTotal: 10, pointsDone: 4, percent: 33.333333, unestimatedTasks: 0 },
       }], page: 0, size: 20, total: 1,
     }), { status: 200 }));
     render(
@@ -77,6 +77,7 @@ describe('top bar', () => {
     );
     expect(await screen.findByRole('heading', { name: 'Live Campus' })).toBeTruthy();
     expect(screen.getByRole('link', { name: /Live Campus/ }).getAttribute('href')).toBe('/projects/550e8400-e29b-41d4-a716-446655440000');
+    expect(screen.getByText('4 of 10 · 34%')).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Campus Eats Mobile App' })).toBeNull();
   });
 
@@ -84,6 +85,29 @@ describe('top bar', () => {
     render(<Projects />);
     expect(screen.getByRole('heading', { name: 'Campus Eats Mobile App' })).toBeTruthy();
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('closes the project switcher when clicking outside it', async () => {
+    await mountAs('DEV_LEAD', 'Dev Lead');
+    fireEvent.click(screen.getByRole('button', { name: 'Switch project' }));
+    expect(screen.getByRole('menu')).toBeTruthy();
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  it('preserves each live project link while already inside a project', async () => {
+    const B = '660e8400-e29b-41d4-a716-446655440001';
+    fetchMock
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'u1', email: 'p@x.io', displayName: 'PM', role: 'PM' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ items: [
+        { id: A, name: 'Current project', brief: null, status: 'ACTIVE', createdBy: 'u1', createdAt: '', updatedAt: '', version: 1, progress: { pointsTotal: 0, pointsDone: 0, percent: 0, unestimatedTasks: 0 } },
+        { id: B, name: 'Other project', brief: null, status: 'ACTIVE', createdBy: 'u1', createdAt: '', updatedAt: '', version: 1, progress: { pointsTotal: 0, pointsDone: 0, percent: 0, unestimatedTasks: 0 } },
+      ], page: 0, size: 100, total: 2 }), { status: 200 }));
+    render(<AuthRoot mode="firebase"><ProjectRouteContext.Provider value={projectRoute(`/projects/${A}`)}><Top /></ProjectRouteContext.Provider></AuthRoot>);
+    await act(async () => fbCb!({ uid: 'a', email: 'p@x.io' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Switch project' }));
+    expect(screen.getByRole('menuitem', { name: /Current project/ }).getAttribute('href')).toBe(`/projects/${A}`);
+    expect(screen.getByRole('menuitem', { name: /Other project/ }).getAttribute('href')).toBe(`/projects/${B}`);
   });
 
   it('E1 keeps the live list in loading state before the first response and then shows its empty state', async () => {

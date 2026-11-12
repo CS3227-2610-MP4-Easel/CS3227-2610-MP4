@@ -40,5 +40,8 @@ test("N6/OpenAPI parity has exactly one generated operation per policy record", 
     assert.deepEqual(response.required, ["items", "page", "size", "total"]);
     assert.equal(response.properties.items.type, "array");
   }
+  assert.equal((components.SPRINT_LISTResponse as any).properties.items.type, "array");
+  assert.equal((components.LEAD_PROPOSAL_APPROVERequest as any).properties.suggestionIds.maxItems, 100);
+  assert.deepEqual((components.SPRINT_CLOSERequest as any).required, ["version", "carryOver"]);
   assert.equal((components.PROJECT_MEMBER_LISTResponse as any).type, "array");
 });

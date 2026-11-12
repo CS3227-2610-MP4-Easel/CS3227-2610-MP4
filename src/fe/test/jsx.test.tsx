@@ -14,6 +14,7 @@ vi.mock('../lib/api', async () => {
 });
 
 import OverviewLead from '../components/canvas/OverviewLead';
+import { ProgressCard } from '../components/live/overview';
 import { ApiError } from '../lib/api';
 
 const A = '550e8400-e29b-41d4-a716-446655440000';
@@ -28,6 +29,12 @@ describe('jsx', () => {
   it('E82 compiles JSX in a .tsx test', () => {
     render(<p>jsx ok</p>);
     expect(screen.getByText('jsx ok').tagName).toBe('P');
+  });
+
+  it('rounds overview progress percentages up to whole numbers', () => {
+    render(<ProgressCard live progress={{ pointsTotal: 3, pointsDone: 1, percent: 33.333333, unestimatedTasks: 0, velocity: [] }} />);
+    expect(screen.getByText('34%')).toBeTruthy();
+    expect(screen.queryByText('33.333333%')).toBeNull();
   });
 
   it('F2 E2 never renders prototype overview values while a live UUID request is pending', async () => {
