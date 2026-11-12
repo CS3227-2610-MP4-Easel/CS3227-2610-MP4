@@ -8,6 +8,7 @@ const listTasks = vi.fn();
 const listEpics = vi.fn();
 const listMembers = vi.fn();
 const listCheckpoints = vi.fn();
+const listSprints = vi.fn();
 const createCheckpoint = vi.fn();
 const getTask = vi.fn();
 const updateTask = vi.fn();
@@ -30,6 +31,7 @@ vi.mock('../lib/api', async () => {
     listEpicsLive_16: (...args: unknown[]) => listEpics(...args),
     listMembersLive_9: (...args: unknown[]) => listMembers(...args),
     listCheckpointsLive_12: (...args: unknown[]) => listCheckpoints(...args),
+    listSprintsLive_27: (...args: unknown[]) => listSprints(...args),
     createCheckpointLive_13: (...args: unknown[]) => createCheckpoint(...args),
     getTaskLive_22: (...args: unknown[]) => getTask(...args),
     updateTaskLive_23: (...args: unknown[]) => updateTask(...args),
@@ -69,6 +71,7 @@ beforeEach(() => {
   listEpics.mockReset().mockResolvedValue({ items: [{ id: 'epic-1', projectId: PROJECT, checkpointId: null, title: 'Live epic', description: null, position: 0, taskCount: 1, pointsTotal: 3, createdAt: '', updatedAt: '', version: 1 }], page: 0, size: 100, total: 1 });
   listMembers.mockReset().mockResolvedValue([{ userId: 'user-1', displayName: 'Ada Lead', role: 'DEVELOPER', addedAt: '' }, { userId: 'user-1', displayName: 'Ada Lead', role: 'DEVELOPER', addedAt: '' }]);
   listCheckpoints.mockReset().mockResolvedValue([]);
+  listSprints.mockReset().mockResolvedValue({ items: [{ id: 'sprint-must-not-be-used', projectId: PROJECT, name: 'Sprint 1: Test', status: 'ACTIVE', startDate: '', endDate: '', completedPoints: 0, version: 1 }], page: 0, size: 100, total: 1 });
   createCheckpoint.mockReset().mockResolvedValue({ id: 'checkpoint-1', projectId: PROJECT, name: 'Launch', targetDate: '2026-12-01', createdAt: '', updatedAt: '', version: 1 });
   getTask.mockReset().mockResolvedValue(task);
   updateTask.mockReset().mockResolvedValue({ ...task, title: 'Saved task', version: 5 });
@@ -150,6 +153,19 @@ describe('W5 live planning surfaces', () => {
     render(liveView(<BacklogList />));
     expect(await screen.findByText('Live task')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Live task' }).getAttribute('href')).toBe(`/projects/${PROJECT}/board?task=task-1`);
+    expect(screen.getByText('Sprint 1')).toBeTruthy();
+  });
+
+  it('filters live backlog tasks by title and assignment state', async () => {
+    listTasks.mockResolvedValue({ items: [task, { ...task, id: 'task-2', title: 'Unscheduled task', sprintId: null, assigneeId: null, storyPoints: null }], page: 0, size: 100, total: 2 });
+    render(liveView(<BacklogList />));
+    expect(await screen.findByText('Unscheduled task')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Search by title'), { target: { value: 'Live task' } });
+    expect(screen.queryByText('Unscheduled task')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Search by title'), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Unassigned' }));
+    expect(screen.getByText('Unscheduled task')).toBeTruthy();
+    expect(screen.queryByText('Live task')).toBeNull();
   });
 
   it('F4 N1 E9 initializes live task creation from live epics and never sends sprintId', async () => {
