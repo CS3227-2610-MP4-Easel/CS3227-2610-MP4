@@ -1,6 +1,7 @@
 import { NotMember, type Core } from "@agile/contracts";
 import { createApply, type ApplyDb } from "./apply.js";
 import { createDerived, type DerivedDb } from "./derived.js";
+import { createSprintService, type SprintService } from "./sprints.js";
 
 type Row = Record<string, unknown>;
 type FindFirst = (args: Record<string, unknown>) => Promise<Row | null>;
@@ -16,6 +17,9 @@ export type CoreDependencies = {
   archivedMembership?: (userId: string, projectId: string) => Promise<boolean>;
 };
 
+/** Core's frozen contract stays narrow; W14 services are exposed on the factory result. */
+export type CoreServices = Core & { sprints: SprintService };
+
 /** Serialize a writable project against archive mutations inside the caller's transaction. */
 export async function lockProjectForMutation(tx: { project?: { update(args: Row): Promise<Row> } }, projectId: string): Promise<void> {
   if (typeof tx.project?.update === "function") await tx.project.update({ where: { id: projectId }, data: { version: { increment: 0 } } });
@@ -23,10 +27,10 @@ export async function lockProjectForMutation(tx: { project?: { update(args: Row)
 
 const unavailable = async (): Promise<never> => { throw new Error("CORE_OPERATION_UNAVAILABLE"); };
 
-export function createCore({ db, archivedMembership = async () => false }: CoreDependencies): Core {
+export function createCore({ db, archivedMembership = async () => false }: CoreDependencies): CoreServices {
   const derived = createDerived(db);
   const apply = createApply();
-  return {
+  const core: Core = {
     async requireMember(userId, projectId) {
       const membership = await db.projectMember?.findFirst({ where: { userId, projectId } });
       if (membership && !await archivedMembership(userId, projectId)) return;
@@ -42,4 +46,9 @@ export function createCore({ db, archivedMembership = async () => false }: CoreD
     applyPlan: apply.applyPlan,
     applyReplan: apply.applyReplan,
   };
+  const sprints = createSprintService(db as never, {
+    requireMember: async (userId, projectId) => core.requireMember(userId, projectId),
+    archivedMembership,
+  });
+  return { ...core, sprints };
 }
