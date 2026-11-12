@@ -26,7 +26,7 @@ pages. W14 sprint/re-plan interactions remain out of scope.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W5/W8 | Active | Modal and overview fixes complete; digest HTTP 500 remains a local runtime blocker | Inspect the running API error for digest persistence failure | 2026-11-12 |
+| S1 | 2026-11-12 | Codex | W5/W8 | Active | Modal, overview, and local digest runtime fixes complete | Restart Next and browser-retest the health page | 2026-11-12 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human` (name the question).
 
@@ -35,7 +35,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human` (name the ques
 - [x] Obtain Gate 1 approval for the revised W5 UI design spec covering blockers 1–7.
 - [x] Obtain Gate 2 approval for the five-task W5 implementation plan.
 - [x] Implement approved W5 frontend API clients and screen wiring.
-- [ ] Resolve browser-found overview, digest, and modal defects; rerun focused tests and browser retest.
+- [x] Resolve browser-found overview, digest, and modal defects; rerun focused tests and browser retest.
 - [ ] **Handover:** Add focused frontend coverage and rerun the required typechecks after the managed worktree permits `src/fe/tsconfig.tsbuildinfo` writes.
 
 ## 2. Workstreams
@@ -74,8 +74,8 @@ One line per change on this branch: what changed and why, with a commit as the r
 - **Consequence:** The managed sandbox required escalated repository cache-write access; the commands pass when run with that access.
 - **What was done:** The focused matrix, full frontend tests, frontend lint, root lint, and non-incremental frontend typecheck pass; no production repair was made.
 
-### Q~2 — Local digest POST still returns HTTP 500
+### Q~2 — Local digest POST returned HTTP 500 before local AI mode was set
 
-- **What:** Browser verification still shows `POST /api/lead/projects/{id}/digests` returning the generic error toast, while facts and latest-digest reads load.
-- **Consequence:** The UI remains usable and reports the backend failure, but digest persistence/generation cannot be claimed fixed without the running API's server-side exception.
-- **What was done:** Confirmed the local database has both W8 digest migrations; no speculative fallback was added that would hide a persistence failure.
+- **What:** `LLM_MODE=live` caused local lead-runtime initialization to fail with `Invalid setting SOCLAAS_API_KEY`; the safe API mapping exposed only HTTP 500.
+- **Consequence:** Facts and digest reads failed before reaching their database logic.
+- **What was done:** Set local `.env.local` to `LLM_MODE=mock`; direct verification now returns facts and persists a degraded digest. Restart the dev server to reload it.
