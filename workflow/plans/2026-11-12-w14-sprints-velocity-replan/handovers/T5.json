@@ -2,7 +2,7 @@
   "task": "T5",
   "status": "done",
   "summary": "Registered W14 sprint/proposal routes, composed SprintService and ProposalService with the lead runtime, extended resource resolution and added API contract/security coverage.",
-  "commit": "ae6a431",
+  "commit": "62a1229112f0f906d99489917159119132d73293",
   "produces": [
     { "kind": "route", "name": "createSprintRoutes", "where": "src/be/api/src/routes/sprints.ts", "note": "Endpoints 27–33 with bounded paging, strict mutation bodies and stable domain-error mapping." },
     { "kind": "route", "name": "createProposalRoutes", "where": "src/be/api/src/routes/proposals.ts", "note": "Endpoints 46–48 with proposal paging, approval/rejection bodies and session-owner policy integration." },
@@ -11,13 +11,13 @@
     { "kind": "other", "name": "W14 resource resolution", "where": "src/be/core/src/resolvers.ts and src/be/proposals/src/resolvers.ts", "note": "Sprint mutations resolve non-deleted sprint ownership; lead proposals are restricted to REPLAN resources and project scope." }
   ],
   "next": "T6 can consume the registered endpoint paths, paged response envelopes and strict W14 request bodies.",
-  "deviations": [
-    { "what": "Unrelated in-progress T4 review edits remain uncommitted in the shared worktree.", "why": "They were present before T5 and were preserved; T5 was verified from a clean commit with those edits temporarily stashed.", "needs": "orchestrator" }
-  ],
+  "deviations": [],
   "edge_cases": ["E12", "E13", "E16", "E17", "E19", "E20", "E21", "E24"],
   "checks": {
     "build": "pass",
-    "focused_tests": "pass: 14/14 API route, authorization and OpenAPI tests",
+    "focused_tests": "pass: API, contracts, source-scan and proposals suites",
+    "full_tests": "pass: backend 939, skipped 117; frontend 230",
+    "typecheck": "pass: backend and frontend",
     "diff_check": "pass",
     "secret_scan": "pass"
   }

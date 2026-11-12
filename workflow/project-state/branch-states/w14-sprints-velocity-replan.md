@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — T4 accepted; session paused for T5 handover validation
+- **Last updated:** 2026-11-13 by Codex — T5 contract fixes pass full tests; final archived-resource review remains
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Paused | T4 accepted after transaction, runtime and E27 fixes; T5 handover remains present | Validate T5 handover/review, then continue T6 from the T5 handover | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Active | Final T5 security review | Confirm archived sprint/proposal mutation mapping and narrowed composition-root source-scan exemption before accepting T5 and starting T6 | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -54,7 +54,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W14 | Sprints, velocity and re-plan | Building | [spec](../../specs/2026-11-12-w14-sprints-velocity-replan-design.md) | [plan](../../plans/2026-11-12-w14-sprints-velocity-replan/plan.md) | T4 Done; T5 handover validation is next | — |
+| W14 | Sprints, velocity and re-plan | Building | [spec](../../specs/2026-11-12-w14-sprints-velocity-replan-design.md) | [plan](../../plans/2026-11-12-w14-sprints-velocity-replan/plan.md) | T5 final review: contract fixes pass; archived-resource semantics pending | — |
 
 ## 3. Changes
 
@@ -89,6 +89,9 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-13 | T5 registered endpoints 27–33 and 46–48, composed SprintService/ProposalService with lead runtime, extended scoped resolvers, and added route/security/OpenAPI tests | W14 | commit `f2d52a8`; handover `T5.json` |
 | 2026-11-13 | Fixed T4 review blockers: degraded sessions close through the transaction client, failed persistence no longer mutates sessions after rollback, cached lead runtimes accept late ProposalService wiring safely, and rollback/E27 barrier coverage now tracks digest/proposal/session state | W14 | commit `745e889`; handover `T4.json` |
 | 2026-11-13 | Tightened E27 race fixture to model both admitted sessions and assert the losing transaction leaves session outcomes unchanged | W14 | T4 test follow-up |
+| 2026-11-13 | Read-only attacker review of T5 commit f2d52a8 found route contract and observability blockers; no source or test files edited | W14 | review |
+| 2026-11-13 | T5 implementer review passed composition, route registration, typecheck and current OpenAPI tests but found spec-contract gaps in proposal filtering, mutation bounds, proposal responses and endpoint-48 error status; no source edits made | W14 | review; lesson L~1 |
+| 2026-11-13 | Applied T5 contract and security fixes: proposal status filtering, non-empty approval, optimistic PATCH/delete bounds, session outcomes, member-gated rejection, mutation audit records, deleted-sprint resolution and composition-root-only source-scan exemption; full test suite passes | W14 | working tree; final review |
 
 ## 4. Decisions
 
@@ -104,3 +107,13 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | C~6 | 2026-11-12 | Serialize REPLAN operations project-first then proposal-second, and validate current target state without claiming historical snapshot-version detection. | Prevents lock inversion/deadlock; the frozen suggestion schema has no expected-version token. | W14 spec review |
 | C~7 | 2026-11-12 | Persist immutable `appliedSuggestionIds` in the existing proposal JSON payload and define an exact transaction-aware session-close gateway. | Needed for idempotent approved replay and atomic proposal/domain/session outcomes without a new table or Prisma column; post-commit close was rejected. | W14 second review |
 | C~8 | 2026-11-12 | Make proposal creation/supersession, session binding, source-task equality, page/carry-over limits and conflict details explicit. | Removes implementation discretion at the W8-to-W14 boundary and bounds untrusted request work. | W14 second review |
+
+## Lessons
+
+### L~1 — Review route contracts against the approved spec, not only generated schemas
+
+- **Date:** 2026-11-12
+- **Cause:** T5 tests compared routes to current schemas but omitted the spec's status filter, non-empty suggestion selection, session outcome fields, and endpoint-48 owner conflict status.
+- **Rule:** Every route review must exercise optional filters, non-empty bounds, response fields, and exact error precedence.
+- **Scope:** role:implementer
+- **Found by:** T5 implementer review of f2d52a8
