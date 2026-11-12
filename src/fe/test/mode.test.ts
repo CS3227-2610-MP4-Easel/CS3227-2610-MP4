@@ -74,6 +74,7 @@ describe('project route mode', () => {
   });
 
   it('E14 rejects role-excluded state and mutation-dialog URLs', () => {
+    expect(resolve('/projects', undefined, 'lead')).toEqual({ forbidden: true });
     expect(resolve('/projects/p1/settings', undefined, 'dev')).toEqual({ forbidden: true });
     expect(resolve('/projects/p1/backlog', 'add-task', 'dev')).toEqual({ forbidden: true });
     expect(resolve('/projects/p1/sprints', 'new', 'pm')).toEqual({ forbidden: true });

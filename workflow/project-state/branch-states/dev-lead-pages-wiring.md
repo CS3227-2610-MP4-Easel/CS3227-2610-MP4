@@ -58,6 +58,7 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-12 | Added the F1-F8/N1-N3/E1-E15 verification matrix; required typechecks pass with repository cache-write access | W5 | 560ac31 |
 | 2026-11-12 | Kept live project overview data independent per request and moved W5 route dialogs onto their base pages with Escape/X close behavior | W5/W8 | working tree |
 | 2026-11-12 | Routed authenticated root visits to the role home; Dev Leads now land on `/lead/overview` and stale Projects-list copy was removed | W8 | working tree |
+| 2026-11-12 | Restricted the PM `/projects` list to PMs and redirected authenticated non-PM visitors to their role home | W8 | working tree |
 
 ## Decisions
 

@@ -18,7 +18,7 @@ export const SCREENS: Screen[] = [
   { file: 'Usage', path: '/usage' },
   { file: 'MyWork', path: '/my-work', roles: ['dev'] },
   { file: 'LeadOverview', path: '/lead/overview', roles: ['lead'] },
-  { file: 'Projects', path: '/projects' },
+  { file: 'Projects', path: '/projects', roles: ['pm'] },
   { file: 'ProjectsEmptyPM', path: '/projects', view: 'empty', roles: ['pm'] },
   { file: 'ProjectsEmptyDev', path: '/projects', view: 'empty', roles: ['lead', 'dev'] },
   { file: 'Projects1024', path: '/projects', view: 'narrow' },
