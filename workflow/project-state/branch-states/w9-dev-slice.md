@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** ludannnn (Developer member)
 - **Status:** Approved
 - **Approved:** ludannnn 2026-11-11 (re-approval after the PR #29 review fixes; first approved 2026-11-09)
-- **Last updated:** 2026-11-12 by Claude Opus 5.5 — midnight-blockers fix (C~11); Gate 3 re-approved by the owner
+- **Last updated:** 2026-11-12 by Claude Opus 5.5 — midnight-blockers fix (C~11) approved and pushed to PR #29
 
 **Untouched:** Architecture, Conventions
 
@@ -42,7 +42,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] Gate 3 again: ludannnn approved the PR #29 review fixes and the 2026-11-11 spec amendment (C~10, D~1) on 2026-11-11 ("yes").
 - [x] Push the fixes to PR #29 (`c846ace`, pushed by ludannnn 2026-11-11).
 - [x] Gate 3 again: ludannnn approved the midnight-blockers fix and the spec E76 amendment (C~11, D~2) on 2026-11-12 ("yes").
-- [ ] Push the fix to PR #29 (owner).
+- [x] Push the fix to PR #29 (`2b32ca4`, pushed by ludannnn 2026-11-12).
 - [ ] **Handover:** to the Dev Lead (W5): `core.blockedTasks` now ignores `options.window` and lists every task assigned to the caller that is blocked now (D~1); `context-sources.test.ts` was updated to match (the W5 spec names no window for this source, so it is unchanged). DEV_STANDUP is its only consumer.
 - [ ] **Handover:** to the W4 owner (this owner): the 413 counter moved to `src/be/api/src/body-limit.ts`; `auth.ts` keeps 4,096 bytes. To the W1 owners: `RouteDefinition.bodyLimitBytes` (plan P1) reads the body after authorisation; endpoints 49 (1 MiB), 50 and 51 (16 KiB) use it.
 - [ ] **Handover:** test follow-ups (two-round limit): poll `pg_locks` instead of a 300 ms wait in the E47 lock test, and await the pending write before cleanup on failure (`src/be/dev/test/dev-integration.test.ts`).
