@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | Closed-sprint mutation error copy | Await owner review of commit `TODO` | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Active | Closed-sprint mutation error copy | Await owner review of commit `71b4c08` | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -121,6 +121,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-13 | Checked the live first two backlog tasks: both belong to closed sprints, and endpoint 24 correctly returns `CONFLICT_STATE`/409 for status or block changes | W14 | T6 diagnostic |
 | 2026-11-13 | Mapped `CONFLICT_STATE` task mutations to “This task is in a closed sprint and cannot be changed.” and reserved Reload for true `CONFLICT_VERSION`; added regression coverage | W14 | T6 UI follow-up |
 | 2026-11-13 | Verified frontend typecheck, 237 tests and diff check | W14 | T6 UI follow-up |
+| 2026-11-13 | Committed closed-sprint error copy and reload gating as `71b4c08` | W14 | T6 close-out |
 
 ## 4. Decisions
 
