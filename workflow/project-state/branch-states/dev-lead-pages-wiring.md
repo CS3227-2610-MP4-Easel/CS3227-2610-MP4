@@ -26,7 +26,7 @@ pages. W14 sprint/re-plan interactions remain out of scope.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W5/W8 | Active | Modal, overview, and local digest runtime fixes complete | Restart Next and browser-retest the health page | 2026-11-12 |
+| S1 | 2026-11-12 | Codex | W5/W8 | Active | Modal, overview, local digest runtime, and role-home fixes complete | Owner review | 2026-11-12 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human` (name the question).
 
@@ -57,6 +57,7 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-12 | Completed and reviewed Wave 2 project, board, backlog, checkpoint, member, and task wiring; T5 is now in flight | W5 | 8cdbff5 |
 | 2026-11-12 | Added the F1-F8/N1-N3/E1-E15 verification matrix; required typechecks pass with repository cache-write access | W5 | 560ac31 |
 | 2026-11-12 | Kept live project overview data independent per request and moved W5 route dialogs onto their base pages with Escape/X close behavior | W5/W8 | working tree |
+| 2026-11-12 | Routed authenticated root visits to the role home; Dev Leads now land on `/lead/overview` and stale Projects-list copy was removed | W8 | working tree |
 
 ## Decisions
 

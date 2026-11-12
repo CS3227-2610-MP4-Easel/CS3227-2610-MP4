@@ -11,12 +11,12 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const { slug } = await params;
   const sp = await searchParams;
   const pathname = '/' + (slug ?? []).join('/');
-  if (pathname === '/') redirect('/sign-in');
   const view = typeof sp.task === 'string' ? 'task' : typeof sp.view === 'string' ? sp.view : undefined;
   if (authMode(process.env) !== 'prototype') return <AuthGate pathname={pathname} view={view} />;
   const stored = (await cookies()).get('role')?.value;
   const role: Role = stored === 'lead' || stored === 'dev' || stored === 'pm' ? stored : 'pm';
   const signedIn = Boolean(stored);
+  if (pathname === '/') redirect(signedIn ? HOME[role] : '/sign-in');
   if (!signedIn && !PUBLIC.includes(pathname)) redirect('/sign-in');
   const found = resolve(pathname, view, role);
   const projectId = pathname.match(/^\/projects\/([^/?#]+)/i)?.[1];

@@ -82,6 +82,13 @@ describe('gate', () => {
     expect(document.querySelector('header.top')).toBeNull();
   });
 
+  it('authenticated Dev Lead visiting the root lands on the Dev Lead home', async () => {
+    fetchMock.mockResolvedValue(me('DEV_LEAD'));
+    mount('/');
+    await act(async () => fbCb!(fb));
+    expect(replace).toHaveBeenCalledWith('/lead/overview');
+  });
+
   it('E54 a 401 from me_4 on /projects, then onUserChanged(null), replaces to /sign-in with no error view', async () => {
     vi.mocked(currentUser).mockReturnValue(fb as never);
     fetchMock.mockImplementation(async () => err(401, 'UNAUTHENTICATED'));
