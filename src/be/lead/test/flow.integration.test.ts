@@ -147,7 +147,10 @@ test("E27 barrier race commits one digest/proposal and rolls back the competing 
     db,
     facts: { target: async () => facts, caller: async () => facts },
     proposalService,
-    binding: binding(sessionId, async () => {}),
+    binding: {
+      ...binding(sessionId, async () => {}),
+      sessions: { open: async () => { state.sessions.push({ id: sessionId, projectId: P, userId: U, feature: "LEAD_DIGEST", env: "test", outcome: "OPEN" }); return sessionId; }, close: async () => { throw new Error("public close must not be used"); } },
+    },
     context: { assembleWith: async () => ({ sections: [], provenance: [] }) } as any,
   });
 
@@ -159,5 +162,7 @@ test("E27 barrier race commits one digest/proposal and rolls back the competing 
   assert.equal([first, second].filter((result) => result.status === "rejected" && result.reason?.message === "CONFLICT_STATE").length, 1);
   assert.equal(state.digests.length, 1);
   assert.equal(state.proposals.length, 1);
-  assert.deepEqual(state.sessions, []);
+  assert.equal(state.sessions.length, 2);
+  assert.deepEqual(state.sessions.map((session) => session.outcome), ["OPEN", "OPEN"]);
+  assert.equal(state.proposals[0].sessionId, winner);
 });

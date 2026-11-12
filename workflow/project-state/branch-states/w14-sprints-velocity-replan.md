@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — T4 blocker fixes accepted; T5 remains handed over
+- **Last updated:** 2026-11-13 by Codex — T4 blocker fixes accepted; E27 fixture tightened
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -88,6 +88,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-13 | T4 tester review found E25 covered, but E27 race/rollback coverage is absent and session cleanup remains outside the transaction; no source, test or task files edited | W14 | review |
 | 2026-11-13 | T5 registered endpoints 27–33 and 46–48, composed SprintService/ProposalService with lead runtime, extended scoped resolvers, and added route/security/OpenAPI tests | W14 | commit `f2d52a8`; handover `T5.json` |
 | 2026-11-13 | Fixed T4 review blockers: degraded sessions close through the transaction client, failed persistence no longer mutates sessions after rollback, cached lead runtimes accept late ProposalService wiring safely, and rollback/E27 barrier coverage now tracks digest/proposal/session state | W14 | commit `745e889`; handover `T4.json` |
+| 2026-11-13 | Tightened E27 race fixture to model both admitted sessions and assert the losing transaction leaves session outcomes unchanged | W14 | T4 test follow-up |
 
 ## 4. Decisions
 
