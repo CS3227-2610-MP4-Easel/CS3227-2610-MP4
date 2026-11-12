@@ -152,7 +152,7 @@ function LiveBoard({ projectId, role = 'lead', archived = false }: { projectId: 
         </div>
       )}
       <div className="row between"><span className="small muted">Page {page + 1} of {pageCount}</span><div className="row"><button className="btn sm" disabled={page === 0 || loading} onClick={() => setPage((current) => current - 1)}>Previous</button><button className="btn sm" disabled={page + 1 >= pageCount || loading} onClick={() => setPage((current) => current + 1)}>Next</button></div></div>
-      <div className="banner b-info"><svg className="ic" aria-hidden="true"><use href="#i-info" /></svg><span>{role === 'pm' ? 'Project Manager view: status is read-only.' : 'Live project data.'}</span></div>
+      {role === 'pm' && <div className="banner b-info"><svg className="ic" aria-hidden="true"><use href="#i-info" /></svg><span>Project Manager view: status is read-only.</span></div>}
     </div>
   );
 }
