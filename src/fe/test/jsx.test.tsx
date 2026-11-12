@@ -31,9 +31,9 @@ describe('jsx', () => {
     expect(screen.getByText('jsx ok').tagName).toBe('P');
   });
 
-  it('formats overview progress percentages to at most two decimal places', () => {
+  it('rounds overview progress percentages up to whole numbers', () => {
     render(<ProgressCard live progress={{ pointsTotal: 3, pointsDone: 1, percent: 33.333333, unestimatedTasks: 0, velocity: [] }} />);
-    expect(screen.getByText('33.33%')).toBeTruthy();
+    expect(screen.getByText('34%')).toBeTruthy();
     expect(screen.queryByText('33.333333%')).toBeNull();
   });
 

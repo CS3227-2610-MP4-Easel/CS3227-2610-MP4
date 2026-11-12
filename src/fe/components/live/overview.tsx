@@ -20,9 +20,9 @@ function LiveState({ loading, error, onRetry, children }: { loading?: boolean; e
 // Overview cards, read from the data layer (endpoints 33, 12 and 9).
 export function ProgressCard(props: OverviewLiveProps = {}) {
   const db = useDb();
-  if (props.live) { const p = props.progress; const percent = Math.round((p?.percent ?? 0) * 100) / 100; return <LiveState loading={props.loading} error={props.error} onRetry={props.onRetry}><section className="card"><h3>Progress</h3><div className="row between" style={{ alignItems: 'flex-end' }}><div><span style={{ fontSize: 36, fontWeight: 700, lineHeight: 1 }} className="num">{percent}%</span><span className="muted"> done</span></div><span className="b num">{p?.pointsDone ?? 0} of {p?.pointsTotal ?? 0} points done</span></div><div className="bar big" style={{ margin: '12px 0' }}><i style={{ width: `${percent}%` }}></i></div>{(p?.unestimatedTasks ?? 0) > 0 && <div className="chip c-warn">{p!.unestimatedTasks} task{p!.unestimatedTasks === 1 ? ' has' : 's have'} no estimate</div>}</section></LiveState>; }
+  if (props.live) { const p = props.progress; const percent = Math.ceil(p?.percent ?? 0); return <LiveState loading={props.loading} error={props.error} onRetry={props.onRetry}><section className="card"><h3>Progress</h3><div className="row between" style={{ alignItems: 'flex-end' }}><div><span style={{ fontSize: 36, fontWeight: 700, lineHeight: 1 }} className="num">{percent}%</span><span className="muted"> done</span></div><span className="b num">{p?.pointsDone ?? 0} of {p?.pointsTotal ?? 0} points done</span></div><div className="bar big" style={{ margin: '12px 0' }}><i style={{ width: `${percent}%` }}></i></div>{(p?.unestimatedTasks ?? 0) > 0 && <div className="chip c-warn">{p!.unestimatedTasks} task{p!.unestimatedTasks === 1 ? ' has' : 's have'} no estimate</div>}</section></LiveState>; }
   const p = progressOf(db);
-  const percent = Math.round(p.percent * 100) / 100;
+  const percent = Math.ceil(p.percent);
   return (
     <section className="card">
       <h3>Progress</h3>

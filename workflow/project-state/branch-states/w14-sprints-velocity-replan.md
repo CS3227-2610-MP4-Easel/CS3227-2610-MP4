@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — fixed overview percentage formatting and project-switcher links
+- **Last updated:** 2026-11-13 by Codex — rounded project progress percentages up to whole numbers
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | Fixed overview percentage formatting and project-switcher links; frontend checks pass | Continue W14 close-out or inspect the deployed UI | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Active | Rounded Projects and overview progress percentages up to whole numbers; frontend checks pass | Continue W14 close-out or inspect the deployed UI | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -133,6 +133,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-13 | Replaced the local demo domain data with Campus Eats: 3 real-user members, 3 checkpoints, 4 epics, 4 sprints and 12 tasks; preserved all users and the empty project | W14 | local test setup |
 | 2026-11-13 | Made Dev Lead Projects the authenticated landing page, loaded `/projects` from the live project API in Firebase mode, prevented fixture links during header loading, and preserved UUID project links in the header dropdown; progress is capped at two decimals and velocity labels use `Sprint <number>` | W14 | T6 UI follow-up |
 | 2026-11-13 | Fixed overview progress display to two decimal places and bypassed current-project ID rewriting for live project-switcher links; added regressions for `33.33%` and distinct project destinations | W14 | T6 UI follow-up |
+| 2026-11-13 | Changed Projects and overview progress displays and bars to round percentages up with `Math.ceil`; added regression coverage for `33.333333% → 34%` | W14 | T6 UI follow-up |
 
 ## 4. Decisions
 

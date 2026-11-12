@@ -67,7 +67,7 @@ describe('top bar', () => {
       items: [{
         id: '550e8400-e29b-41d4-a716-446655440000', name: 'Live Campus', brief: 'Live brief', status: 'ACTIVE',
         createdBy: 'u1', createdAt: '2026-11-12T00:00:00Z', updatedAt: '2026-11-12T00:00:00Z', version: 1,
-        progress: { pointsTotal: 10, pointsDone: 4, percent: 40, unestimatedTasks: 0 },
+        progress: { pointsTotal: 10, pointsDone: 4, percent: 33.333333, unestimatedTasks: 0 },
       }], page: 0, size: 20, total: 1,
     }), { status: 200 }));
     render(
@@ -77,6 +77,7 @@ describe('top bar', () => {
     );
     expect(await screen.findByRole('heading', { name: 'Live Campus' })).toBeTruthy();
     expect(screen.getByRole('link', { name: /Live Campus/ }).getAttribute('href')).toBe('/projects/550e8400-e29b-41d4-a716-446655440000');
+    expect(screen.getByText('4 of 10 · 34%')).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Campus Eats Mobile App' })).toBeNull();
   });
 
