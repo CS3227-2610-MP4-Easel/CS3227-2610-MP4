@@ -1,4 +1,4 @@
-import { ProposalPageSchema, ReplanApprovalBodySchema, ReplanApprovalSchema, ReplanProposalSchema, ReplanRejectionBodySchema, policyForRoute, type RouteDefinition } from "@agile/contracts";
+import { ProposalPageSchema, ProposalStatusSchema, ReplanApprovalBodySchema, ReplanApprovalSchema, ReplanRejectionBodySchema, ReplanRejectionSchema, policyForRoute, type RouteDefinition } from "@agile/contracts";
 import { z } from "zod/v3";
 import { ProposalError, type ProposalService } from "@agile/proposals";
 import { HttpError } from "../errors.js";
@@ -34,8 +34,8 @@ const actor = (value: Actor | undefined) => {
 
 export function createProposalRoutes(services: ProposalRouteServices): RouteDefinition[] {
   return [
-    { ...route("endpoint-46"), paramsSchema: Id, querySchema: z.object({ page: z.coerce.number().int().min(0).max(10_000).default(0), size: z.coerce.number().int().min(1).max(100).default(20) }).strict(), responseSchema: ProposalPageSchema, handler: async ({ principal, input }) => Response.json(await invoke(() => services.proposals.list({ actorId: actor(principal).userId, projectId: (input.params as { id: string }).id, ...(input.query as { page: number; size: number }) }))) },
+    { ...route("endpoint-46"), paramsSchema: Id, querySchema: z.object({ page: z.coerce.number().int().min(0).max(10_000).default(0), size: z.coerce.number().int().min(1).max(100).default(20), status: ProposalStatusSchema.optional() }).strict(), responseSchema: ProposalPageSchema, handler: async ({ principal, input }) => Response.json(await invoke(() => services.proposals.list({ actorId: actor(principal).userId, projectId: (input.params as { id: string }).id, ...(input.query as { page: number; size: number; status?: "PENDING" | "APPROVED" | "REJECTED" | "SUPERSEDED" }) }))) },
     { ...route("endpoint-47"), paramsSchema: ProposalId, bodySchema: ReplanApprovalBodySchema, responseSchema: ReplanApprovalSchema, handler: async ({ principal, input }) => Response.json(await invoke(() => services.proposals.approve({ proposalId: (input.params as { proposalId: string }).proposalId, ...(input.body as { version: number; suggestionIds: string[] }), actorId: actor(principal).userId }))) },
-    { ...route("endpoint-48"), paramsSchema: ProposalId, bodySchema: ReplanRejectionBodySchema, responseSchema: ReplanProposalSchema, handler: async ({ principal, input }) => Response.json(await invoke(() => services.proposals.reject({ proposalId: (input.params as { proposalId: string }).proposalId, ...(input.body as { version: number }), actorId: actor(principal).userId }))) },
+    { ...route("endpoint-48"), paramsSchema: ProposalId, bodySchema: ReplanRejectionBodySchema, responseSchema: ReplanRejectionSchema, handler: async ({ principal, input }) => Response.json(await invoke(() => services.proposals.reject({ proposalId: (input.params as { proposalId: string }).proposalId, ...(input.body as { version: number }), actorId: actor(principal).userId }))) },
   ];
 }

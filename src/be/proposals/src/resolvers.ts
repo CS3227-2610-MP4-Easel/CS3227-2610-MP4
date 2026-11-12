@@ -14,8 +14,8 @@ export function createProposalResolvers(db: FilteredDbClient): ResourceResolver 
       return project && project.status !== "ARCHIVED" ? { kind: "PROJECT", projectId, state: "ACTIVE" } : null;
     }
     if (typeof proposalId !== "string" || !UUID.test(proposalId)) return null;
-    const row = await db.aiProposal.findFirst({ where: { id: proposalId, ...(operationId.startsWith("LEAD_") ? { kind: "REPLAN" } : {}) } });
+    const row = await db.aiProposal.findFirst({ where: { id: proposalId, ...(operationId.startsWith("LEAD_") ? { kind: "REPLAN" } : {}) }, select: { id: true, projectId: true, createdBy: true, project: { select: { status: true } } } });
     if (!row) return null;
-    return { kind: "PROPOSAL", projectId: row.projectId, ownerId: row.createdBy, state: "ACTIVE" };
+    return { kind: "PROPOSAL", projectId: row.projectId, ownerId: row.createdBy, state: row.project?.status === "ARCHIVED" ? "ARCHIVED" : "ACTIVE" };
   };
 }

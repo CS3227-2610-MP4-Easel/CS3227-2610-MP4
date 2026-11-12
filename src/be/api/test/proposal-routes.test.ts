@@ -21,8 +21,8 @@ function build(overrides: Partial<Record<"list" | "approve" | "reject", (...args
   const calls: string[] = [];
   const service = {
     list: async (...args: any[]) => { calls.push("list"); return { items: [proposal], page: args[0].page, size: args[0].size, total: 1 }; },
-    approve: async (...args: any[]) => { calls.push("approve"); return { proposalId, status: "APPROVED", applied: [suggestionId] }; },
-    reject: async (...args: any[]) => { calls.push("reject"); return { ...proposal, status: "REJECTED", version: 2 }; },
+    approve: async (...args: any[]) => { calls.push("approve"); return { proposalId, status: "APPROVED", applied: [suggestionId], sessionOutcome: "ACCEPTED" }; },
+    reject: async (...args: any[]) => { calls.push("reject"); return { ...proposal, status: "REJECTED", version: 2, sessionOutcome: "REJECTED" }; },
     ...overrides,
   };
   const routes = createProposalRoutes({ proposals: service });

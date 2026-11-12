@@ -47,6 +47,7 @@ export const SuggestionSchema = z.discriminatedUnion("type", [
 export const ReplanProposalSchema = z.object({
   id: uuid, projectId: uuid, kind: z.literal("REPLAN"), status: ProposalStatusSchema, suggestions: z.array(SuggestionSchema), explanation: z.string(), flagged: z.boolean(), createdAt: instant, version: z.number().int().positive(),
 }).strict();
+export const ReplanRejectionSchema = ReplanProposalSchema.extend({ sessionOutcome: z.literal("REJECTED") }).strict();
 export const SprintPageSchema = pageSchema(SprintSchema);
 export const ProposalPageSchema = pageSchema(ReplanProposalSchema);
 export const PageSprintSchema = SprintPageSchema;
@@ -69,11 +70,11 @@ export const EmptyBodySchema = z.object({}).strict();
 const sprintCarryOverTarget = z.union([z.literal("BACKLOG"), uuid]);
 export const SprintCarryOverSchema = z.object({ taskId: uuid, to: sprintCarryOverTarget }).strict();
 export const SprintCloseBodySchema = z.object({ version: z.number().int().min(1).max(2147483647), carryOver: z.array(SprintCarryOverSchema).max(1000) }).strict();
-export const ReplanApprovalBodySchema = z.object({ version: z.number().int().min(1).max(2147483647), suggestionIds: z.array(uuid).max(100) }).strict();
+export const ReplanApprovalBodySchema = z.object({ version: z.number().int().min(1).max(2147483647), suggestionIds: z.array(uuid).min(1).max(100) }).strict();
 export const ReplanRejectionBodySchema = ProposalVersionBodySchema;
 const count = z.number().int().nonnegative();
 export const PlanApprovalSchema = z.object({ proposalId: uuid, status: z.literal("APPROVED"), created: z.object({ checkpoints: count, epics: count, tasks: count }).strict() }).strict();
-export const ReplanApprovalSchema = z.object({ proposalId: uuid, status: z.literal("APPROVED"), applied: z.array(uuid) }).strict();
+export const ReplanApprovalSchema = z.object({ proposalId: uuid, status: z.literal("APPROVED"), applied: z.array(uuid), sessionOutcome: z.literal("ACCEPTED") }).strict();
 export const LeadOverviewSchema = z.array(z.object({ project: ProjectSchema, facts: FactsSchema.pick({ pointsTotal: true, pointsDone: true, pointsRemaining: true, projectedCompletionDate: true }).strict(), latestDigest: z.object({ status: z.enum(["AVAILABLE", "NONE"]) }).strict() }).strict());
 export const UsageSummarySchema = z.array(z.object({ feature: FeatureSchema, model: z.string().min(1), calls: z.number().int().nonnegative(), promptTokens: z.number().int().nonnegative(), completionTokens: z.number().int().nonnegative(), costMicroUsd: z.number().int().nonnegative(), cacheHits: z.number().int().nonnegative(), avgLatencyMs: z.number().nonnegative(), schemaFailures: z.number().int().nonnegative(), estimateErrorPercent: z.number().nonnegative() }).strict());
 
@@ -94,5 +95,6 @@ export type ProposalVersionBody = z.infer<typeof ProposalVersionBodySchema>;
 export type EmptyBody = z.infer<typeof EmptyBodySchema>;
 export type PlanApproval = z.infer<typeof PlanApprovalSchema>;
 export type ReplanApproval = z.infer<typeof ReplanApprovalSchema>;
+export type ReplanRejection = z.infer<typeof ReplanRejectionSchema>;
 export type LeadOverview = z.infer<typeof LeadOverviewSchema>;
 export type UsageSummary = z.infer<typeof UsageSummarySchema>;

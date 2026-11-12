@@ -48,7 +48,7 @@ export function createCoreResourceResolvers(db: ResolverDb): CoreResourceResolve
   const sprint = (operation: string) => async (request: Request): Promise<ResolvedResource | null> => {
     const sprintId = id(request, "id");
     if (!sprintId) return null;
-    const row = await db.sprint?.findFirst({ where: { id: sprintId, deletedAt: null }, select: { projectId: true, project: { select: { status: true } } } });
+    const row = await db.sprint?.findFirst({ where: { id: sprintId, ...(READ_OPERATIONS.has(operation) ? { deletedAt: null } : {}) }, select: { projectId: true, project: { select: { status: true } } } });
     const projectId = row?.projectId;
     if (!row || typeof projectId !== "string") return null;
     return resolve(operation, resource("PROJECT", row, projectId));

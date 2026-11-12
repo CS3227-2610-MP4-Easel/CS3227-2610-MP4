@@ -101,7 +101,7 @@ test("approve passes selected full suggestions in request order and stores immut
   const f = fixture();
   const service = createProposalService({ db: f.db, core: f.core, sessionCloser: f.closer });
   const result = await service.approve({ proposalId, version: 1, actorId: ownerId, suggestionIds: [secondSuggestionId, firstSuggestionId] });
-  assert.deepEqual(result, { proposalId, status: "APPROVED", applied: [secondSuggestionId, firstSuggestionId] });
+  assert.deepEqual(result, { proposalId, status: "APPROVED", applied: [secondSuggestionId, firstSuggestionId], sessionOutcome: "ACCEPTED" });
   assert.deepEqual(f.state.applies, [[f.state.proposal.payload.suggestions[1], f.state.proposal.payload.suggestions[0]]]);
   assert.deepEqual(f.state.proposal.payload.appliedSuggestionIds, [secondSuggestionId, firstSuggestionId]);
   assert.equal(f.state.session.outcome, "ACCEPTED");
@@ -112,7 +112,7 @@ test("approved replay returns stored ids without applying a new subset", async (
   const service = createProposalService({ db: f.db, core: f.core, sessionCloser: f.closer });
   await service.approve({ proposalId, version: 1, actorId: ownerId, suggestionIds: [firstSuggestionId] });
   const replay = await service.approve({ proposalId, version: 999, actorId: ownerId, suggestionIds: [secondSuggestionId] });
-  assert.deepEqual(replay, { proposalId, status: "APPROVED", applied: [firstSuggestionId] });
+  assert.deepEqual(replay, { proposalId, status: "APPROVED", applied: [firstSuggestionId], sessionOutcome: "ACCEPTED" });
   assert.equal(f.state.applies.length, 1);
 });
 
@@ -169,7 +169,7 @@ test("E16-E17 hide a foreign project and outsider from proposal approval/listing
 test("endpoint 48 rejects a non-session owner without changing the proposal", async () => {
   const f = fixture();
   const service = createProposalService({ db: f.db, core: f.core, sessionCloser: f.closer });
-  assert.equal(await code(service.reject({ proposalId, version: 1, actorId: otherOwnerId })), "NOT_FOUND");
+  assert.equal(await code(service.reject({ proposalId, version: 1, actorId: otherOwnerId })), "CONFLICT_STATE");
   assert.equal(f.state.proposal.status, "PENDING");
   assert.equal(f.state.session.outcome, "OPEN");
 });

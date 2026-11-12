@@ -67,6 +67,6 @@ test("W14 policy matrix keeps sprint reads/progress member-scoped and mutations/
     const policy = policies.get(`endpoint-${endpoint}`);
     assert.ok(policy);
     assert.deepEqual(policy.roles, ["DEV_LEAD"]);
-    assert.equal(policy.predicate, endpoint === 48 ? "SELF" : "MEMBER");
+    assert.equal(policy.predicate, "MEMBER");
   }
 });

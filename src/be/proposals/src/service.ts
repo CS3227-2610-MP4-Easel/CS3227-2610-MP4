@@ -1,6 +1,6 @@
 import { z } from "zod/v3";
-import type { Core, ReplanApproval, ReplanProposal } from "@agile/contracts";
-import { ReplanProposalSchema, SuggestionSchema } from "@agile/contracts";
+import type { Core, ReplanApproval, ReplanProposal, ReplanRejection } from "@agile/contracts";
+import { ReplanProposalSchema, ReplanRejectionSchema, SuggestionSchema } from "@agile/contracts";
 import { inMutationTransaction, type FilteredDbClient, type MutationTransactionClient } from "@agile/db";
 import type { Prisma } from "@prisma/client";
 import { ProposalError } from "./errors.js";
@@ -170,7 +170,7 @@ export function createProposalService(options: { db: FilteredDbClient; core: Pic
       if (proposal.status === "APPROVED") {
         const applied = z.array(z.string().uuid()).safeParse(payload.appliedSuggestionIds);
         if (!applied.success) throw new ProposalError("CONFLICT_STATE");
-        return { proposalId: proposal.id, status: "APPROVED" as const, applied: applied.data };
+        return { proposalId: proposal.id, status: "APPROVED" as const, applied: applied.data, sessionOutcome: "ACCEPTED" as const };
       }
       if (proposal.status !== "PENDING") throw new ProposalError("CONFLICT_STATE");
       if (proposal.version !== input.version) throw new ProposalError("CONFLICT_VERSION");
@@ -193,7 +193,7 @@ export function createProposalService(options: { db: FilteredDbClient; core: Pic
       }
       await tx.aiProposal.update({ where: { id: proposal.id }, data: { status: "APPROVED", appliedBy: input.actorId, appliedAt: new Date(), payload: { ...payload, appliedSuggestionIds: input.suggestionIds } as Prisma.InputJsonValue, version: proposal.version + 1 }, select: { id: true } });
       await sessionCloser.closeInTransaction(tx, { sessionId: session.id, proposalId: proposal.id, projectId, feature: "LEAD_DIGEST", ownerId: session.userId, outcome: "ACCEPTED", actorId: input.actorId });
-      return { proposalId: proposal.id, status: "APPROVED" as const, applied: input.suggestionIds };
+      return { proposalId: proposal.id, status: "APPROVED" as const, applied: input.suggestionIds, sessionOutcome: "ACCEPTED" as const };
     });
   }
 
@@ -207,10 +207,10 @@ export function createProposalService(options: { db: FilteredDbClient; core: Pic
       if (proposal.version !== input.version) throw new ProposalError("CONFLICT_VERSION");
       const session = await lockSession(tx, proposal.sessionId) as Row | null;
       if (!session || session.feature !== "LEAD_DIGEST" || session.projectId !== projectId || session.userId !== proposal.createdBy || session.env !== environment || session.outcome !== "OPEN") throw new ProposalError("CONFLICT_STATE");
-      if (session.userId !== input.actorId) throw new ProposalError("NOT_FOUND");
+      if (session.userId !== input.actorId) throw new ProposalError("CONFLICT_STATE");
       await tx.aiProposal.update({ where: { id: proposal.id }, data: { status: "REJECTED", version: proposal.version + 1 }, select: { id: true } });
       await sessionCloser.closeInTransaction(tx, { sessionId: session.id, proposalId: proposal.id, projectId, feature: "LEAD_DIGEST", ownerId: session.userId, outcome: "REJECTED", actorId: input.actorId });
-      return replanView({ ...proposal, status: "REJECTED", version: proposal.version + 1 });
+      return ReplanRejectionSchema.parse({ ...replanView({ ...proposal, status: "REJECTED", version: proposal.version + 1 }), sessionOutcome: "REJECTED" }) as ReplanRejection;
     });
   }
 

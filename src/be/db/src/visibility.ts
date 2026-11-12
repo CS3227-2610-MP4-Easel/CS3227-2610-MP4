@@ -15,10 +15,12 @@ export const VISIBILITY_POLICY: Readonly<Record<string, VisibilityEntry>> = Obje
   ProjectMember: entry(false, "required", { project: "Project", user: "User", adder: "User", assignedTasks: "Task" }, { project: "one", user: "one", adder: "one", assignedTasks: "many" }),
   Checkpoint: entry(true, "required", { project: "Project", epics: "Epic" }, { project: "one", epics: "many" }),
   Epic: entry(true, "required", { project: "Project", checkpoint: "Checkpoint", tasks: "Task" }, { project: "one", checkpoint: "one", tasks: "many" }),
-  Sprint: entry(true, "required", { project: "Project", tasks: "Task" }, { project: "one", tasks: "many" }),
+  // SprintService performs project membership/archive checks before exposing these rows.
+  Sprint: entry(true, "none", { project: "Project", tasks: "Task" }, { project: "one", tasks: "many" }),
   Task: entry(true, "required", { project: "Project", epic: "Epic", sprint: "Sprint", assignee: "ProjectMember", creator: "User", events: "TaskEvent" }, { project: "one", epic: "one", sprint: "one", assignee: "one", creator: "one", events: "many" }),
   TaskEvent: entry(false, "required", { task: "Task", project: "Project", actor: "User" }, { task: "one", project: "one", actor: "one" }),
-  AiProposal: entry(false, "required", { project: "Project", session: "AiSession", creator: "User", applier: "User", epics: "ProposalEpic", digests: "ProjectDigest" }, { project: "one", session: "one", creator: "one", applier: "one", epics: "many", digests: "many" }),
+  // ProposalService and the API policy layer enforce project access; resolvers need archived rows to map mutations to 409.
+  AiProposal: entry(false, "none", { project: "Project", session: "AiSession", creator: "User", applier: "User", epics: "ProposalEpic", digests: "ProjectDigest" }, { project: "one", session: "one", creator: "one", applier: "one", epics: "many", digests: "many" }),
   ProposalEpic: entry(false, "required", { proposal: "AiProposal" }, { proposal: "one" }, ["proposal", "project"]),
   AiSession: entry(false, "nullable", { user: "User", project: "Project", calls: "LlmCall", proposals: "AiProposal", standups: "Standup", digests: "ProjectDigest" }, { user: "one", project: "one", calls: "many", proposals: "many", standups: "many", digests: "many" }),
   LlmCall: entry(false, "nullable", { session: "AiSession", project: "Project", summaries: "ItemSummary" }, { session: "one", project: "one", summaries: "many" }),

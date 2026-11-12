@@ -13,7 +13,8 @@ type Import = { spec: string; line: number };
 // followed when a scanned file imports them, so moving a query into `../lib` or `./test` does not hide it.
 const BE_SRC = /^src\/be\/[^/]+\/src\//;
 const production = (path: string) => (BE_SRC.test(path) || path.startsWith("src/fe/")) && !path.split("/").includes("test");
-const ruleOneFile = (path: string) => production(path) && BE_SRC.test(path) && !/^src\/be\/(db|llm-gateway|proposals|ai-context)\//.test(path);
+// Only the API composition root may assemble gateway-backed services; feature/data packages remain bounded.
+const ruleOneFile = (path: string) => production(path) && BE_SRC.test(path) && !/^src\/be\/(db|llm-gateway|proposals|ai-context)\//.test(path) && path !== "src/be/api/src/core-composition.ts";
 const ruleTwoFile = (path: string) => production(path) && !path.startsWith("src/be/db/src/");
 const ruleThreeFile = (path: string) => production(path) && !/^src\/be\/(api|ai-context)\/src\//.test(path);
 const ALLOWED_IN_GATEWAY_FILES = new Set(["@agile/contracts", "@agile/ai-context", "@agile/llm-gateway"]);

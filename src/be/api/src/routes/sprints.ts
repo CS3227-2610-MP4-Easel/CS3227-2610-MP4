@@ -16,9 +16,9 @@ export type SprintRouteServices = { sprints: SprintService };
 
 const Id = z.object({ id: z.string().uuid() }).strict();
 const Create = z.object({ name: z.string().min(1).max(200), startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).strict();
-const Patch = z.object({ name: z.string().min(1).max(200).optional(), startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), version: z.number().int().positive() }).strict();
+const Patch = z.object({ name: z.string().min(1).max(200).optional(), startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), version: z.number().int().positive() }).strict().refine((value) => value.name !== undefined || value.startDate !== undefined || value.endDate !== undefined, "At least one sprint field must change");
 const Version = z.object({ version: z.number().int().positive() }).strict();
-const DeleteQuery = z.object({ version: z.coerce.number().int().positive().optional() }).strict();
+const DeleteQuery = z.object({ version: z.coerce.number().int().positive() }).strict();
 const route = (key: string) => { const policy = policyForRoute(key); return { operationId: policy.operationId, method: policy.method, path: policy.path, policyKey: key }; };
 
 function mapError(error: unknown): HttpError {
@@ -47,7 +47,7 @@ export function createSprintRoutes(services: SprintRouteServices): RouteDefiniti
     { ...route("endpoint-29"), paramsSchema: Id, bodySchema: Patch, responseSchema: SprintSchema, handler: async ({ principal, input }) => Response.json(await invoke(() => services.sprints.patch(actor(principal), (input.params as { id: string }).id, input.body as { name?: string; startDate?: string; endDate?: string; version: number }))) },
     { ...route("endpoint-30"), paramsSchema: Id, bodySchema: Version, responseSchema: SprintSchema, handler: async ({ principal, input }) => Response.json(await invoke(() => services.sprints.start(actor(principal), (input.params as { id: string }).id, input.body as { version: number }))) },
     { ...route("endpoint-31"), paramsSchema: Id, bodySchema: SprintCloseBodySchema, responseSchema: SprintSchema, handler: async ({ principal, input }) => Response.json(await invoke(() => services.sprints.close(actor(principal), (input.params as { id: string }).id, input.body as { version: number; carryOver: Array<{ taskId: string; to: string }> }))) },
-    { ...route("endpoint-32"), paramsSchema: Id, querySchema: DeleteQuery, responseSchema: {}, handler: async ({ principal, input }) => { const query = input.query as { version?: number }; await invoke(() => services.sprints.remove(actor(principal), (input.params as { id: string }).id, query.version === undefined ? undefined : { version: query.version })); return new Response(null, { status: 204 }); } },
+    { ...route("endpoint-32"), paramsSchema: Id, querySchema: DeleteQuery, responseSchema: {}, handler: async ({ principal, input }) => { const query = input.query as { version: number }; await invoke(() => services.sprints.remove(actor(principal), (input.params as { id: string }).id, { version: query.version })); return new Response(null, { status: 204 }); } },
     { ...route("endpoint-33"), paramsSchema: Id, responseSchema: ProgressSchema, handler: async ({ principal, input }) => Response.json(await invoke(() => services.sprints.progress(actor(principal), (input.params as { id: string }).id))) },
   ];
 }

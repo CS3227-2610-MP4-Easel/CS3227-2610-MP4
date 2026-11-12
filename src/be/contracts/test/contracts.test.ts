@@ -62,7 +62,7 @@ test("W14 page envelopes and mutation bodies enforce their shared bounds", () =>
   assert.equal(ReplanApprovalBodySchema.safeParse({ version: 1, suggestionIds: Array.from({ length: 101 }, () => id) }).success, false);
   const suggestion = { id, type: "MOVE_CHECKPOINT_DATE", checkpointId: id, newTargetDate: "2026-11-15", rationale: "Keep the checkpoint date aligned." };
   assert.equal(ReplanProposalSchema.safeParse({ id, projectId: id, kind: "REPLAN", status: "PENDING", suggestions: Array.from({ length: 101 }, () => suggestion), explanation: "Explanation", flagged: false, createdAt: "2026-11-02T00:00:00Z", version: 1 }).success, true);
-  assert.equal(ReplanApprovalSchema.safeParse({ proposalId: id, status: "APPROVED", applied: Array.from({ length: 101 }, () => id) }).success, true);
+  assert.equal(ReplanApprovalSchema.safeParse({ proposalId: id, status: "APPROVED", applied: Array.from({ length: 101 }, () => id), sessionOutcome: "ACCEPTED" }).success, true);
   assert.equal(ReplanRejectionBodySchema.safeParse({ version: 1 }).success, true);
   assert.equal(ReplanRejectionBodySchema.safeParse({ version: 1, suggestionIds: [] }).success, false);
 });
@@ -98,7 +98,7 @@ test("F2 normative AI response schemas cover proposal, facts, digest, standup, a
   assert.equal(SummaryResponseSchema.safeParse({ summaries: [], failed: [] }).success, true);
   assert.equal(PlanApprovalSchema.safeParse({ proposalId: id, status: "APPROVED", created: { checkpoints: 1, epics: 3, tasks: 9 } }).success, true);
   assert.equal(PlanApprovalSchema.safeParse({ proposalId: id, status: "APPROVED", created: { checkpoints: [], epics: [], tasks: [] } }).success, false);
-  assert.equal(ReplanApprovalSchema.safeParse({ proposalId: id, status: "APPROVED", applied: [] }).success, true);
+  assert.equal(ReplanApprovalSchema.safeParse({ proposalId: id, status: "APPROVED", applied: [], sessionOutcome: "ACCEPTED" }).success, true);
   assert.equal(LeadOverviewSchema.safeParse([{ project: { id, name: "Project", brief: null, status: "ACTIVE", createdBy: id, createdAt: instant, updatedAt: instant, version: 1 }, facts: { pointsTotal: 0, pointsDone: 0, pointsRemaining: 0, projectedCompletionDate: null }, latestDigest: { status: "NONE" } }]).success, true);
   assert.equal(UsageSummarySchema.safeParse([]).success, true);
 });
