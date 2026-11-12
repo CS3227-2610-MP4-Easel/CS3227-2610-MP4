@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Paused | PM/Developer overview, PM Health and Developer My Work are wired, tested and committed | Owner review of commit `61a4d25`; continue remaining W14 work afterward | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Paused | PM/Developer overview, PM Health and Developer My Work are wired, tested and committed | Owner review of commit `fd6d657`; continue remaining W14 work afterward | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -137,7 +137,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-13 | Replaced raw live close-sprint task status enums with the shared styled StatusChip mapping for To do, In progress and In review | W14 | T6 UI follow-up |
 | 2026-11-13 | Added member email to the live Member contract/API response and rendered it on the Members page instead of `userId`; repository typecheck and OpenAPI contract checks pass | W14 | T6 UI follow-up |
 | 2026-11-13 | Added outside-click handling to board task cards so open three-dot status menus close when clicking anywhere outside the task card; added regression coverage | W14 | T6 UI follow-up |
-| 2026-11-13 | Wired PM and Developer overview cards to live project/progress/checkpoint/member APIs, PM Health to live facts, and Developer My Work to assigned live tasks with status/block mutations; typecheck, full tests and diff check pass | W14 | commit `61a4d25` |
+| 2026-11-13 | Wired PM and Developer overview cards to live project/progress/checkpoint/member APIs, PM Health to live facts, and Developer My Work to assigned live tasks with status/block mutations; typecheck, full tests and diff check pass | W14 | commit `fd6d657` |
 | 2026-11-13 | Operator explicitly waived a new spec for this focused reuse of existing API contracts | W14 | operator direction |
 
 ## 4. Decisions
