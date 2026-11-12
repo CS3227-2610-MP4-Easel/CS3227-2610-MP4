@@ -38,6 +38,7 @@ const GENERIC = 'Something went wrong. Try again.';
 const SAFE_CODES = new Set([
   'FORBIDDEN_ROLE', 'FORBIDDEN', 'NOT_FOUND', 'CONFLICT_VERSION', 'CONFLICT_STATE',
   'VALIDATION_FAILED', 'RATE_LIMITED', 'NETWORK', 'INTERNAL', 'INTERNAL_ERROR',
+  'AI_BUSY', 'AI_UNAVAILABLE', 'AI_DISABLED',
   // Auth flows use these bounded codes to select their fixed UI state.
   'UNAUTHENTICATED', 'USER_NOT_REGISTERED', 'REGISTRATION_CODE_INVALID', 'ALREADY_REGISTERED',
 ]);
@@ -54,6 +55,7 @@ function errorCode(status: number, code: unknown): string {
 }
 
 function errorMessage(status: number, code: string): string {
+  if (code === 'AI_DISABLED') return 'AI features are disabled.';
   if (status >= 500 || code === 'NETWORK' || code === 'INTERNAL' || code === 'INTERNAL_ERROR') return GENERIC;
   if (status === 401) return 'Authentication is required.';
   if (status === 403) return 'You do not have permission to view this.';

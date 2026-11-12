@@ -7,7 +7,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w13-deployment-continuation (from `INT` at `dc3447f`)
 - **Base:** 82cbf9196f8bcc5af026094cfb41e2a7747d2252
 - **Owner:** operator / repository owner
-- **Status:** Approved
+- **Status:** Folded
 - **Approved:** operator / repository owner, 2026-11-12
 - **Last updated:** 2026-11-13 by Codex — merged current origin/development and verified the integrated branch
 
@@ -30,7 +30,7 @@ describes `INT`; read it for context and write here instead of editing it.
 **Remaining**
 
 - [x] Q~4: Before original W13 T5, repository owner confirms the active Neon plan and approved restricted rehearsal target. **Confirmed 2026-11-08 and amended:** Neon Free, which provides a six-hour instant-restore history; approved baseline is `agile-platform-dev / w13-recovery-baseline`, with `w13-recovery-past` as the recovered child. The subsequent backup/restore rehearsal may alter only those disposable branches and remains owner-operated.
-- [ ] **Handover:** After the amended approvals, record the redacted T4 audit result distinguishing generic PR previews from the protected `development` branch. **Done 2026-11-08:** generic Preview is `APP_TIER=preview`; dev-tier variables are exact-`development` scoped; repository linkage and branch protection pass.
+- [x] **Handover:** After the amended approvals, record the redacted T4 audit result distinguishing generic PR previews from the protected `development` branch. **Done 2026-11-08:** generic Preview is `APP_TIER=preview`; dev-tier variables are exact-`development` scoped; repository linkage and branch protection pass.
 
 ---
 
@@ -322,3 +322,35 @@ outcome: pass
 - **Rule:** Check an artifact's declared format before selecting its validation command; do not infer a missing v1 field is a v2 defect.
 - **Scope:** role:implementer
 - **Found by:** Codex
+
+
+## Fold record
+Folded 2026-11-13 by Codex on isolated sync worktree from `development` · merge commit `d452926` · base `82cbf919`
+
+| Provisional | Permanent |
+|---|---|
+| Q~4 | Q21 |
+| C~5 | C85 |
+| C~8 | C86 |
+| C~9 | C87 |
+| D~8 | D33 |
+| D~7 | D34 |
+| D~5 | D35 |
+| C~10 | C88 |
+| C~11 | C89 |
+| C~12 | C90 |
+| C~13 | C91 |
+| C~3 | C92 |
+| C~14 | C93 |
+| C~15 | C94 |
+| C~1 | C95 |
+| C~2 | C96 |
+| C~4 | C97 |
+| Q~5 | Q22 |
+| C~6 | C98 |
+| D~3 | D36 |
+| D~4 | D37 |
+| C~7 | C99 |
+| D~1 | D38 |
+| D~2 | D39 |
+| L~1 | L9 |
