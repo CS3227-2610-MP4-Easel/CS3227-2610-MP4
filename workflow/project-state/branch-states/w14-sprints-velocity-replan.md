@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-12 by Codex — W14 plan reviewed and ready for Gate 2 approval
+- **Last updated:** 2026-11-13 by Codex — merged Gate 3-approved dev-lead-pages-wiring; plan reassessment required
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | W14 plan is linted and reviewed | Ask the operator to approve or request changes to the plan | 2026-11-12 |
+| S1 | 2026-11-12 | Codex | W14 | Active | Reassessing W14 tasks against merged W5/W8/W7 seams | Amend and lint the plan before requesting Gate 2 approval again | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -68,6 +68,8 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-12 | Final review found blockers: existing 0–100 progress behavior, proposal-table access in `Core.applyReplan`, and unresolved session/authorization atomicity | W14 | this commit |
 | 2026-11-12 | Second review pass required persisted approval replay, explicit proposal creation/supersession, exact session binding, bounded carry-over/page inputs, and conflict details; spec amended accordingly | W14 | this commit |
 | 2026-11-12 | Gate 1 approved by operator; six-task W14 plan created, linted with 0 errors/0 warnings, and revised after plan review | W14 | this commit |
+| 2026-11-13 | Merged Gate 3-approved `dev-lead-pages-wiring` at `d5f3fda`; W14 plan must reuse its proposals, API composition, and frontend client seams | W14 | merge commit `fe8af2e` |
+| 2026-11-13 | Amended W14 tasks T3–T6 to reuse merged proposals/API/frontend seams; plan lint remains 0 errors/0 warnings | W14 | this commit |
 
 ## 4. Decisions
 
