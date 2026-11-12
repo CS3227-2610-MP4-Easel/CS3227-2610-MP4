@@ -2,7 +2,7 @@
   "task": "T2",
   "status": "done",
   "summary": "Added typed W5 live DTOs and apiFetch clients for projects, progress, members, checkpoints, epics and tasks. Live task create/update bodies allowlist fields and never serialize sprintId.",
-  "commit": "2d085bf",
+  "commit": "5229386",
   "produces": [
     { "kind": "symbol", "name": "listProjectsLive_6", "where": "src/fe/lib/api/index.ts", "note": "Typed live project page client." },
     { "kind": "symbol", "name": "getProjectLive_7", "where": "src/fe/lib/api/index.ts", "note": "Typed live project detail client." },
