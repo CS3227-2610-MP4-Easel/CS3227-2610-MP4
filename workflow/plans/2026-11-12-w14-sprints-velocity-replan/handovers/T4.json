@@ -1,0 +1,25 @@
+{
+  "task": "T4",
+  "status": "done",
+  "summary": "Lead digest persistence is transaction-safe, runtime injection is cache-safe, and rollback/race coverage is complete.",
+  "commit": "745e8890067d3412990c58bf9fe105361689d7a3",
+  "produces": [
+    { "kind": "symbol", "name": "LeadProposalService", "where": "src/be/lead/src/flow.ts", "note": "Structural transaction-safe ProposalService seam used by digest persistence without a lead-to-proposals package dependency." },
+    { "kind": "symbol", "name": "createLeadRuntime", "where": "src/be/lead/src/runtime.ts", "note": "Accepts an injected proposalService through runtime options." },
+    { "kind": "symbol", "name": "TransactionSessionCloser", "where": "src/be/lead/src/gateway-binding.ts", "note": "Lead degraded/no-proposal persistence closes sessions through the transaction-aware seam; proposal-bound closure accepts a null proposal ID for this path." },
+    { "kind": "other", "name": "REPLAN digest persistence", "where": "src/be/lead/src/flow.ts", "note": "Digest creation, ProposalService createReplanInTransaction, and proposalId update run in one persistence callback; direct tx.aiProposal access was removed." },
+    { "kind": "file", "name": "forecast.test.ts", "where": "src/be/lead/test/forecast.test.ts", "note": "Covers null/zero velocity and zero remaining-work semantics." },
+    { "kind": "file", "name": "flow.integration.test.ts", "where": "src/be/lead/test/flow.integration.test.ts", "note": "Uses transaction-backed fixtures for digest/proposal/session rollback, degraded closure and a barrier-controlled E27 race." },
+    { "kind": "file", "name": "runtime.test.ts", "where": "src/be/lead/test/runtime.test.ts", "note": "Proves a cached runtime is rebuilt when ProposalService wiring arrives after initial creation." }
+  ],
+  "next": "T5 should construct ProposalService in API composition and inject it into createLeadRuntime/initLeadRuntime before wiring endpoints 44–48.",
+  "deviations": [
+    {
+      "what": "The repository-wide npm test run included separate uncommitted T5/API edits and reported four source-scan failures from those edits.",
+      "why": "The T5 changes were preserved and not modified; the T4-focused suites and package typechecks pass.",
+      "needs": "orchestrator"
+    }
+  ],
+  "edge_cases": ["E25", "E27"],
+  "checks": { "build": "pass", "typecheck": "pass: lead, llm-gateway and proposals", "focused_tests": "pass: 39 lead/proposals tests", "diff_check": "pass: git diff --check", "source_scan": "not rerun cleanly because the shared worktree contains separate uncommitted T5/API edits" }
+}
