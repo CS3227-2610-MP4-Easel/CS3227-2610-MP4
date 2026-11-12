@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S5 | 2026-11-12 | Codex | W13 | Active | Reviewing the corrected W13 runbook and workflow safety boundaries | Fix the generic push-workflow checker bypass before renewed Gate 3 approval | 2026-11-12 |
+| S5 | 2026-11-12 | Codex | W13 | Done | Restricted privileged push triggers to the exact W13 production workflow and completed full verification | Request renewed Gate 3 approval before pushing or merging | 2026-11-12 |
 
 **Remaining**
 
@@ -105,6 +105,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-12 | Operator approved Gate 3 after the authenticated SHA-guard repair and close-out verification; branch is ready for normal integration. | W13 | owner approval |
 | 2026-11-12 | Corrected the runbook so the owner merges to `main`, observes the workflow pause, and then approves the protected `production` Environment for that run. | W13 | pending renewed Gate 3 |
 | 2026-11-12 | Review found the generic workflow checker accepts an arbitrary push-only workflow with a protected environment; only the exact W13 filename receives the production contract, so a regression fix is required. | W13 | blocker pending |
+| 2026-11-12 | Restricted `push` triggers to the exact W13 production workflow and added a regression test for arbitrary push-only privileged workflows; full tests, typecheck, lint, contract, workflow checker, secret scan, and diff checks pass. | W13 | 44f88a8 |
 
 ### D~8 — Deploy Hook cannot carry an exact commit SHA
 

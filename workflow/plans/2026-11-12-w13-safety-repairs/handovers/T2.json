@@ -1,8 +1,8 @@
 {
   "task": "T2",
   "status": "done",
-  "summary": "Removed filename-based workflow privilege and added the explicit production workflow contract.",
-  "commit": "8c1b32eb783d4eba6bba8d185bd82d44adf3d8e7",
+  "summary": "Production push triggers are now restricted to the exact W13 workflow; arbitrary push-only privileged workflows fail baseline validation.",
+  "commit": "44f88a8a1c7067de3e581199a50fc3a898e62577",
   "produces": [
     {
       "kind": "symbol",
@@ -17,7 +17,7 @@
       "note": "Applies baseline validation to every workflow and the production contract to the committed production path."
     }
   ],
-  "next": "T3 must make .github/workflows/w13-production.yml satisfy validateProductionWorkflowContract without restoring filename-only privilege.",
+  "next": "T3 uses the exact protected W13 workflow; no other workflow may use a push trigger or production environment path.",
   "deviations": [],
   "edge_cases": ["E8", "E9"],
   "checks": {
@@ -27,6 +27,8 @@
     "contract": "7 pass, 0 fail",
     "workflow-checker": "pass",
     "git-diff-check": "pass",
-    "typecheck": "failed: pre-existing missing frontend dependencies (@firebase/*, vitest, @testing-library/*)"
+    "typecheck": "pass",
+    "full-tests": "543 backend pass, 28 skipped; 149 frontend pass",
+    "secret-scan": "pass; no leaks found"
   }
 }
