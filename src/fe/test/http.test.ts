@@ -203,6 +203,14 @@ describe('apiFetch', () => {
     expect(signOutUser).not.toHaveBeenCalled();
   });
 
+  it('E65 an idToken failure becomes a safe NETWORK ApiError', async () => {
+    idToken.mockRejectedValue(new Error('credential details must not escape'));
+    const e = await fail(apiFetch('/api/me'));
+    expect([e.code, e.message, e.status]).toEqual(['NETWORK', 'Something went wrong. Try again.', 0]);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(signOutUser).not.toHaveBeenCalled();
+  });
+
   it('E90 an authenticated 401 starts sign-out once and still rejects', async () => {
     reply(401, '{"error":{"code":"UNAUTHENTICATED","message":"no"}}');
     const e = await fail(apiFetch('/api/me'));
@@ -240,14 +248,32 @@ describe('apiFetch', () => {
 });
 
 describe('error body mapping', () => {
+  it('E7 maps bodyless and malformed responses by status', async () => {
+    const cases: [number, string, string, string][] = [
+      [401, '', 'UNAUTHENTICATED', 'Authentication is required.'],
+      [403, '', 'FORBIDDEN', 'You do not have permission to view this.'],
+      [404, '<html>gone</html>', 'NOT_FOUND', 'This project or task was not found.'],
+      [409, 'not-json', 'CONFLICT_STATE', 'This changed elsewhere. Reload before trying again.'],
+      [422, '', 'VALIDATION_FAILED', 'Check the highlighted fields.'],
+      [429, '', 'RATE_LIMITED', 'Please wait before trying again.'],
+      [500, '', 'INTERNAL', 'Something went wrong. Try again.'],
+    ];
+    for (const [status, body, code, message] of cases) {
+      reply(status, body);
+      const e = await fail(apiFetch('/api/x'));
+      expect([e.status, e.code, e.message]).toEqual([status, code, message]);
+    }
+    expect(signOutUser).toHaveBeenCalledTimes(1);
+  });
+
   it('E62 a JSON body without error maps to INTERNAL', async () => {
     reply(400, '{"x":1}');
-    expect((await fail(apiFetch('/api/x'))).code).toBe('INTERNAL');
+    expect((await fail(apiFetch('/api/x'))).code).toBe('INTERNAL_ERROR');
   });
 
   it('E62 a non-string code maps to INTERNAL', async () => {
     reply(400, '{"error":{"code":5,"message":"m"}}');
-    expect((await fail(apiFetch('/api/x'))).code).toBe('INTERNAL');
+    expect((await fail(apiFetch('/api/x'))).code).toBe('INTERNAL_ERROR');
   });
 
   it('E62 missing details and requestId give [] and null', async () => {

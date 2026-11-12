@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { authMode, FIREBASE_KEYS } from '../lib/auth/mode';
 import { isProjectUuid, projectRoute } from '../lib/api/project-mode';
+import { routeFor } from '../lib/nav';
 import { resolve, routeOf } from '../lib/screens';
 
 const all = Object.fromEntries(FIREBASE_KEYS.map((k) => [k, 'x']));
@@ -69,6 +70,7 @@ describe('project route mode', () => {
 
   it('N1 preserves the route project id when translating canvas links', () => {
     expect(routeOf('Health.dc.html', '550e8400-e29b-41d4-a716-446655440000')).toBe('/projects/550e8400-e29b-41d4-a716-446655440000/health');
+    expect(routeFor('Board.dc.html', '550e8400-e29b-41d4-a716-446655440000')).toBe('/projects/550e8400-e29b-41d4-a716-446655440000/board');
   });
 
   it('E14 rejects role-excluded state and mutation-dialog URLs', () => {

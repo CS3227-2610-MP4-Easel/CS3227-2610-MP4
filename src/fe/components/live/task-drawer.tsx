@@ -1,7 +1,7 @@
 'use client';
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { A, r } from '../../lib/nav';
+import { A, r, useRoute } from '../../lib/nav';
 import { ApiError, deleteTask_25, setTaskStatus_24, updateTask_23, useDb, type TaskStatus } from '../../lib/api';
 import StatusChip from '../canvas/StatusChip';
 import { toast } from './toast';
@@ -13,6 +13,7 @@ function Drawer() {
   const id = useSearchParams().get('task') || 't5';
   const db = useDb();
   const router = useRouter();
+  const route = useRoute();
   const t = db.tasks.find((x) => x.id === id);
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState('');
@@ -48,7 +49,7 @@ function Drawer() {
         <div className="row">
           {!editing && <button className="btn sm" onClick={() => { setTitle(t.title); setDesc(t.description); setPts(t.points ? String(t.points) : ''); setEditing(true); }}><svg className="ic" aria-hidden="true"><use href="#i-edit" /></svg>Edit</button>}
           {editing && <button className="btn sm p" onClick={save}>Save</button>}
-          <button className="btn sm" style={{ color: 'var(--danger)' }} onClick={async () => { try { await deleteTask_25(t.id); toast('Task deleted.'); router.push(r('Board.dc.html')); } catch (e) { toast(e instanceof ApiError ? e.message : 'Something went wrong.', 'bad'); } }}><svg className="ic" aria-hidden="true"><use href="#i-trash" /></svg>Delete</button>
+          <button className="btn sm" style={{ color: 'var(--danger)' }} onClick={async () => { try { await deleteTask_25(t.id); toast('Task deleted.'); router.push(route('Board.dc.html')); } catch (e) { toast(e instanceof ApiError ? e.message : 'Something went wrong.', 'bad'); } }}><svg className="ic" aria-hidden="true"><use href="#i-trash" /></svg>Delete</button>
           <A className="btn g sm ib" href={r('Board.dc.html')} aria-label="Close"><svg className="ic" aria-hidden="true"><use href="#i-x" /></svg></A>
         </div>
       </div>

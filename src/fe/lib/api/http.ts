@@ -44,6 +44,7 @@ const SAFE_CODES = new Set([
 
 function errorCode(status: number, code: unknown): string {
   if (typeof code === 'string' && SAFE_CODES.has(code)) return code;
+  if (status === 401) return 'UNAUTHENTICATED';
   if (status === 403) return 'FORBIDDEN';
   if (status === 404) return 'NOT_FOUND';
   if (status === 409) return 'CONFLICT_STATE';
@@ -77,7 +78,12 @@ export async function apiFetch<T>(
   const useAuth = init.auth ?? true;
   const headers: Record<string, string> = {};
   if (useAuth) {
-    const t = await idToken();
+    let t: string | null;
+    try {
+      t = await idToken();
+    } catch {
+      throw new ApiError('NETWORK', GENERIC, { status: 0 });
+    }
     if (t === null) throw new ApiError('UNAUTHENTICATED', 'Authentication is required.', { status: 401 });
     headers.Authorization = `Bearer ${t}`;
   }
@@ -120,5 +126,6 @@ export async function apiFetch<T>(
       retryAfterSeconds: ra,
     });
   }
-  throw new ApiError('INTERNAL', GENERIC, { status, retryAfterSeconds: ra });
+  const code = errorCode(status, null);
+  throw new ApiError(code, errorMessage(status, code), { status, retryAfterSeconds: ra });
 }

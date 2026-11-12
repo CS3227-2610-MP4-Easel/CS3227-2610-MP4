@@ -1,7 +1,7 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
-import { A, r } from '../../lib/nav';
+import { A, r, useRoute } from '../../lib/nav';
 import { ApiError, createEpic_17, createSprint_28, createTask_21, useDb, type Person } from '../../lib/api';
 import { toast } from './toast';
 
@@ -14,6 +14,7 @@ const Close = ({ to }: { to: string }) => (
 
 function useSubmit(back: string, ok: string) {
   const router = useRouter();
+  const route = useRoute();
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const go = async (fn: () => Promise<unknown>) => {
@@ -22,7 +23,7 @@ function useSubmit(back: string, ok: string) {
     try {
       await fn();
       toast(ok);
-      router.push(r(back));
+      router.push(route(back));
     } catch (e) {
       setErr(e instanceof ApiError ? e.message : 'Something went wrong.');
       setBusy(false);

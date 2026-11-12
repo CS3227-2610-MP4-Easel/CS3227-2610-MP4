@@ -23,6 +23,16 @@ export function css(str: string | undefined): CSSProperties {
 
 export const r = routeOf;
 
+/** Generate a route for an imperative navigation, preserving the active project id. */
+export function routeFor(href: string, projectId?: string | null): string {
+  return routeOf(href, projectId ?? undefined);
+}
+
+export function useRoute(): (href: string) => string {
+  const { projectId } = useProjectRoute();
+  return (href) => routeFor(href, projectId);
+}
+
 function withProjectId(href: string, projectId: string | null): string {
   if (!projectId) return href;
   return href.replace(/^\/projects\/[^/?#]+(?=\/|\?|#|$)/i, `/projects/${projectId}`);
