@@ -8,7 +8,7 @@ const ROLE = { PM: 'pm', DEV_LEAD: 'lead', DEVELOPER: 'dev' } as const;
 const AV = ['a1', 'a2', 'a3', 'a4'];
 const ini = (n: string) => n.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase();
 
-export type OverviewLiveProps = { live?: boolean; loading?: boolean; error?: string | null; onRetry?: () => void; progress?: LiveProgress | null; checkpoints?: LiveCheckpoint[]; members?: LiveMember[] };
+export type OverviewLiveProps = { live?: boolean; projectId?: string | null; loading?: boolean; error?: string | null; onRetry?: () => void; progress?: LiveProgress | null; checkpoints?: LiveCheckpoint[]; members?: LiveMember[] };
 
 function LiveState({ loading, error, onRetry, children }: { loading?: boolean; error?: string | null; onRetry?: () => void; children: React.ReactNode }) {
   if (loading) return <div className="card"><div className="sk" style={{ height: 18, width: '35%' }}></div><div className="sk" style={{ height: 38, marginTop: 12 }}></div></div>;
@@ -70,7 +70,7 @@ export function VelocityCard(props: OverviewLiveProps = {}) {
 
 export function CheckpointsCard(props: OverviewLiveProps = {}) {
   const db = useDb();
-  if (props.live) return <LiveState loading={props.loading} error={props.error} onRetry={props.onRetry}><section className="card"><div className="row between" style={{ marginBottom: 8 }}><h3 style={{ margin: 0 }}>Next checkpoints</h3><A href={r('Checkpoints.dc.html')} className="small b" style={{ color: 'var(--accent-t)' }}>All checkpoints</A></div><div className="stack8">{(props.checkpoints ?? []).map((c) => <div className="row between" key={c.id}><span className="b">{c.name}</span><span className="num muted">{fmtFull(c.targetDate)}</span></div>)}{!(props.checkpoints ?? []).length && <span className="muted">No checkpoints yet.</span>}</div></section></LiveState>;
+  if (props.live) return <LiveState loading={props.loading} error={props.error} onRetry={props.onRetry}><section className="card"><div className="row between" style={{ marginBottom: 8 }}><h3 style={{ margin: 0 }}>Next checkpoints</h3><A href={r('Checkpoints.dc.html', props.projectId ?? undefined)} className="small b" style={{ color: 'var(--accent-t)' }}>All checkpoints</A></div><div className="stack8">{(props.checkpoints ?? []).map((c) => <div className="row between" key={c.id}><span className="b">{c.name}</span><span className="num muted">{fmtFull(c.targetDate)}</span></div>)}{!(props.checkpoints ?? []).length && <span className="muted">No checkpoints yet.</span>}</div></section></LiveState>;
   return (
     <section className="card">
       <div className="row between" style={{ marginBottom: 8 }}>
@@ -92,7 +92,7 @@ export function CheckpointsCard(props: OverviewLiveProps = {}) {
 
 export function TeamCard(props: OverviewLiveProps = {}) {
   const db = useDb();
-  if (props.live) return <LiveState loading={props.loading} error={props.error} onRetry={props.onRetry}><section className="card"><div className="row between" style={{ marginBottom: 8 }}><h3 style={{ margin: 0 }}>Team</h3><A href={r('Members.dc.html')} className="small b" style={{ color: 'var(--accent-t)' }}>Manage</A></div><div className="stack8">{(props.members ?? []).map((m, i) => <div className="row" key={m.userId}><span className={`av ${AV[i % 4]}`}>{ini(m.displayName)}</span><span className="sp b">{m.displayName}</span><RoleBadge role={ROLE[m.role]} /></div>)}{!(props.members ?? []).length && <span className="muted">No developers yet.</span>}</div></section></LiveState>;
+  if (props.live) return <LiveState loading={props.loading} error={props.error} onRetry={props.onRetry}><section className="card"><div className="row between" style={{ marginBottom: 8 }}><h3 style={{ margin: 0 }}>Team</h3><A href={r('Members.dc.html', props.projectId ?? undefined)} className="small b" style={{ color: 'var(--accent-t)' }}>Manage</A></div><div className="stack8">{(props.members ?? []).map((m, i) => <div className="row" key={m.userId}><span className={`av ${AV[i % 4]}`}>{ini(m.displayName)}</span><span className="sp b">{m.displayName}</span><RoleBadge role={ROLE[m.role]} /></div>)}{!(props.members ?? []).length && <span className="muted">No developers yet.</span>}</div></section></LiveState>;
   return (
     <section className="card">
       <div className="row between" style={{ marginBottom: 8 }}>
