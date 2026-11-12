@@ -2,7 +2,7 @@
   "task": "T1",
   "status": "done",
   "summary": "Added UUID project route context, id-preserving navigation, forbidden resolution, Health race protection, and fixed safe API error mapping; 162 tests pass.",
-  "commit": "974dcac",
+  "commit": "bae8254",
   "produces": [
     { "kind": "file", "name": "project-mode.ts", "where": "src/fe/lib/api/project-mode.ts", "note": "Exports isProjectUuid, projectRoute, ProjectRouteContext, and useProjectRoute." },
     { "kind": "symbol", "name": "routeOf", "where": "src/fe/lib/screens.ts", "note": "Accepts an optional project id and preserves it in generated project URLs." },
