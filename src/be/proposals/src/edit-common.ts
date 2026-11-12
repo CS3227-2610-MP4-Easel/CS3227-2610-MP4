@@ -10,7 +10,7 @@ export type EpicRowLike = { title: string; description: string; checkpointName: 
 export type Checkpoint = { name: string; targetDate: string };
 export async function guardEdit(tx: FilteredTransactionClient, i: { proposalId: string; actorId: string; version: number }): Promise<ProposalRow> {
   const proposal = await lockProposal(tx, i.proposalId);
-  if (!proposal || proposal.createdBy !== i.actorId) throw new ProposalError("NOT_FOUND");
+  if (!proposal || proposal.createdBy !== i.actorId || !await tx.project.findFirst({ where: { id: proposal.projectId, status: "ACTIVE" } })) throw new ProposalError("NOT_FOUND");
   if (proposal.status !== "PENDING") throw new ProposalError("CONFLICT_STATE");
   if (proposal.version !== i.version) throw new ProposalError("CONFLICT_VERSION");
   return proposal;

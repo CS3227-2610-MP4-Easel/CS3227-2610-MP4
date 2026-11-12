@@ -55,7 +55,7 @@ test("backlog edits are versioned, project-scoped and preserve unrelated records
     assert.equal(cleared.assigneeId, null); assert.equal(cleared.sprintId, null);
     assert.equal(await db.taskEvent.count({ where: { taskId: task.id } }), 5);
     const sprints = createSprints(db as any, access);
-    assert.deepEqual((await sprints.list(actor, project.id)).map(x => x.name), ["earlier", "later"]);
+    assert.deepEqual((await sprints.list(actor, project.id)).items.map(x => x.name), ["earlier", "later"]);
     await assert.rejects(() => sprints.list(actor, other.id), /NOT_FOUND/);
   } finally {
     await db.taskEvent.deleteMany({ where: { projectId: { in: projects } } });

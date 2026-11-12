@@ -7,7 +7,7 @@ const id = "00000000-0000-4000-8000-000000000001";
 const services = { epics: { list: async () => [], create: async () => ({}), patch: async () => ({}) }, sprints: { list: async () => [] }, tasks: { list: async () => ({ items: [], page: 0, size: 20, total: 0 }), read: async () => ({}), create: async () => ({}), patch: async () => ({}), status: async () => ({}) } };
 
 test("E17 and E29-E30 planning routes expose only their assigned operations", () => {
-  assert.deepEqual(createPlanningRoutes(services).map((route) => route.operationId), ["EPIC_LIST", "EPIC_CREATE", "EPIC_UPDATE", "SPRINT_LIST", "TASK_LIST", "TASK_CREATE", "TASK_READ", "TASK_UPDATE", "TASK_STATUS_UPDATE"]);
+  assert.deepEqual(createPlanningRoutes(services).map((route) => route.operationId), ["EPIC_LIST", "EPIC_CREATE", "EPIC_UPDATE", "TASK_LIST", "TASK_CREATE", "TASK_READ", "TASK_UPDATE", "TASK_STATUS_UPDATE"]);
 });
 
 test("planning PATCH input rejects status and block fields while status input is strict", () => {

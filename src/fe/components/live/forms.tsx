@@ -170,7 +170,7 @@ export function AddTaskForm() {
       <div className="g2">
         <div className="field"><label htmlFor="sp">Story points</label>
           <input id="sp" className="in" type="number" min={1} max={20} step={1} value={pts} onChange={(e) => setPts(e.target.value)} />
-          <span className="hint">1, 2, 3, 5, 8, 13 or none</span></div>
+          <span className="hint">Whole number from 1 to 20, or none</span></div>
         <div className="field"><label htmlFor="as">Assignee</label>
           <select id="as" className="in" value={who} onChange={(e) => setWho(e.target.value)}><option value="">Unassigned</option>{live ? liveMembers.map((member) => <option key={member.userId} value={member.userId}>{member.displayName}</option>) : PEOPLE.map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select>
           <span className="hint">Project members only</span></div>

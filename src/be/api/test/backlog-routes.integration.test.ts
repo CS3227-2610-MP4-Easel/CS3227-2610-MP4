@@ -30,7 +30,7 @@ test("backlog routes enforce role and membership and reject foreign checkpoints 
     const app = createApiApp(createAppDependencies(runtime as never, composition), composition.routes);
     const request = (path: string, index: number, method = "GET", body?: object) => app.request(`http://localhost/api${path}`, { method, headers: { authorization: `Bearer ${users[index]!.firebaseUid}`, ...(body ? { "content-type": "application/json" } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
     const listed = await request(`/projects/${project.id}/sprints`, 0);
-    assert.equal(listed.status, 200); assert.deepEqual((await listed.json() as any[]).map(s => s.name), ["early", "late"]);
+    assert.equal(listed.status, 200); assert.deepEqual((await listed.json() as { items: { name: string }[] }).items.map(s => s.name), ["early", "late"]);
     assert.equal((await request(`/projects/${project.id}/sprints`, 2)).status, 404);
     assert.equal((await request(`/checkpoints/${cp.id}`, 1, "PATCH", { name: "bad", version: 1 })).status, 403);
     assert.equal((await request(`/checkpoints/${cp.id}`, 2, "PATCH", { name: "bad", version: 1 })).status, 404);
