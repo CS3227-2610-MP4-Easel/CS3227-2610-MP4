@@ -1,8 +1,8 @@
 {
   "task": "T1",
   "status": "done",
-  "summary": "Added bounded W14 pagination, sprint/proposal page envelopes, strict sprint-close and replan decision bodies, endpoint-48 owner metadata, and matching OpenAPI contracts; preserved existing replan response array schemas.",
-  "commit": "4bea8a2",
+  "summary": "Added bounded W14 pagination, page envelopes, strict decision bodies, owner metadata, and OpenAPI contracts; preserved existing replan response arrays.",
+  "commit": "b2f655a",
   "produces": [
     {
       "kind": "symbol",
