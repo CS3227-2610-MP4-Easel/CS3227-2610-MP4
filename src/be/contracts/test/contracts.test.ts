@@ -15,6 +15,9 @@ import {
   UploadResponseSchema,
   SummaryResponseSchema,
   PlanApprovalSchema,
+  PlanCreateBodySchema,
+  ProposalVersionBodySchema,
+  EmptyBodySchema,
   ReplanApprovalSchema,
   LeadOverviewSchema,
   UsageSummarySchema,
@@ -67,8 +70,54 @@ test("F2 normative AI response schemas cover proposal, facts, digest, standup, a
   assert.equal(ProgressSchema.safeParse({ pointsTotal: 0, pointsDone: 0, percent: 0, unestimatedTasks: 0, velocity: [] }).success, true);
   assert.equal(UploadResponseSchema.safeParse({ received: 0, created: 0, updated: 0, unchanged: 0, rejected: [], needsSummary: [] }).success, true);
   assert.equal(SummaryResponseSchema.safeParse({ summaries: [], failed: [] }).success, true);
-  assert.equal(PlanApprovalSchema.safeParse({ proposalId: id, status: "APPROVED", created: { checkpoints: [], epics: [], tasks: [] } }).success, true);
+  assert.equal(PlanApprovalSchema.safeParse({ proposalId: id, status: "APPROVED", created: { checkpoints: 1, epics: 3, tasks: 9 } }).success, true);
+  assert.equal(PlanApprovalSchema.safeParse({ proposalId: id, status: "APPROVED", created: { checkpoints: [], epics: [], tasks: [] } }).success, false);
   assert.equal(ReplanApprovalSchema.safeParse({ proposalId: id, status: "APPROVED", applied: [] }).success, true);
   assert.equal(LeadOverviewSchema.safeParse([{ project: { id, name: "Project", brief: null, status: "ACTIVE", createdBy: id, createdAt: instant, updatedAt: instant, version: 1 }, facts: { pointsTotal: 0, pointsDone: 0, pointsRemaining: 0, projectedCompletionDate: null }, latestDigest: { status: "NONE" } }]).success, true);
   assert.equal(UsageSummarySchema.safeParse([]).success, true);
+});
+
+test("E47 plan body schemas are strict and count code points", () => {
+  const idea = (n: number, ch = "a") => ({ idea: ch.repeat(n) });
+  assert.equal(PlanCreateBodySchema.safeParse(idea(19)).success, false);
+  assert.equal(PlanCreateBodySchema.safeParse(idea(20)).success, true);
+  assert.equal(PlanCreateBodySchema.safeParse(idea(6000)).success, true);
+  assert.equal(PlanCreateBodySchema.safeParse(idea(6001)).success, false);
+  assert.equal(PlanCreateBodySchema.safeParse(idea(20, "😀")).success, true);
+  assert.equal(PlanCreateBodySchema.safeParse(idea(6000, "😀")).success, true);
+  assert.equal(PlanCreateBodySchema.safeParse(idea(19, "😀")).success, false);
+  assert.equal(PlanCreateBodySchema.safeParse(idea(6001, "😀")).success, false);
+  assert.equal(PlanCreateBodySchema.safeParse({ idea: "😀".repeat(10) }).success, false);
+  assert.equal(PlanCreateBodySchema.safeParse(idea(24001)).success, false);
+  for (const n of [19, 6001]) {
+    const r = PlanCreateBodySchema.safeParse(idea(n));
+    assert.equal(r.success, false);
+    if (!r.success) {
+      assert.equal(r.error.issues[0].message, "Must be 20 to 6000 characters.");
+      assert.equal(r.error.issues[0].message.includes("a".repeat(19)), false);
+    }
+  }
+  const extra = PlanCreateBodySchema.safeParse({ ...idea(20), extra: 1 });
+  assert.equal(extra.success, false);
+  if (!extra.success) assert.equal(extra.error.issues[0].code, "unrecognized_keys");
+  assert.equal(ProposalVersionBodySchema.safeParse({ version: 1 }).success, true);
+  assert.equal(ProposalVersionBodySchema.safeParse({ version: 2147483647 }).success, true);
+  assert.equal(ProposalVersionBodySchema.safeParse({ version: 0 }).success, false);
+  assert.equal(ProposalVersionBodySchema.safeParse({ version: 1.5 }).success, false);
+  assert.equal(ProposalVersionBodySchema.safeParse({ version: -1 }).success, false);
+  assert.equal(ProposalVersionBodySchema.safeParse({}).success, false);
+  assert.equal(ProposalVersionBodySchema.safeParse({ version: 2147483648 }).success, false);
+  const vExtra = ProposalVersionBodySchema.safeParse({ version: 1, extra: 1 });
+  assert.equal(vExtra.success, false);
+  if (!vExtra.success) assert.equal(vExtra.error.issues[0].code, "unrecognized_keys");
+  assert.equal(EmptyBodySchema.safeParse({}).success, true);
+  const eExtra = EmptyBodySchema.safeParse({ extra: 1 });
+  assert.equal(eExtra.success, false);
+  if (!eExtra.success) assert.equal(eExtra.error.issues[0].code, "unrecognized_keys");
+  const pid = "00000000-0000-0000-0000-000000000001";
+  const approve = (created: unknown) => PlanApprovalSchema.safeParse({ proposalId: pid, status: "APPROVED", created }).success;
+  assert.equal(approve({ checkpoints: 1, epics: [], tasks: 9 }), false);
+  assert.equal(approve({ checkpoints: -1, epics: 3, tasks: 9 }), false);
+  assert.equal(approve({ checkpoints: 1.5, epics: 3, tasks: 9 }), false);
+  assert.equal(approve({ checkpoints: 1, epics: 3, tasks: 9, extra: 1 }), false);
 });

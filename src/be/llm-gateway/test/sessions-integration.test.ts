@@ -117,3 +117,63 @@ test("E37 concurrent opens overshoot the open cap by at most one", { skip }, () 
   const open = await base.aiSession.count({ where: { userId: owner, outcome: "OPEN" } });
   assert.ok(open === 3 || open === 4, `open sessions: ${open}`);
 }));
+
+test("E75 openOrReuse reuses a usable session for the same user, feature and project", { skip }, () => withIntegrationDb(async (base, { user, project }) => {
+  const { sessions, clock } = setup(base);
+  const owner = await user();
+  const projectId = await project(owner);
+  const input = { feature: "DEV_SUMMARY" as const, userId: owner, projectId };
+  const first = await sessions.openOrReuse(input);
+  clock.advance(10 * MIN);
+  assert.equal(await sessions.openOrReuse(input), first);
+  assert.equal(await base.aiSession.count({ where: { userId: owner } }), 1);
+  assert.deepEqual((await base.aiSession.findUniqueOrThrow({ where: { id: first } })).lastActivityAt, new Date(START), "reuse does not touch");
+
+  const otherProject = await sessions.openOrReuse({ ...input, projectId: await project(owner) });
+  const otherFeature = await sessions.openOrReuse({ ...input, feature: "DEV_STANDUP" });
+  assert.equal(new Set([first, otherProject, otherFeature]).size, 3);
+}));
+
+test("E75 openOrReuse abandons an idle session and opens a new one", { skip }, () => withIntegrationDb(async (base, { user, project }) => {
+  const { sessions, clock } = setup(base);
+  const owner = await user();
+  const input = { feature: "DEV_SUMMARY" as const, userId: owner, projectId: await project(owner) };
+  const first = await sessions.openOrReuse(input);
+  clock.advance(30 * MIN + 1_000);
+  const second = await sessions.openOrReuse(input);
+  assert.notEqual(second, first);
+  assert.equal((await base.aiSession.findUniqueOrThrow({ where: { id: first } })).outcome, "ABANDONED");
+}));
+
+test("E75 openOrReuse keeps the daily cap when nothing is reusable", { skip }, () => withIntegrationDb(async (base, { user, project }) => {
+  const { sessions } = setup(base);
+  const owner = await user();
+  const projectId = await project(owner);
+  for (let i = 0; i < 20; i++) await sessions.close(await sessions.open({ feature: "LEAD_DIGEST", userId: owner, projectId: null }), "ACCEPTED", owner);
+  const toMidnight = (new Date("2026-11-05T16:00:00.000Z").getTime() - new Date(START).getTime()) / 1000;
+  await assert.rejects(sessions.openOrReuse({ feature: "DEV_SUMMARY", userId: owner, projectId }), capReached(toMidnight));
+  assert.equal(await base.aiSession.count({ where: { userId: owner } }), 20, "no new row");
+}));
+
+test("E75 openOrReuse with three open sessions on other projects hits the open cap", { skip }, () => withIntegrationDb(async (base, { user, project }) => {
+  const { sessions, clock } = setup(base);
+  const owner = await user();
+  await sessions.openOrReuse({ feature: "DEV_SUMMARY", userId: owner, projectId: await project(owner) });
+  clock.advance(10 * MIN);
+  await sessions.openOrReuse({ feature: "DEV_SUMMARY", userId: owner, projectId: await project(owner) });
+  await sessions.openOrReuse({ feature: "DEV_SUMMARY", userId: owner, projectId: await project(owner) });
+  await assert.rejects(sessions.openOrReuse({ feature: "DEV_SUMMARY", userId: owner, projectId: await project(owner) }), capReached(20 * 60));
+  assert.equal(await base.aiSession.count({ where: { userId: owner } }), 3);
+}));
+
+test("E75 openOrReuse returns the newer of two open sessions for the same key", { skip }, () => withIntegrationDb(async (base, { user, project }) => {
+  const { sessions, clock } = setup(base);
+  const owner = await user();
+  const projectId = await project(owner);
+  const older = await sessions.open({ feature: "DEV_SUMMARY", userId: owner, projectId });
+  clock.advance(5 * MIN);
+  const newer = await sessions.open({ feature: "DEV_SUMMARY", userId: owner, projectId });
+  clock.advance(5 * MIN);
+  assert.equal(await sessions.openOrReuse({ feature: "DEV_SUMMARY", userId: owner, projectId }), newer);
+  assert.notEqual(older, newer);
+}));

@@ -5,11 +5,11 @@ describes `INT`; read it for context and write here instead of editing it.
 `sync-project-state` folds this file in after the branch merges.
 
 - **Branch:** w9-screen-wiring (from `INT` at `2c5dd9f`)
-- **Base:** 2c5dd9f
+- **Base:** 465c8fe
 - **Owner:** ludannnn (Developer member)
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-12 by Claude Opus 5.5 — spec approved, T1 next
+- **Last updated:** 2026-11-13 by Claude Opus 5.5 — T0 merged development; T1 in progress
 
 **Untouched:** Architecture, Conventions, Deviations
 
@@ -25,12 +25,12 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Claude Opus 5.5 | W~1 | Paused | Spec approved; T1 next | T1: `src/fe/lib/api/dev.ts`, `useProjectId`, date helpers, example file, `AuthModeCtx` export, `LiveTestProvider`; done when `src/fe/test/dev-api.test.ts` (E1, E2, E8, E16) passes | 2026-11-12 |
+| S1 | 2026-11-13 | Claude Opus 5.5 | W~1 | Active | T1 | T1: `src/fe/lib/api/dev.ts`, `useProjectId`, date helpers, example file, `AuthModeCtx` export, `LiveTestProvider`; done when `src/fe/test/dev-api.test.ts` (E1, E2, E8, E16) passes | 2026-11-12 |
 
 **Remaining**
 
 - [x] Gate 1: spec approved by ludannnn on 2026-11-12 ("yes"), including SD2-SD4.
-- [ ] T0: merge `development` after PR #29 (W9) merges; the code tasks need the W9 endpoints.
+- [x] T0: merged `development` at `465c8fe` (W9 PR #29) on 2026-11-13.
 - [ ] T1-T5 per the spec's task list.
 
 ---
@@ -48,6 +48,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
 | 2026-11-12 | Branch created from `development`; S20/S18 wiring spec drafted (Medium, 18 edge cases, 6 tasks); Implementer review round 1: 3 blocking, 10 should-fix, 4 nits, all applied. Spec is 12 KB against the ~4 KB Medium target (logged with `ws feedback`); approved at Gate 1 by ludannnn | W~1 | `4fdb179` |
+| 2026-11-13 | T0: merged `development` at `465c8fe` (W9, W7 backend, W8, PR #34); only `skill-feedback.md` conflicted (kept both rows) | W~1 | merge commit |
 
 ---
 

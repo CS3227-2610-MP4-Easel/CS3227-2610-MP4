@@ -5,5 +5,5 @@
   "types": "dist/index.d.ts",
   "exports": { ".": "./src/index.ts" },
   "scripts": { "test": "tsx --test \"test/**/*.test.ts\"", "typecheck": "tsc -p tsconfig.json --noEmit" },
-  "dependencies": { "@agile/contracts": "*", "@agile/db": "*", "zod": "^4.6.6" }
+  "dependencies": { "@agile/contracts": "*", "@agile/db": "*", "@prisma/client": "^7.10.1", "zod": "^4.6.6" }
 }

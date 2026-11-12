@@ -70,6 +70,6 @@ export const OPTION_SCHEMAS = {
   PM_PLAN_EXPAND: pmOptions,
   LEAD_DIGEST: z.object({}).strict(),
   DEV_SUMMARY: z.object({ itemIds: z.array(z.uuid()).min(1).max(10).refine((ids) => new Set(ids).size === ids.length) }).strict(),
-  DEV_STANDUP: z.object({ window: z.object({ from: z.date(), to: z.date() }).strict().refine((w) => w.from < w.to) }).strict(),
+  DEV_STANDUP: z.object({ window: z.object({ from: z.date(), to: z.date() }).strict().refine((w) => w.from <= w.to) }).strict(),
 } as const;
 export type AssembleOptions = { query?: string; itemIds?: string[]; window?: { from: Date; to: Date } };
