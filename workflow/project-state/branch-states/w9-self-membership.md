@@ -7,15 +7,15 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w9-self-membership (from `INT` at `d452926`)
 - **Base:** d452926
 - **Owner:** ludannnn (Developer member)
-- **Status:** Draft
-- **Approved:** —
-- **Last updated:** 2026-11-13 by Claude Opus 5.5 — SELF membership check verified for 52
+- **Status:** Approved
+- **Approved:** ludannnn 2026-11-13
+- **Last updated:** 2026-11-13 by Claude Opus 5.5 — integration-test fixes; Gate 3 approved
 
 **Untouched:** Architecture, Conventions, Known Gaps, Decisions, Deviations
 
 ---
 
-**Scope.** Small: settle the STATE Upcoming row "W9 SELF membership check" (handed over from w1) by checking endpoint 52 and adding a route-level test.
+**Scope.** Small, tests only: settle the STATE Upcoming row "W9 SELF membership check" (handed over from w1) by checking endpoint 52 and adding a route-level test, and do the "W9 integration test follow-ups" row.
 
 ---
 
@@ -28,7 +28,9 @@ describes `INT`; read it for context and write here instead of editing it.
 
 **Remaining**
 
-- [ ] Gate 3: owner review, then push and open the PR into `development`.
+- [x] Gate 3: approved by ludannnn on 2026-11-13 ("ok", covering the route test and the test-only integration fixes).
+- [ ] Push and open the PR into `development` (owner).
+- [ ] **Handover:** remove STATE Upcoming "W9 integration test follow-ups" (done on this branch).
 - [ ] **Handover:** replace STATE Upcoming "W9 SELF membership check" with: endpoint 52 is covered (its `DEV_STANDUP_MINE_READ` resolver calls `requireMember` before setting `ownerId`, so a removed Developer gets 404; route test in `src/be/api/test/dev-routes.test.ts`). When W16 builds 53 and 54 (`SELF` on a standup id), their resolvers must check the caller's current membership of the standup's project the same way, not only that they own the row.
 
 ---
@@ -45,4 +47,5 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-13 | Verified the Upcoming "W9 SELF membership check": endpoint 52's resolver already requires current membership (removed Developer → 404). Added a route test with a non-member Developer; it fails when the `requireMember` call is removed from the resolver. 53/54 are W16's (handover). Checks: `dev-routes.test.ts` 27/27 | W9 | this commit |
+| 2026-11-13 | W9 integration-test follow-ups (Upcoming row "W9 integration test follow-ups"): the E47 lock tests poll `pg_stat_activity` for a lock wait instead of sleeping 300 ms, and on failure wait for the write and the archive to settle before cleanup. Tests only. Checks: `dev-integration.test.ts` 19/19 on Postgres (0 skipped) on three runs; typecheck green | W9 | this commit |
+| 2026-11-13 | Verified the Upcoming "W9 SELF membership check": endpoint 52's resolver already requires current membership (removed Developer → 404). Added a route test with a non-member Developer; it fails when the `requireMember` call is removed from the resolver. 53/54 are W16's (handover). Checks: `dev-routes.test.ts` 27/27 | W9 | `d68c62c` |

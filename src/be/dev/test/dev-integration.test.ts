@@ -54,6 +54,16 @@ function lockGate() {
   return { wrapDb, hit, release };
 }
 
+// Polls until a session in this database is waiting on a lock (or `done()`), instead of a fixed sleep.
+async function waitForLockWait(base: PrismaClient, done: () => boolean, timeoutMs = 10_000) {
+  const until = Date.now() + timeoutMs;
+  while (!done() && Date.now() < until) {
+    const [row] = await base.$queryRaw<{ n: number }[]>`SELECT count(*)::int AS n FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock'`;
+    if (row && row.n > 0) return;
+    await sleep(20);
+  }
+}
+
 // Both parties must be inside the model call before either continues, so both passed the cache read.
 function rendezvous(parties: number) {
   let arrived = 0;
@@ -287,13 +297,18 @@ for (const [endpoint, label] of [[49, "upload"], [50, "summaries"], [51, "standu
     let archiving: Promise<unknown> = Promise.resolve();
     let archived = false;
     let archivedAt = 0;
+    let released = 0;
     try {
       await Promise.race([gate.hit, op.then(() => undefined, () => undefined)]);
       archiving = archive(base, s.projectId).then(() => { archived = true; archivedAt = Date.now(); });
-      await sleep(300);
+      await waitForLockWait(base, () => archived);
       assert.equal(archived, false, "the archive blocks on the project row lock");
-    } finally { gate.release(); }
-    const released = Date.now();
+    } finally {
+      gate.release();
+      released = Date.now();
+      // On a failed assertion, let the write and the archive settle before scene() deletes their rows.
+      await Promise.allSettled([op, archiving]);
+    }
     await op;
     assert.equal(await written(base, s.projectId), 1);
     await archiving;
