@@ -32,6 +32,18 @@ The browser needs four more, all from the Firebase console's web app settings (t
 |---|---|
 | `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID` | the Firebase web app the sign-in screen talks to |
 
+**Tier configuration.** `APP_TIER=dev` targets the `agile-platform-dev` Firebase/Neon resources;
+production targets `agile-platform-prod`. The code-owned target map in
+[`src/be/db/src/tier-targets.ts`](../../src/be/db/src/tier-targets.ts) is authoritative:
+development uses Neon project `falling-rice-06970921` and production uses `super-sunset-36592949`.
+Production runtime uses the pooled database host, while migrations use the protected
+`DIRECT_DATABASE_URL` direct host. Do not substitute one for the other.
+
+For local sign-in, use the development Firebase project and keep its domain in Authorized domains.
+The four `NEXT_PUBLIC_FIREBASE_*` values belong to the matching tier. Local PostgreSQL 16 is used
+for integration tests; production migrations run only from the protected GitHub workflow, not from
+a local Prisma command.
+
 Locally, copy `src/fe/.env.example` to `src/fe/.env.local` and fill it in. Never commit secrets (AD-32).
 
 **Firebase for local sign-in.** In a Firebase project for development: turn on Email/Password sign-in, register a web app (its config gives the four values above), and keep `localhost` in Authorized domains. `FIREBASE_PROJECT_ID` is the same project's id.

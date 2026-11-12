@@ -31,6 +31,13 @@ The W10 prototype remains the frontend handoff:
 - **Invariants:** routes are registered through the policy gate; handlers do not check roles; resource resolvers belong to table-owning modules and must fail closed for hidden or missing resources. A route with `bodyLimitBytes` has its JSON body read with that byte cap after authorization (413 past it); `body-limit.ts` holds the counting helpers.
 - **Deviations:** authorization precedes input parsing (D2), and registration is app/dependency-aware (D3).
 
+## Core (`src/be/core`)
+
+- **Purpose:** owns project planning data and the membership/resource-resolution seams used by the API and AI context.
+- **API:** [`createCore`](../../src/be/core/src/core.ts), `requireMember`, `lockProjectForMutation`, project/task/epic/checkpoint operations, `applyPlan`, and the registered core context sources ([`src/be/core/src/index.ts`](../../src/be/core/src/index.ts)).
+- **Depends on:** `@agile/db` and the caller/project authorization context; it does not import `@agile/ai-context`.
+- **Invariants:** archived projects are not writable; hidden or missing resources fail closed; mutation writes lock the project row and preserve task/sprint/checkpoint rules.
+
 ## Auth (`src/be/auth`, routes in `src/be/api/src/routes/auth.ts`)
 
 - **Purpose:** verifies Firebase ID tokens, resolves the caller's role from `users` (never from a claim), checks registration codes, and rate-limits sign-up. Serves endpoints 2 (`check-code`), 3 (`register`) and 4 (`me`).
@@ -54,7 +61,14 @@ The W10 prototype remains the frontend handoff:
 - **How it works:** checks the input, the caller's role for the feature and the caller's membership of the target project (the frozen `Core.requireMember`, registered by W5), calls every allow-listed source of the feature at once behind a 10-second deadline, checks each source's rows (shape, count, type, length, project, owner, requested items), checks membership again, and builds the sections. Any failure returns nothing. Feature modules register their sources with `registerContextSource`; `ai-context` imports no other module.
 - **Invariants:** a source-scan test keeps gateway-calling files away from database packages and unsafe raw queries.
 - **Options:** `DEV_STANDUP` takes `{ window: { from, to } }` with `from <= to`; an empty window is valid, so the current blockers still reach the standup (C74).
-- **Not built:** the `core.*` sources await W5 (`requireMember`); W9 registers `dev.activityItems` and `dev.itemSummaries` (see Developer), and W7 and W8 register their own.
+- W5 registers the `core.*` sources; W9 registers `dev.activityItems` and `dev.itemSummaries` (see Developer), and W7/W8 register their own sources.
+
+## Lead (`src/be/lead`)
+
+- **Purpose:** implements Dev Lead facts, forecast, digest generation and the `lead` AI context sources.
+- **API:** [`createLeadRuntime`](../../src/be/lead/src/runtime.ts), facts/forecast/flow functions, digest schemas and context-source wiring.
+- **Depends on:** `@agile/core`, `@agile/ai-context`, `@agile/llm-gateway`, and `@agile/db` through its owning seams.
+- **Invariants:** facts are limited to allow-listed keys and member projects; digest ordering uses persisted `factsAsOf`; cached/public responses do not expose private source rows.
 
 ## Developer (`src/be/dev`, routes in `src/be/api/src/routes/dev.ts`)
 
@@ -70,3 +84,14 @@ The W10 prototype remains the frontend handoff:
 - **Purpose:** pull requests are verified by CI, and changes to process-control files need review.
 - **How it works:** one CODEOWNER approval per PR (C30); GitHub reviews are the approval source for sensitive paths, and the trusted workflow re-evaluates review approvals and sets the authoritative security status (C42, C43). An alternate reviewer is permitted when the usual security reviewer authored the PR (C34). Production migrations and deploys run only from CI.
 - **Agent policy (C55):** agents may write the workflow's own outputs and run git (except `push`), `node`, `npm` and file commands inside the repository; the process-control files (`workflow/agent-permissions.json`, `workflow/tools/**`, `workflow/skills/**`, `.github/**`, `.githooks/**`, `scripts/**` and others) and the attack corpus stay review-required. The hook is `scripts/agent-pre-tool-hook.mjs`.
+
+The W11 security corpus and authorization suite exercise production registration, auth, limiter,
+session, filesystem and network-deny seams from declarative corpus cases. The corpus is reviewed
+separately from the guard implementation and does not change production guard rules (C82, C83,
+C84).
+
+W13 deployment safety lives in [`scripts/w13/`](../../scripts/w13/),
+[`src/be/db/src/tier-targets.ts`](../../src/be/db/src/tier-targets.ts), and
+[`w13-production.yml`](../../.github/workflows/w13-production.yml). Recovery accepts only the
+code-owned synthetic Neon target; production migration validates the direct host and migration
+manifest, then deployment follows through the protected hook (C85, C92, C90, C93).

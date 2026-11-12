@@ -4,6 +4,7 @@ The full chronological record of every change, newest first. One line each: what
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-13 | Developer guide checkpoint documented W5, W8, W11 and W13: setup, architecture, components, requirements and testing sections updated; stale W5 context note removed | W5, W8, W11, W13 | `docs/guide/` |
 | 2026-11-13 | Folded branch state `w13-deployment-continuation` | — | archive |
 | 2026-11-13 | Fixed the CI-only E48 concurrency test failure: the test now asserts the W7 contract (exactly one winner and one `CONFLICT_STATE`) without assuming database lock queue order. | W13 | pending verification |
 | 2026-11-13 | Full tests, typecheck, lint, contract, workflow, agent-policy, secret-scan, and diff checks pass after the merge. | W13 | verification |

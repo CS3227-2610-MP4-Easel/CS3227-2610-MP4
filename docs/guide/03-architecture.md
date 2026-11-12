@@ -21,6 +21,24 @@ flowchart LR
 3. The API registers route definitions through the shared `ROUTES` list, authorizes through the policy map, validates input with contracts, and uses the filtered Prisma client for database access.
 4. Downstream workstreams provide principal lookup, resource resolvers, domain routes, and the remaining live frontend API functions.
 
+## Core and role-feature path
+
+`src/be/core` owns projects, memberships, epics, tasks, checkpoints, task events, planning
+application, and the resource/context resolvers. It exposes `requireMember` and
+`lockProjectForMutation`; the API composition root registers the core and its context sources.
+Feature packages do not reach into core tables directly. The filtered database client remains the
+visibility boundary, while core performs the domain and mutation checks (C48, C49, C80, C71).
+
+The Dev Lead feature in `src/be/lead` reads only allow-listed facts, produces deterministic
+forecast data, and stores digests with durable `factsAsOf` ordering. Its context source is
+membership-scoped and its gateway calls use `assembleWith`; the compatibility migration is
+expand/contract so old and new writers can coexist during rollout.
+
+Production deployment is a separate protected path: `.github/workflows/w13-production.yml` runs
+the checked-in migration wrapper with the production Environment, then invokes the Vercel Deploy
+Hook only after migration succeeds. The workflow is push-only on `main`; Vercel Git deployment for
+`main` is disabled and target identity/checksums are validated before Prisma runs (C85, C90, C93).
+
 ## Sign-in and registration
 
 A request carries a Firebase ID token. `src/be/auth` verifies it, then looks up the caller in `users` for the application role. Registration (endpoints 2 and 3) is gated by a per-role registration code and a per-IP limit; the app refuses to start with unsafe auth settings.
@@ -102,6 +120,9 @@ Endpoints never call the provider or build their own context; they go through `a
 | W2 builds the whole `run` path with a guard slot; feature owners register mock responses | W3 to W9 need a working gateway and mock | C27 |
 | Untrusted sections are wrapped after fitting, with the security suffix in the user message | Truncate before wrapping; flagged input is marked, not blocked | C56 |
 | `ai-context` is a source registry with membership through the frozen `Core` | Table ownership stays with the owning modules | C61 |
+| `core` owns membership and resource resolution | Keeps project tables and authorization seams together | C48, C49, C80 |
+| W5 mutation writes take the project-row lock | Archive and feature writes serialize on one lock | C71 |
+| Production migration and deployment run only through protected CI | Prevents new application code from racing an old schema | C90, C93 |
 | A real auth gate replaces the role cookie; the role comes from `/api/me` | The role shown must be the server's | C66 |
 | The browser uses `@firebase/app` and `@firebase/auth`, not the `firebase` package | The full package pulls in a dependency with a high audit finding | C64 |
 | The standup window is anchored to the standup date | A standup for tomorrow covers today, not the day before as well | C75 |

@@ -19,6 +19,21 @@ From the repository root:
 
 **Process security.** `tests/process-security/` covers the agent hook, the policy file and the review-approval checks; the trusted workflow re-evaluates approvals on review events.
 
+**Core and role-feature suites.** W5 coverage is in `src/be/core/test/` and the API planning and
+authorization tests; W8 coverage is in `src/be/lead/test/` plus the lead route/context tests. Run
+the root test command for both unit and integration coverage, and set
+`W1_INTEGRATION_DATABASE_URL` when PostgreSQL-backed cases are required.
+
+**Security corpus.** W11's declarative corpus and authorization tests run through the real route,
+auth, limiter, session, filesystem and network-deny seams. They are part of the backend/root
+suite and must remain green without changing the frozen guard rules.
+
+**Deployment safety.** W13 has focused tests for tier targets, seed/migration procedures,
+recovery evidence, workflow contracts and production migration ordering. Use
+`node scripts/check-workflows.mjs` for workflow validation and the repository's configured secret
+scan before changing `.github/workflows/w13-production.yml` or `scripts/w13/`. Production migration
+itself is CI-only.
+
 From `src/fe`, the existing frontend checks remain:
 
 | Command | Checks |
