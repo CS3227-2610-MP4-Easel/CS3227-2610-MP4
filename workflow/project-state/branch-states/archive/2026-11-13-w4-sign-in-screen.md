@@ -7,11 +7,11 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w4-sign-in-screen (from `INT` at `512dc4c`)
 - **Base:** b95546f
 - **Owner:** ludannnn (Developer member)
-- **Status:** Approved
+- **Status:** Folded
 - **Approved:** ludannnn 2026-11-08
 - **Last updated:** 2026-11-08 by Claude Opus 5.5 — Gate 3 approved by the owner
 
-**Untouched:** Architecture, Conventions
+**Untouched:** Conventions
 
 ---
 
@@ -34,7 +34,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] Operator's manual check on 2026-11-08 with `src/fe/.env.local` against `agile-platform-dev`: registered an account, signed out and signed in again; flows worked.
 - [ ] **Handover:** to the PM (W10): the canvas screens, including the live sign-in and register screens that reuse their markup, are fixed-size (`.app { min-height: 1000px }` in `src/fe/app/canvas.css`, fixed flex bases such as `1 1 420px`), so they do not adapt to short or very wide windows (seen by the operator on an ultrawide monitor).
 - [x] Gate 3: approved by ludannnn on 2026-11-08.
-- [ ] Push and open the PR into `development` (operator's go-ahead pending); the PR body calls out C~7 (W12 test change) for the Dev Lead.
+- [x] Push and open the PR into `development` (PR #25, merged 2026-11-09); the PR body calls out C~7 (W12 test change) for the Dev Lead.
 
 - [x] T7 spec, Gate 1: approved by ludannnn on 2026-11-08 (one review round, four lenses).
 - [x] T7 plan, Gate 2: approved by ludannnn on 2026-11-08 (7 tasks, 5 waves, full review each).
@@ -52,7 +52,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W4 | Auth and registration | In review | [spec](../../specs/2026-10-31-w4-auth-design.md), [T7 spec](../../specs/2026-11-08-w4-sign-in-screen-design.md) (approved 2026-11-08) | [plan](../../plans/2026-11-08-w4-sign-in-screen/plan.md) (approved 2026-11-08) | T7 follow-up: done; Gate 3 approved 2026-11-08; PR next | — |
+| W4 | Auth and registration | Done | [spec](../../specs/2026-10-31-w4-auth-design.md), [T7 spec](../../specs/2026-11-08-w4-sign-in-screen-design.md) (approved 2026-11-08) | [plan](../../plans/2026-11-08-w4-sign-in-screen/plan.md) (approved 2026-11-08) | T7 follow-up done; PR #25 merged 2026-11-09 | — |
 
 ---
 
@@ -81,6 +81,26 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-08 | T7 done: `src/fe/test/source-rules.test.ts` enforces the six auth source rules and empty `.env.example` values, with breach samples; smoke and link-check scripts marked prototype-only. Full review: no blocking; fixed skip-dir scope, client-file detection behind comments, rule 6 for `export … from`/`require`/`.js`/`index`, template-literal imports, exact-path exemption tests. Remaining regex limits recorded as a Known Gap. Close-out checks: typecheck, `npm test` 487/487 + fe 139/139 (5.8 s), build, audit (no high), close-out lint clean | W4 | `f438c32` |
 | 2026-11-08 | Close-out code review (branch vs `development`, high): 10 findings; fixed 7 (stale Retry values, a 401 during registration stuck Retry, session stuck on "Loading…" after a no-user 401, hold release now re-reads `/api/me` (D~3), Top sign-out with no user, `/api/as` 500 on a malformed `to`, a redundant condition) and re-reviewed; rejected: Top role-mapping dedupe (screen role is `pm` on `/styleguide` and `/states`, so Top must read the session user), lazy Firebase SDK loading (handover); recorded D~2 (401 state) and D~4 (trailer format). Final checks: typecheck, `npm test` 487/487 + fe 149/149, build, audit no high | W4 | `efe86cb` |
 | 2026-11-08 | Merged `development` at `b95546f` (W5 PR #23) after Gate 3, no conflicts; re-checked: typecheck, `npm test` 562/562 + fe 149/149, build, audit no high | W4 | `9be278f` |
+
+---
+
+## 4. Architecture
+
+> Added at fold (2026-11-13, approved by ludannnn): the branch had listed Architecture as Untouched.
+
+### 4.1 Web
+
+**Now (proposed):** The `src/fe` Next.js app is free of Prisma/database imports; its catch-all API adapter forwards `/api/*` to the Hono app, and business rules and authorization stay server-side. `authMode` picks the mode per request: `prototype` (fixtures and the role buttons, mock previews only), `firebase` (live sign-in) or `unconfigured`. In `firebase` mode `AuthRoot` and `SessionProvider` hold the Firebase session (`@firebase/app` and `@firebase/auth` only, loaded in `lib/auth/firebase.ts`), and `AuthGate` gates every page on it. The role comes from `GET /api/me`, never a cookie. Sign-in and register call endpoints 2-4. `apiFetch` (`lib/api/http.ts`) is the only place that calls `fetch`; it attaches the ID token and is confined to same-origin `/api/` paths. `test/source-rules.test.ts` enforces these source rules. The UI tests use Vitest, Testing Library and jsdom and run under the root `npm test`. Screens other than sign-in and register still read fixtures until their workstreams wire them.
+
+| Path | Role |
+|---|---|
+| `src/fe/lib/auth` | auth mode, Firebase client, session, gate |
+| `src/fe/lib/api/http.ts` | `apiFetch`, the only `fetch` caller |
+
+| ID | Date | Decision | Why / who asked | Source |
+|---|---|---|---|---|
+| C~2 | 2026-11-08 | T7 replaces the role cookie with a real auth gate | see Decisions | spec |
+| C~5 | 2026-11-08 | `@firebase/app` and `@firebase/auth`, not the `firebase` package | see Decisions | spec |
 
 ---
 
@@ -160,3 +180,25 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Decision:** add Vitest with Testing Library and jsdom to `src/fe`; the Firebase SDK and fetch are mocked, fake timers cover the 429 countdown; the tests run in CI.
 - **Why:** F7 needs UI tests and `src/fe` had no runner (the C46 blocker).
 - **Rejected:** Playwright end to end (heavier, needs a running app and stubbed Firebase).
+
+
+## Fold record
+Folded 2026-11-13 by Claude Opus 5.5 (with `ws fold`) on `development` · merge commit `3519ff0` · base `b95546f`
+
+At fold, with ludannnn's yes: the `Untouched: Architecture` claim was wrong (new Firebase client, auth gate, Vitest), so a web-area Now was added and `auth.md`'s "sign-in screen is a follow-up" sentence was updated; the PR item was ticked and the W4 row set to Done (PR #25 merged). The handover that closes the "Ask the PM about the W10 sign-in page" Upcoming row was applied by deleting that row.
+
+| Provisional | Permanent |
+|---|---|
+| C~1 | C62 |
+| C~7 | C63 |
+| D~1 | D19 |
+| C~5 | C64 |
+| C~6 | C65 |
+| D~3 | D20 |
+| D~2 | D21 |
+| D~4 | D22 |
+| C~2 | C66 |
+| C~3 | C67 |
+| C~4 | C68 |
+
+Sessions discarded at fold: none

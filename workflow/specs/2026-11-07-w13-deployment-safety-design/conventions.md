@@ -1,7 +1,7 @@
 # Applied conventions
 
 - Vercel project identity means the immutable canonical `prj_...` system project ID, not the display slug; the verifier does not accept a caller-supplied manifest for project or alias identity.
-- Deployment identity is accepted only from the Vercel API response; GitHub event fields provide only the expected commit and push timestamp. The protected workflow uses a read-only token from the `w13-development-verification` environment, restricted to `development`.
+- Deployment identity is accepted only from owner-inspected Vercel metadata; GitHub event fields provide only the expected commit and push timestamp. No repository workflow or application runtime receives a Vercel deployment token.
 - Database target validation uses `new URL(...).hostname` and database name against the committed tier target map; credentials, query strings, and full URLs never appear in errors. `NEON_HOST` and `NEON_PROJECT` are observations that must match the code-owned map, not the allowlist source.
 - Migration manifests are repository-relative, one line per migration, with `<path> <lowercase sha256>`, raw file-byte hashing, no blank/comment/duplicate/extra entries, and sorted migration paths.
 - The tier manifest has separate application `env` and Vercel `vercelEnv` fields: production uses `production`; development uses `preview`.

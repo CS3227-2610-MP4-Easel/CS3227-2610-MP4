@@ -73,5 +73,5 @@ test("core sources render storage fields and use their fixed sort order", async 
   assert.equal((await sources.blockedTasks(standupArgs))[0].text, "Blocked: Waiting");
   assert.deepEqual(queries.map((query) => query.orderBy), [[{ targetDate: "asc" }, { id: "asc" }], [{ at: "desc" }, { id: "desc" }], [{ createdAt: "desc" }, { id: "desc" }]]);
   assert.deepEqual(queries[1].where.at, { gte: window.from, lt: window.to });
-  assert.deepEqual(queries[2].where.createdAt, { gte: window.from, lt: window.to });
+  assert.equal(queries[2].where.createdAt, undefined, "a current blocker is listed whenever the task was created");
 });

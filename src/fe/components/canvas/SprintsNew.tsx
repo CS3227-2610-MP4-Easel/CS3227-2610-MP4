@@ -5,6 +5,7 @@ import { A, css, r, useRole } from '../../lib/nav';
 import { NewSprintForm } from '../live/forms';
 import Top from './Top';
 import ProjectHead from './ProjectHead';
+import ModalRoute from '../modal-route';
 
 class Logic {
 props: any;
@@ -15,5 +16,5 @@ renderVals() { return {}; }
 
 export default function SprintsNew(props: any = {}) {
   const v = new Logic(props).renderVals();
-  return (<><div className="app"><Top role={"lead"} project={"1"} />{" "}<div className="body"><main className="main"><ProjectHead role={"lead"} active={"sprints"} />{" "}<div className="wide stack"><div className="card"><div className="sk" style={{width: "200px", height: "16px", marginBottom: "12px"}}></div><div className="sk" style={{marginBottom: "8px"}}></div><div className="sk" style={{width: "80%"}}></div></div></div></main></div>{" "}<div className="scrim" role="presentation"><NewSprintForm /></div></div></>);
+  return <ModalRoute closeTo="Sprints.dc.html"><NewSprintForm /></ModalRoute>;
 }

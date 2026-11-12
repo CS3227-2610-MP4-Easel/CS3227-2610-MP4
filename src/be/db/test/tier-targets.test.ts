@@ -18,6 +18,7 @@ test("E1/E2 canonical dev and prod targets use the confirmed values", () => {
   assert.equal(prod.firebaseProjectId, "agile-platform-prod");
   assert.equal(prod.neonProject, "super-sunset-36592949");
   assert.equal(prod.neonHost, "ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech");
+  assert.equal(prod.directMigrationHost, "ep-summer-heart-b3767eul.c-4.ap-southeast-1.aws.neon.tech");
   assert.equal(prod.databaseName, "neondb");
 });
 
@@ -46,7 +47,7 @@ test("E5 malformed and cross-tier database targets fail without echoing the URL"
     APP_TIER: "dev",
     DATABASE_URL: "postgresql://user:password@ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb",
     NEON_HOST: "ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech",
-    NEON_PROJECT: "super-sunset-36592949",
+    NEON_PROJECT: "falling-rice-06970921",
   };
   assert.deepEqual(parseDatabaseTarget(dev.DATABASE_URL), {
     protocol: "postgresql:",
@@ -62,4 +63,57 @@ test("E5 malformed and cross-tier database targets fail without echoing the URL"
     return true;
   });
   assert.throws(() => parseDatabaseTarget("not-a-url"), /malformed/);
+});
+
+test("W13 recovery seed accepts only the explicitly approved isolated branch", () => {
+  const rehearsal = {
+    APP_TIER: "dev",
+    W13_RECOVERY_REHEARSAL: "1",
+    NEON_BRANCH: "w13-recovery-baseline",
+    DATABASE_URL: "postgresql://user:password@ep-purple-shape-aohygd1w.c-2.ap-southeast-1.aws.neon.tech/neondb",
+    NEON_HOST: "ep-purple-shape-aohygd1w.c-2.ap-southeast-1.aws.neon.tech",
+    NEON_PROJECT: "falling-rice-06970921",
+  };
+  assert.doesNotThrow(() => validateDatabaseTarget(rehearsal, "dev"));
+  assert.throws(() => validateDatabaseTarget({ ...rehearsal, W13_RECOVERY_REHEARSAL: undefined }, "dev"), /target|rehearsal/i);
+  assert.throws(() => validateDatabaseTarget({ ...rehearsal, NEON_BRANCH: "w13-recovery-rehearsal" }, "dev"), /target|rehearsal/i);
+  assert.throws(() => validateDatabaseTarget({ ...rehearsal, DATABASE_URL: "postgresql://user:password@ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech/neondb", NEON_HOST: "ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech" }, "dev"), /target|observations/i);
+});
+
+test("E1-E3 recovery requires the exact direct target and fixed observations", () => {
+  const base = {
+    APP_TIER: "dev",
+    W13_RECOVERY_REHEARSAL: "1",
+    NEON_BRANCH: "w13-recovery-baseline",
+    DATABASE_URL: "postgresql://user:password@ep-purple-shape-aohygd1w.c-2.ap-southeast-1.aws.neon.tech/neondb",
+    NEON_HOST: "ep-purple-shape-aohygd1w.c-2.ap-southeast-1.aws.neon.tech",
+    NEON_PROJECT: "falling-rice-06970921",
+  };
+  for (const mismatch of [
+    { DATABASE_URL: "postgresql://recovery-user:recovery-password@ep-other-shape-aohygd1w.c-2.ap-southeast-1.aws.neon.tech/neondb" },
+    { DATABASE_URL: "postgresql://recovery-user:recovery-password@ep-purple-shape-aohygd1w.c-2.ap-southeast-1.aws.neon.tech/neondb", NEON_HOST: "ep-other-shape-aohygd1w.c-2.ap-southeast-1.aws.neon.tech" },
+    { NEON_HOST: undefined },
+    { NEON_PROJECT: "other-project" },
+    { NEON_PROJECT: undefined },
+    { NEON_BRANCH: "other-branch" },
+    { DATABASE_URL: "postgresql://recovery-user:recovery-password@ep-purple-shape-aohygd1w.c-2.ap-southeast-1.aws.neon.tech/otherdb" },
+    { DATABASE_URL: "not-a-url" },
+    { DATABASE_URL: "postgresql://recovery-user:recovery-password@ep-purple-shape-aohygd1w-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb" },
+  ]) {
+    assert.throws(() => validateDatabaseTarget({ ...base, ...mismatch }, "dev"), (error: unknown) => {
+      assert.ok(error instanceof Error);
+      assert.match(error.message, /target|observations|malformed/i);
+      assert.equal(error.message.includes("recovery-user"), false);
+      assert.equal(error.message.includes("recovery-password"), false);
+      assert.equal(error.message.includes("postgresql://"), false);
+      return true;
+    });
+  }
+});
+
+test("malformed percent-encoded database paths use the fixed malformed-target error", () => {
+  assert.throws(
+    () => parseDatabaseTarget("postgresql://recovery-user:recovery-password@ep-purple-shape-aohygd1w.c-2.ap-southeast-1.aws.neon.tech/%E0%A4%A"),
+    (error: unknown) => error instanceof Error && error.message === "DATABASE_URL target is malformed",
+  );
 });

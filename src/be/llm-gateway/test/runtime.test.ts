@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 import type { PrismaClient } from "@prisma/client";
 import { createLlmGatewayRuntime } from "../src/runtime.js";
@@ -7,7 +8,7 @@ const CANONICAL_SOCLAAS = "https://soclaas-api.comp.nus.edu.sg/v1";
 const dev = {
   APP_TIER: "dev", LLM_MODE: "live", SOCLAAS_API_KEY: "sk-test-key", SOCLAAS_BASE_URL: CANONICAL_SOCLAAS,
   DATABASE_URL: "postgresql://user:password@ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb",
-  NEON_HOST: "ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech", NEON_PROJECT: "super-sunset-36592949",
+  NEON_HOST: "ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech", NEON_PROJECT: "falling-rice-06970921",
 };
 const prod = {
   APP_TIER: "prod", LLM_MODE: "live", SOCLAAS_API_KEY: "sk-test-key", SOCLAAS_BASE_URL: CANONICAL_SOCLAAS,
@@ -60,4 +61,16 @@ test("E8 identity-only previews return AI_DISABLED without a database client", a
   assert.equal(calls, 0);
   assert.deepEqual(await runtime.gateway.run(undefined as never), { ok: false, code: "AI_DISABLED" });
   await assert.rejects(runtime.sessions.open(undefined as never), /AI_NOT_CONFIGURED/);
+  await assert.rejects(runtime.sessions.openOrReuse(undefined as never), /AI_NOT_CONFIGURED/);
+  await assert.rejects(runtime.cacheHits.recordCacheHit(undefined as never), /AI_NOT_CONFIGURED/);
+});
+
+test("F9 a runtime's recordCacheHit creates one row and never calls the limiter", async () => {
+  const rows: unknown[] = [];
+  const db = { llmCall: { create: async (args: unknown) => { rows.push(args); return { id: "x" }; } } } as unknown as PrismaClient;
+  let hits = 0;
+  const runtime = createLlmGatewayRuntime({ APP_TIER: "test", LLM_MODE: "mock", DATABASE_URL: "postgresql://localhost/agile_platform" }, { createClient: () => db, hit: async () => { hits += 1; return { allowed: true, retryAfterSeconds: 0 }; } });
+  await runtime.cacheHits.recordCacheHit({ feature: "DEV_SUMMARY", caller: { userId: randomUUID(), role: "DEVELOPER" }, sessionId: null, projectId: null, inputHash: "ab", promptVersion: "cd" });
+  assert.equal(rows.length, 1);
+  assert.equal(hits, 0);
 });

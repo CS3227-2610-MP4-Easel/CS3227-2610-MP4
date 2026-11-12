@@ -1,0 +1,21 @@
+{
+  "task": "T11",
+  "status": "done",
+  "summary": "Endpoints 34/35/37/40/41 registered with body limits and getPmRuntime wiring; route and mock-mode end-to-end tests pass on the real database.",
+  "commit": "4354466",
+  "produces": [
+    { "kind": "symbol", "name": "pmRoutes", "where": "src/be/api/src/routes/pm.ts", "note": "five RouteDefinitions; PlanFlowError -> HttpError, Retry-After on 429; validates PM_SIMILAR_ITEMS at load" },
+    { "kind": "symbol", "name": "getPmRuntime", "where": "src/be/pm/src/runtime.ts", "note": "memoised PlanFlow; registers pm.similarItems once; gateway access isolated in gateway-binding.ts" },
+    { "kind": "file", "name": "gateway-binding.ts", "where": "src/be/pm/src/gateway-binding.ts", "note": "only file importing llm-gateway on the runtime path; needed because the W6 source scan forbids gateway and @agile/db imports in one file or its relative closure" },
+    { "kind": "route", "name": "endpoints 34, 35, 37, 40, 41", "where": "src/be/api/src/routes/index.ts", "note": "ROUTES now includes ...pmRoutes(getPmRuntime); endpoint 34 uses params.id, others params.proposalId" },
+    { "kind": "file", "name": "pm-routes.test.ts / pm-e2e.test.ts", "where": "src/be/api/test/", "note": "E3,E5,E9,E19,E21,E36,E47 / E45,E12,E17,E52" }
+  ],
+  "next": "Routes: node --env-file .ws/w7.env --import tsx --import ./tests/setup-auth-env.ts --test src/be/api/test/pm-routes.test.ts\nE2E: same command with src/be/api/test/pm-e2e.test.ts\nW5: register createProposalResolvers(db), project resolver for endpoint 34 (params.id).",
+  "deviations": [
+    { "what": "runtime.ts split: gateway access moved to src/be/pm/src/gateway-binding.ts", "why": "source scan rule 1 flagged runtime.ts for importing llm-gateway together with @agile/db, @agile/core and @agile/proposals", "needs": "none" },
+    { "what": "429 details sent as [{field:'reason',message}] from PlanFlowError.details", "why": "HttpError details is a field/message array", "needs": "none" },
+    { "what": "Four F8 pre-tool mediation tests fail in the full run (491, 492, 493, 497)", "why": "unrelated to this task (agent policy hook tests); not touched", "needs": "orchestrator" }
+  ],
+  "edge_cases": ["E3", "E5", "E9", "E12", "E17", "E19", "E21", "E36", "E45", "E47", "E52"],
+  "checks": { "build": "pass", "tests": "full run 557 tests with database: 553 pass, 4 fail (F8 mediation, unrelated), 0 skipped; pm-routes 11/11 pass, pm-e2e 4/4 pass, contract 7/7 pass", "lint": "pass" }
+}
