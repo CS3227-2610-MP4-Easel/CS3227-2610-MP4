@@ -2,6 +2,7 @@ import type { AuthRuntime } from "@agile/auth";
 import { registerContextSource, registerCore } from "@agile/ai-context";
 import { NotMember, type ResolvedResource } from "@agile/contracts";
 import { createCheckpoints, createCore, createCoreResourceResolvers, createEpics, createProjects, createTasks, registerCoreContextSources, resolveCoreResource } from "@agile/core";
+import { getLeadRuntime, initLeadRuntime } from "@agile/lead";
 import type { AuthDependencies } from "./middleware/auth.js";
 import { createW5Routes, type W5RouteServices } from "./routes/index.js";
 
@@ -36,10 +37,17 @@ export function createCoreComposition(auth: Pick<AuthRuntime, "db" | "lookupUser
     const targetRole = user ? await auth.lookupUserRole(user.userId) : null;
     return targetRole ? { ...resolved, targetRole } : resolved;
   };
+  const leadRuntime = () => {
+    try { return getLeadRuntime(db as never); } catch (error) {
+      if (!(error instanceof Error) || error.message !== "LEAD_RUNTIME_NOT_INITIALIZED") throw error;
+      return initLeadRuntime(db as never);
+    }
+  };
   const services: W5RouteServices = {
     projects: createProjects(db as never, access),
     checkpoints: createCheckpoints(db as never, access),
     planning: { epics: createEpics(db as never, access), tasks: createTasks(db as never, access) },
+    lead: { runtime: leadRuntime },
   };
 
   // Registration is intentionally fail-fast: a duplicate or missing source must prevent degraded boot.

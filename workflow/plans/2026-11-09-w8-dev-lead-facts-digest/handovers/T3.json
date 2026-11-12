@@ -1,0 +1,23 @@
+{
+  "task": "T3",
+  "status": "done",
+  "summary": "Added policy-composed endpoints 42, 44 and 45, lead runtime wiring, project resolver coverage, validation/error mapping, and focused route tests.",
+  "commit": "d12fb61",
+  "produces": [
+    { "kind": "route", "name": "PROJECT_FACTS_READ", "where": "src/be/api/src/routes/lead.ts", "note": "GET /api/projects/{id}/facts uses caller-member facts and FactsSchema." },
+    { "kind": "route", "name": "LEAD_DIGEST_CREATE", "where": "src/be/api/src/routes/lead.ts", "note": "POST /api/lead/projects/{id}/digests accepts exact JSON {} and translates typed lead-flow errors." },
+    { "kind": "route", "name": "LEAD_DIGEST_LATEST_READ", "where": "src/be/api/src/routes/lead.ts", "note": "GET /api/lead/projects/{id}/digests/latest returns target latest digest with cached false." },
+    { "kind": "symbol", "name": "createCoreResourceResolvers", "where": "src/be/core/src/resolvers.ts", "note": "Registers project operations PROJECT_FACTS_READ, LEAD_DIGEST_CREATE and LEAD_DIGEST_LATEST_READ." }
+  ],
+  "next": "Close-out: run branch review and reconcile guide impact for lead API routes.",
+  "deviations": [
+    { "what": "The whole suite under APP_TIER=preview had 11 API-shell failures because DATABASE_URL is present.", "why": "Preview environment validation rejects DATABASE_URL; focused T3 checks are green and this is unrelated to the route changes.", "needs": "none" }
+  ],
+  "edge_cases": ["E7", "E8", "E17", "E18", "E26", "E28"],
+  "checks": {
+    "build": "pass",
+    "tests": "focused API/core tests 13 pass; whole suite 499 pass, 11 fail from APP_TIER=preview plus DATABASE_URL, 28 skipped",
+    "lint": "pass",
+    "contract": "7 pass"
+  }
+}

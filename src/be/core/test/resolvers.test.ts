@@ -20,7 +20,7 @@ test("the registry maps every T1 operation to its frozen resource kind", async (
     ["CHECKPOINT_LIST", "PROJECT"], ["CHECKPOINT_CREATE", "PROJECT"], ["CHECKPOINT_UPDATE", "PROJECT"], ["CHECKPOINT_DELETE", "PROJECT"],
     ["EPIC_LIST", "PROJECT"], ["EPIC_CREATE", "PROJECT"], ["EPIC_UPDATE", "PROJECT"], ["EPIC_DELETE", "PROJECT"],
     ["TASK_LIST", "PROJECT"], ["TASK_CREATE", "PROJECT"], ["TASK_READ", "TASK"], ["TASK_UPDATE", "TASK"], ["TASK_STATUS_UPDATE", "TASK"], ["TASK_DELETE", "TASK"], ["TASK_EVENT_LIST", "TASK"],
-    ["SPRINT_LIST", "PROJECT"], ["SPRINT_CREATE", "PROJECT"], ["PROJECT_PROGRESS_READ", "PROJECT"], ["PM_PLAN_CREATE", "PROJECT"],
+    ["SPRINT_LIST", "PROJECT"], ["SPRINT_CREATE", "PROJECT"], ["PROJECT_PROGRESS_READ", "PROJECT"], ["PM_PLAN_CREATE", "PROJECT"], ["PROJECT_FACTS_READ", "PROJECT"], ["LEAD_DIGEST_CREATE", "PROJECT"], ["LEAD_DIGEST_LATEST_READ", "PROJECT"],
   ];
   for (const [operation, kind] of expected) assert.equal((await resolvers[operation]({ params: { projectId, id: taskId, userId }, body: { email: "member@example.test", role: "PM" } }))?.kind, kind, operation);
   assert.deepEqual(await resolvers.PROJECT_LIST({ userId }), { kind: "PROJECT_SET", projectIds: [projectId] });

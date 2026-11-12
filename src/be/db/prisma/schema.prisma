@@ -429,6 +429,7 @@ model ProjectDigest {
   id String @id @default(uuid()) @db.Uuid
   projectId String @map("project_id") @db.Uuid
   facts Json
+  factsAsOf DateTime @map("facts_as_of")
   factsHash String @map("facts_hash")
   explanation String?
   degraded Boolean
@@ -440,5 +441,6 @@ model ProjectDigest {
   proposal AiProposal? @relation(fields: [proposalId], references: [id])
   session AiSession? @relation(fields: [sessionId], references: [id])
   @@index([projectId, createdAt])
+  @@index([projectId, factsAsOf(sort: Desc), createdAt(sort: Desc), id(sort: Desc)])
   @@map("project_digests")
 }
