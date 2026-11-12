@@ -7,7 +7,7 @@ import { getLeadRuntime, initLeadRuntime } from "@agile/lead";
 import type { AuthDependencies } from "./middleware/auth.js";
 import { createW5Routes, type W5RouteServices } from "./routes/index.js";
 
-const PROPOSAL_OPERATIONS = new Set(["PM_PROPOSAL_READ", "PM_EPIC_EXPAND", "PM_PROPOSAL_APPROVE", "PM_PROPOSAL_REJECT"]);
+const PROPOSAL_OPERATIONS = new Set(["PM_PROPOSAL_READ", "PM_EPIC_EXPAND", "PM_PROPOSAL_APPROVE", "PM_PROPOSAL_REJECT", "PM_EPIC_UPDATE", "PM_EPIC_REGENERATE", "PM_PROPOSAL_CHECKPOINTS_UPDATE", "PM_PROPOSAL_EPIC_CREATE", "PM_PROPOSAL_EPIC_DELETE"]);
 
 export type CoreComposition = Pick<AuthDependencies, "resolveResource" | "requireMember"> & { routes: ReturnType<typeof createW5Routes> };
 
@@ -30,7 +30,7 @@ export function createCoreComposition(auth: Pick<AuthRuntime, "db" | "lookupUser
   const proposalResolver = createProposalResolvers(auth.db);
   const resolveResource: AuthDependencies["resolveResource"] = async (operationId, request, tx) => {
     if (PROPOSAL_OPERATIONS.has(operationId)) return proposalResolver(operationId, request, tx);
-    let resolved = await resolveCoreResource(resolvers, operationId, request);
+    let resolved = await resolveCoreResource(resolvers, operationId === "PM_PROPOSAL_LIST" ? "PM_PLAN_CREATE" : operationId, request);
     // Filtered reads hide archived projects. For the add-member operation, only the auth-owned
     // membership probe may restore the archived shape needed to preserve 409/404 precedence.
     if (operationId === "PROJECT_MEMBER_ADD" && !resolved && request.userId && typeof request.params.projectId === "string" && await auth.lookupArchivedMembership(request.userId, request.params.projectId)) {

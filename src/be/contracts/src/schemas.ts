@@ -1,4 +1,5 @@
 import { z } from "zod/v3";
+import { PageQuerySchema, pageSchema } from "./pagination.js";
 import { ExpansionStatusSchema, FeatureSchema, ProjectStatusSchema, ProposalStatusSchema, SprintStatusSchema, TaskEventTypeSchema, TaskStatusSchema, UsageOutcomeSchema, UserRoleSchema } from "./enums.js";
 
 const uuid = z.string().uuid();
@@ -60,6 +61,13 @@ export const UploadResponseSchema = z.object({ received: z.number().int().nonneg
 export const SummaryResponseSchema = z.object({ summaries: z.array(z.object({ itemId: uuid, oneLiner: z.string().min(1), cached: z.boolean() }).strict()), failed: z.array(uuid) }).strict();
 export const PlanCreateBodySchema = z.object({ idea: z.string().max(24000, "Must be 20 to 6000 characters.").refine((s) => [...s].length >= 20 && [...s].length <= 6000, "Must be 20 to 6000 characters.") }).strict();
 export const ProposalVersionBodySchema = z.object({ version: z.number().int().min(1).max(2147483647) }).strict();
+export const PlanTaskInputSchema = z.object({ title: z.string().min(1).max(200), description: z.string().max(4000), acceptanceCriteria: z.array(z.string().min(1).max(300)).max(12), storyPoints: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(5), z.literal(8), z.literal(13)]) }).strict();
+export const PlanEpicEditBodySchema = z.object({ title: z.string().min(1).max(200).optional(), description: z.string().max(4000).optional(), checkpointName: z.string().max(200).nullable().optional(), tasks: z.array(PlanTaskInputSchema).min(1).max(8).optional(), version: ProposalVersionBodySchema.shape.version }).strict().refine((b) => b.title !== undefined || b.description !== undefined || b.checkpointName !== undefined || b.tasks !== undefined, { message: "Send at least one field." });
+export const PlanCheckpointsBodySchema = z.object({ checkpoints: z.array(z.object({ name: z.string().min(1).max(200), targetDate: date, previousName: z.string().min(1).max(200).optional() }).strict()).max(8), version: ProposalVersionBodySchema.shape.version }).strict();
+export const PlanEpicAddBodySchema = z.object({ title: z.string().min(1).max(200), description: z.string().max(4000), checkpointName: z.string().max(200).nullable(), version: ProposalVersionBodySchema.shape.version }).strict();
+export const ProposalVersionQuerySchema = z.object({ version: z.coerce.number().int().min(1).max(2147483647) }).strict();
+export const PlanListQuerySchema = PageQuerySchema.extend({ status: ProposalStatusSchema.optional(), size: z.coerce.number().int().min(1).max(20).default(20) });
+export const PlanProposalPageSchema = pageSchema(PlanProposalSchema);
 export const EmptyBodySchema = z.object({}).strict();
 const count = z.number().int().nonnegative();
 export const PlanApprovalSchema = z.object({ proposalId: uuid, status: z.literal("APPROVED"), created: z.object({ checkpoints: count, epics: count, tasks: count }).strict() }).strict();

@@ -19,9 +19,10 @@ const auth = {
 // One test for the W7 wiring into W5's composition: the four proposal operations resolve through the stored proposal, endpoint 34 through the project, and unknown ids to nothing.
 test("W7 composition resolves the proposal operations and the plan-create project", async () => {
   const { resolveResource } = createCoreComposition(auth);
-  for (const operation of ["PM_PROPOSAL_READ", "PM_EPIC_EXPAND", "PM_PROPOSAL_APPROVE", "PM_PROPOSAL_REJECT"]) {
+  for (const operation of ["PM_PROPOSAL_READ", "PM_EPIC_EXPAND", "PM_PROPOSAL_APPROVE", "PM_PROPOSAL_REJECT", "PM_EPIC_UPDATE", "PM_EPIC_REGENERATE", "PM_PROPOSAL_CHECKPOINTS_UPDATE", "PM_PROPOSAL_EPIC_CREATE", "PM_PROPOSAL_EPIC_DELETE"]) {
     assert.deepEqual(await resolveResource(operation, { params: { proposalId: PROPOSAL } } as never, undefined as never), { kind: "PROPOSAL", projectId: PROJECT, ownerId: OWNER, state: "ACTIVE" }, operation);
     assert.equal(await resolveResource(operation, { params: { proposalId: "3e0c9d6b-4f4a-4b8d-9c54-6f2a5d7e8b93" } } as never, undefined as never), null, `${operation} unknown`);
   }
+  assert.deepEqual(await resolveResource("PM_PROPOSAL_LIST", { params: { id: PROJECT } } as never, undefined as never), { kind: "PROJECT", projectId: PROJECT, state: "ACTIVE" });
   assert.deepEqual(await resolveResource("PM_PLAN_CREATE", { params: { id: PROJECT } } as never, undefined as never), { kind: "PROJECT", projectId: PROJECT, state: "ACTIVE" });
 });

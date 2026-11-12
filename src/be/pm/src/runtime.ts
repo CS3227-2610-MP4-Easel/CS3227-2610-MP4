@@ -1,7 +1,7 @@
 import { applyPlan } from "@agile/core";
 import { createDbClient, type FilteredDbClient } from "@agile/db";
 import { getAiContext } from "@agile/ai-context";
-import { approveProposal, claimEpic, createProposal, failEpic, getProposalView, rejectProposal, storeEpic } from "@agile/proposals";
+import { addEpic, approveProposal, claimEpic, createProposal, deleteEpic, editEpic, failEpic, getProposalView, listProposals, precheckRegenerate, rejectProposal, replaceCheckpoints, storeEpic } from "@agile/proposals";
 import { gatewayParts } from "./gateway-binding.js";
 import { createPlanFlow, type PlanFlow } from "./plan-flow.js";
 import { loadPmSettings } from "./settings.js";
@@ -39,6 +39,12 @@ export function getPmRuntime(deps: { createDbClient: () => FilteredDbClient; gat
       claimEpic: (i) => claimEpic(client, i),
       storeEpic: (i) => storeEpic(client, i),
       failEpic: (i) => failEpic(client, i),
+      editEpic: (i) => editEpic(client, i),
+      replaceCheckpoints: (i) => replaceCheckpoints(client, i),
+      addEpic: (i) => addEpic(client, i),
+      deleteEpic: (i) => deleteEpic(client, i),
+      precheckRegenerate: (i) => precheckRegenerate(client, i),
+      listProposals: (i) => listProposals(client, i),
       approveProposal: (i) => approveProposal({ db: client, core, sessions }, i),
       rejectProposal: (i) => rejectProposal({ db: client, sessions }, i),
     },
