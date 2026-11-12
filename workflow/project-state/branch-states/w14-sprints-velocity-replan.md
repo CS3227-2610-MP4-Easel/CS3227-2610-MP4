@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — T1 dispatched
+- **Last updated:** 2026-11-13 by Codex — T1 review fixed; T2/T3 dispatched
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | Orchestrating T1 shared contracts and route metadata | Validate T1 handover, review its diff, then dispatch T2/T3 | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Active | Orchestrating T2 core sprint work and T3 proposal/session work | Validate T2/T3 handovers and full reviews; then dispatch T4 | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -54,7 +54,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W14 | Sprints, velocity and re-plan | Building | [spec](../../specs/2026-11-12-w14-sprints-velocity-replan-design.md) | [plan](../../plans/2026-11-12-w14-sprints-velocity-replan/plan.md) | T1 in progress: shared contracts | — |
+| W14 | Sprints, velocity and re-plan | Building | [spec](../../specs/2026-11-12-w14-sprints-velocity-replan-design.md) | [plan](../../plans/2026-11-12-w14-sprints-velocity-replan/plan.md) | T2/T3 in progress: core and proposal seams | — |
 
 ## 3. Changes
 
@@ -74,6 +74,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-13 | Reviewed merged W7 UI scope: PM plan flow/history plus shared backlog/project wiring; W7 did not own Dev Lead health or W14 sprint/re-plan pages | W14 | this commit |
 | 2026-11-13 | Audited role wiring: board/backlog and member/checkpoint data have live seams, but PM/Developer overview and sprint screens still use fixture paths; W14 remains the owner of live sprint/re-plan wiring | W14 | this commit |
 | 2026-11-13 | Operator approved the six-task W14 implementation plan at Gate 2; execution begins with T1 | W14 | this commit |
+| 2026-11-13 | T1 completed shared W14 contracts; T2 and T3 started after T1 handover | W14 | commits `4bea8a2`, `29e8dea` |
 
 ## 4. Decisions
 
