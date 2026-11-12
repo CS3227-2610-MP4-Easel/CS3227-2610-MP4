@@ -94,7 +94,7 @@ textarea.in{height:auto;padding:10px 12px;resize:none}
 .b-bad{background:var(--danger-s);border-color:var(--b-bad-line);color:var(--b-bad-t)}
 .b-ok{background:var(--ok-s);border-color:var(--b-ok-line);color:var(--b-ok-t)}
 .toast{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--fill);color:var(--ink);padding:12px 16px;border-radius:10px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
-.scrim{position:absolute;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:24px;z-index:20}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:24px;z-index:20}
 .scrim.end{justify-content:flex-end;padding:0;align-items:stretch}
 .dialog{background:var(--surface);border-radius:14px;width:min(520px,100%);box-shadow:0 20px 50px rgba(0,0,0,.3);padding:24px;display:flex;flex-direction:column;gap:16px}
 .drawer{width:min(540px,100%);background:var(--surface);padding:24px;overflow:auto;display:flex;flex-direction:column;gap:18px;box-shadow:-12px 0 40px rgba(0,0,0,.2)}

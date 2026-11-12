@@ -1,0 +1,17 @@
+{
+  "task": "T3",
+  "status": "done",
+  "summary": "Closed T3 review findings: explicit UUID links, live members/checkpoints, truthful loading/empty/error states, and 401 boundary regressions.",
+  "commit": "170a4e3",
+  "produces": [
+    { "kind": "file", "name": "Projects live surface", "where": "src/fe/components/canvas/Projects.tsx", "note": "UUID-mode list uses listProjectsLive_6 and preserves each project id in links; prototype mode remains local." },
+    { "kind": "file", "name": "Lead overview live surface", "where": "src/fe/components/canvas/OverviewLead.tsx", "note": "UUID-mode detail/progress loads through getProjectLive_7 and getProgressLive_33 without rendering prototype values while pending." },
+    { "kind": "file", "name": "Context-aware project header", "where": "src/fe/components/canvas/ProjectHead.tsx", "note": "UUID-mode title/status and tabs preserve the active project id; 401 stays with AuthGate and other failures use safe messages." }
+  ],
+  "next": "T5 should run route/state regressions and confirm prototype screens retain their existing interactions.",
+  "deviations": [
+    { "what": "The normal incremental typecheck command is not usable in this managed worktree.", "why": "The worktree denies writes to generated tsconfig.tsbuildinfo; the non-incremental frontend typecheck passes and is the verified replacement.", "needs": "none" }
+  ],
+  "edge_cases": ["F1", "F2", "F7", "F8", "E1", "E2", "E3", "E7", "E14"],
+  "checks": { "build": "pass", "tests": "183 pass, 0 fail", "lint": "pass" }
+}

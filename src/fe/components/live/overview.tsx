@@ -1,6 +1,6 @@
 'use client';
 import { A, r } from '../../lib/nav';
-import { progressOf, useDb } from '../../lib/api';
+import { progressOf, useDb, type LiveCheckpoint, type LiveMember, type LiveProgress } from '../../lib/api';
 import RoleBadge from '../canvas/RoleBadge';
 import { fmtFull } from './people';
 
@@ -8,9 +8,19 @@ const ROLE = { PM: 'pm', DEV_LEAD: 'lead', DEVELOPER: 'dev' } as const;
 const AV = ['a1', 'a2', 'a3', 'a4'];
 const ini = (n: string) => n.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase();
 
+export type OverviewLiveProps = { live?: boolean; projectId?: string | null; loading?: boolean; error?: string | null; onRetry?: () => void; progress?: LiveProgress | null; checkpoints?: LiveCheckpoint[]; members?: LiveMember[] };
+
+function LiveState({ loading, error, onRetry, children }: { loading?: boolean; error?: string | null; onRetry?: () => void; children: React.ReactNode }) {
+  if (loading) return <div className="card"><div className="sk" style={{ height: 18, width: '35%' }}></div><div className="sk" style={{ height: 38, marginTop: 12 }}></div></div>;
+  if (error) return <div className="banner b-bad" role="alert"><span className="sp">{error}</span>{onRetry ? <button className="btn sm" type="button" onClick={onRetry}>Try again</button> : null}</div>;
+  return <>{children}</>;
+}
+
 // Overview cards, read from the data layer (endpoints 33, 12 and 9).
-export function ProgressCard() {
-  const p = progressOf(useDb());
+export function ProgressCard(props: OverviewLiveProps = {}) {
+  const db = useDb();
+  if (props.live) { const p = props.progress; return <LiveState loading={props.loading} error={props.error} onRetry={props.onRetry}><section className="card"><h3>Progress</h3><div className="row between" style={{ alignItems: 'flex-end' }}><div><span style={{ fontSize: 36, fontWeight: 700, lineHeight: 1 }} className="num">{p?.percent ?? 0}%</span><span className="muted"> done</span></div><span className="b num">{p?.pointsDone ?? 0} of {p?.pointsTotal ?? 0} points done</span></div><div className="bar big" style={{ margin: '12px 0' }}><i style={{ width: `${p?.percent ?? 0}%` }}></i></div>{(p?.unestimatedTasks ?? 0) > 0 && <div className="chip c-warn">{p!.unestimatedTasks} task{p!.unestimatedTasks === 1 ? ' has' : 's have'} no estimate</div>}</section></LiveState>; }
+  const p = progressOf(db);
   return (
     <section className="card">
       <h3>Progress</h3>
@@ -26,8 +36,10 @@ export function ProgressCard() {
   );
 }
 
-export function VelocityCard() {
-  const p = progressOf(useDb());
+export function VelocityCard(props: OverviewLiveProps = {}) {
+  const db = useDb();
+  if (props.live) { const p = props.progress; return <LiveState loading={props.loading} error={props.error} onRetry={props.onRetry}><section className="card"><div className="row between" style={{ marginBottom: 12 }}><h3 style={{ margin: 0 }}>Velocity</h3><span className="small muted">Completed points per closed sprint</span></div>{!p?.velocity.length ? <p className="muted">Close a sprint to see velocity.</p> : <div className="row small muted">{p.velocity.map((v) => <span key={v.name}>{v.name}: {v.completedPoints} pts</span>)}</div>}</section></LiveState>; }
+  const p = progressOf(db);
   const max = Math.max(1, ...p.velocity.map((v) => v.points));
   const last = p.velocity.slice(-3);
   const avg = last.length ? Math.round(last.reduce((a, v) => a + v.points, 0) / last.length) : 0;
@@ -56,8 +68,9 @@ export function VelocityCard() {
   );
 }
 
-export function CheckpointsCard() {
+export function CheckpointsCard(props: OverviewLiveProps = {}) {
   const db = useDb();
+  if (props.live) return <LiveState loading={props.loading} error={props.error} onRetry={props.onRetry}><section className="card"><div className="row between" style={{ marginBottom: 8 }}><h3 style={{ margin: 0 }}>Next checkpoints</h3><A href={r('Checkpoints.dc.html', props.projectId ?? undefined)} className="small b" style={{ color: 'var(--accent-t)' }}>All checkpoints</A></div><div className="stack8">{(props.checkpoints ?? []).map((c) => <div className="row between" key={c.id}><span className="b">{c.name}</span><span className="num muted">{fmtFull(c.targetDate)}</span></div>)}{!(props.checkpoints ?? []).length && <span className="muted">No checkpoints yet.</span>}</div></section></LiveState>;
   return (
     <section className="card">
       <div className="row between" style={{ marginBottom: 8 }}>
@@ -77,8 +90,9 @@ export function CheckpointsCard() {
   );
 }
 
-export function TeamCard() {
+export function TeamCard(props: OverviewLiveProps = {}) {
   const db = useDb();
+  if (props.live) return <LiveState loading={props.loading} error={props.error} onRetry={props.onRetry}><section className="card"><div className="row between" style={{ marginBottom: 8 }}><h3 style={{ margin: 0 }}>Team</h3><A href={r('Members.dc.html', props.projectId ?? undefined)} className="small b" style={{ color: 'var(--accent-t)' }}>Manage</A></div><div className="stack8">{(props.members ?? []).map((m, i) => <div className="row" key={m.userId}><span className={`av ${AV[i % 4]}`}>{ini(m.displayName)}</span><span className="sp b">{m.displayName}</span><RoleBadge role={ROLE[m.role]} /></div>)}{!(props.members ?? []).length && <span className="muted">No developers yet.</span>}</div></section></LiveState>;
   return (
     <section className="card">
       <div className="row between" style={{ marginBottom: 8 }}>

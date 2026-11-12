@@ -7,8 +7,8 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w8-dev-lead-facts-digest (from `INT` at `b95546f`)
 - **Base:** b95546f
 - **Owner:** project operator
-- **Status:** In review
-- **Approved:** Gate 1 spec, Gate 2 plan, and Gate 3 branch review — project operator, 2026-11-09
+- **Status:** Folded
+- **Approved:** Gate 1 spec, Gate 2 plan, and Gate 3 branch review — project operator, 2026-11-09; fold approval (project owner, 2026-11-13)
 - **Last updated:** 2026-11-12 by Codex — re-reviewing the W8 branch for remaining blockers
 
 **Untouched:** Architecture, Conventions, Known Gaps, Decisions, Deviations
@@ -26,21 +26,7 @@ sources, and their guarded gateway integration.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | T1 Facts package and deterministic forecast (Wave 1) | — | 2026-11-09 |
-| S2 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | T1 deterministic-pagination follow-up | — | 2026-11-09 |
-| S3 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | T1 attacker review found unbounded endpoint-42 caller scope; operator chose complete aggregation | — | 2026-11-09 |
-| S4 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | T1 complete bounded aggregation repair | — | 2026-11-09 |
-| S5 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | T2 Context sources and digest flow (Wave 2) | — | 2026-11-09 |
-| S6 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | Two post-review lead digest blockers fixed and verified | — | 2026-11-09 |
-| S7 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | Fresh T2 tester-lens review and blocker repair | — | 2026-11-09 |
-| S8 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | Latest digest requires indexed persisted ordering | Record the approved migration and amend the spec/plan | 2026-11-09 |
-| S9 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | Amended W8 for durable `factsAsOf` ordering and migration | Owner review of the uncommitted change set | 2026-11-09 |
-| S10 | 2026-11-09 | Codex (orchestrator) | W8 | Complete | Implementer, tester, and attacker reviews of schema, migrations, and digest flow | — | 2026-11-09 |
-| S11 | 2026-11-10 | Codex (orchestrator) | W8 | Complete | Final verification and owner handover | Request final Gate 3 review and monitor PR CI | 2026-11-10 |
-| S12 | 2026-11-12 | Codex | W8 | Complete | Repaired five PR #28 findings and the failing CI frontend check | Owner review of the isolated repair branch | 2026-11-12 |
-| S13 | 2026-11-12 | Codex | W8 | Complete | Re-reviewed the repaired W8 branch and found the E33 async assertion still unfixed | Move the waitFor assertion from E32 to E33 before merge | 2026-11-12 |
-| S14 | 2026-11-12 | Codex | W8 | Complete | Moved the async assertion to E33 and re-reviewed the complete branch | Owner review of the amended W8 branch | 2026-11-12 |
-| S15 | 2026-11-12 | Codex | W8 | Complete | Corrected completed-checkpoint projected dates to preserve the formula under zero velocity | Owner review of the amended W8 branch | 2026-11-12 |
+| — | — | — | — | — | — | — | — |
 
 Session status: `Active` · `Paused` · `Blocked — needs human` (name the question).
 
@@ -81,6 +67,7 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-09 | Resolved review findings with compatibility-triggered expand/contract migration, forward-only restore recovery, offset-bearing backfill validation, final non-null Prisma shape, migration manifest updates, and a CI-gated PostgreSQL migration regression; full suite passed | W8 | 9975055 |
 | 2026-11-12 | Repaired caller-scoped endpoint-42 facts, bounded trusted numeric formatting, latest-row digest caching, captured-facts assembly, completed-checkpoint risk, and the asynchronous registration CI assertion; added regressions | W8 | this commit |
 | 2026-11-12 | Preserved the formula-derived null projected date for completed checkpoints without velocity while retaining `ON_TRACK` risk; added the missing assertion | W8 | this commit |
+| 2026-11-13 | Project owner confirmed fold readiness; completed session rows were cleared and W8 marked Approved for project-state sync | W8 | owner confirmation |
 
 ## 4. Deviations
 
@@ -119,3 +106,18 @@ One line per change on this branch: what changed and why, with a commit as the r
 
 - Immediate correction: preserve auth's legacy `400` parser behavior and make strict `415`/`422` mapping opt-in for W8 lead routes; rerun CI before merge. Resolved in this branch.
 
+
+
+## Fold record
+Folded 2026-11-13 by Codex on isolated sync worktree from `development` · merge commit `2c5dd9f` · base `b95546f`
+
+| Provisional | Permanent |
+|---|---|
+| D~1 | D26 |
+| D~2 | D27 |
+| D~3 | D28 |
+| D~4 | D29 |
+| D~5 | D30 |
+| D~6 | D31 |
+| D~7 | D32 |
+| C~1 | C81 |

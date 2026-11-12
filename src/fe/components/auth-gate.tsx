@@ -9,6 +9,8 @@ import Screen from './screen';
 
 const OPEN = ['/styleguide', '/states'];
 
+const projectIdOf = (pathname: string) => pathname.match(/^\/projects\/([^/?#]+)/i)?.[1];
+
 function Loading() {
   return (
     <main className="app" style={{ alignItems: 'center', justifyContent: 'center' }}>
@@ -22,12 +24,14 @@ export default function AuthGate({ pathname, view }: { pathname: string; view?: 
   const router = useRouter();
   const status = session?.status ?? 'loading';
   const isOpen = OPEN.includes(pathname);
+  const isRoot = pathname === '/';
+  const isProjectsList = pathname === '/projects';
   const isSignIn = pathname === '/sign-in';
   const isRegister = pathname === '/register';
 
   let target: string | null = null;
   if (!isOpen) {
-    if (status === 'ready' && (isSignIn || isRegister)) target = '/projects';
+    if (status === 'ready' && (isRoot || isSignIn || isRegister || (isProjectsList && session?.user && toRole(session.user.role) !== 'pm'))) target = session?.user && (isRoot || isProjectsList) ? HOME[toRole(session.user.role)] : '/projects';
     else if (status === 'unregistered' && !isRegister) target = '/register';
     else if (status === 'signed-out' && !isSignIn && !isRegister) target = '/sign-in';
   }
@@ -37,7 +41,7 @@ export default function AuthGate({ pathname, view }: { pathname: string; view?: 
   }, [target, router]);
 
   if (!session) return <Loading />;
-  if (isOpen) return <Screen found={resolve(pathname, view, 'pm')} role="pm" home={HOME.pm} />;
+  if (isOpen) return <Screen found={resolve(pathname, view, 'pm')} role="pm" home={HOME.pm} pathname={pathname} projectId={projectIdOf(pathname)} />;
   if (status === 'error') {
     const id = session.error?.requestId;
     return (
@@ -53,7 +57,7 @@ export default function AuthGate({ pathname, view }: { pathname: string; view?: 
   if (isRegister) return <Register />;
   if (status === 'ready' && session.user) {
     const role = toRole(session.user.role);
-    return <Screen found={resolve(pathname, view, role)} role={role} home={HOME[role]} />;
+    return <Screen found={resolve(pathname, view, role)} role={role} home={HOME[role]} pathname={pathname} projectId={projectIdOf(pathname)} />;
   }
   return <Loading />;
 }
