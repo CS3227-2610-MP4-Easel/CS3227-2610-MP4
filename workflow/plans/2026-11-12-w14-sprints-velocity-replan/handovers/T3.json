@@ -1,8 +1,8 @@
 {
   "task": "T3",
   "status": "done",
-  "summary": "Closed T3 review gaps with direct conflict, tenancy, owner, session-binding, adapter and rollback tests; stored suggestions remain uncapped.",
-  "commit": "783e3a2",
+  "summary": "Finalized T3 with realistic cross-project tenancy, authorization-seam, predicate-honoring mock and table-driven session-closer tests.",
+  "commit": "0ddcaaf",
   "produces": [
     {
       "kind": "symbol",
@@ -44,7 +44,7 @@
   "edge_cases": ["E13", "E14", "E15", "E16", "E17", "E23", "endpoint-48"],
   "checks": {
     "build": "pass",
-    "service_tests": "pass: 13/13 via node --import tsx --test src/be/proposals/test/service.test.ts",
+    "service_tests": "pass: 18/18 via node --import tsx --test src/be/proposals/test/service.test.ts",
     "core_tests": "pass: 11/11 via node --import tsx --test src/be/core/test/apply.test.ts",
     "proposals_tests": "not rerun; prior handover recorded 3 passed, 33 skipped (integration URL absent)",
     "gateway_tests": "known failure: E46 live SoCLaaS fetch expected LIVE_SOCLAAS_IN_TESTS but environment returned fetch failed",
