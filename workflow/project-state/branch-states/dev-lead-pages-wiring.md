@@ -7,9 +7,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** dev-lead-pages-wiring (from `INT` at `2c5dd9f`)
 - **Base:** 82cbf919 (development merged 2026-11-13; merge commit 590233c)
 - **Owner:** project operator
-- **Status:** In review
-- **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — PR #35 opened against development
+- **Status:** Approved
+- **Approved:** project operator 2026-11-13
+- **Last updated:** 2026-11-13 by project operator — Gate 3 approved
 
 **Untouched:** Architecture, Conventions, Known Gaps, Decisions, Deviations
 
@@ -26,7 +26,6 @@ pages. W14 sprint/re-plan interactions remain out of scope.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W5/W8 | Active | Development merged cleanly; client-side modal and task-parameter handoff remain complete | Owner review | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human` (name the question).
 
@@ -64,6 +63,7 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-12 | Passed task and member query parameters through client-side modal state so live drawers load the selected database record without changing the source URL | W5 | working tree |
 | 2026-11-13 | Merged development into the wiring branch; dependency refresh and full repository verification pass | W5/W8 | 590233c |
 | 2026-11-13 | Pushed branch and opened PR #35 against development | W5/W8 | PR #35 |
+| 2026-11-13 | Gate 3 branch review approved by the project operator | W5/W8 | this commit |
 
 ## Decisions
 
