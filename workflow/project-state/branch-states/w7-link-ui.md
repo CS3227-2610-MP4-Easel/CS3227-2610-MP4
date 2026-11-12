@@ -7,15 +7,16 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w7-link-ui (from `w7-implement-pm-plan-flow` at `1bc7384`; stacked, so it merges after that branch and after W5 PR 23)
 - **Base:** 3519ff077de611e79be28b1c3743a027675260c9 (development, integrated through W7 and W7b)
 - **Owner:** Xiao-Congchen (PM)
-- **Status:** Building
-- **Last updated:** 2026-11-08 by Claude Sonnet 5.5 — branch and worktree created, scope survey done, no UI code yet
+- **Status:** In review
+- **Last updated:** 2026-11-13 by Codex — PR #44 open; integration and fold boundaries reconciled
 
 **Untouched:** Conventions
 
 ---
 
-**Scope.** Link the PM plan screens in `src/fe` to the W7 backend endpoints 34, 35, 36, 37, 40, 41 (`@agile/pm`, `@agile/proposals`). W7's C~1 left "the New Plan screen is wired later"; this branch is that later. Feature freeze is end of 10 Nov (AD-69).
+**Scope and fold boundary.** Substantive W7c record: story points 1–20 and plan-wide expansion (endpoint 61), plus W7-UI plan screens and live backlog work. PR #33 merged into a feature branch; PR #44 now carries this stack, including W7b, into `development` and is open for review. This record is not eligible for folding until that PR merges and the owner approves the fold. Do not duplicate W7 or W7b decisions/handovers; W14, W5 and W9 own their separate changes. The `codex/w7c-pm-ui.md` record only describes integration.
 
+**Current integration caveat:** the development merge retained newer live project navigation and backlog components in conflicts. Compare the final PR #44 diff with C~11–C~14 and the live-backlog spec before filing those decisions or claiming all earlier UI behavior remains; previously recorded browser verification predates this integration. Real authenticated PM flow, D~8 live outline, E36, conflict recovery and project switching remain unverified. Historical session rows and Remaining items below describe earlier work and require reconciliation before a fold.
 ---
 
 ## 1. How to Resume
@@ -59,6 +60,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-13 | Integrated development and opened PR #44. Typecheck, 48 focused backend tests and 286 frontend tests passed; real authenticated flow and retained UI behavior remain to be reviewed. | W7c, W7-UI | fe016cd, PR #44 |
 | 2026-11-11 | Wired PM plan history to endpoint 36 with filters, paging and project-safe opening; live browser verified approved plan, filter and new composer. FE typecheck, lint and navigation epoch test pass; independent review fixed stale-navigation races. W5/W14/W16 owner scopes retained. | W7-UI | this commit |
 | 2026-11-11 | Restored compact backlog rows and status chips; chevrons toggle checkpoint/task details, direct epic drag and keyboard move with focus restoration verified in local test project. FE typecheck, lint and spec lint passed; independent review clean. | W7-UI | this commit |
 | 2026-11-11 | Live backlog editing implemented and reviewed: checkpoint, epic and task editors; checkpoint grouping and task movement; sprint list and scoped versioned writes. Full suite 786 passed, 0 skipped; typecheck, lint, contracts and Prisma validation passed. Browser verified collapse, keyboard expand, checkpoint/epic/task saves, task move selector, checkpoint drop picker and cancel in disposable local project; conflict recovery, cross-checkpoint drop completion and project switching remain unverified. | W7-UI | this commit |

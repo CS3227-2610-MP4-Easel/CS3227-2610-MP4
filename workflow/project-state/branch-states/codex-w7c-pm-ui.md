@@ -5,19 +5,19 @@
 - **Owner:** PM
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — integrated development; targeted verification completed
+- **Last updated:** 2026-11-13 by Codex — PR #44 opened against development
 
 **Untouched:** Architecture, Conventions, Known Gaps, Decisions, Deviations
 
 ## 1. How to Resume
 
-**Remaining:** Review integration, verify real sign-in and live PM flow; retarget after PR #32 lands. W7/W7b/W7c fold boundaries remain separate from W14 and other pending workstreams. See w7-link-ui.md for workstreams and handovers.
+**Scope and remaining:** PR #33 merged into `codex/w7b-plan-editing`, not `development`. PR #44 carries W7b and W7c to `development`; owner review and merge are pending. Verify real sign-in and live PM flow. The substantive W7c/W7-UI record is `w7-link-ui.md`; this integration-only file must not produce duplicate decisions or ledger entries. Keep W14 and other pending workstreams separate.
 
 ## 2. Workstreams
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W7c | Plan expansion and PM UI | Building | See w7-link-ui.md | See w7-link-ui.md | Integration verification pending | — |
+| W7c | Plan expansion and PM UI | Building | See w7-link-ui.md | See w7-link-ui.md | PR #44 open; owner review pending | — |
 
 ## 3. Changes
 

@@ -7,16 +7,17 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w7-implement-pm-plan-flow (from `INT` at `7caa23d`)
 - **Base:** 3519ff077de611e79be28b1c3743a027675260c9
 - **Owner:** Xiao-Congchen (PM)
-- **Status:** Draft
-- **Prior approval:** W7 before development integration; W7 and W7b reviews pending.
-- **Last updated:** 2026-11-11 by Codex — integrated the W7 boundary and development; W7b review pending.
+- **Status:** In review
+- **Prior approval:** Owner reported PR #31 approved and merged; W7b integration awaits review of PR #44.
+- **Last updated:** 2026-11-13 by Codex — reconciled W7 merge and W7b stack; fold preparation pending.
 
 **Untouched:** Conventions (Architecture Now blocks for pm, core and proposals are written at the fold; see Close-out)
 
 ---
 
-**Scope.** W7 PM plan flow (proposals, pm): the PM's AI feature that turns a brief into a plan proposal, behind the gateway. Per STATE.md §3 it builds after W2, W3, W5 and W6. W2, W3 and W6 are Done on `INT` (folded 2026-11-07, `faa1c08`); **W5 (Dev Lead's core planning, which owns `requireMember`) is Not started** and gates W7's build, though not its spec. Feature freeze is end of 10 Nov (AD-69). The older `w7-pm-plan-flow` branch carried the experiment framework (W~1, merged as PR #19) and never started W7 itself.
+**Fold boundary.** This substantive record contains two workstreams: W7 backend plan flow (endpoints 34, 35, 37, 40, 41), merged into `development` by PR #31 (`487cafe`), and W7b editing (36, 38, 39, 58–60), merged into a feature branch by PR #32 and included in PR #44, which targets `development` and is open. Do not fold W7b until PR #44 merges and its owner approves the fold. Before folding W7 independently, separate its decisions, deviations, changes and handovers from W7b or use a reviewed split; do not attribute W7b entries to the W7 fold. The `codex/w7-pm-plan-flow` and `codex/w7b-plan-editing` files are integration records, not separate feature workstreams: reconcile and archive them without duplicating decisions or ledger entries. W7c/W7-UI is recorded in `w7-link-ui.md`; W14 and other branches have separate fold boundaries.
 
+**Historical sections below** include pre-merge plans and estimates; use the current status and Remaining above them when reconciling. W5 is merged and folded; W7b and W7c are not yet merged to `development`.
 ---
 
 ## 1. How to Resume
@@ -33,12 +34,12 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] W7 spec approved at Gate 1 (2026-11-07).
 - [x] W7 plan approved at Gate 2 (2026-11-07): 11 tasks, 6 waves, all reviewed full.
 - [x] Build T1-T11 (plan close-out lint clean).
-- [ ] Gate 3: the operator reviews the branch; then ask whether to push and open the PR (nothing pushed).
+- [x] W7 PR #31 approved per owner and merged into development (`487cafe`).
 - [ ] **Handover W2 owner (Developer):** spec SD3 changes `Sessions.assertUsable` (a `PM_PLAN_OUTLINE` session also admits `PM_PLAN_EXPAND`) and amends contracts §5.3; their agreement is recorded in T1 (AD-11, as C59); not yet obtained.
-- [x] **W5 (Dev Lead) integrated 2026-11-08:** `origin/w5-core-planning` (PR 23, not yet merged to `INT`) is merged into this branch; W5 supplies `requireMember`, `Core.assertWritable` and a `PM_PLAN_CREATE` project resolver that reads `id`; W7 registers the four proposal resolvers in `core-composition.ts`; both `applyPlan` implementations exist (see Known Gaps). This branch now depends on PR 23 merging first.
+- [x] **W5 (Dev Lead) integrated 2026-11-08:** `origin/w5-core-planning` (PR 23, not yet merged to `INT`) is merged into this branch; W5 supplies `requireMember`, `Core.assertWritable` and a `PM_PLAN_CREATE` project resolver that reads `id`; W7 registers the four proposal resolvers in `core-composition.ts`; both `applyPlan` implementations exist (see Known Gaps). PR #23 merged and W5 has been folded.
 - [x] W5's owner estimate: no longer needed, W5 is in PR 23.
-- [ ] **W7b branch review:** T1–T8 implemented; see D~10 for remaining suite failures and coverage-audit.md for evidence. Owner review is required before approval.
-- [ ] Carry STATE.md Upcoming items addressed to W7 into the spec: W6 sources and `assembleWith` (`pm.similarItems`, titles only, at most 5, filtered by member projects); W3 section rules, blocked-input handling (`BLOCKED_INPUT` to 422 `VALIDATION_FAILED`, `REQUEST_REFUSED` to 422) and output schemas without URLs or angle brackets; W2 mock responses, static sections and `assertStaticSectionsFit`; W7 proposal resolvers.
+- [ ] **W7b integration:** PR #32 merged into its feature parent, not development; PR #44 targets development. Owner review and merge remain; see D~10 for historical failures.
+- [ ] **Handover:** at fold, reconcile existing STATE.md Upcoming items addressed to W7 against merged code: W6 sources and `assembleWith` (`pm.similarItems`, titles only, at most 5, filtered by member projects); W3 section rules, blocked-input handling (`BLOCKED_INPUT` to 422 `VALIDATION_FAILED`, `REQUEST_REFUSED` to 422) and output schemas without URLs or angle brackets; W2 mock responses, static sections and `assertStaticSectionsFit`; W7 proposal resolvers.
 
 ---
 
@@ -46,8 +47,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W7 | PM plan flow (proposals, pm) | In review | [spec](../../specs/2026-11-07-w7-pm-plan-flow-design.md) | [plan](../../plans/2026-11-07-w7-pm-plan-flow/plan.md) | T1-T11 done; 565 tests, 561 pass, 4 unrelated agent-hook failures | out of date: pm, core, proposals |
-| W7b | PM plan editing (endpoints 36, 38, 39, 58-60; carved from W16) | In review | [spec](../../specs/2026-11-09-w7b-pm-plan-editing-design.md) | [plan](../../plans/2026-11-09-w7b-pm-plan-editing/plan.md) | T1–T8 done; branch review requested; D~10 | out of date: pm, proposals, contracts |
+| W7 | PM plan flow (proposals, pm) | Done | [spec](../../specs/2026-11-07-w7-pm-plan-flow-design.md) | [plan](../../plans/2026-11-07-w7-pm-plan-flow/plan.md) | PR #31 merged; fold requires separating W7b entries | out of date: pm, core, proposals |
+| W7b | PM plan editing (endpoints 36, 38, 39, 58-60; carved from W16) | In review | [spec](../../specs/2026-11-09-w7b-pm-plan-editing-design.md) | [plan](../../plans/2026-11-09-w7b-pm-plan-editing/plan.md) | PR #44 open; review and merge pending; D~10 | out of date: pm, proposals, contracts |
 
 ---
 
@@ -55,6 +56,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-13 | Reconciled PR #31 merge and stacked PR #32 target; PR #44 carries W7b/W7c to development. Scope separation required before fold. | W7/W7b | 487cafe, PR #44 |
 | 2026-11-09 | W7b T1 contracts, policy, OpenAPI and documentation implemented; focused and contract tests pass; review placement finding fixed | W7b | 1bdeca0, c304835 |
 | 2026-11-09 | W7b T2 editing store implemented; review fixed strict-parse storage and deterministic lock races; 11 edit integration tests pass | W7b | 9bc5ec2, 8a5ed46 |
 | 2026-11-09 | W7b T5 approval outcome and replay implemented; 21 database tests pass; review clean | W7b | f3c4564 |
@@ -144,7 +146,7 @@ pm install removes the generated Prisma client, so 	sc -b fails until `prisma:ge
 
 **Built.** Endpoints 34, 35, 37, 40, 41 (`@agile/pm` routes and flow, `@agile/proposals` store and resolvers, `@agile/core` `applyPlan`, API routes, W2 session feature map, contract schemas). Verified against a local Postgres 16 in Docker (`w7-pg`, variables in untracked `.ws/w7.env`): full suite 565 tests, 561 pass, 4 fail, 0 skipped. The 4 failures are `tests/process-security/agent-hook.test.ts` (F8 shell-write mediation); no file they depend on differs from the base commit, but they were not run on the base branch. One run also showed a gateway test (`run-integration` E25) fail once under parallel load; it passed alone three times and in two later full runs.
 
-**Not done / not verified.** Nothing pushed. The Developer (W2 owner) has not agreed to the `Sessions` change (AD-11). After the W5 merge (2026-11-08) the endpoints are wired to W5's composition, but not yet called over HTTP with real authentication. The whole-branch `code-review` reported 10 findings (none blocking). Fixed (commits 2ecaa2d, c26a5c3): approve replay without a stored count recounts from the stored rows; the proposal view reads in parallel and returns nothing for a viewer who is not a member of the proposal's project; the lock-wait test helpers wait only on the holder's backend; the body-limit and policy-key helpers are shared by the auth and pm routes; the pm runtime reuses one database client across failed builds and registers the similar-items source with a plain flag; a doubled blank line. Left on purpose: the placeholder resolvers (W5 owns them; Known Gap) and the top-50-by-id cut before ranking (accepted by spec SD5; Known Gap).
+**Historical close-out (before PRs were opened).** The Developer (W2 owner) has not agreed to the `Sessions` change (AD-11). After the W5 merge (2026-11-08) the endpoints are wired to W5's composition, but not yet called over HTTP with real authentication. The whole-branch `code-review` reported 10 findings (none blocking). Fixed (commits 2ecaa2d, c26a5c3): approve replay without a stored count recounts from the stored rows; the proposal view reads in parallel and returns nothing for a viewer who is not a member of the proposal's project; the lock-wait test helpers wait only on the holder's backend; the body-limit and policy-key helpers are shared by the auth and pm routes; the pm runtime reuses one database client across failed builds and registers the similar-items source with a plain flag; a doubled blank line. Left on purpose: the placeholder resolvers (W5 owns them; Known Gap) and the top-50-by-id cut before ranking (accepted by spec SD5; Known Gap).
 
 ### Known Gaps (new)
 
@@ -182,7 +184,7 @@ pm install removes the generated Prisma client, so 	sc -b fails until `prisma:ge
 - **W7b owners:** Dev Lead and Developer sign off endpoints 58–60 and changed 38/39 responses (AD-11); update architecture text saying 57 endpoints; UI reminds PM to create a new epic for substantial changes; creator-only editing differs from member-wide approval/rejection. Guide out of date: pm, proposals, contracts.
 
 - **W2 owner (Developer):** agree to the `Sessions.assertUsable` change (a session admits its own feature and the one mapped by `SESSION_FEATURE`; contracts §5.3 amended).
-- **W5 owner (Dev Lead):** PR 23 must merge before this branch. Agree with W7 on one `applyPlan` (see Known Gaps).
+- **W5 owner (Dev Lead):** PR #23 merged. Agree with W7 on one `applyPlan` (see Known Gaps).
 - **W2 owner (Developer), model config:** decide the `PM_PLAN_OUTLINE` model or deadline: `qwen3.5:9b` does not answer within the 25 s attempt deadline on SoCLaaS (see Known Gaps). Either set the feature to `llama3.1:8b` in `FEATURES` or allow a longer deadline for it; the environment override `LLM_MODEL_PM_PLAN_OUTLINE` works in the meantime.
 - **W13:** `PM_SIMILAR_ITEMS` (`on`/`off`, default `on`) and the seed data that gives retrieval something to find.
 - **Architecture Now blocks:** write `pm`, `core` and `proposals` area files from the built code at the fold.
