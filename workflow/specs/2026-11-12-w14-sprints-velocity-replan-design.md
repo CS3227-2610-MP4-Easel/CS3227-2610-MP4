@@ -102,12 +102,12 @@ No migration, backfill, seed regeneration or rollback procedure is required by t
 | `POST /api/projects/{id}/sprints` | LEAD member; `{ name: 1..200, startDate: date, endDate: date }` | 201 PLANNED sprint | 422 invalid date/overlap; 404 hidden project; insert transaction |
 | `PATCH /api/sprints/{id}` | LEAD member; at least one of name/dates plus positive `version` | 200 sprint | stale version -> 409 `CONFLICT_VERSION`; non-PLANNED/archived -> 409 `CONFLICT_STATE`; invalid/overlap -> 422; update transaction excludes the current sprint from overlap checks |
 | `POST /api/sprints/{id}/start` | LEAD member; `{ version }` | 200 ACTIVE sprint | stale version -> 409 `CONFLICT_VERSION`; non-PLANNED, archived or existing ACTIVE sprint -> 409 `CONFLICT_STATE`; transaction locks project/sprint state |
-| `POST /api/sprints/{id}/close` | LEAD member; `{ version, carryOver[] }`, one entry for each non-DONE task; max 100 entries | 200 CLOSED sprint | stale version -> 409 `CONFLICT_VERSION`; non-ACTIVE/archived/race -> 409 `CONFLICT_STATE`; missing/duplicate/invalid carry-over or invalid target -> 422; one transaction for points, task moves, events and close |
+| `POST /api/sprints/{id}/close` | LEAD member; `{ version, carryOver: [{ taskId: UUID, to: "BACKLOG" or plannedSprintId: UUID }] }`, one entry for each non-DONE task | 200 CLOSED sprint | stale version -> 409 `CONFLICT_VERSION`; non-ACTIVE/archived/race -> 409 `CONFLICT_STATE`; missing/duplicate/invalid carry-over or invalid target -> 422; one transaction for points, task moves, events and close |
 | `DELETE /api/sprints/{id}?version=` | LEAD member | 204 | stale version -> 409 `CONFLICT_VERSION`; non-PLANNED/archived -> 409 `CONFLICT_STATE`; one transaction soft-deletes sprint, clears task sprint ids and writes events |
 | `GET /api/projects/{id}/progress` | Any authenticated member | 200 `{ pointsTotal, pointsDone, percent, unestimatedTasks, velocity[] }` | 404 hidden/missing/non-member project; read-only snapshot |
 | `GET /api/lead/projects/{id}/proposals` | LEAD member of the path project; optional status/page/size | 200 page `{ items, page, size, total }` of REPLAN proposals ordered `createdAt DESC, id DESC` | 404 hidden/missing/non-member project; invalid status/page/size -> 422; read-only |
-| `POST /api/lead/proposals/{id}/approve` | LEAD member; `{ version, suggestionIds }`, non-empty unique UUID list max 100 | 200 `{ proposalId, status: APPROVED, applied[] }` | stale version -> 409 `CONFLICT_VERSION`; non-pending, wrong project, archived project or mutation conflict -> 409 `CONFLICT_STATE`; one proposals transaction, no partial apply |
-| `POST /api/lead/proposals/{id}/reject` | LEAD member; `{ version }` | 200 rejected proposal | stale version -> 409 `CONFLICT_VERSION`; non-pending/archived -> 409 `CONFLICT_STATE`; proposals transaction updates proposal and closes session |
+| `POST /api/lead/proposals/{id}/approve` | LEAD member; `{ version, suggestionIds: UUID[] }`, non-empty unique list max 100 | 200 `{ proposalId, status: APPROVED, applied: UUID[] }` | hidden/missing/soft-deleted -> 404 `NOT_FOUND`; stale version -> 409 `CONFLICT_VERSION`; non-pending, wrong project, archived project or mutation conflict -> 409 `CONFLICT_STATE`; one proposals/domain transaction, no partial apply |
+| `POST /api/lead/proposals/{id}/reject` | LEAD member; `{ version }` | 200 `ReplanProposal` with REJECTED status | hidden/missing/soft-deleted -> 404 `NOT_FOUND`; stale version -> 409 `CONFLICT_VERSION`; non-pending/archived -> 409 `CONFLICT_STATE`; proposals transaction updates proposal, then idempotently closes session |
 
 `SprintService` exposes sprint lifecycle operations; the frozen `Core` object remains unchanged.
 `Core.progress(projectId)` returns live task totals. `Core.velocity(projectId, n)` returns the
@@ -119,7 +119,9 @@ Progress formulas are exact: `pointsTotal` sums live tasks with points; `pointsD
 tasks with points; `percent` is 0 when total is 0, otherwise `pointsDone / pointsTotal` (for
 example, 1 of 4 returns 0.25);
 unestimated tasks count live tasks without points; closed sprint velocity is stored
-`completedPoints`.
+`completedPoints`. When the last three closed sprints have average velocity zero, projected
+completion is null; a checkpoint with remaining points is `UNKNOWN`, while a checkpoint with zero
+remaining points is `ON_TRACK`.
 
 Sprint create, edit, close and delete lock the project row before checking dates or task membership,
 so overlap checks and sprint-task snapshots serialize with W5 task-assignment mutations. Sprint
@@ -135,9 +137,40 @@ The closed suggestion union is the existing `MOVE_CHECKPOINT_DATE`, `MOVE_EPIC_T
 and `REASSIGN_TASK` schema. `Core.applyReplan` performs the domain mutations inside the same
 transaction and locks or conditionally updates every referenced row before each write. If any
 selected suggestion is stale, nothing is applied and the response identifies the conflicting
-suggestions. Successful approval marks the proposal APPROVED and closes its session ACCEPTED in
-the same transaction; rejection closes it REJECTED. A pending proposal superseded by a newer
-REPLAN cannot be approved or rejected.
+suggestions. The response `applied[]` preserves the request's `suggestionIds` order. Successful approval marks the proposal APPROVED in the same transaction as the core
+mutation. Because the frozen `Sessions.close` interface accepts no transaction handle, the
+proposal transaction commits first and then `proposals` calls idempotent `Sessions.close` with the
+approving actor; a retry of the already-approved request repeats only the session close and returns
+the same approval result. Rejection follows the same post-commit session-close rule. A project lock
+serializes REPLAN creation/supersession with approval/rejection, so a pending proposal cannot be
+approved after a newer REPLAN has superseded it.
+
+The owning service contracts are:
+
+- `SprintService.list(projectId: UUID, query: { page: int, size: int }): Promise<Page<Sprint>>`;
+  `create(actorId: UUID, projectId: UUID, input: SprintCreate): Promise<Sprint>`;
+  `patch(actorId: UUID, sprintId: UUID, input: SprintPatch): Promise<Sprint>`;
+  `start(actorId: UUID, sprintId: UUID, version: positive int): Promise<Sprint>`;
+  `close(actorId: UUID, sprintId: UUID, input: SprintClose): Promise<Sprint>`; and
+  `remove(actorId: UUID, sprintId: UUID, version: positive int): Promise<void>`. It owns all
+  project-row locks and returns `NOT_FOUND`, `CONFLICT_VERSION`, `CONFLICT_STATE` or
+  `VALIDATION_FAILED` domain errors.
+- `ProposalService.list(actorId: UUID, projectId: UUID, query: { status?: ProposalStatus,
+  page: int, size: int }): Promise<Page<ReplanProposal>>`;
+  `approve(actorId: UUID, proposalId: UUID, input: { version: positive int,
+  suggestionIds: UUID[] }): Promise<ReplanApproval>`; and
+  `reject(actorId: UUID, proposalId: UUID, version: positive int): Promise<ReplanProposal>`.
+  It owns proposal resource resolution, `kind = REPLAN` filtering, project scoping, state/version
+  transitions, supersession and session closure; it delegates only domain changes to
+  `Core.applyReplan`.
+- API composition injects `SprintService` into the core route group and `ProposalService` into the
+  lead route group. `lead` supplies facts/digest generation but does not query `ai_proposals` or
+  resolve proposal ownership.
+
+All existing core task status, task assignment and sprint-affecting mutation transactions use the
+same project-row lock before reading or writing sprint membership. Sprint close additionally
+rechecks task versions and statuses after the lock; close-vs-task, start-vs-start and
+create/edit-vs-create/edit races therefore produce one committed winner and a stable conflict.
 
 ### 4.4 UI
 
@@ -156,10 +189,11 @@ contracts later without changing the W14 backend semantics.
 
 ### 4.6 Sequencing constraints
 
-- W14 consumes the W5 core seams and the W8 lead proposal/digest representation.
 - The API composition root must register core and lead services before W14 routes are reachable.
 - Resource resolution and policy-map entries must exist before route handler tests can pass.
 - Sprint close and re-plan approval must remain transactional after route composition.
+- The scoped C~1 contract amendment requires the shared Sprint page schema, route query parser,
+  OpenAPI response and frontend client type to agree on `{ items, page, size, total }`.
 
 ## 5. Edge cases
 
@@ -170,14 +204,14 @@ contracts later without changing the W14 backend semantics.
 | E3 | F3,F4,F6 | Mutation targets ACTIVE, CLOSED or deleted sprint | 409 `CONFLICT_STATE` and no mutation | core/API |
 | E4 | F4 | Two starts race for the same project | At most one ACTIVE sprint commits; loser gets 409 | integration |
 | E5 | F5 | Close omits a non-DONE task | 422 and sprint/tasks/events remain unchanged | core |
-| E6 | F5 | Carry-over target is foreign, deleted, ACTIVE or CLOSED | 422/409 as applicable; rollback all changes | core |
+| E6 | F5 | Carry-over target is foreign/deleted/ACTIVE/CLOSED, or a target is not PLANNED/BACKLOG | 422 `VALIDATION_FAILED` for malformed/foreign target; 409 `CONFLICT_STATE` for deleted/ACTIVE/CLOSED target; rollback all changes | core |
 | E7 | F5 | Task is DONE but has a carry-over entry | Reject the extra entry with 422 | core |
 | E8 | F5 | Close is retried after commit | 409 because sprint is CLOSED; no duplicate events | integration |
 | E9 | F6 | Planned sprint has assigned tasks | Soft-delete sprint and clear all task sprint ids atomically | core |
 | E10 | F7 | No points or no closed sprints | Zero totals/percent and empty velocity; no divide-by-zero | core |
 | E11 | F7 | Equal sprint end dates | Stable id tie-breaker produces deterministic order | core |
 | E12 | F8 | Status filter is invalid or project is not caller-visible | 422 for invalid filter or 404 for hidden project | API |
-| E13 | F9 | Selected suggestion is duplicated, foreign or stale | 409/422 and no suggestion is applied | core/lead |
+| E13 | F9 | Selected suggestion is duplicated, foreign or stale | 422 `VALIDATION_FAILED` for duplicate/malformed ids; 404 `NOT_FOUND` for hidden proposal; 409 `CONFLICT_STATE` for stale/foreign target; no suggestion is applied | proposals/core |
 | E14 | F9 | Re-plan approval races with task, checkpoint, epic, assignee or membership mutation | 409 and no partial mutation; every referenced row is rechecked under the transaction lock | integration |
 | E15 | F10 | Proposal is already approved/rejected | 409 and session/proposal state is unchanged | lead |
 | E16 | N1 | Developer or PM calls a LEAD-only mutation | Policy map returns forbidden before domain mutation | API/security |
@@ -189,11 +223,12 @@ contracts later without changing the W14 backend semantics.
 | ID | Req | Scenario | Expected behaviour | Test layer |
 |---|---|---|---|---|
 | E18 | N2 | Event insertion fails during close | Entire transaction rolls back, including sprint status and task moves | integration |
-| E19 | N3 | Oversized carry-over or suggestion list | Schema rejects before mutation | API |
+| E19 | N3 | Suggestion list exceeds 100 ids or page size exceeds 100 | Schema rejects before mutation | API |
 | E20 | N4 | W14 route imports a foreign module's tables | Contract/source-scan test fails; implementation must use owner service | contract |
 | E22 | F7 | Four tasks have one point done | Progress percent is exactly 0.25, not 25 | core/API |
 | E23 | N2 | Delete or approve fails after a child write | Sprint/proposal, task, event, version and session rows are unchanged | integration |
 | E24 | N5 | A mutation returns a conflict | Response and log carry request id, status and stable code but no sensitive payload | API/security |
+| E25 | F7 | Three closed sprints have zero completed points | Projected dates are null and risk is UNKNOWN for remaining work | lead |
 
 ## 6. Security
 

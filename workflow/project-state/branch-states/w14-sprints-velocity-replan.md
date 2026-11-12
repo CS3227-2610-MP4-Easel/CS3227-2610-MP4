@@ -5,11 +5,11 @@ describes `INT`; read it for context and write here instead of editing it.
 `sync-project-state` folds this file in after the branch merges.
 
 - **Branch:** w14-sprints-velocity-replan (from W8 at `6db7a0021c75c83fe89739961a9bdfac3f6607d9`)
-- **Base:** 6db7a0021c75c83fe89739961a9bdfac3f6607d9
+- **Base:** 2c5dd9f0b1c8f23610af5b6638818110f3bc5b02
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-12 by Codex — scoped C20 reversal approved
+- **Last updated:** 2026-11-12 by Codex — updated spec after W8 merge audit
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | C~1 approved; reconciling merged W8 into W14 | Commit the decision/spec state, merge `origin/development`, then update W14 endpoint-27 contracts and rerun review | 2026-11-12 |
+| S1 | 2026-11-12 | Codex | W14 | Active | W8 merge audit complete; final spec review pending | Commit the amended spec/state, rerun final review lenses, then request Gate 1 | 2026-11-12 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -56,6 +56,8 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-12 | Created isolated W14 worktree and branch from W8 tip `6db7a00`; verified W5 base is present | W14 | this commit |
 | 2026-11-12 | Operator approved the architecture-aligned split: `core` owns sprint/progress/velocity and `lead` owns forecast/re-plan | W14 | this commit |
 | 2026-11-12 | Operator approved C~1: reverse C20 narrowly for W14 endpoint 27 and add bounded pagination | W14 | this commit |
+| 2026-11-12 | Merged `origin/development` at `2c5dd9f`, including W8 PR #28, with no conflicts | W14 | merge commit |
+| 2026-11-12 | Amended W14 after review: endpoint-27 pagination, proposal service ownership, shared locks, session closure, exact errors and zero-velocity behavior | W14 | this commit |
 
 ## 4. Decisions
 
