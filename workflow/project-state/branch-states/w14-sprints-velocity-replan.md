@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-12 by Codex — final review found cross-workstream blockers
+- **Last updated:** 2026-11-12 by Codex — second review pass resolved replay, creation and session-seam gaps
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Blocked — needs human | Final review found proposal/session and existing-contract conflicts | Owner resolves the listed W14 contract questions before the spec can reach Gate 1 | 2026-11-12 |
+| S1 | 2026-11-12 | Codex | W14 | Active | Second review findings are being folded into the spec | Lint, record review outcome, commit the spec/state, then request Gate 1 approval | 2026-11-12 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -40,10 +40,13 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 - [ ] Draft, review and obtain Gate 1 approval for the W14 design spec.
 - [ ] Produce the implementation plan after spec approval.
 - [x] **Q~1:** Resolved by C~1: reverse C20 narrowly for W14 endpoint 27 and add bounded pagination.
-- [ ] **Q~2:** Keep the existing 0–100 progress contract used by W8 and `ProgressSchema`, or approve a project-wide ratio change.
-- [ ] **Q~3:** Choose proposal/session closure semantics: add a transaction-aware gateway seam, or accept post-commit idempotent retry/reconciliation.
-- [ ] **Q~4:** Decide whether endpoint 48 is restricted to the session owner or whether the session contract expands to permit any authorized project Dev Lead to reject.
-- [ ] **Q~5:** Approve the W14 refactor that moves `ai_proposals` validation/status access out of `Core.applyReplan` into the new proposals owner.
+- [x] **Q~2:** Keep the existing 0–100 progress contract used by W8 and `ProgressSchema` (C~2).
+- [x] **Q~3:** Add a transaction-aware gateway session-close seam (C~3).
+- [x] **Q~4:** Restrict endpoint 48 rejection to the proposal session owner (C~4).
+- [x] **Q~5:** Move `ai_proposals` validation/status access out of `Core.applyReplan` into `proposals` (C~5).
+- [x] **Q~6:** Use project-first, proposal-second lock ordering and validate current suggestion state rather than claim snapshot-version detection (C~6).
+- [x] **Q~7:** Persist approved suggestion IDs in the existing proposal JSON payload for idempotent replay, and define the exact transaction-aware session gateway (C~7).
+- [x] **Q~8:** Add explicit proposal creation/supersession, session binding, carry-over/page bounds, and exact conflict details to make the W8-to-W14 seam implementable (C~8).
 
 ---
 
@@ -63,6 +66,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-12 | Merged `origin/development` at `2c5dd9f`, including W8 PR #28, with no conflicts | W14 | merge commit |
 | 2026-11-12 | Amended W14 after review: endpoint-27 pagination, proposal service ownership, shared locks, session closure, exact errors and zero-velocity behavior | W14 | this commit |
 | 2026-11-12 | Final review found blockers: existing 0–100 progress behavior, proposal-table access in `Core.applyReplan`, and unresolved session/authorization atomicity | W14 | this commit |
+| 2026-11-12 | Second review pass required persisted approval replay, explicit proposal creation/supersession, exact session binding, bounded carry-over/page inputs, and conflict details; spec amended accordingly | W14 | this commit |
 
 ## 4. Decisions
 
@@ -71,3 +75,10 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | ID | Date | Decision | Why / who asked | Source |
 |---|---|---|---|---|
 | C~1 | 2026-11-12 | Reverse C20 narrowly for W14 endpoint 27: add standard bounded pagination rather than preserve the unpaginated sprint list. | Operator chose this after review identified unbounded read/response work; all other existing contracts remain governed by C20. | W14 spec Gate 1 preparation |
+| C~2 | 2026-11-12 | Preserve progress as 0–100 percentage points. | Operator accepted the existing `ProgressSchema`, `core` implementation and W8 consumers; changing to a ratio would require a project-wide contract migration. | W14 spec review |
+| C~3 | 2026-11-12 | Add an internal transaction-aware session-close seam for proposal approval/rejection. | Operator chose atomic proposal/domain/session outcomes over post-commit retry divergence. | W14 spec review |
+| C~4 | 2026-11-12 | Restrict W14 proposal rejection to the proposal session owner. | Preserves the existing `Sessions.close` authorization model; expanding it to every project Dev Lead would widen permissions. | W14 spec review |
+| C~5 | 2026-11-12 | Refactor `Core.applyReplan` to mutate only core domain tables; `proposals` owns `ai_proposals` lifecycle and validation. | Preserves architecture table ownership and prevents core from reading proposal tables. | W14 spec review |
+| C~6 | 2026-11-12 | Serialize REPLAN operations project-first then proposal-second, and validate current target state without claiming historical snapshot-version detection. | Prevents lock inversion/deadlock; the frozen suggestion schema has no expected-version token. | W14 spec review |
+| C~7 | 2026-11-12 | Persist immutable `appliedSuggestionIds` in the existing proposal JSON payload and define an exact transaction-aware session-close gateway. | Needed for idempotent approved replay and atomic proposal/domain/session outcomes without a new table or Prisma column; post-commit close was rejected. | W14 second review |
+| C~8 | 2026-11-12 | Make proposal creation/supersession, session binding, source-task equality, page/carry-over limits and conflict details explicit. | Removes implementation discretion at the W8-to-W14 boundary and bounds untrusted request work. | W14 second review |
