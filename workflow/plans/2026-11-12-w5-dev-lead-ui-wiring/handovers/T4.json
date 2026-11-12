@@ -1,7 +1,15 @@
 {
   "task": "T4",
   "status": "done",
-  "summary": "Wired live UUID board, backlog, checkpoint, member, and task flows while preserving prototype routes.",
+  "summary": "Applied T4 review fixes for UUID route identity, safe task loading, capability controls, mutation reconciliation, live task creation, backlog paging, and member dedupe.",
+  "commit": "review-fixes",
+  "produces": [
+    { "kind": "file", "name": "BoardView live flow", "where": "src/fe/components/canvas/BoardView.tsx", "note": "Live task loading/filter/paging and prototype fallback." },
+    { "kind": "file", "name": "Backlog live flow", "where": "src/fe/components/live/backlog-list.tsx", "note": "Live epics/tasks with no sprint controls." },
+    { "kind": "file", "name": "Checkpoint live flow", "where": "src/fe/components/live/checkpoints.tsx", "note": "Live checkpoint list/create refresh." },
+    { "kind": "file", "name": "Member live flow", "where": "src/fe/components/live/members.tsx", "note": "Live member list/add with reload behavior." },
+    { "kind": "file", "name": "Task live flow", "where": "src/fe/components/live/task-drawer.tsx", "note": "Live task read/update/status with version and no live delete." }
+  ],
   "changed_files": [
     "src/fe/components/canvas/BoardView.tsx",
     "src/fe/components/canvas/CheckpointAdd.tsx",
@@ -11,21 +19,26 @@
     "src/fe/components/live/forms.tsx",
     "src/fe/components/live/members.tsx",
     "src/fe/components/live/task-drawer.tsx",
+    "src/fe/components/canvas/TaskDetail.tsx",
     "src/fe/test/w5-pages.test.tsx"
   ],
   "behavior": [
-    "Live reads and writes use T1 route context and T2 clients.",
-    "Board filters use endpoint-20 fields and reset paging; live screens do not render sprint controls or send sprintId.",
-    "Live creates keep forms open on safe errors; successful checkpoint/member/task mutations refresh local data or navigate to a fresh collection.",
-    "Live task deletion and live member removal controls are absent; task updates/status changes include the server version."
+    "TaskCard, backlog links, and task drawer navigation preserve the active UUID; the drawer rejects tasks whose projectId does not match the route.",
+    "Live task creation starts empty and accepts only an ID from the loaded live epic collection; live screens do not render sprint controls or send sprintId.",
+    "Task loading failures use safe retryable messages distinct from not-found; PMs are read-only, Dev Leads may mutate, and Developers may mutate only their own assigned task.",
+    "Board mutations refetch the active filter/page, drawer mutations notify the board, backlog counts use server totals, and member views deduplicate user IDs."
   ],
   "verification": {
-    "focused_tests": "3 passed",
-    "full_tests": "14 files, 178 tests passed",
+    "focused_tests": "9 passed",
+    "full_tests": "14 files, 189 tests passed",
     "lint": "passed",
     "diff_check": "passed",
-    "typecheck": "blocked by pre-existing errors in src/fe/components/canvas/ProjectHead.tsx and src/fe/components/live/overview.tsx"
+    "typecheck": "non-incremental pass (tsc -b --force; frontend --incremental false)"
   },
+  "next": "T5 runs route/API regressions, full frontend verification, and manual UUID route checks.",
+  "deviations": [],
+  "edge_cases": ["F3", "F4", "F5", "F6", "F7", "F8", "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E9", "E10", "E11", "E12", "E13", "E14", "E15"],
+  "checks": { "build": "pass", "tests": "189 pass, 0 fail", "lint": "pass", "non_incremental_typecheck": "pass" },
   "manual_route_checks": [
     "Open a live UUID board/backlog/checkpoints/members/task route in the browser and verify loading, safe error, success refresh, and pagination states against a running backend.",
     "Verify backend role and tenancy responses remain authoritative for live reads and writes."

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { A } from '../../lib/nav';
+import { A, useRoute } from '../../lib/nav';
 import { ApiError, listCheckpointsLive_12, listEpicsLive_16, listTasksLive_20, useDb, type LiveCheckpoint, type LiveEpic, type LiveTask } from '../../lib/api';
 import { useProjectRoute } from '../../lib/api/project-mode';
 import StatusChip from '../canvas/StatusChip';
@@ -42,12 +42,14 @@ function LiveBacklogList({ projectId }: { projectId: string }) {
   if (loading) return <div className="card"><div className="sk" style={{ width: '40%' }} /><div className="sk" style={{ marginTop: 12 }} /></div>;
   if (error) return <div className="banner b-bad"><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg><span>{error}</span></div>;
   return <>{grouped.map(({ epic, tasks: epicTasks }) => { const checkpoint = checkpoints.find((item) => item.id === epic.checkpointId); return <section className="card pad0" key={epic.id}>
-    <div className="ch" style={{ background: 'var(--head)', borderRadius: '12px 12px 0 0' }}><div className="row"><svg className="ic" aria-hidden="true"><use href="#i-down" /></svg><h3 style={{ margin: 0 }}>{epic.title}</h3>{checkpoint && <span className="chip c-acc"><svg className="ic" aria-hidden="true"><use href="#i-flag" /></svg>{checkpoint.name}</span>}</div><div className="row"><span className="small muted">{epicTasks.length} task{epicTasks.length === 1 ? '' : 's'} · {epicTasks.reduce((sum, task) => sum + (task.storyPoints ?? 0), 0)} pts</span></div></div>
+    <div className="ch" style={{ background: 'var(--head)', borderRadius: '12px 12px 0 0' }}><div className="row"><svg className="ic" aria-hidden="true"><use href="#i-down" /></svg><h3 style={{ margin: 0 }}>{epic.title}</h3>{checkpoint && <span className="chip c-acc"><svg className="ic" aria-hidden="true"><use href="#i-flag" /></svg>{checkpoint.name}</span>}</div><div className="row"><span className="small muted">{epic.taskCount} task{epic.taskCount === 1 ? '' : 's'} · {epic.pointsTotal} pts</span></div></div>
     {epicTasks.length ? epicTasks.map((task) => <LiveTaskRow task={task} key={task.id} />) : <div className="trow"><span className="small muted">No tasks in this epic yet.</span></div>}
-  </section>; })}{epics.length === 0 && <div className="card"><b>The backlog is empty.</b></div>}
+  </section>; })}{epics.length === 0 && total === 0 && <div className="card"><b>The backlog is empty.</b></div>}{epics.length === 0 && total > 0 && <div className="card"><span className="muted">No tasks on this page.</span></div>}
   <div className="row between"><span className="small muted">Page {page + 1} of {Math.max(1, Math.ceil(total / 20))}</span><div className="row"><button className="btn sm" disabled={page === 0} onClick={() => setPage((current) => current - 1)}>Previous</button><button className="btn sm" disabled={(page + 1) * 20 >= total} onClick={() => setPage((current) => current + 1)}>Next</button></div></div></>;
 }
 
 function LiveTaskRow({ task }: { task: LiveTask }) {
-  return <div className="trow"><span className={`pts${task.storyPoints ? '' : ' none'}`}>{task.storyPoints ?? 'Unestimated'}</span><StatusChip status={({ TODO: 'todo', IN_PROGRESS: 'prog', IN_REVIEW: 'rev', DONE: 'done' } as any)[task.status]} />{task.blocked && <span className="chip c-bad"><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg>Blocked</span>}<A className="t" href={`/projects/p1/board?task=${task.id}`}>{task.title}</A>{task.assigneeId ? <span className="who"><span className="av a4" aria-hidden="true">?</span>{task.assigneeId}</span> : <span className="chip c-line">Unassigned</span>}</div>;
+  const routeFor = useRoute();
+  const { projectId } = useProjectRoute();
+  return <div className="trow"><span className={`pts${task.storyPoints ? '' : ' none'}`}>{task.storyPoints ?? 'Unestimated'}</span><StatusChip status={({ TODO: 'todo', IN_PROGRESS: 'prog', IN_REVIEW: 'rev', DONE: 'done' } as any)[task.status]} />{task.blocked && <span className="chip c-bad"><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg>Blocked</span>}<A className="t" href={routeFor(`/projects/${projectId ?? 'p1'}/board?task=${task.id}`)}>{task.title}</A>{task.assigneeId ? <span className="who"><span className="av a4" aria-hidden="true">?</span>{task.assigneeId}</span> : <span className="chip c-line">Unassigned</span>}</div>;
 }

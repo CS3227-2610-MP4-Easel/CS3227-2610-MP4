@@ -84,18 +84,27 @@ export function AddTaskForm() {
   const live = route.mode === 'live' && route.projectId;
   const [liveEpics, setLiveEpics] = useState<LiveEpic[]>([]);
   const [liveMembers, setLiveMembers] = useState<LiveMember[]>([]);
-  useEffect(() => { if (!live) return; Promise.all([listEpicsLive_16(route.projectId!, 0, 100), listMembersLive_9(route.projectId!)]).then(([epicPage, members]) => { setLiveEpics(epicPage.items); setLiveMembers(members); }).catch(() => { setLiveEpics([]); setLiveMembers([]); }); }, [live, route.projectId]);
-  const [epic, setEpic] = useState(db.epics[0]?.id ?? '');
+  useEffect(() => { if (!live) return; Promise.all([listEpicsLive_16(route.projectId!, 0, 100), listMembersLive_9(route.projectId!)]).then(([epicPage, members]) => { setLiveEpics(epicPage.items); setLiveMembers([...new Map(members.map((member) => [member.userId, member])).values()]); }).catch(() => { setLiveEpics([]); setLiveMembers([]); }); }, [live, route.projectId]);
+  const [epic, setEpic] = useState('');
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
   const [crit, setCrit] = useState<string[]>(['']);
   const [pts, setPts] = useState('');
   const [who, setWho] = useState('');
   const f = useSubmit('Backlog.dc.html', 'Task added.');
-  useEffect(() => { if (live && !epic && liveEpics[0]) setEpic(liveEpics[0].id); }, [live, epic, liveEpics]);
+  useEffect(() => {
+    if (live && (!liveEpics.some((item) => item.id === epic)) && liveEpics[0]) setEpic(liveEpics[0].id);
+    if (!live && !epic && db.epics[0]) setEpic(db.epics[0].id);
+  }, [live, epic, liveEpics, db.epics]);
   const setAt = (i: number, v: string) => setCrit((c) => c.map((x, j) => (j === i ? v : x)));
   return (
-    <form className="dialog" role="dialog" aria-modal="true" aria-labelledby="at1" style={{ width: 'min(640px, 100%)' }} onSubmit={(e) => { e.preventDefault(); f.go(() => live ? createTaskLive_21(route.projectId!, { epicId: epic, title, description: desc, acceptanceCriteria: crit, storyPoints: pts ? Number(pts) as any : null, assigneeId: who || null }) : createTask_21({ epicId: epic, title, description: desc, criteria: crit, points: pts ? Number(pts) : null, assignee: (who || null) as Person | null })); }}>
+    <form className="dialog" role="dialog" aria-modal="true" aria-labelledby="at1" style={{ width: 'min(640px, 100%)' }} onSubmit={(e) => { e.preventDefault(); f.go(() => {
+      if (live) {
+        if (!liveEpics.some((item) => item.id === epic)) throw new ApiError('VALIDATION', 'Select an epic.');
+        return createTaskLive_21(route.projectId!, { epicId: epic, title, description: desc, acceptanceCriteria: crit, storyPoints: pts ? Number(pts) as any : null, assigneeId: who || null });
+      }
+      return createTask_21({ epicId: epic, title, description: desc, criteria: crit, points: pts ? Number(pts) : null, assignee: (who || null) as Person | null });
+    }); }}>
       <div className="row between"><h2 id="at1">Add task</h2><Close to="Backlog.dc.html" /></div>
       <div className="field"><label htmlFor="e1">Epic <span style={{ color: 'var(--danger)' }}>*</span></label>
         <select id="e1" className="in" value={epic} onChange={(e) => setEpic(e.target.value)}>{(live ? liveEpics : db.epics).map((e) => <option key={e.id} value={e.id}>{e.title}</option>)}</select></div>

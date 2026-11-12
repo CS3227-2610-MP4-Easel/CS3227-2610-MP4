@@ -18,7 +18,10 @@ export function MemberTable({ canRemove, removeRole, wide = false }: { canRemove
   useEffect(() => {
     if (route.mode !== 'live' || !route.projectId) return;
     let current = true;
-    const load = () => listMembersLive_9(route.projectId!).then((members) => current && setLiveMembers(members)).catch((e) => current && setError(e instanceof ApiError ? e.message : 'Something went wrong.'));
+    const load = () => listMembersLive_9(route.projectId!).then((members) => {
+      const unique = [...new Map(members.map((member) => [member.userId, member])).values()];
+      if (current) setLiveMembers(unique);
+    }).catch((e) => current && setError(e instanceof ApiError ? e.message : 'Something went wrong.'));
     load();
     window.addEventListener('easel-members-changed', load);
     return () => { current = false; window.removeEventListener('easel-members-changed', load); };
