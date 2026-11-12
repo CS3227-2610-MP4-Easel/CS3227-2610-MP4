@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -165,9 +165,11 @@ describe('register step 2', () => {
     await signedOut();
     await step1(u);
     await step2(u);
-    expect(order).toEqual(['check', 'signUp', 'reg']);
-    expect(replace).toHaveBeenCalledTimes(1);
-    expect(replace).toHaveBeenCalledWith('/projects');
+    await waitFor(() => {
+      expect(order).toEqual(['check', 'signUp', 'reg']);
+      expect(replace).toHaveBeenCalledTimes(1);
+      expect(replace).toHaveBeenCalledWith('/projects');
+    });
   });
 
   it('E100 a user change between signUp and register_3 triggers no me_4 and ends ready', async () => {
