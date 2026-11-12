@@ -1,9 +1,9 @@
-import { apiApp } from '@agile/api';
+import { getApiApp } from '@agile/api';
 
 export const maxDuration = 60;
 
 async function forward(request: Request): Promise<Response> {
-  return apiApp.fetch(request);
+  return getApiApp().fetch(request);
 }
 
 export const GET = forward;
