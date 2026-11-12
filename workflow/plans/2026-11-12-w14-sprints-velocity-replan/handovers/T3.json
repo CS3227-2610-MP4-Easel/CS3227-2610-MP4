@@ -1,8 +1,8 @@
 {
   "task": "T3",
   "status": "done",
-  "summary": "Tightened the ProposalService transaction seam and verified atomic REPLAN approval/rejection with domain-only Core.applyReplan.",
-  "commit": "6a0e0ce",
+  "summary": "Added focused rollback, tenancy, owner, session-binding, terminal-state and version-conflict tests for atomic REPLAN decisions.",
+  "commit": "689768c",
   "produces": [
     {
       "kind": "symbol",
@@ -41,9 +41,10 @@
       "needs": "orchestrator"
     }
   ],
+  "edge_cases": ["E16", "E17", "E23", "endpoint-48"],
   "checks": {
     "build": "pass",
-    "service_tests": "pass: 2/2 via node --import tsx --test src/be/proposals/test/service.test.ts",
+    "service_tests": "pass: 11/11 via node --import tsx --test src/be/proposals/test/service.test.ts",
     "core_tests": "pass: 11/11 via node --import tsx --test src/be/core/test/apply.test.ts",
     "proposals_tests": "not rerun; prior handover recorded 3 passed, 33 skipped (integration URL absent)",
     "gateway_tests": "known failure: E46 live SoCLaaS fetch expected LIVE_SOCLAAS_IN_TESTS but environment returned fetch failed",
