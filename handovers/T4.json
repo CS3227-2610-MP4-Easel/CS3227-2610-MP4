@@ -1,0 +1,41 @@
+{
+  "task": "T4",
+  "status": "done",
+  "summary": "Lead digest persistence uses ProposalService for REPLAN creation and adds zero-velocity forecast coverage.",
+  "commit": "pending",
+  "produces": [
+    {
+      "kind": "symbol",
+      "name": "LeadProposalService",
+      "where": "src/be/lead/src/flow.ts",
+      "note": "Structural transaction-safe ProposalService seam used by digest persistence without a lead-to-proposals package dependency."
+    },
+    {
+      "kind": "symbol",
+      "name": "createLeadRuntime",
+      "where": "src/be/lead/src/runtime.ts",
+      "note": "Accepts an injected proposalService through runtime options."
+    },
+    {
+      "kind": "other",
+      "name": "REPLAN digest persistence",
+      "where": "src/be/lead/src/flow.ts",
+      "note": "Digest creation, ProposalService createReplanInTransaction, and proposalId update run in one persistence callback; direct tx.aiProposal access was removed."
+    },
+    {
+      "kind": "file",
+      "name": "forecast.test.ts",
+      "where": "src/be/lead/test/forecast.test.ts",
+      "note": "Covers null/zero velocity and zero remaining-work semantics."
+    }
+  ],
+  "next": "T5 should construct ProposalService in API composition and inject it into createLeadRuntime/initLeadRuntime before wiring endpoints 44–48.",
+  "deviations": [],
+  "edge_cases": ["E25", "E27"],
+  "checks": {
+    "build": "pass",
+    "tests": "pass: 59 focused lead/proposals tests; npm test 929 pass, 117 skipped",
+    "lint": "pass: git diff --check",
+    "source_scan": "pass: npm test source-scan suite"
+  }
+}
