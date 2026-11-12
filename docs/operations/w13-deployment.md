@@ -10,9 +10,11 @@ check compares it with the selected deployment's `aliases[]` response.
 ## Production migration
 
 Production migration is an owner-approved protected GitHub Environment operation. It runs only
-from protected `main`, after checkout and commit/resource identity checks. The job validates the
-schema and committed migration checksum, then runs the forward migration with the protected direct
-Neon connection:
+from protected `main`, after checkout and commit/resource identity checks. The W8 expand migration
+installs a compatibility trigger that derives `facts_as_of` for old writers; this makes the full
+expand/contract sequence safe during a rolling deployment. The job validates the schema and
+committed migration checksum, then runs the forward migration with the protected direct Neon
+connection:
 
 ```text
 DATABASE_URL="$DIRECT_DATABASE_URL" npm --workspace @agile/db exec prisma validate -- --schema prisma/schema.prisma
@@ -21,6 +23,9 @@ DATABASE_URL="$DIRECT_DATABASE_URL" npm --workspace @agile/db exec prisma migrat
 
 The direct URL exists only in the migration process environment and is cleared in the finalizer.
 No down migration is used. If a migration fails, stop the job and preserve only redacted evidence.
+After the contract phase, application rollback is forward-only: restore the last known-good backup
+or apply a corrected forward migration, then deploy a compatible writer. The index and column are
+never dropped by an operational rollback.
 
 ## Manual recovery rehearsal
 

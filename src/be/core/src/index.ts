@@ -1,3 +1,5 @@
+export * from "./plan-input.js";
+export * from "./apply-plan.js";
 export { createCore, lockProjectForMutation, type CoreDependencies, type CoreDb } from "./core.js";
 export { createCoreResourceResolvers, resolveCoreResource, type CoreResourceResolvers } from "./resolvers.js";
 export { createProjects, type ProjectsService, type ProjectAccess } from "./projects.js";

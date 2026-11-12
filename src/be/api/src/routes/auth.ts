@@ -1,8 +1,8 @@
 import { z } from "zod/v3";
-import { policyForRoute, type RouteDefinition } from "@agile/contracts";
+import type { RouteDefinition } from "@agile/contracts";
 import { AlreadyRegistered, checkRegistrationCode, clientIpKey, createUser, getUser, type AuthRuntime, type RatePurpose } from "@agile/auth";
-import { bodyTooLarge } from "../body-limit.js";
 import { errorResponse, HttpError } from "../errors.js";
+import { bodyTooLarge, route } from "./shared.js";
 
 const MAX_BODY_BYTES = 4096;
 const fixed = (message: string) => ({ errorMap: () => ({ message }) });
@@ -35,11 +35,6 @@ function limitedBefore(runtime: () => AuthRuntime, purpose: RatePurpose): NonNul
     if (await bodyTooLarge(request, MAX_BODY_BYTES)) return tooLarge(requestId);
   };
 }
-
-const route = (policyKey: string): Pick<RouteDefinition, "operationId" | "method" | "path" | "policyKey"> => {
-  const policy = policyForRoute(policyKey);
-  return { operationId: policy.operationId, method: policy.method, path: policy.path, policyKey };
-};
 
 /** Endpoints 2 to 4 (spec `api.md`); `runtime` is read per request so tests can pass a fake. */
 export function authRoutes(runtime: () => AuthRuntime): RouteDefinition[] {

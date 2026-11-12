@@ -2,7 +2,7 @@ import type { Core, UserRole } from "@agile/contracts";
 import { SOURCE_IDS, type AssembleOptions, type EntityType, type SourceId } from "./allow-list.js";
 
 export type ContextRow = { projectId: string; ref: { type: EntityType; id: string }; ownerId?: string; text: string };
-export type SourceArgs = { caller: { userId: string; role: UserRole }; projectId: string; options: Readonly<AssembleOptions> };
+export type SourceArgs = { caller: { userId: string; role: UserRole }; projectId: string; options: Readonly<AssembleOptions>; captured?: unknown };
 export type ContextSource = (args: SourceArgs) => Promise<ContextRow[]>;
 export type MemberCheck = Pick<Core, "requireMember">;
 

@@ -5,11 +5,11 @@ describes `INT`; read it for context and write here instead of editing it.
 `sync-project-state` folds this file in after the branch merges.
 
 - **Branch:** w9-dev-slice (from `INT` at `dc3447f`)
-- **Base:** 3519ff0
+- **Base:** 90db346
 - **Owner:** ludannnn (Developer member)
 - **Status:** Approved
 - **Approved:** ludannnn 2026-11-11 (re-approval after the PR #29 review fixes; first approved 2026-11-09)
-- **Last updated:** 2026-11-12 by Claude Opus 5.5 — midnight-blockers fix (C~11) approved and pushed to PR #29
+- **Last updated:** 2026-11-12 by Claude Opus 5.5 — merged `development` (W7, W8, PR #34) for PR #29
 
 **Untouched:** Architecture, Conventions
 
@@ -44,7 +44,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] Gate 3 again: ludannnn approved the midnight-blockers fix and the spec E76 amendment (C~11, D~2) on 2026-11-12 ("yes").
 - [x] Push the fix to PR #29 (`2b32ca4`, pushed by ludannnn 2026-11-12).
 - [ ] **Handover:** to the Dev Lead (W5): `core.blockedTasks` now ignores `options.window` and lists every task assigned to the caller that is blocked now (D~1); `context-sources.test.ts` was updated to match (the W5 spec names no window for this source, so it is unchanged). DEV_STANDUP is its only consumer.
-- [ ] **Handover:** to the W4 owner (this owner): the 413 counter moved to `src/be/api/src/body-limit.ts`; `auth.ts` keeps 4,096 bytes. To the W1 owners: `RouteDefinition.bodyLimitBytes` (plan P1) reads the body after authorisation; endpoints 49 (1 MiB), 50 and 51 (16 KiB) use it.
+- [ ] **Handover:** two identical `bodyTooLarge` helpers now exist (`src/be/api/src/body-limit.ts` from W9, `src/be/api/src/routes/shared.ts` from W7/W8; `auth.ts` and `pm.ts` use the latter). Fold them into one in a later Small change. To the W4 owner (this owner): `auth.ts` keeps 4,096 bytes. To the W1 owners: `RouteDefinition.bodyLimitBytes` (plan P1) reads the body after authorisation; endpoints 49 (1 MiB), 50 and 51 (16 KiB) use it.
 - [ ] **Handover:** test follow-ups (two-round limit): poll `pg_locks` instead of a 300 ms wait in the E47 lock test, and await the pending write before cleanup on failure (`src/be/dev/test/dev-integration.test.ts`).
 - [ ] **Handover:** guide out of date: the dev package (`src/be/dev`), endpoints 49-52 and 55, the gateway additions (`openOrReuse`, `recordCacheHit`), `RouteDefinition.bodyLimitBytes`, and the Postgres integration tests.
 
@@ -95,6 +95,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-09 | Gate 3 asked; the operator asked for the concurrency fix first (C~9): `inDevWrite` maps exhausted serialization retries to 429 `RATE_LIMITED` with `Retry-After: 1`; unit, route and Postgres tests updated. Checks: typecheck green, `npm test` 811/811 (0 skipped) + fe 149/149 | W9 | `1a38dcd` |
 | 2026-11-11 | PR #29 review fixes (C~10): `content_hash` includes `bodyTruncated`, so a longer body with the same first 2000 characters gets a new, flagged summary and standup; endpoint 50 re-reads after the insert and returns the stored one-liner when a concurrent request saved first; `core.blockedTasks` ignores the window (D~1). Spec F4, § 4.2 and E20 amended. Tests: the reviewer's truncation sequence, a concurrent unit test and a Postgres E20 with different model answers, and a Postgres older-blocked-task test; all 8 affected tests fail with the fixes stashed. Checks: typecheck, lint green; `npm test` 813/813 (0 skipped) + fe 149/149 | W9 | PR #29 fixes |
 | 2026-11-12 | PR #29 review, second round (C~11, D~2): at 00:00 SGT with tomorrow's date the window is empty and `generateStandup` skipped `assembleWith`, so current blockers were dropped. Now it always assembles; W6's DEV_STANDUP option schema accepts `from == to` (still rejects `to` before `from`). Spec E76 amended. Tests: E76 midnight with a blocked task gives that blocker; midnight with none stores `[]` without a run; non-member at midnight gets NOT_FOUND; ai-context accepts an empty window and passes it to the sources. Checks: typecheck green; backend `npm test` 814/814 (0 skipped) | W9 | PR #29 fixes |
+| 2026-11-12 | Merged `development` at `90db346` (W8 PR #28, W7 PR #31, W12 paths PR #34) to clear PR #29's conflicts. Resolved: api `package.json`, `tsconfig.json` and `routes/index.ts` keep both W9's `dev` and the new `pm`, `proposals`, `lead`; `core/src/index.ts` keeps W7's exports and W9's `lockProjectForMutation`; `register.ts` keeps W9's byte-limited body read and W8's strict parser (the limited path now honours `strict` too); `auth.ts` takes `development`'s `bodyTooLarge` from `routes/shared.ts`; `package-lock.json` is `development`'s plus the `@agile/dev` link. Checks: typecheck, lint green; `npm test` 979/979 (0 skipped, Postgres ran) + fe 149/149 | W9 | merge commit |
 
 ---
 
