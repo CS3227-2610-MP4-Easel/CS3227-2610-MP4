@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** project operator
 - **Status:** In review
 - **Approved:** —
-- **Last updated:** 2026-11-12 by Codex — W5 implementation and closeout verification complete; Gate 3 requested
+- **Last updated:** 2026-11-12 by Codex — operator retained the existing local/dev tier boundary
 
 **Untouched:** Architecture, Conventions, Known Gaps, Decisions, Deviations
 
@@ -55,6 +55,14 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-12 | Completed and reviewed Wave 1 route/error and typed-client tasks; Wave 2 is unblocked | W5 | this commit |
 | 2026-11-12 | Completed and reviewed Wave 2 project, board, backlog, checkpoint, member, and task wiring; T5 is now in flight | W5 | 8cdbff5 |
 | 2026-11-12 | Added the F1-F8/N1-N3/E1-E15 verification matrix; required typechecks pass with repository cache-write access | W5 | 560ac31 |
+
+## Decisions
+
+### C~2 — Keep local/dev environment binding
+
+- **Decision:** Keep `APP_TIER=local` bound to local Firebase/Postgres resources; `agile-platform-dev` remains valid only with `APP_TIER=dev` and the dev Neon target.
+- **Why:** The operator chose to preserve the existing tier-safety boundary after considering local Postgres with the shared dev Firebase project.
+- **Decided by:** project operator, 2026-11-12.
 
 ## Deviations
 
