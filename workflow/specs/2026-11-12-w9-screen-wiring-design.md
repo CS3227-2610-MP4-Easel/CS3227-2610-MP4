@@ -77,7 +77,7 @@ Tests render with a `LiveTestProvider` (`src/fe/test/live-provider.tsx`) that se
 - [x] T2 `LiveStandupScreen` upload and summaries panels, and the switch in `canvas/Standup.tsx`. Tests: `src/fe/test/standup-live.test.tsx` (E3-E7, E14, E17). Satisfies F2, F3, N1.
 - [x] T3 `LiveStandupScreen` standup panel. Tests: the same file (E9-E11, E18) and E15 against the existing tests. Satisfies F4, F6.
 - [x] T4 `LiveTeamStandups` and the switch in `canvas/Standups.tsx`. Tests: `src/fe/test/team-standups-live.test.tsx` (E12-E14). Satisfies F5.
-- [ ] T5 Close-out: fe typecheck and `vitest` green, Implementer review, branch state updated.
+- [x] T5 Close-out: fe typecheck and `vitest` green, Implementer review, branch state updated.
 
 **Decisions made here:**
 - SD1 The mode switch is `useAuthMode()`: `firebase` is live, anything else is the mock. Rejected: a new env flag (two switches could disagree).

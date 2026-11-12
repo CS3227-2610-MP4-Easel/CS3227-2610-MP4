@@ -7,9 +7,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w9-screen-wiring (from `INT` at `2c5dd9f`)
 - **Base:** d452926
 - **Owner:** ludannnn (Developer member)
-- **Status:** Draft
-- **Approved:** —
-- **Last updated:** 2026-11-13 by Claude Opus 5.5 — T4 done; T5 close-out next
+- **Status:** Approved
+- **Approved:** ludannnn 2026-11-13
+- **Last updated:** 2026-11-13 by Claude Opus 5.5 — Gate 3 approved by the owner
 
 **Untouched:** Architecture, Conventions
 
@@ -25,13 +25,16 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-13 | Claude Opus 5.5 | W~1 | Blocked — needs human | T5: Gate 3 asked | On the owner's yes: write Approved, tick T5, clear this row, commit; the owner pushes and opens the PR into `development` | 2026-11-13 |
 
 **Remaining**
 
 - [x] Gate 1: spec approved by ludannnn on 2026-11-12 ("yes"), including SD2-SD4.
 - [x] T0: merged `development` at `465c8fe` (W9 PR #29) on 2026-11-13.
-- [ ] T1-T5 per the spec's task list.
+- [x] T1-T5 per the spec's task list (T5 review: one round, findings fixed or recorded).
+- [x] Gate 3: approved by ludannnn on 2026-11-13 ("yes").
+- [ ] Push and open the PR into `development` (owner).
+- [ ] **Handover:** S20/S18 a11y follow-up: the day tabs (`role="tab"`) have no `tabpanel` or arrow-key navigation.
+- [ ] **Handover:** when the W7 PM-UI branch (`codex/w7c-pm-ui`) merges, it brings its own mock/live switch (`isLive()`, `openProjectId()`); S20/S18 use `useAuthMode()` and `useProjectId()` (SD1). Pick one mechanism for the web app then.
 
 ---
 
@@ -39,7 +42,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W~1 | W9 screen wiring (S20, S18) | Spec'd | [spec](../../specs/2026-11-12-w9-screen-wiring-design.md) (approved 2026-11-12) | in the spec (Medium) | T0-T4 done; T5 close-out next | — |
+| W~1 | W9 screen wiring (S20, S18) | Spec'd | [spec](../../specs/2026-11-12-w9-screen-wiring-design.md) (approved 2026-11-12) | in the spec (Medium) | T0-T5 done; Gate 3 approved 2026-11-13; PR next | — |
 
 ---
 
