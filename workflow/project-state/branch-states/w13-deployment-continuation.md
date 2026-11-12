@@ -7,9 +7,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w13-deployment-continuation (from `INT` at `dc3447f`)
 - **Base:** dc3447f
 - **Owner:** operator / repository owner
-- **Status:** In review
-- **Approved:** —
-- **Last updated:** 2026-11-12 by Codex — fixed the observed CI registration-test race; renewed review required
+- **Status:** Approved
+- **Approved:** operator / repository owner, 2026-11-12
+- **Last updated:** 2026-11-12 by Codex — renewed Gate 3 approval recorded after the CI registration-test race repair
 
 **Untouched:** Architecture, Conventions, Known Gaps
 
@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S6 | 2026-11-12 | Codex | W13 | Done | Fixed the CI E32 registration-test race and completed verification | Request renewed Gate 3 approval before pushing or merging | 2026-11-12 |
+| *(none)* | — | — | — | — | Branch approved; no active session | Push the approved tip; do not fold until merged | 2026-11-12 |
 
 **Remaining**
 
@@ -108,6 +108,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-12 | Restricted `push` triggers to the exact W13 production workflow and added a regression test for arbitrary push-only privileged workflows; full tests, typecheck, lint, contract, workflow checker, secret scan, and diff checks pass. | W13 | 44f88a8 |
 | 2026-11-12 | Operator re-approved Gate 3 after the checker hardening and runbook correction. | W13 | owner approval |
 | 2026-11-12 | CI run `43151342460` failed because frontend E32 asserted before the fire-and-forget registration flow completed; the test now waits for the observable registration order and navigation. Three focused reruns and the full frontend suite pass. | W13 | 09021ce; pending renewed Gate 3 |
+| 2026-11-12 | Operator approved Gate 3 after the CI registration-test race repair and verification. | W13 | owner approval |
 
 ### D~8 — Deploy Hook cannot carry an exact commit SHA
 
