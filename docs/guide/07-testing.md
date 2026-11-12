@@ -4,12 +4,14 @@ From the repository root:
 
 | Command | Checks |
 |---|---|
-| `npm test` | root tests and all backend tests under `src/be/**/*.test.ts`; PostgreSQL integration uses `W1_INTEGRATION_DATABASE_URL` when set |
+| `npm test` | root tests and all backend tests under `src/be/**/*.test.ts`, then the `src/fe` Vitest suite; PostgreSQL integration uses `W1_INTEGRATION_DATABASE_URL` when set |
 | `npm run typecheck` | backend TypeScript project references, then the standalone `src/fe` typecheck |
 | `npm run lint` | root TypeScript build/lint boundary |
 | `npm --workspace @agile/db run prisma:validate` | validates `src/be/db/prisma/schema.prisma` |
 
-**Integration tests and CI.** The W2 and W4 integration tests (gateway rows, sessions, limiter) need PostgreSQL 16 and skip when `W1_INTEGRATION_DATABASE_URL` is unset. W12's CI does not set it yet, so CI skips them; the CI owner is to add a Postgres service and fail when the variable is missing. Run them locally against a database.
+**Integration tests and CI.** The integration tests (W2 gateway rows and sessions, W4 limiter, W9's `src/be/dev/test/dev-integration.test.ts`: atomic upload, concurrent summaries and standups, archive races under the project lock) need PostgreSQL 16 and skip when `W1_INTEGRATION_DATABASE_URL` is unset. CI runs a PostgreSQL 16 service, sets the variable and fails if it is missing, so they always run there. Locally, point the variable at a database (section 2).
+
+**Frontend tests.** `src/fe` uses Vitest with jsdom and Testing Library (C68); run them alone with `npm --workspace easel-fe run test`. The Firebase SDK and `fetch` are mocked, and fake timers cover countdowns. `test/source-rules.test.ts` enforces the frontend source rules (see 4 Components, Frontend).
 
 **Gateway tests.** Unit tests run over in-memory fakes with an injectable clock; `tests/setup-auth-env.ts` defaults `LLM_MODE=mock` and blocks requests to SoCLaaS, so the suite never calls the live service. A leak test checks that no prompt, response or key reaches a stored row across every admission path. Feature modules register mock responses with `registerMockResponse` and call `assertStaticSectionsFit` in a test.
 
