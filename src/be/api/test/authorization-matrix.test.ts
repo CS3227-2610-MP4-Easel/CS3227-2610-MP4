@@ -54,3 +54,19 @@ test("F5/E11 endpoint 42 authorizes PM and Dev Lead members on the new route", a
     assert.equal((result as { principal: { role: string } }).principal.role, role);
   }
 });
+
+test("W14 policy matrix keeps sprint reads/progress member-scoped and mutations/proposals Dev Lead-only", () => {
+  const policies = new Map(getPolicyMap().filter((entry) => entry.policyKey >= "endpoint-27" && entry.policyKey <= "endpoint-48").map((entry) => [entry.policyKey, entry]));
+  for (const endpoint of [27, 33]) {
+    const policy = policies.get(`endpoint-${endpoint}`);
+    assert.ok(policy);
+    assert.deepEqual(policy.roles, []);
+    assert.equal(policy.predicate, "MEMBER");
+  }
+  for (const endpoint of [28, 29, 30, 31, 32, 46, 47, 48]) {
+    const policy = policies.get(`endpoint-${endpoint}`);
+    assert.ok(policy);
+    assert.deepEqual(policy.roles, ["DEV_LEAD"]);
+    assert.equal(policy.predicate, endpoint === 48 ? "SELF" : "MEMBER");
+  }
+});

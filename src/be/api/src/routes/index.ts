@@ -9,15 +9,17 @@ import { createCheckpointsRoutes, type CheckpointsRouteServices } from "./checkp
 import { createPlanningRoutes, type PlanningRouteServices } from "./planning.js";
 import { createLeadRoutes, type LeadRouteServices } from "./lead.js";
 import { createDevRoutes, type DevRouteServices } from "./dev.js";
+import { createSprintRoutes, type SprintRouteServices } from "./sprints.js";
+import { createProposalRoutes, type ProposalRouteServices } from "./proposals.js";
 
 export { createDevRoutes, type DevRouteServices };
 
 /** One line per owner: append your module's `RouteDefinition[]` here; `createApiApp` registers each through the policy gate. */
 export const ROUTES: RouteDefinition[] = [healthRoute, ...authRoutes(getAuthRuntime), ...pmRoutes(getPmRuntime)];
 
-export type W5RouteServices = { projects: ProjectsRouteServices; checkpoints: CheckpointsRouteServices; planning: PlanningRouteServices; lead?: LeadRouteServices };
+export type W5RouteServices = { projects: ProjectsRouteServices; checkpoints: CheckpointsRouteServices; planning: PlanningRouteServices; sprints: SprintRouteServices; proposals: ProposalRouteServices; lead?: LeadRouteServices };
 
 /** Tier 1 W5 factories remain transport-only; composition supplies their narrow service objects. */
 export function createW5Routes(services: W5RouteServices): RouteDefinition[] {
-  return [...createProjectsRoutes(services.projects), ...createCheckpointsRoutes(services.checkpoints), ...createPlanningRoutes(services.planning), ...(services.lead ? createLeadRoutes(services.lead) : [])];
+  return [...createProjectsRoutes(services.projects), ...createCheckpointsRoutes(services.checkpoints), ...createPlanningRoutes(services.planning), ...createSprintRoutes(services.sprints), ...createProposalRoutes(services.proposals), ...(services.lead ? createLeadRoutes(services.lead) : [])];
 }
