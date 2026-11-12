@@ -1,5 +1,6 @@
 'use client';
-import { RoleCtx } from '../lib/nav';
+import { useState } from 'react';
+import { ModalCtx, RoleCtx, type ModalRequest } from '../lib/nav';
 import { ProjectRouteContext, projectRoute } from '../lib/api/project-mode';
 import { resolve, type Resolved, type Role } from '../lib/screens';
 import { SCREEN_COMPONENTS } from './screens-index';
@@ -14,6 +15,8 @@ const MODAL_BASE: Record<string, string> = {
 
 export default function Screen({ found, role, home, pathname = '', projectId }: { found: Resolved; role: Role; home: string; pathname?: string; projectId?: string }) {
   const route = projectRoute(pathname, projectId);
+  const [modal, setModal] = useState<ModalRequest | null>(null);
+  const modalContext = { modal, open: setModal, close: () => setModal(null) };
   if ('file' in found) {
     const baseFile = MODAL_BASE[found.file];
     const base = baseFile ? resolve(pathname, undefined, role) : null;
@@ -22,8 +25,11 @@ export default function Screen({ found, role, home, pathname = '', projectId }: 
     return (
       <ProjectRouteContext.Provider value={route}>
         <RoleCtx.Provider value={role}>
-          {Base ? <Base /> : null}
-          <Modal />
+          <ModalCtx.Provider value={modalContext}>
+            {Base ? <Base /> : null}
+            <Modal />
+            {modal ? (() => { const ClientModal = SCREEN_COMPONENTS[modal.file]; return ClientModal ? <ClientModal /> : null; })() : null}
+          </ModalCtx.Provider>
         </RoleCtx.Provider>
       </ProjectRouteContext.Provider>
     );
@@ -32,6 +38,7 @@ export default function Screen({ found, role, home, pathname = '', projectId }: 
   return (
     <ProjectRouteContext.Provider value={route}>
       <RoleCtx.Provider value={role}>
+        <ModalCtx.Provider value={modalContext}>
         <div className="app">
           <Top role={role} />
           <main className="main" style={{ alignItems: 'center', paddingTop: 80 }}>
@@ -44,6 +51,7 @@ export default function Screen({ found, role, home, pathname = '', projectId }: 
             </div>
           </main>
         </div>
+        </ModalCtx.Provider>
       </RoleCtx.Provider>
     </ProjectRouteContext.Provider>
   );

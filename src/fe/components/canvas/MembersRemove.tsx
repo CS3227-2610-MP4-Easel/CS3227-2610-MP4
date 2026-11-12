@@ -6,6 +6,7 @@ import RemoveMember from '../live/remove-member';
 import Top from './Top';
 import ProjectHead from './ProjectHead';
 import ConfirmDialog from './ConfirmDialog';
+import ModalRoute from '../modal-route';
 
 class Logic {
 props: any;
@@ -16,5 +17,5 @@ renderVals() { return {}; }
 
 export default function MembersRemove(props: any = {}) {
   const v = new Logic(props).renderVals();
-  return (<><div className="app"><Top role={"lead"} project={"1"} />{" "}<div className="body"><main className="main"><ProjectHead role={"lead"} active={"members"} />{" "}<div className="wide stack"><div className="card"><div className="sk" style={{width: "200px", height: "16px", marginBottom: "12px"}}></div><div className="sk" style={{marginBottom: "8px"}}></div><div className="sk" style={{width: "80%"}}></div></div></div></main></div>{" "}<div className="scrim" role="presentation"><RemoveMember /></div></div></>);
+  return <ModalRoute closeTo="Members.dc.html"><RemoveMember /></ModalRoute>;
 }
