@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { A, css, r, useRoute } from '../../lib/nav';
 import { ApiError, setTaskStatus_24, setTaskStatusLive_24 } from '../../lib/api';
 import { useProjectRoute } from '../../lib/api/project-mode';
@@ -11,9 +11,18 @@ const mutationError = (error: unknown) => error instanceof ApiError && error.cod
 export default function TaskCard(props: any = {}) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const cardRef = useRef<HTMLElement>(null);
   const route = useProjectRoute();
   const routeFor = useRoute();
   const live = !!(props.live && route.mode === 'live' && route.projectId);
+  useEffect(() => {
+    if (!open) return;
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!cardRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', closeOnOutsideClick);
+    return () => document.removeEventListener('mousedown', closeOnOutsideClick);
+  }, [open]);
   const solo = props.title === undefined;
   const whoMap = { pn: ['a3', 'PN', 'Priya N.'], ml: ['a2', 'ML', 'Marcus L.'], wo: ['a4', 'WO', 'Wei Ling O.'] };
   const who = solo ? whoMap.ml : whoMap[props.who];
@@ -37,7 +46,7 @@ export default function TaskCard(props: any = {}) {
     } finally { setBusy(false); }
   };
   return <div style={css(solo ? 'padding: 24px 24px 150px; background: var(--bg); width: 360px; box-sizing: border-box' : '')}>
-    <article className={`tcard ${blocked ? 'blocked' : ''}`} style={css(`margin-top: 0; position: relative;${open ? ' outline: 2px solid var(--accent); outline-offset: 1px; z-index: 6' : ''}`)}>
+    <article ref={cardRef} className={`tcard ${blocked ? 'blocked' : ''}`} style={css(`margin-top: 0; position: relative;${open ? ' outline: 2px solid var(--accent); outline-offset: 1px; z-index: 6' : ''}`)}>
       <div className="row between" style={{ alignItems: 'flex-start' }}><div className="small muted">{solo ? 'Browse stalls and menus' : props.epic || ''}</div>{editable && <span className="btn g sm ib" role="button" aria-label="Change status" aria-haspopup="menu" aria-expanded={open} tabIndex={0} onClick={() => setOpen(!open)} style={{ width: 26, height: 26, margin: '-4px -6px 0 0' }}><svg className="ic" aria-hidden="true"><use href="#i-more" /></svg></span>}</div>
       <A href={props.id ? routeFor(`/projects/${route.projectId ?? 'p1'}/board?task=${props.id}`) : r('TaskDetail.dc.html')} className="t" style={{ display: 'block' }}>{solo ? 'Search and filter by cuisine' : props.title || ''}</A>
       {blocked && <div className="chip c-bad wrapt" style={{ alignSelf: 'flex-start' }}><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg>{blocked}</div>}

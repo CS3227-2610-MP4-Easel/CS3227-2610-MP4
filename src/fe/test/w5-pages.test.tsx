@@ -105,6 +105,15 @@ describe('W5 live planning surfaces', () => {
     expect(listTasks).toHaveBeenLastCalledWith(PROJECT, 0, 20, { status: 'IN_PROGRESS' });
   });
 
+  it('closes a task status menu when clicking outside the task card', async () => {
+    render(liveView(<BoardView role="lead" />));
+    expect(await screen.findByText('Live task')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Change status' }));
+    expect(screen.getByRole('menu')).toBeTruthy();
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
   it('F5 E11 E13 refetches the board after a live status mutation', async () => {
     render(liveView(<BoardView role="lead" />));
     expect(await screen.findByText('Live task')).toBeTruthy();
