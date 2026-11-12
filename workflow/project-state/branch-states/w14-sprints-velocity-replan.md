@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — fixed PM read-only Sprints tab role
+- **Last updated:** 2026-11-13 by Codex — committed PM read-only Sprints tab fix
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | Fixed PM read-only Sprints tab role propagation | Run checks and hand off the focused correction | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Paused | Fixed PM read-only Sprints tab role propagation; checks pass | Owner review of commit `2a92804`; continue remaining W14 work afterward | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -140,7 +140,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-13 | Wired PM and Developer overview cards to live project/progress/checkpoint/member APIs, PM Health to live facts, and Developer My Work to assigned live tasks with status/block mutations; typecheck, full tests and diff check pass | W14 | commit `fd6d657` |
 | 2026-11-13 | Operator explicitly waived a new spec for this focused reuse of existing API contracts | W14 | operator direction |
 | 2026-11-13 | Made post-login routing use the role-specific home (`/my-work` for Developers), made the Developer header landing link honor its explicit role, and made live My Work fetch all project tasks before filtering assigned open tasks; added regression coverage | W14 | commit `a3970d6` |
-| 2026-11-13 | Fixed PM read-only Sprints to pass the current role into the shared header instead of hardcoding Developer, restoring PM Health and Settings tabs | W14 | T6 UI follow-up |
+| 2026-11-13 | Fixed PM read-only Sprints to pass the current role into the shared header instead of hardcoding Developer, restoring PM Health and Settings tabs | W14 | commit `2a92804` |
 
 ## 4. Decisions
 
