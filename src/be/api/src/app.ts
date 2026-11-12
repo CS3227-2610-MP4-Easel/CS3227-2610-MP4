@@ -47,3 +47,12 @@ let cachedApiApp: ReturnType<typeof createApiApp> | undefined;
 export function getApiApp() {
   return (cachedApiApp ??= createApiApp());
 }
+
+/** Preserve the public app export without constructing it during framework builds. */
+export const apiApp = new Proxy({} as ReturnType<typeof createApiApp>, {
+  get(_target, property) {
+    const app = getApiApp();
+    const value = Reflect.get(app, property, app);
+    return typeof value === "function" ? value.bind(app) : value;
+  },
+});
