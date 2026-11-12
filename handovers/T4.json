@@ -2,7 +2,7 @@
   "task": "T4",
   "status": "done",
   "summary": "Lead digest persistence uses ProposalService for REPLAN creation and adds zero-velocity forecast coverage.",
-  "commit": "pending",
+  "commit": "25e3521",
   "produces": [
     {
       "kind": "symbol",
