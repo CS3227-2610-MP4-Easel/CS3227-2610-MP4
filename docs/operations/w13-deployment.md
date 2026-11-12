@@ -20,11 +20,12 @@ W13 workflow. The owner does not run Prisma or the migration wrapper locally. Be
 1. In Vercel, disable Production Branch auto-deploy for `main` and record redacted setting evidence
    showing the project, branch, setting state, owner, and check time. Do not record tokens, URLs with
    credentials, the deploy hook URL, response bodies, or secret values.
-2. Approve the protected production Environment, confirm the release commit and committed migration
-   manifest, then merge or promote that reviewed commit to `main`.
-3. Confirm that the `main` push starts the protected workflow. Its migration action is the sole CI
-   entry point and runs `node --import tsx scripts/w13/migrate-production.mjs`; the direct database
-   URL is supplied only to that process environment.
+2. Confirm the release commit and committed migration manifest, then merge or promote that reviewed
+   commit to `main`.
+3. Confirm that the `main` push starts the protected workflow and that the job pauses for approval
+   of the protected `production` Environment. Approve that workflow run in GitHub Actions. Its
+   migration action is the sole CI entry point and runs `node --import tsx scripts/w13/migrate-production.mjs`;
+   the direct database URL is supplied only to that process environment.
 4. Before the hook, the workflow rechecks that remote `main` still equals `github.sha`. This closes
    the ordinary branch-advance race, but Vercel Deploy Hooks do not accept a commit SHA, so the hook
    itself cannot provide exact SHA binding; Vercel may resolve the branch after this check. An exact

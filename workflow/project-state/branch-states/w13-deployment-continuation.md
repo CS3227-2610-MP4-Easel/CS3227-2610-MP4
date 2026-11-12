@@ -7,9 +7,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w13-deployment-continuation (from `INT` at `dc3447f`)
 - **Base:** dc3447f
 - **Owner:** operator / repository owner
-- **Status:** Approved
+- **Status:** In review
 - **Approved:** operator / repository owner, 2026-11-12
-- **Last updated:** 2026-11-12 by Codex — Gate 3 approved by operator; branch is ready for integration
+- **Last updated:** 2026-11-12 by Codex — corrected the production approval sequence in the runbook; review required again
 
 **Untouched:** Architecture, Conventions, Known Gaps
 
@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| *(none)* | — | — | — | — | Branch approved; no active session | Integrate through the normal pull request; do not fold until merged | 2026-11-12 |
+| S5 | 2026-11-12 | Codex | W13 | Active | Correcting the runbook’s production Environment approval order | Validate, commit, and request renewed Gate 3 approval | 2026-11-12 |
 
 **Remaining**
 
@@ -103,6 +103,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-12 | Gate 3 review identified that the pre-hook SHA check used unauthenticated `git ls-remote`; the repair replaced it with an authenticated read-only GitHub API check using `github.token`. | W13 | resolved by 1c22eb9 |
 | 2026-11-12 | Replaced the unauthenticated `git ls-remote` release-SHA guard with a `contents: read` GitHub refs API check using `github.token`, `pipefail`, and a fail-closed JSON SHA comparison; focused and full close-out checks pass. | W13 | 1c22eb9 |
 | 2026-11-12 | Operator approved Gate 3 after the authenticated SHA-guard repair and close-out verification; branch is ready for normal integration. | W13 | owner approval |
+| 2026-11-12 | Corrected the runbook so the owner merges to `main`, observes the workflow pause, and then approves the protected `production` Environment for that run. | W13 | pending renewed Gate 3 |
 
 ### D~8 — Deploy Hook cannot carry an exact commit SHA
 
