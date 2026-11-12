@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — T2/T3 accepted after final review; T4 dispatched
+- **Last updated:** 2026-11-13 by Codex — T4 review fixes dispatched for transaction-aware session closure, runtime injection and E27 coverage
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | Orchestrating T4 lead digest persistence through ProposalService | Validate T4 handover and review its atomic transaction integration | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Active | T4 review fixes | Validate the T4 agent's transaction-aware closure, runtime injection, rollback fixtures and E27 race test; then rerun T4 review | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -54,7 +54,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W14 | Sprints, velocity and re-plan | Building | [spec](../../specs/2026-11-12-w14-sprints-velocity-replan-design.md) | [plan](../../plans/2026-11-12-w14-sprints-velocity-replan/plan.md) | T4 in progress: atomic lead digest persistence | — |
+| W14 | Sprints, velocity and re-plan | Building | [spec](../../specs/2026-11-12-w14-sprints-velocity-replan-design.md) | [plan](../../plans/2026-11-12-w14-sprints-velocity-replan/plan.md) | T4 review fixes in progress: session atomicity, runtime wiring and E27 race | — |
 
 ## 3. Changes
 
@@ -81,7 +81,11 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-13 | Final T2 review requested true zero-progress/unestimated, newest-three/deleted velocity, and no-mutation overlap assertions; follow-up in progress | W14 | T2 final-review follow-up |
 | 2026-11-13 | Added all-unestimated zero-progress, real newest-three/deleted velocity, and overlap no-mutation assertions; focused tests, typecheck and diff check pass | W14 | commit `d09dd4d`, handover T2 |
 | 2026-11-13 | T2 and T3 final reviews accepted after substantive race, rollback, conflict, tenancy and session-adapter coverage; T4 started | W14 | review action |
+| 2026-11-13 | T4 accepted after handover lint, typecheck and diff verification; T5 started for API routes and composition | W14 | commit `25e3521` |
 | 2026-11-13 | Started attacker review of final T2/T3 transaction, lock, authorization, replay, bounds and tenancy behavior; review is read-only for source and task files | W14 | review |
+| 2026-11-13 | Started read-only attacker review of T4 for proposal-table access, transaction boundary leaks, session ownership and lock order | W14 | review |
+| 2026-11-13 | T4 attacker review found public session closes outside the transaction on degraded and rollback paths, cache-order risk for late ProposalService injection, and no real E27 race test; direct lead proposal-table access was removed | W14 | review; fix before acceptance |
+| 2026-11-13 | T4 tester review found E25 covered, but E27 race/rollback coverage is absent and session cleanup remains outside the transaction; no source, test or task files edited | W14 | review |
 
 ## 4. Decisions
 
