@@ -35,11 +35,6 @@
       "why": "The environment returned fetch failed; the T3 adapter typechecks and does not alter that provider path.",
       "needs": "none"
     },
-    {
-      "what": "Concurrent T2 changes remain uncommitted in core composition/derived/index/sprints.",
-      "why": "They were present in the shared worktree and were intentionally not staged by T3.",
-      "needs": "orchestrator"
-    }
   ],
   "edge_cases": ["E13", "E14", "E15", "E16", "E17", "E23", "endpoint-48"],
   "checks": {

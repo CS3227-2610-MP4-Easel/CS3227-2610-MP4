@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — T2 final-review assertions committed and handed over
+- **Last updated:** 2026-11-13 by Codex — T2/T3 accepted after final review; T4 dispatched
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | T2 final-review assertions committed and handed over | Continue with T3 review follow-up acceptance | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Active | Orchestrating T4 lead digest persistence through ProposalService | Validate T4 handover and review its atomic transaction integration | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -54,7 +54,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W14 | Sprints, velocity and re-plan | Building | [spec](../../specs/2026-11-12-w14-sprints-velocity-replan-design.md) | [plan](../../plans/2026-11-12-w14-sprints-velocity-replan/plan.md) | T2/T3 in progress: core and proposal seams | — |
+| W14 | Sprints, velocity and re-plan | Building | [spec](../../specs/2026-11-12-w14-sprints-velocity-replan-design.md) | [plan](../../plans/2026-11-12-w14-sprints-velocity-replan/plan.md) | T4 in progress: atomic lead digest persistence | — |
 
 ## 3. Changes
 
@@ -80,6 +80,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-13 | Replaced serialized E4 coverage with a barrier-controlled race and added direct E21, velocity ordering, progress, and 1000-item bound assertions | W14 | T2 second-review follow-up |
 | 2026-11-13 | Final T2 review requested true zero-progress/unestimated, newest-three/deleted velocity, and no-mutation overlap assertions; follow-up in progress | W14 | T2 final-review follow-up |
 | 2026-11-13 | Added all-unestimated zero-progress, real newest-three/deleted velocity, and overlap no-mutation assertions; focused tests, typecheck and diff check pass | W14 | commit `d09dd4d`, handover T2 |
+| 2026-11-13 | T2 and T3 final reviews accepted after substantive race, rollback, conflict, tenancy and session-adapter coverage; T4 started | W14 | review action |
 | 2026-11-13 | Started attacker review of final T2/T3 transaction, lock, authorization, replay, bounds and tenancy behavior; review is read-only for source and task files | W14 | review |
 
 ## 4. Decisions
