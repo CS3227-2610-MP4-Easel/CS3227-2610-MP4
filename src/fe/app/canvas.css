@@ -100,7 +100,8 @@ textarea.in{height:auto;padding:10px 12px;resize:none}
 .drawer{width:min(540px,100%);background:var(--surface);padding:24px;overflow:auto;display:flex;flex-direction:column;gap:18px;box-shadow:-12px 0 40px rgba(0,0,0,.2)}
 .dfoot{display:flex;justify-content:flex-end;gap:8px}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;padding:3px;background:var(--surface);gap:2px}
-.seg a,.seg span{padding:5px 12px;border-radius:7px;font-weight:600;font-size:13px;color:var(--muted)}
+.seg a,.seg span,.seg button{padding:5px 12px;border-radius:7px;font-weight:600;font-size:13px;color:var(--muted)}
+.seg button{border:0;background:none;font-family:inherit;cursor:pointer}
 .seg .on{background:var(--accent);color:#fff}
 .cols{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;align-items:start}
 .col{background:var(--sunk);border-radius:12px;padding:12px}

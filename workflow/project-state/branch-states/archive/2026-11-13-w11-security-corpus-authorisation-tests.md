@@ -7,8 +7,8 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w11-security-corpus-authorisation-tests (from `origin/development` at `3519ff077de611e79be28b1c3743a027675260c9`)
 - **Base:** `465c8fe0e64995c80b19d0757694706555398357`
 - **Owner:** Dev Lead
-- **Status:** In review
-- **Approved:** — (project owner only)
+- **Status:** Folded
+- **Approved:** fold approval (project owner, 2026-11-13)
 - **Last updated:** 2026-11-13 by Codex — merged current development and verified the integrated branch
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
@@ -103,3 +103,15 @@ Gate 3: approved by operator. PR [#27](https://github.com/CS3227-2610-MP4-Easel/
 
 Review follow-up resolved: the network deny covers DNS promises and socket connections, and
 route-source discovery accepts newly added TypeScript route files.
+
+Project owner approved W11 for project-state sync on 2026-11-13.
+
+
+## Fold record
+Folded 2026-11-13 by Codex on isolated sync worktree from `development` · merge commit `82cbf91` · base `465c8fe0`
+
+| Provisional | Permanent |
+|---|---|
+| C~1 | C82 |
+| C~2 | C83 |
+| C~3 | C84 |

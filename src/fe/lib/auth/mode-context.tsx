@@ -4,7 +4,7 @@ import type { AuthMode } from './mode';
 import { firebaseConfigured } from './firebase';
 import { SessionProvider } from './session';
 
-const AuthModeCtx = createContext<AuthMode>('prototype');
+export const AuthModeCtx = createContext<AuthMode>('prototype');
 
 export const useAuthMode = (): AuthMode => useContext(AuthModeCtx);
 

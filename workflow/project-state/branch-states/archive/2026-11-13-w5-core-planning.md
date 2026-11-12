@@ -7,8 +7,8 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w5-core-planning (managed worktree, checked out at `faa1c08`)
 - **Base:** 512dc4c0ad0cf487cca2020756cc5d0c82716525
 - **Owner:** operator / Codex
-- **Status:** In review
-- **Approved:** Gate 1 spec (operator, 2026-11-08); Gate 2 plan (operator, 2026-11-08); Gate 3 branch review (operator, 2026-11-08)
+- **Status:** Folded
+- **Approved:** Gate 1 spec (operator, 2026-11-08); Gate 2 plan (operator, 2026-11-08); Gate 3 branch review (operator, 2026-11-08); fold approval (project owner, 2026-11-13)
 - **Last updated:** 2026-11-08 by Codex — merged latest INT into W5
 
 **Untouched:** Architecture, Conventions, Known Gaps, Decisions, Deviations
@@ -31,8 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w5-core-planning/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| 2026-11-08 blocker repair | 2026-11-08 | Codex | W5 | Done | Closed-sprint PATCH and archive-race mutation paths fixed and verified | Owner review of updated PR | 2026-11-08 |
-| 2026-11-08 review follow-up | 2026-11-08 | Codex | W5 | Done | Three review fixes implemented and focused tests pass | Review commits; full suite has five failures and 28 skips | 2026-11-08 |
+| — | — | — | — | — | — | — | — |
 
 **Remaining**
 
@@ -70,6 +69,7 @@ cd /Users/trevortan/.codex/worktrees/w5-core-planning/CS3227-2610-MP4
 | 2026-11-08 | Operator renamed the intended branch from `codex/w5-core-planning` to `w5-core-planning`; branch creation was initially blocked by shared read-only `.git` metadata | W5 | working tree |
 | 2026-11-07 | Started W5 on a managed worktree from `development` tip `faa1c08`; local branch creation is blocked by shared read-only `.git` metadata | W5 | working tree |
 | 2026-11-07 | Drafted and linted the W5 High-tier spec; Implementer, Tester, Attacker, and Maintainer reviews ran for two rounds and blocking findings were fixed, including archive probing, apply transactions, resolver seams, task events, and source serialization | W5 | working tree |
+| 2026-11-13 | Project owner confirmed fold readiness; completed session rows were cleared and W5 marked Approved for project-state sync | W5 | owner confirmation |
 
 ---
 
@@ -86,3 +86,12 @@ cd /Users/trevortan/.codex/worktrees/w5-core-planning/CS3227-2610-MP4
 | ID | Date | What / consequence | Action needed |
 |---|---|---|---|
 | D~1 | 2026-11-08 | T1 review round 2 still found `PROJECT_MEMBER_ADD` mapped as `PROJECT` instead of frozen `MEMBERSHIP`, and PROJECT_LIST did not filter archived projects. Both violate the approved T1 contract. | Operator approved contained corrections on 2026-11-08; corrective pass in progress. |
+
+
+## Fold record
+Folded 2026-11-13 by Codex on isolated sync worktree from `development` · merge commit `b95546f` · base `512dc4c0`
+
+| Provisional | Permanent |
+|---|---|
+| D~1 | D25 |
+| C~1 | C80 |

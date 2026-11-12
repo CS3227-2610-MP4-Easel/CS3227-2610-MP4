@@ -15,7 +15,9 @@ const users: Record<string, { userId: string; role: "PM" | "DEV_LEAD" | "DEVELOP
   lead: { userId: "22222222-2222-4222-8222-222222222222", role: "DEV_LEAD" },
   pm: { userId: "44444444-4444-4444-8444-444444444444", role: "PM" },
   stranger: { userId: "55555555-5555-4555-8555-555555555555", role: "DEV_LEAD" },
+  outsider: { userId: "99999999-9999-4999-8999-999999999999", role: "DEVELOPER" },
 };
+const nonMembers = new Set([users.stranger.userId, users.outsider.userId]);
 const SECRET_TITLE = "FIXTURE-SECRET-TITLE";
 const SECRET_LINE = "FIXTURE-SECRET-STANDUP-LINE";
 const FIXED_NOW = new Date("2026-11-10T04:00:00Z");
@@ -45,7 +47,7 @@ function build(overrides: Partial<DevRouteServices> = {}, options: BuildOptions 
   const db = {
     ...tx,
     project: { ...tx.project, findFirst: async () => (options.archived ? null : { id: projectId, status: "ACTIVE" }) },
-    projectMember: { findFirst: async ({ where }: { where: { userId: string } }) => (where.userId === users.stranger.userId ? null : { userId: where.userId }), findMany: async () => [] },
+    projectMember: { findFirst: async ({ where }: { where: { userId: string } }) => (nonMembers.has(where.userId) ? null : { userId: where.userId }), findMany: async () => [] },
     checkpoint: { findMany: async () => [] }, taskEvent: { findMany: async () => [] }, task: { findMany: async () => [] },
     $transaction: async (work: (t: typeof tx) => Promise<unknown>) => work(tx),
   };
@@ -249,6 +251,14 @@ test("E59 a Dev Lead who is not a member gets 404 NOT_FOUND on 55", async () => 
   const response = await send(build().api, "stranger", "GET", "/standups");
   assert.equal(response.status, 404);
   assert.equal((await code(response)).code, "NOT_FOUND");
+});
+
+test("a Developer who is not (or no longer) a member gets 404 on 52 and the service is never called", async () => {
+  const { api, calls } = build();
+  const response = await send(api, "outsider", "GET", "/standups/mine?date=2026-11-10");
+  assert.equal(response.status, 404);
+  assert.equal((await code(response)).code, "NOT_FOUND");
+  assert.equal(calls.mine.length, 0);
 });
 
 test("a project id and a developerId in upper case reach the services in lower case", async () => {

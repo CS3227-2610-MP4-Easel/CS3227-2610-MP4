@@ -5,8 +5,8 @@
 - **Phase:** Pre-implementation. The architecture passed its readiness gate for the first slice on 2026-10-29; the W10 clickable prototype, W1 foundation/API skeleton, W2 gateway, W3 guards, W4 auth, W6 AI context and W12 CI are merged, while the role features (W5, W7-W9) remain.
 - **Stack:** TypeScript monorepo, Next.js App Router with a Hono API under `/api`, Prisma, Postgres (Neon), Firebase Auth, Vercel (Hobby), NUS SoCLaaS
 - **Branch:** `INT` = `development`; `main` is the release branch. This file describes `INT` only.
-- **Last updated:** 2026-11-13 by Claude Opus 5.5 — folded w4-sign-in-screen, w9-dev-slice
-- **Last verified against repo:** 2026-11-13 (W4 and W9 areas only, at their folds)
+- **Last updated:** 2026-11-13 by Codex — merged development; documented W5, W8, W11, W13; retained W4/W9 guide checkpoint
+- **Last verified against repo:** 2026-11-13 (W4, W5, W8, W9, W11, and W13 guide checkpoint)
 - **Developer guide:** seeded 2026-11-02 from W10, [guide](../../docs/guide/index.md)
 - **Deadline:** 13 Nov 2026. Feature freeze end of 10 Nov (AD-69), production deploy 11 Nov (AD-70).
 
@@ -66,7 +66,6 @@ Verification commands are configured in `workflow/config.json`: `npm test`, `npm
 | W7/W8 context sources and `assembleWith` | Todo | register your sources at module load with `registerContextSource` (rules in [W6 spec conventions.md § Rules for source owners](../specs/2026-11-06-w6-ai-context-design/conventions.md): `ownerId` meanings, rows most important first, filtered client, no unsafe raw SQL); call `assembleWith`, not `assemble`; keep gateway-calling files free of database imports (the source scan enforces it); never catch `ContextScopeViolation`. W7: `pm.similarItems` filters by the caller's member projects before searching, titles only, at most 5. W8: `lead.facts` emits only `FACT_KEYS` rows (add keys to `allow-list.ts` by PR, and update `facts`' max chars, which a test pins); test that the overload fact covers only member projects (C-28) | handed over from w6-ai-context | 2026-11-07 |
 | Slicing: W8 also depends on W6 | Todo | `workflow/specs/slicing.md` lists W8's dependencies as W2, W3, W5; it also depends on W6 | handed over from w6-ai-context | 2026-11-07 |
 | W10 canvas screens are fixed-size | Todo | to the PM (W10): the canvas screens, including the live sign-in and register screens that reuse their markup, are fixed-size (`.app { min-height: 1000px }` in `src/fe/app/canvas.css`, fixed flex bases such as `1 1 420px`), so they do not adapt to short or very wide windows (seen by the operator on an ultrawide monitor) | handed over from w4-sign-in-screen | 2026-11-13 |
-| Guide: W4 sign-in setup and testing | Todo | guide out of date: setup (Firebase dev project, `src/fe/.env.local` from `.env.example`, local Postgres and the `agile-pg-test` container for integration tests) and testing (fe Vitest suite under root `npm test`) | handed over from w4-sign-in-screen | 2026-11-13 |
 | W13 Firebase projects per tier | Todo | to the repo owner (W13): `agile-platform-dev` exists (owner ludannnn; add the repo owner as Owner); create `agile-platform-prod` with that exact ID (`src/be/db/src/tier-targets.ts`) and add the Vercel domains to Authorized domains on both projects; set the four `NEXT_PUBLIC_FIREBASE_*` values per tier | handed over from w4-sign-in-screen | 2026-11-13 |
 | W12 pin the fe test script | Todo | to the Dev Lead (W12): `tests/process-security/ci-workflow.test.ts` now pins the chained root `test` script (C63) but not `src/fe/package.json` `scripts.test` (`vitest run`) or `src/fe/vitest.config.ts`; consider asserting the fe script too (T1 Attacker review nit) | handed over from w4-sign-in-screen | 2026-11-13 |
 | Lazy-load the Firebase SDK | Todo | `AuthRoot` in the root layout statically imports `lib/auth/firebase` and `session`, so `@firebase/app` and `@firebase/auth` ship in every page bundle, including prototype previews; load them lazily (`next/dynamic` or `import()`) only in `firebase` mode. `force-dynamic` on the layout is deliberate (mode read per request) | handed over from w4-sign-in-screen | 2026-11-13 |
@@ -77,7 +76,6 @@ Verification commands are configured in `workflow/config.json`: `npm test`, `npm
 | W5: `core.blockedTasks` ignores the window | Todo | to the Dev Lead (W5): `core.blockedTasks` now ignores `options.window` and lists every task assigned to the caller that is blocked now (D23); `context-sources.test.ts` was updated to match (the W5 spec names no window for this source, so it is unchanged). DEV_STANDUP is its only consumer | handed over from w9-dev-slice | 2026-11-13 |
 | Merge the two `bodyTooLarge` helpers | Todo | two identical `bodyTooLarge` helpers exist (`src/be/api/src/body-limit.ts` from W9, `src/be/api/src/routes/shared.ts` from W7/W8; `auth.ts` and `pm.ts` use the latter); fold them into one in a Small change. W4: `auth.ts` keeps 4,096 bytes. W1: `RouteDefinition.bodyLimitBytes` (plan P1) reads the body after authorisation; endpoints 49 (1 MiB), 50 and 51 (16 KiB) use it | handed over from w9-dev-slice | 2026-11-13 |
 | W9 integration test follow-ups | Todo | poll `pg_locks` instead of a 300 ms wait in the E47 lock test, and await the pending write before cleanup on failure (`src/be/dev/test/dev-integration.test.ts`) | handed over from w9-dev-slice | 2026-11-13 |
-| Guide: W9 dev package | Todo | guide out of date: the dev package (`src/be/dev`), endpoints 49-52 and 55, the gateway additions (`openOrReuse`, `recordCacheHit`), `RouteDefinition.bodyLimitBytes`, and the Postgres integration tests | handed over from w9-dev-slice | 2026-11-13 |
 
 ---
 
@@ -88,16 +86,16 @@ Verification commands are configured in `workflow/config.json`: `npm test`, `npm
 | W1 | Foundation and API skeleton | Done | [review-repairs spec](../../specs/2026-11-02-w1-review-repairs-design.md); [backend source-root spec](../../specs/2026-11-02-w1-backend-source-root-design.md) | [review-repairs plan](../../plans/2026-11-02-w1-review-repairs-plan.md); [source-root plan](../../plans/2026-11-02-w1-backend-source-root-plan.md) | Merged 2026-11-03; resolver/auth handovers remain; confirmed 2026-11-03 | Documented 2026-11-03 |
 | W2 | Gateway runtime and mock | Done | [spec](../../specs/2026-11-05-w2-gateway-design.md) | [plan](../../plans/2026-11-05-w2-gateway.md) | T1–T7 done; approved at Gate 3; PR #14 merged 2026-11-06; guide confirmed 2026-11-07 | Documented 2026-11-07 |
 | W3 | Guards (untrusted-text pipeline) | Done | [spec](../../specs/2026-11-06-w3-guards-design.md) | [plan](../../plans/2026-11-06-w3-guards.md) | PR #15 merged 2026-11-07; guide confirmed 2026-11-07 | Documented 2026-11-07 |
-| W4 | Auth and registration | Done | [spec](../../specs/2026-10-31-w4-auth-design.md), [T7 spec](../../specs/2026-11-08-w4-sign-in-screen-design.md) (approved 2026-11-08) | [plan](../../plans/2026-11-08-w4-sign-in-screen/plan.md) (approved 2026-11-08) | T0–T6 PR #10 merged 2026-11-05; T7 sign-in screen PR #25 merged 2026-11-09 | Pending |
-| W5 | Core planning (projects to tasks) | Not started | — | — | Tier 1 · Big · owner Dev Lead · after W1, W4 | — |
+| W4 | Auth and registration | Done | [spec](../../specs/2026-10-31-w4-auth-design.md), [T7 spec](../../specs/2026-11-08-w4-sign-in-screen-design.md) (approved 2026-11-08) | [plan](../../plans/2026-11-08-w4-sign-in-screen/plan.md) (approved 2026-11-08) | T0–T6 PR #10 merged 2026-11-05; T7 sign-in screen PR #25 merged 2026-11-09; guide confirmed 2026-11-13 | Documented 2026-11-13 |
+| W5 | Core planning (projects to tasks) | Done | [spec](../../specs/2026-11-07-w5-core-planning-design.md) | [plan](../../plans/2026-11-08-w5-core-planning/plan.md) | T1–T6 complete; merged and folded 2026-11-13 | Documented 2026-11-13 |
 | W6 | AI context assembly | Done | [spec](../../specs/2026-11-06-w6-ai-context-design.md) | [plan](../../plans/2026-11-06-w6-ai-context.md) | PR #16 merged 2026-11-07; SD4 signed off (C59); depends on W5 for `requireMember`; guide confirmed 2026-11-07 | Documented 2026-11-07 |
 | W7 | PM plan flow (proposals, pm) | Not started | — | — | Tier 1 · Big · owner PM · after W2, W3, W5, W6 | — |
-| W8 | Dev Lead facts and digest | Not started | — | — | Tier 1 · Big · owner Dev Lead · after W2, W3, W5 | — |
-| W9 | Developer upload, summaries, standup | Done | [spec](../../specs/2026-11-08-w9-dev-slice-design.md) (approved 2026-11-08, amended 2026-11-09) | [plan](../../plans/2026-11-09-w9-dev-slice/plan.md) (approved 2026-11-09) | PR #29 merged 2026-11-13; S20/S18 wiring follows on `w9-screen-wiring` | Pending |
+| W8 | Dev Lead facts and digest | Done | [spec](../../specs/2026-11-09-w8-dev-lead-facts-digest-design.md) (approved/amended 2026-11-09) | [plan](../../plans/2026-11-09-w8-dev-lead-facts-digest/plan.md) (approved/amended 2026-11-09) | `factsAsOf` migration, bounded ordering, `previousDigest`, session-cap mapping, compatibility trigger, and final verification complete; merged and folded 2026-11-13 | Documented 2026-11-13 |
+| W9 | Developer upload, summaries, standup | Done | [spec](../../specs/2026-11-08-w9-dev-slice-design.md) (approved 2026-11-08, amended 2026-11-09) | [plan](../../plans/2026-11-09-w9-dev-slice/plan.md) (approved 2026-11-09) | PR #29 merged 2026-11-13; S20/S18 wiring follows on `w9-screen-wiring`; guide confirmed 2026-11-13 | Documented 2026-11-13 |
 | W10 | UI mockups and shell | Done | [spec folder](../../specs/2026-11-01-w10-ui-design/ui.md) ([index](../../specs/2026-11-01-w10-ui-design.md), approved 2026-11-02) | [plan](../../plans/2026-11-02-w10-prototype.md) (approved 2026-11-02) | Tier 1 · Big · owner PM · merged 2026-11-02 (PR #6), confirmed 2026-11-02 | Documented 2026-11-02 |
-| W11 | Security corpus and authorisation tests | Not started | — | — | Tier 1 · Big · owner Dev Lead · after W1, W3 | — |
+| W11 | Security corpus and authorisation tests | Done | [spec](../../specs/2026-11-09-w11-security-corpus-authorisation-tests-design.md) | [plan](../../plans/2026-11-09-w11-security-corpus-authorisation-tests/plan.md) | T1-T3 done; focused and full verification green; merged and folded 2026-11-13 | Documented 2026-11-13 |
 | W12 | CI and process security | Done | [spec](../../specs/2026-11-02-w12-ci-process-security-design.md) | [plan](../../plans/2026-11-02-w12-ci-process-security-plan.md) | T1–T7 merged (PR #9); agent policy narrowed (PR #13, C55); guide confirmed 2026-11-07 | Documented 2026-11-07 |
-| W13 | Environments, seed data and deployment | Not started | — | — | Tier 1 · Big · owner repo owner · after W1 | — |
+| W13 | Environments, seed data and deployment | Done | [follow-up spec](../../specs/2026-11-07-w13-pr18-safety-fixes-design.md); [safety repairs](../../specs/2026-11-12-w13-safety-repairs-design.md) (amended and approved 2026-11-12) | [safety repairs plan](../../plans/2026-11-12-w13-safety-repairs/plan.md) (approved 2026-11-12) | T1-T4 complete; merged and folded 2026-11-13 | Documented 2026-11-13 |
 | W14 | Sprints, velocity and re-plan | Not started | — | — | Tier 2.1 · Big · owner Dev Lead · after W5, W8 | — |
 | W15 | Usage views | Not started | — | — | Tier 2.2 · Medium · owner PM · after W2 | — |
 | W16 | Tier 2 remainder | Not started | — | — | Tier 2 · Medium · per owner · after W5, W7, W9 | — |
@@ -195,6 +193,17 @@ Status: `Not started` · `Spec'd` · `Planned` · `Building` · `Blocked — nee
 | C77 | W9 spec now, build after W5 merges | [C77](decisions/C77.md) |
 | C78 | An unchanged input hash returns the stored standup, even when degraded | [C78](decisions/C78.md) |
 | C79 | W9 adds `recordCacheHit` and `openOrReuse` to the gateway | [C79](decisions/C79.md) |
+| C80 | W5 uses one `core` package for project, membership, planning-domain, and resolver behavior; `src/be/api` only composes routes and dependencies | decisions/C80.md |
+| C82 | Use a declarative corpus with deterministic runners and a policy-derived authorization suite | decisions/C82.md |
+| C83 | Keep W11 as verification over frozen guard and policy contracts; do not change production guard rules or policy entries | decisions/C83.md |
+| C84 | Keep C83 and amend T1-E2 to assert the frozen guard's actual contract: PII redaction and injection flagging, without requiring arbitrary non-PII canary/tag removal | decisions/C84.md |
+| C95 | Preserve AD-53's protected development exception | decisions/C95.md |
+| C96 | Permit the approved isolated development recovery target | decisions/C96.md |
+| C92 | Allow the approved W13 branch through dev seed validation | decisions/C92.md |
+| C97 | Supersede C96 with baseline/past recovery branches | decisions/C97.md |
+| C85 | Replace automated dev-check with manual owner evidence | decisions/C85.md |
+| C98 | Remove the W9 standup/AI probe from the T4 gate | decisions/C98.md |
+| C99 | Keep C85 for T6 | decisions/C99.md |
 
 ---
 
@@ -213,4 +222,4 @@ Status: `Not started` · `Spec'd` · `Planned` · `Building` · `Blocked — nee
 The Done ledger is **[`ledger/done-ledger.md`](ledger/done-ledger.md)**, newest first.
 
 - **Latest entry:** 2026-11-13
-- **Entries (live file):** 286
+- **Entries (live file):** 287
