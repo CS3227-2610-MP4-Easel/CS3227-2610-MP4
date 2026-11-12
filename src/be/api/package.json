@@ -12,6 +12,7 @@
     "@agile/ai-context": "*",
     "@agile/contracts": "*",
     "@agile/core": "*",
+    "@agile/dev": "*",
     "@agile/pm": "*",
     "@agile/proposals": "*",
     "@agile/lead": "*",

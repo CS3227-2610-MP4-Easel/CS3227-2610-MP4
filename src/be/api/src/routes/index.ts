@@ -8,6 +8,9 @@ import { createProjectsRoutes, type ProjectsRouteServices } from "./projects.js"
 import { createCheckpointsRoutes, type CheckpointsRouteServices } from "./checkpoints.js";
 import { createPlanningRoutes, type PlanningRouteServices } from "./planning.js";
 import { createLeadRoutes, type LeadRouteServices } from "./lead.js";
+import { createDevRoutes, type DevRouteServices } from "./dev.js";
+
+export { createDevRoutes, type DevRouteServices };
 
 /** One line per owner: append your module's `RouteDefinition[]` here; `createApiApp` registers each through the policy gate. */
 export const ROUTES: RouteDefinition[] = [healthRoute, ...authRoutes(getAuthRuntime), ...pmRoutes(getPmRuntime)];

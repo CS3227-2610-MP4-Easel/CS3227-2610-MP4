@@ -40,3 +40,10 @@ export function standupActivityWindow(now: Date): { from: Date; to: Date } {
   while (weekday(cursor) === 0 || weekday(cursor) === 6) cursor = addDays(cursor, -1);
   return { from: new Date(`${cursor}T00:00:00+08:00`), to: now };
 }
+
+/** Window for a standup `date`: from 00:00 SGT of the last working day before it, to `now`; `from >= to` means empty. */
+export function standupActivityWindowFor(date: string, now: Date): { from: Date; to: Date } {
+  let cursor = addDays(date, -1);
+  while (weekday(cursor) === 0 || weekday(cursor) === 6) cursor = addDays(cursor, -1);
+  return { from: new Date(`${cursor}T00:00:00+08:00`), to: now };
+}

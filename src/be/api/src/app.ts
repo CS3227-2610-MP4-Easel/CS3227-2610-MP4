@@ -5,6 +5,7 @@ import { requestIdMiddleware } from "./middleware/request-id.js";
 import { getAuthRuntime } from "@agile/auth";
 import { createAppDependencies } from "./deps.js";
 import { getCoreComposition } from "./core-composition.js";
+import { getDevComposition, withDevComposition } from "./dev-composition.js";
 import type { AuthDependencies } from "./middleware/auth.js";
 import { ROUTES } from "./routes/index.js";
 import { registerRoute, type ApiEnv } from "./routes/register.js";
@@ -21,7 +22,7 @@ export function createApiApp(deps?: AuthDependencies, routes?: readonly RouteDef
       deps = createAppDependencies(auth);
       routes ??= ROUTES;
     } else {
-      const composition = getCoreComposition(auth);
+      const composition = withDevComposition(getCoreComposition(auth), getDevComposition(auth));
       deps = createAppDependencies(auth, composition);
       routes ??= [...ROUTES, ...composition.routes];
     }
