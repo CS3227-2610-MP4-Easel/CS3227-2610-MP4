@@ -5,6 +5,8 @@ import { HttpError, parseInput, parseJsonBody } from "../errors.js";
 import { authorizeAdder, authorizeRequest, type AuthDependencies } from "../middleware/auth.js";
 
 export type ApiEnv = { Variables: { requestId: string } };
+export const STRICT_BODY_PARSER = Symbol("strictBodyParser");
+type RegisteredRoute = RouteDefinition & { [STRICT_BODY_PARSER]?: true };
 
 const registered = new WeakMap<object, RouteDefinition[]>();
 const isSchema = (value: unknown): value is z.ZodTypeAny => Boolean(value) && typeof (value as { safeParse?: unknown }).safeParse === "function";
@@ -17,7 +19,7 @@ export function registeredRoutes(app: Hono<ApiEnv>): readonly RouteDefinition[] 
 /** Every route goes through the policy map: authorize, parse, run the handler, then commit or roll back
  * the authorization transaction. Throws at registration for a missing/duplicate/mismatched policy,
  * or for a non-public route when `deps` are not supplied. */
-export function registerRoute(app: Hono<ApiEnv>, route: RouteDefinition, deps?: AuthDependencies): void {
+export function registerRoute(app: Hono<ApiEnv>, route: RegisteredRoute, deps?: AuthDependencies): void {
   const existing = registered.get(app) ?? [];
   validateRouteRegistration([...existing, route]);
   const policy = policyForRoute(route.policyKey);
@@ -41,7 +43,7 @@ export function registerRoute(app: Hono<ApiEnv>, route: RouteDefinition, deps?: 
     let settled = false;
     try {
       const parseBody = async () => {
-        try { return await parseJsonBody(c.req.raw); } catch (error) {
+        try { return await parseJsonBody(c.req.raw, { strict: route[STRICT_BODY_PARSER] === true }); } catch (error) {
           if (EDIT_BODY_KEYS.has(route.policyKey) && (c.req.header("content-type") ?? "").toLowerCase().startsWith("application/json") && error instanceof HttpError && error.code === "BAD_REQUEST") throw new HttpError("VALIDATION_FAILED", 422, "The request body is not valid.");
           throw error;
         }
