@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Approved
 - **Approved:** operator / repository owner, 2026-11-12
-- **Last updated:** 2026-11-12 by Codex — renewed Gate 3 approval recorded after the CI registration-test race repair
+- **Last updated:** 2026-11-12 by Codex — actual CI E34 timer failure repaired; operator approval recorded for push
 
 **Untouched:** Architecture, Conventions, Known Gaps
 
@@ -107,8 +107,10 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-12 | Review found the generic workflow checker accepts an arbitrary push-only workflow with a protected environment; only the exact W13 filename receives the production contract, so a regression fix is required. | W13 | blocker pending |
 | 2026-11-12 | Restricted `push` triggers to the exact W13 production workflow and added a regression test for arbitrary push-only privileged workflows; full tests, typecheck, lint, contract, workflow checker, secret scan, and diff checks pass. | W13 | 44f88a8 |
 | 2026-11-12 | Operator re-approved Gate 3 after the checker hardening and runbook correction. | W13 | owner approval |
-| 2026-11-12 | CI run `43151342460` failed because frontend E32 asserted before the fire-and-forget registration flow completed; the test now waits for the observable registration order and navigation. Three focused reruns and the full frontend suite pass. | W13 | 09021ce; pending renewed Gate 3 |
+| 2026-11-12 | CI run `43151342460` failed because frontend E32 asserted before the fire-and-forget registration flow completed; the test now waits for the observable registration order and navigation. Three focused reruns and the full frontend suite pass. | W13 | 09021ce |
 | 2026-11-12 | Operator approved Gate 3 after the CI registration-test race repair and verification. | W13 | owner approval |
+| 2026-11-12 | Latest CI run `43152832330` exposed the actual E34 failure: synchronous fake-timer advancement did not flush the cooldown interval update on the runner. The test now uses asynchronous timer advancement; five focused E34 runs, full tests, typecheck, lint, contract, secret scan, and diff checks pass. | W13 | 317e8e7 |
+| 2026-11-12 | Operator approved Gate 3 after the E34 timer repair and verification. | W13 | owner approval |
 
 ### D~8 — Deploy Hook cannot carry an exact commit SHA
 
