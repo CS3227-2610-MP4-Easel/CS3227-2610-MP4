@@ -5,6 +5,8 @@ import { parseInput, parseJsonBody } from "../errors.js";
 import { authorizeAdder, authorizeRequest, type AuthDependencies } from "../middleware/auth.js";
 
 export type ApiEnv = { Variables: { requestId: string } };
+export const STRICT_BODY_PARSER = Symbol("strictBodyParser");
+type RegisteredRoute = RouteDefinition & { [STRICT_BODY_PARSER]?: true };
 
 const registered = new WeakMap<object, RouteDefinition[]>();
 const isSchema = (value: unknown): value is z.ZodTypeAny => Boolean(value) && typeof (value as { safeParse?: unknown }).safeParse === "function";
@@ -16,7 +18,7 @@ export function registeredRoutes(app: Hono<ApiEnv>): readonly RouteDefinition[] 
 /** Every route goes through the policy map: authorize, parse, run the handler, then commit or roll back
  * the authorization transaction. Throws at registration for a missing/duplicate/mismatched policy,
  * or for a non-public route when `deps` are not supplied. */
-export function registerRoute(app: Hono<ApiEnv>, route: RouteDefinition, deps?: AuthDependencies): void {
+export function registerRoute(app: Hono<ApiEnv>, route: RegisteredRoute, deps?: AuthDependencies): void {
   const existing = registered.get(app) ?? [];
   validateRouteRegistration([...existing, route]);
   const policy = policyForRoute(route.policyKey);
@@ -42,7 +44,7 @@ export function registerRoute(app: Hono<ApiEnv>, route: RouteDefinition, deps?: 
       const input = {
         params: isSchema(route.paramsSchema) ? parseInput(route.paramsSchema, request.params) : request.params,
         query: isSchema(route.querySchema) ? parseInput(route.querySchema, Object.fromEntries(url.searchParams)) : Object.fromEntries(url.searchParams),
-        body: isSchema(route.bodySchema) ? parseInput(route.bodySchema, await parseJsonBody(c.req.raw)) : undefined,
+        body: isSchema(route.bodySchema) ? parseInput(route.bodySchema, await parseJsonBody(c.req.raw, { strict: route[STRICT_BODY_PARSER] === true })) : undefined,
       };
       if (policy.predicate === "ADDER" && scope.principal && "userId" in scope.principal) {
         request.body = input.body;

@@ -20,11 +20,11 @@ const id = (request: Request, ...names: string[]) => {
 const projectState = (row: Row): "ACTIVE" | "ARCHIVED" => row.status === "ARCHIVED" || (row.project as Row | undefined)?.status === "ARCHIVED" ? "ARCHIVED" : "ACTIVE";
 const resource = (kind: Exclude<ResolvedResource["kind"], "PROJECT_SET">, row: Row, projectId: string, extra: Partial<ResolvedResource> = {}): ResolvedResource => ({ kind, projectId, state: projectState(row), ...extra } as ResolvedResource);
 
-const PROJECT_OPERATIONS = ["PROJECT_READ", "PM_PROJECT_UPDATE", "PROJECT_MEMBER_LIST", "CHECKPOINT_LIST", "CHECKPOINT_CREATE", "EPIC_LIST", "EPIC_CREATE", "TASK_LIST", "TASK_CREATE", "SPRINT_LIST", "SPRINT_CREATE", "PROJECT_PROGRESS_READ", "PM_PLAN_CREATE"];
+const PROJECT_OPERATIONS = ["PROJECT_READ", "PM_PROJECT_UPDATE", "PROJECT_MEMBER_LIST", "CHECKPOINT_LIST", "CHECKPOINT_CREATE", "EPIC_LIST", "EPIC_CREATE", "TASK_LIST", "TASK_CREATE", "SPRINT_LIST", "SPRINT_CREATE", "PROJECT_PROGRESS_READ", "PM_PLAN_CREATE", "PROJECT_FACTS_READ", "LEAD_DIGEST_CREATE", "LEAD_DIGEST_LATEST_READ"];
 const CHECKPOINT_OPERATIONS = ["CHECKPOINT_UPDATE", "CHECKPOINT_DELETE"];
 const EPIC_OPERATIONS = ["EPIC_UPDATE", "EPIC_DELETE"];
 const TASK_OPERATIONS = ["TASK_READ", "TASK_UPDATE", "TASK_STATUS_UPDATE", "TASK_DELETE", "TASK_EVENT_LIST"];
-const READ_OPERATIONS = new Set(["PROJECT_READ", "PROJECT_MEMBER_LIST", "CHECKPOINT_LIST", "EPIC_LIST", "TASK_LIST", "TASK_READ", "TASK_EVENT_LIST", "SPRINT_LIST", "PROJECT_PROGRESS_READ"]);
+const READ_OPERATIONS = new Set(["PROJECT_READ", "PROJECT_MEMBER_LIST", "CHECKPOINT_LIST", "EPIC_LIST", "TASK_LIST", "TASK_READ", "TASK_EVENT_LIST", "SPRINT_LIST", "PROJECT_PROGRESS_READ", "PROJECT_FACTS_READ", "LEAD_DIGEST_LATEST_READ"]);
 
 export function createCoreResourceResolvers(db: ResolverDb): CoreResourceResolvers {
   const resolve = (operation: string, value: ResolvedResource | null): ResolvedResource | null => value?.kind !== "PROJECT_SET" && value?.state === "ARCHIVED" && READ_OPERATIONS.has(operation) ? null : value;
