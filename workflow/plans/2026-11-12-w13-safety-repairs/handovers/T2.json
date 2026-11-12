@@ -1,0 +1,34 @@
+{
+  "task": "T2",
+  "status": "done",
+  "summary": "Production push triggers are now restricted to the exact W13 workflow; arbitrary push-only privileged workflows fail baseline validation.",
+  "commit": "44f88a8a1c7067de3e581199a50fc3a898e62577",
+  "produces": [
+    {
+      "kind": "symbol",
+      "name": "validateProductionWorkflowContract",
+      "where": "scripts/check-workflows.mjs",
+      "note": "Validates the exact production workflow path, push-only main trigger, production environment, concurrency, pinned Actions, checkout SHA, migration wrapper ordering, and deploy-hook safety."
+    },
+    {
+      "kind": "other",
+      "name": "validateWorkflowDirectory production integration",
+      "where": "scripts/check-workflows.mjs",
+      "note": "Applies baseline validation to every workflow and the production contract to the committed production path."
+    }
+  ],
+  "next": "T3 uses the exact protected W13 workflow; no other workflow may use a push trigger or production environment path.",
+  "deviations": [],
+  "edge_cases": ["E8", "E9"],
+  "checks": {
+    "build": "pass",
+    "workflow-security": "17 pass, 0 fail",
+    "lint": "pass",
+    "contract": "7 pass, 0 fail",
+    "workflow-checker": "pass",
+    "git-diff-check": "pass",
+    "typecheck": "pass",
+    "full-tests": "543 backend pass, 28 skipped; 149 frontend pass",
+    "secret-scan": "pass; no leaks found"
+  }
+}

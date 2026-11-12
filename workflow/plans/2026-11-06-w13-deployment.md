@@ -2,6 +2,8 @@
 
 - **Status:** Approved (operator, 2026-11-06)
 
+> Amended 2026-11-09 under branch-state C~9: T6's protected production migration/deployment workflow and Deploy Hook are retired by operator decision. Production migration/deployment is a manual owner handover; T4 remains the reduced development gate.
+
 > Amended 2026-11-07 under branch-state C~4: T4 now uses a protected, read-only Vercel metadata token for authoritative deployment verification; the former no-token external-gate wording is superseded for this check. The implementation keeps the token in the pre-checkout lookup step only.
 
 > **For agents:** tick each checklist item as it is completed. Keep the branch-state Progress cell current. Spec: [W13 design](../specs/2026-11-06-w13-deployment-design.md).
@@ -23,9 +25,9 @@
 | T1 | — | T2 | 1 | Done |
 | T2 | — | T1 | 1 | Done |
 | T3 | T1 | — | 2 | Done |
-| T4 | T1, T3 | — | 3 | Ready for owner gate |
-| T5 | T3, T4 | — | 4 | Post-merge |
-| T6 | T1, T3, T5 | T4 | 5 | Not started |
+| T4 | T1, T3 | — | 3 | Done |
+| T5 | T3, T4 | — | 4 | Done |
+| T6 | T1, T3, T5 | T4 | 5 | Retired by operator |
 | T7 | T1, T4, T6 | — | 6 | Not started |
 
 ## Traceability
@@ -131,7 +133,7 @@
 - [x] 4. Run focused migration tests, `npm --workspace @agile/db run prisma:validate`, and `npm run lint`.
 - [ ] 5. Update branch state and commit: `feat: add W13 migration and recovery controls`.
 
-### T4: Development Vercel deployment
+### T4: Manual development deployment evidence
 
 **Delivers:** owner-merge dev deployment contract and dev-tier configuration | **Satisfies:** F2, F3 | **Depends on:** T1, T3 | **Wave:** 3
 
@@ -139,18 +141,16 @@
 
 | Action | Path | What changes |
 |---|---|---|
-| Modify | `.github/workflows/w13-dev-check.yml` | Before checkout, use the protected `w13-development-verification` environment's read-only Vercel token to fetch and poll exact deployment metadata; pass only sanitized project/alias/state/commit evidence to the checked-out verifier; do not receive production credentials. |
-| Modify | `scripts/w13/verify-dev-deployment.mjs` | Compare Vercel deployment metadata SHA/project/alias to the merged commit and manifest. |
-| Modify | `tests/w13/dev-deployment.test.ts` | Cover E2, E26, E41-E42 and preview variable isolation. |
-| Modify | `scripts/check-workflows.mjs` | Allow only the fixed owner-merge dev check workflow to use its protected `push` trigger; retain pull-request restrictions elsewhere. |
+| Modify | `docs/operations/w13-deployment.md` | Document the owner-operated Vercel metadata inspection, exact alias-bound smoke requests, redacted evidence schema, and T4 completion gate. |
+| Modify | `workflow/project-state/branch-states/w13-deployment-continuation.md` | Record the owner’s redacted T4 evidence and deployed SHA. |
 
 **Checklist**
 
-- [x] 1. Write failing workflow/script tests for merged-SHA, alias, missing settings, preview isolation, and dev AI degradation.
-- [x] 2. Implement the fixed dev check without production secrets.
-- [x] 3. Run `npm run check:workflows`, `npm run check:agent-policy`, and focused W13 tests.
-- [ ] 4. `GATE:` repository owner configures the canonical Vercel dev project/alias and merges a reviewed commit to `development`.
-- [ ] 5. Record the deployed SHA and smoke evidence; update branch state and commit: `feat: verify W13 development deployment`.
+- [x] 1. Retire the removed automated dev-check workflow, verifier, and dedicated tests; preserve historical references only in audit records.
+- [x] 2. Amend and approve the manual T4 evidence contract and runbook under C~5.
+- [x] 3. Run the repository tests, workflow validator, agent-policy check, and secret scan after cleanup.
+- [x] 4. `GATE:` repository owner confirms the merged `development` SHA, canonical project/alias from the tier manifest, `READY` deployment identity, and fixed health/auth/tier smoke results using the manual runbook. **Done 2026-11-08:** owner `teleifo` verified the reduced gate.
+- [x] 5. Record the redacted T4 evidence in branch state and mark T4 complete before T6 starts. **Done 2026-11-08.**
 
 ### T5: Recovery rehearsal
 
@@ -167,32 +167,19 @@
 
 **Checklist**
 
-- [ ] 1. `GATE:` repository owner confirms the active Neon plan and approved restricted rehearsal target.
-- [ ] 2. `GATE:` repository owner manually performs the Neon backup/restore rehearsal using the W13 runbook.
-- [ ] 3. `GATE:` repository owner reapplies the non-production seed and records all required evidence fields.
-- [ ] 4. Attach the redacted evidence and mark T5 complete only if RPO ≤24 hours and RTO ≤4 hours.
+- [x] 1. `GATE:` repository owner confirms the active Neon plan and approved restricted rehearsal target.
+- [x] 2. `GATE:` repository owner manually performs the Neon backup/restore rehearsal using the W13 runbook.
+- [x] 3. `GATE:` repository owner reapplies/verifies the non-production seed and records all required evidence fields.
+- [x] 4. Attach the redacted evidence and mark T5 complete only if RPO ≤24 hours and RTO ≤4 hours. **Done 2026-11-08:** owner `teleifo` verified the recovered `w13-recovery-past` state; measured RPO/RTO are 20 seconds each (0.0056 hours), seed result passed, outcome passed.
 
-### T6: Protected production migration and deployment
+### T6: Protected production migration and deployment (retired)
 
-**Delivers:** protected production job that migrates, builds, smokes, and promotes one immutable SHA | **Satisfies:** F4, N1 | **Depends on:** T1, T3, T5 | **Wave:** 5
-
-**Files**
-
-| Action | Path | What changes |
-|---|---|---|
-| Create | `.github/workflows/w13-production.yml` | Protected `main` workflow with least privilege, pinned actions, environment approval, concurrency lock, fixed inputs, no PR-controlled code after secrets, migration, candidate deploy, smoke, and promotion. |
-| Create | `scripts/w13/verify-production-identity.mjs` | Verify detached checkout SHA, manifest hash, artifact digest, Vercel candidate metadata, and promotion target. |
-| Create | `tests/w13/production-workflow.test.ts` | Cover E4-E6, E16, E25, E27, E34-E35, E38, E40 and no-live-key boundary. |
-| Modify | `scripts/check-workflows.mjs` | Extend validation for protected non-PR deployment workflows while preserving the deny rules for PR workflows; require fixed triggers, environments, permissions, and pinned actions. |
-| Modify | `workflow/action-pins.json` | Add approved commit-SHA pins for the protected deployment workflows. |
+**Status:** Retired 2026-11-09 under SD7. Production migration/deployment is a manual owner-operated handover documented in `docs/operations/w13-deployment.md`.
 
 **Checklist**
 
-- [ ] 1. Write failing workflow tests for ref/review/check gates, SHA/artifact drift, concurrency, secret timing, and target identity.
-- [ ] 2. Implement the protected workflow and immutable identity checks.
-- [ ] 3. Run workflow/security checks and focused W13 tests.
-- [ ] 4. `GATE:` repository owner configures the GitHub Environment, Vercel production target, and production secrets.
-- [ ] 5. Update branch state and commit: `feat: add protected W13 production deployment`.
+- [x] 1. Retire the protected workflow and Deploy Hook requirement under SD7.
+- [x] 2. Amend the runbook and branch state to record the manual owner-operated production handover.
 
 ### T7: Fixed post-deploy smoke harness
 

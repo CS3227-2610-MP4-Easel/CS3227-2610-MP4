@@ -3,7 +3,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { validateDatabaseTarget } from "../../src/be/db/src/tier-targets.ts";
+import { validateDirectMigrationTarget } from "../../src/be/db/src/tier-targets.ts";
 
 const execFileAsync = promisify(execFile);
 const MIGRATIONS_ROOT = "src/be/db/prisma/migrations";
@@ -12,7 +12,7 @@ const MANIFEST = "workflow/deployment/migrations.manifest";
 export function validateMigrationInputs(env) {
   if (env.APP_TIER !== "prod") throw new Error("APP_TIER must be prod");
   if (!env.DIRECT_DATABASE_URL) throw new Error("DIRECT_DATABASE_URL is required");
-  validateDatabaseTarget({ ...env, DATABASE_URL: env.DIRECT_DATABASE_URL }, "prod", env.DIRECT_DATABASE_URL);
+  validateDirectMigrationTarget(env, "prod");
 }
 
 export function buildMigrationCommand() {
@@ -73,4 +73,20 @@ export async function runProductionMigration(env = process.env, root = process.c
   return { migrations: checksums, outcome: "pass" };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) runProductionMigration().catch((error) => { console.error(error instanceof Error ? error.message : error); process.exitCode = 1; });
+export async function runProductionMigrationCli({ env = process.env, root = process.cwd(), executor, writeError = console.error } = {}) {
+  if (env.GITHUB_ACTIONS !== "true") {
+    writeError("production migration CLI is available only in GitHub Actions");
+    return 1;
+  }
+  try {
+    await runProductionMigration(env, root, executor);
+    return 0;
+  } catch {
+    writeError("production migration failed");
+    return 1;
+  }
+}
+
+if (process.argv[1] && import.meta.url === new URL(process.argv[1], "file:").href) {
+  runProductionMigrationCli().then((exitCode) => { process.exitCode = exitCode; });
+}

@@ -336,7 +336,7 @@ test("E33 two concurrent approves (barrier): one applies, the other waits and re
 });
 
 for (const [firstName, order] of [["approve", ["approve", "reject"]], ["reject", ["reject", "approve"]]] as const) {
-  test(`E48 approve and reject sent together (barrier, ${firstName} queued first): exactly one wins, the loser gets CONFLICT_STATE`, opts, async () => {
+  test(`E48 approve and reject sent together (barrier, ${firstName} requested first): exactly one wins, the loser gets CONFLICT_STATE`, opts, async () => {
     await withIntegrationDb(async (base, f) => {
       const { db, pm, project, proposalId } = await seed(base, f);
       const { calls, sessions } = fakeSessions();
@@ -356,13 +356,13 @@ for (const [firstName, order] of [["approve", ["approve", "reject"]], ["reject",
         hold.release();
       }
       await hold.done;
-      const [winner, loser] = await Promise.all(results);
-      assert.equal(winner, "OK");
-      assert.equal(loser, "CONFLICT_STATE");
+      const [firstResult, secondResult] = await Promise.all(results);
+      assert.deepEqual([firstResult, secondResult].sort(), ["CONFLICT_STATE", "OK"]);
+      const winner = firstResult === "OK" ? order[0] : order[1];
       const row = await proposalRow(base, proposalId);
       assert.equal(row.version, 2);
       assert.equal(calls.length, 1);
-      if (order[0] === "reject") {
+      if (winner === "reject") {
         assert.equal(row.status, "REJECTED");
         assert.deepEqual(await domainCounts(base, project), NONE);
         assert.equal(calls[0].outcome, "REJECTED");

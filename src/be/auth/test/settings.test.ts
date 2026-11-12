@@ -8,7 +8,7 @@ const DEV = "dev-code-0123456789";
 const SECRET = "s".repeat(32);
 const valid = (tier: AppTier = "test"): Record<string, string | undefined> => ({
   APP_TIER: tier, FIREBASE_PROJECT_ID: tier === "dev" ? "agile-platform-dev" : tier === "prod" ? "agile-platform-prod" : "w4-test", REGISTRATION_CODE_PM: PM, REGISTRATION_CODE_DEV_LEAD: LEAD, REGISTRATION_CODE_DEVELOPER: DEV, RATE_KEY_SECRET: SECRET,
-  ...(tier === "dev" ? { VERCEL_PROJECT_ID: "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd", VERCEL_ENV: "preview", VERCEL_GIT_COMMIT_REF: "development", NEON_HOST: "ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech", NEON_PROJECT: "super-sunset-36592949", SOCLAAS_BASE_URL: "https://soclaas-api.comp.nus.edu.sg/v1" } : {}),
+  ...(tier === "dev" ? { VERCEL_PROJECT_ID: "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd", VERCEL_ENV: "preview", VERCEL_GIT_COMMIT_REF: "development", NEON_HOST: "ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech", NEON_PROJECT: "falling-rice-06970921", SOCLAAS_BASE_URL: "https://soclaas-api.comp.nus.edu.sg/v1" } : {}),
   ...(tier === "prod" ? { VERCEL_PROJECT_ID: "prj_U7YYwCGOdx4pThKCPYdkXH1a9Smd", VERCEL_ENV: "production", VERCEL_GIT_COMMIT_REF: "main", NEON_HOST: "ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech", NEON_PROJECT: "super-sunset-36592949", SOCLAAS_BASE_URL: "https://soclaas-api.comp.nus.edu.sg/v1" } : {}),
 });
 const fails = (env: Record<string, string | undefined>, name: string, value?: string) => {

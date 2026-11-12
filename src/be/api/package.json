@@ -12,8 +12,10 @@
     "@agile/ai-context": "*",
     "@agile/contracts": "*",
     "@agile/core": "*",
+    "@agile/dev": "*",
     "@agile/pm": "*",
     "@agile/proposals": "*",
+    "@agile/lead": "*",
     "hono": "^4.6.14",
     "zod": "^4.6.6"
   }

@@ -1,0 +1,18 @@
+{
+  "task": "T2",
+  "status": "done",
+  "summary": "Completed target-only digest facts, DB-identity runtime composition, bounded latest selection, and successful proposal acceptance coverage.",
+  "commit": "pending",
+  "produces": [
+    { "kind": "symbol", "name": "getLeadRuntime", "where": "src/be/lead/src/runtime.ts", "note": "DB-identity-bound lookup; no-argument lookup fails closed for compatibility." },
+    { "kind": "symbol", "name": "createLeadFlow", "where": "src/be/lead/src/flow.ts", "note": "Exposes facts, createDigest, and latestDigest(caller, projectId); latestDigest authorizes target membership." },
+    { "kind": "symbol", "name": "registerLeadSources", "where": "src/be/lead/src/context-sources.ts", "note": "Registers bounded lead.facts, lead.changes, and lead.previousDigest sources." },
+    { "kind": "file", "name": "src/be/lead/src/schemas.ts", "where": "src/be/lead/src/schemas.ts", "note": "Closed digest output schema." }
+  ],
+  "next": "T3 inject the runtime route-facing methods; map failures to fixed API-safe codes and retry seconds.",
+  "deviations": [
+    { "what": "The lead integration test uses an executable deterministic transaction fixture rather than a real database fixture.", "why": "The repository provides no lead persistence integration fixture, and Prisma/schema changes are outside T2; no test is skipped.", "needs": "none" }
+  ],
+  "edge_cases": ["E9", "E12", "E17", "E19", "E22", "E24", "E27", "E29", "E30"],
+  "checks": { "build": "pass", "focused": "29 pass, 0 fail", "tests": "596 total, 564 pass, 4 fail, 28 skipped (unrelated auth-route failures)", "lint": "pass", "contract": "7 pass" }
+}

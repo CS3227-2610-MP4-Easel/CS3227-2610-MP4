@@ -12,7 +12,10 @@ export class SessionCapReached extends Error {
   }
 }
 
-export type GatewaySessions = Sessions & { regenerate(sessionId: string, userId: string): Promise<void> };
+export type GatewaySessions = Sessions & {
+  regenerate(sessionId: string, userId: string): Promise<void>;
+  openOrReuse(input: { feature: Feature; userId: string; projectId: string | null }): Promise<string>;
+};
 
 const CLOSED_OUTCOMES = ["ACCEPTED", "EDITED", "REJECTED", "ABANDONED"] as const;
 type ClosedOutcome = (typeof CLOSED_OUTCOMES)[number];
@@ -41,19 +44,32 @@ export function createSessions({ db, settings, clock = systemClock }: { db: Pris
     }
   }
 
+  async function open({ feature, userId, projectId }: { feature: Feature; userId: string; projectId: string | null }): Promise<string> {
+    const now = clock.now();
+    await abandon({ userId }, now);
+    const dayStart = new Date(Math.floor((now.getTime() + SINGAPORE_OFFSET_MS) / DAY_MS) * DAY_MS - SINGAPORE_OFFSET_MS);
+    const startedToday = await db.aiSession.count({ where: { userId, env, startedAt: { gte: dayStart } } });
+    if (startedToday >= SESSION_CAPS.maxNewSessionsPerUserPerDay) throw new SessionCapReached(Math.max(1, Math.ceil((dayStart.getTime() + DAY_MS - now.getTime()) / 1000)));
+    const openRows = await db.aiSession.findMany({ where: { userId, env, feature, outcome: "OPEN" }, orderBy: { lastActivityAt: "asc" }, select: { lastActivityAt: true } });
+    if (openRows.length >= SESSION_CAPS.maxOpenSessionsPerFeature) {
+      throw new SessionCapReached(Math.max(1, Math.ceil((openRows[0].lastActivityAt.getTime() + LIMITS.sessionIdleMs - now.getTime()) / 1000)));
+    }
+    const created = await db.aiSession.create({ data: { feature, userId, projectId, env, startedAt: now, lastActivityAt: now }, select: { id: true } });
+    return created.id;
+  }
+
   return {
-    async open({ feature, userId, projectId }) {
-      const now = clock.now();
-      await abandon({ userId }, now);
-      const dayStart = new Date(Math.floor((now.getTime() + SINGAPORE_OFFSET_MS) / DAY_MS) * DAY_MS - SINGAPORE_OFFSET_MS);
-      const startedToday = await db.aiSession.count({ where: { userId, env, startedAt: { gte: dayStart } } });
-      if (startedToday >= SESSION_CAPS.maxNewSessionsPerUserPerDay) throw new SessionCapReached(Math.max(1, Math.ceil((dayStart.getTime() + DAY_MS - now.getTime()) / 1000)));
-      const open = await db.aiSession.findMany({ where: { userId, env, feature, outcome: "OPEN" }, orderBy: { lastActivityAt: "asc" }, select: { lastActivityAt: true } });
-      if (open.length >= SESSION_CAPS.maxOpenSessionsPerFeature) {
-        throw new SessionCapReached(Math.max(1, Math.ceil((open[0].lastActivityAt.getTime() + LIMITS.sessionIdleMs - now.getTime()) / 1000)));
+    open,
+
+    async openOrReuse({ feature, userId, projectId }) {
+      const candidates = await db.aiSession.findMany({ where: { userId, env, feature, projectId: projectId ?? null, outcome: "OPEN" }, orderBy: { lastActivityAt: "desc" }, select: { id: true } });
+      for (const { id } of candidates) {
+        try { await assertUsable(id, userId, feature); return id; } catch (error) {
+          // Only "gone or idle meanwhile" means look at the next; anything else is a real failure.
+          if (!(error instanceof Error && (error.message === "NOT_FOUND" || error.message === "CONFLICT_STATE"))) throw error;
+        }
       }
-      const created = await db.aiSession.create({ data: { feature, userId, projectId, env, startedAt: now, lastActivityAt: now }, select: { id: true } });
-      return created.id;
+      return open({ feature, userId, projectId });
     },
 
     assertUsable,

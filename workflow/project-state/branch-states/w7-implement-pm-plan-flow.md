@@ -5,17 +5,17 @@ describes `INT`; read it for context and write here instead of editing it.
 `sync-project-state` folds this file in after the branch merges.
 
 - **Branch:** w7-implement-pm-plan-flow (from `INT` at `7caa23d`)
-- **Base:** 3519ff07
+- **Base:** d452926
 - **Owner:** Xiao-Congchen (PM)
-- **Status:** Approved — work merged; fold pending
-- **Approved:** Operator reports the PRs approved and merged into development
-- **Last updated:** 2026-11-13 by Codex — reconciled merged W7 and W7b PRs; fold pending.
+- **Status:** In review
+- **Approved:** W7 PR #31 merged; W7b merge into development not established
+- **Last updated:** 2026-11-13 by Codex — integrated development; corrected W7b merge boundary.
 
 **Untouched:** Conventions (Architecture Now blocks for pm, core and proposals are written at the fold; see Close-out)
 
 ---
 
-**Scope and fold boundary.** This record covers W7 backend plan flow (endpoints 34, 35, 37, 40, 41; PR #31, merge `487cafe`) and W7b backend plan editing (endpoints 36, 38, 39, 58–60; PR #32, merge `385cda8`). Both are on `development` through separate PR branches; this original branch tip is not itself an ancestor of `development`. Fold only W7/W7b material attributable to those PRs, reconciling shared files and handovers against current `development`. W7c UI (PR #33), W5, W8, W9, W12 and other pending workstreams have their own boundaries and must not be marked folded by this record. The integration-only `codex/w7-pm-plan-flow` and `codex/w7b-plan-editing` branch states may contain overlapping references; reconcile them to avoid duplicate decisions, handovers or ledger entries. No fold has been performed or approved here.
+**Scope and fold boundary.** This record covers W7 backend plan flow (endpoints 34, 35, 37, 40, 41; PR #31, merge `487cafe`) and W7b backend plan editing (endpoints 36, 38, 39, 58–60; PR #32, merge `385cda8`). PR #31 is in `development`; PR #32 and PR #33 are not ancestors of fetched `origin/development` at `d452926`. W7b remains on this branch and its integration requires separate verification. This original branch tip is not itself an ancestor of `development`. Fold only W7/W7b material attributable to those PRs, reconciling shared files and handovers against current `development`. W7c UI (PR #33), W5, W8, W9, W12 and other pending workstreams have their own boundaries and must not be marked folded by this record. The integration-only `codex/w7-pm-plan-flow` and `codex/w7b-plan-editing` branch states may contain overlapping references; reconcile them to avoid duplicate decisions, handovers or ledger entries. No fold has been performed or approved here.
 ---
 
 ## 1. How to Resume
@@ -24,6 +24,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
+
 
 
 **Remaining**
@@ -37,7 +38,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - [ ] **Handover W2 owner (Developer):** spec SD3 changes `Sessions.assertUsable` (a `PM_PLAN_OUTLINE` session also admits `PM_PLAN_EXPAND`) and amends contracts §5.3; their agreement is recorded in T1 (AD-11, as C59); not yet obtained.
 - [x] **W5 (Dev Lead) integrated 2026-11-08:** `origin/w5-core-planning` (PR 23, not yet merged to `INT`) is merged into this branch; W5 supplies `requireMember`, `Core.assertWritable` and a `PM_PLAN_CREATE` project resolver that reads `id`; W7 registers the four proposal resolvers in `core-composition.ts`; both `applyPlan` implementations exist (see Known Gaps). PR 23 is now merged to development.
 - [x] W5's owner estimate: no longer needed, W5 is in PR 23.
-- [x] **W7b branch review and merge:** operator reports approval; PR #32 merged. D~10 retains the historical suite failures.
+- [ ] **W7b integration:** verify PR #32 status and integrate its approved work into development if still needed. D~10 retains the historical suite failures.
 - [ ] **Fold reconciliation:** check each existing STATE.md Upcoming item against merged W7/W7b evidence before resolving or retaining it: W6 sources and `assembleWith` (`pm.similarItems`, titles only, at most 5, filtered by member projects); W3 section rules, blocked-input handling (`BLOCKED_INPUT` to 422 `VALIDATION_FAILED`, `REQUEST_REFUSED` to 422) and output schemas without URLs or angle brackets; W2 mock responses, static sections and `assertStaticSectionsFit`; W7 proposal resolvers.
 
 ---
@@ -47,7 +48,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
 | W7 | PM plan flow (proposals, pm) | Done | [spec](../../specs/2026-11-07-w7-pm-plan-flow-design.md) | [plan](../../plans/2026-11-07-w7-pm-plan-flow/plan.md) | PR #31 merged; project-state fold pending | out of date: pm, core, proposals |
-| W7b | PM plan editing (endpoints 36, 38, 39, 58-60; carved from W16) | Done | [spec](../../specs/2026-11-09-w7b-pm-plan-editing-design.md) | [plan](../../plans/2026-11-09-w7b-pm-plan-editing/plan.md) | PR #32 merged; project-state fold pending; D~10 | out of date: pm, proposals, contracts |
+| W7b | PM plan editing (endpoints 36, 38, 39, 58-60; carved from W16) | In review | [spec](../../specs/2026-11-09-w7b-pm-plan-editing-design.md) | [plan](../../plans/2026-11-09-w7b-pm-plan-editing/plan.md) | PR #32 not in development history; verify integration; D~10 | out of date: pm, proposals, contracts |
 
 ---
 
@@ -55,7 +56,8 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-13 | Operator reports approval and merge; identified W7 PR #31 and W7b PR #32 on development, separated W7c and other pending folds, and recorded fold boundary. | W7/W7b | 487cafe, 385cda8 |
+| 2026-11-13 | Operator reported approval and merge; W7 PR #31 verified on development. Earlier assertion that W7b PR #32 was also on development was incorrect; fetched history does not contain it. | W7/W7b | 487cafe, 385cda8 |
+| 2026-11-13 | Integrated development d452926; preserved W7b editing and development body-limit handling in route registration; W9 already folded, other folds remain separate. | W7/W7b | merge |
 | 2026-11-11 | Merged development 3519ff07; regenerated lockfile against merged manifests; typecheck, lint and contract tests pass. Full suite: 506 pass, 18 fail, 125 skip with placeholder DB target; rerun with correct configuration and investigate failures. Draft PR #30; owner review remains. W7c and UI integration continue on w7-link-ui. | W7/W7b | e756143 |
 | 2026-11-09 | W7b T1 contracts, policy, OpenAPI and documentation implemented; focused and contract tests pass; review placement finding fixed | W7b | 1bdeca0, c304835 |
 | 2026-11-09 | W7b T2 editing store implemented; review fixed strict-parse storage and deterministic lock races; 11 edit integration tests pass | W7b | 9bc5ec2, 8a5ed46 |
