@@ -18,7 +18,7 @@ export const SCREENS: Screen[] = [
   { file: 'Usage', path: '/usage' },
   { file: 'MyWork', path: '/my-work', roles: ['dev'] },
   { file: 'LeadOverview', path: '/lead/overview', roles: ['lead'] },
-  { file: 'Projects', path: '/projects' },
+  { file: 'Projects', path: '/projects', roles: ['pm'] },
   { file: 'ProjectsEmptyPM', path: '/projects', view: 'empty', roles: ['pm'] },
   { file: 'ProjectsEmptyDev', path: '/projects', view: 'empty', roles: ['lead', 'dev'] },
   { file: 'Projects1024', path: '/projects', view: 'narrow' },
@@ -73,19 +73,19 @@ export const SCREENS: Screen[] = [
   { file: 'States', path: '/states' },
 ];
 
-export function urlOf(s: Screen): string {
-  const p = s.path.replace(':id', PROJECT);
+export function urlOf(s: Screen, projectId = PROJECT): string {
+  const p = s.path.replace(':id', projectId);
   return s.view ? `${p}?view=${s.view}` : p;
 }
 
 const byFile = new Map(SCREENS.map((s) => [s.file, s]));
 
 /** Canvas hrefs look like "Board.dc.html"; turn one into the app URL. */
-export function routeOf(href: string): string {
+export function routeOf(href: string, projectId = PROJECT): string {
   const m = href.match(/^([A-Za-z0-9]+)\.dc\.html$/);
   if (!m) return href;
   const s = byFile.get(m[1]);
-  return s ? urlOf(s) : '#';
+  return s ? urlOf(s, projectId) : '#';
 }
 
 export type Resolved = { file: string } | { forbidden: true } | { notFound: true };
@@ -101,6 +101,5 @@ export function resolve(pathname: string, view: string | undefined, role: Role):
   if (!inView.length) return { notFound: true };
   const exact = inView.find((s) => !s.roles || s.roles.includes(role));
   if (exact) return { file: exact.file };
-  if (wanted) return { file: inView[0].file };
   return { forbidden: true };
 }

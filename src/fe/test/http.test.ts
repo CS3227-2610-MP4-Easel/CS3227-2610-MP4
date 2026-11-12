@@ -13,7 +13,29 @@ vi.mock('../lib/auth/firebase', () => ({
 }));
 
 import { apiFetch } from '../lib/api/http';
-import { ApiError, checkCode_2, me_4, register_3 } from '../lib/api';
+import {
+  ApiError,
+  addMemberLive_10,
+  checkCode_2,
+  createCheckpointLive_13,
+  createDigest_44,
+  createEpicLive_17,
+  createTaskLive_21,
+  getFacts_42,
+  getLatestDigest_45,
+  getProgressLive_33,
+  getProjectLive_7,
+  getTaskLive_22,
+  listCheckpointsLive_12,
+  listEpicsLive_16,
+  listMembersLive_9,
+  listProjectsLive_6,
+  listTasksLive_20,
+  me_4,
+  register_3,
+  setTaskStatusLive_24,
+  updateTaskLive_23,
+} from '../lib/api';
 
 const fetchMock = vi.fn();
 
@@ -181,6 +203,14 @@ describe('apiFetch', () => {
     expect(signOutUser).not.toHaveBeenCalled();
   });
 
+  it('E65 an idToken failure becomes a safe NETWORK ApiError', async () => {
+    idToken.mockRejectedValue(new Error('credential details must not escape'));
+    const e = await fail(apiFetch('/api/me'));
+    expect([e.code, e.message, e.status]).toEqual(['NETWORK', 'Something went wrong. Try again.', 0]);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(signOutUser).not.toHaveBeenCalled();
+  });
+
   it('E90 an authenticated 401 starts sign-out once and still rejects', async () => {
     reply(401, '{"error":{"code":"UNAUTHENTICATED","message":"no"}}');
     const e = await fail(apiFetch('/api/me'));
@@ -218,14 +248,45 @@ describe('apiFetch', () => {
 });
 
 describe('error body mapping', () => {
+  it('E90 retains only the approved bounded auth compatibility codes', async () => {
+    const cases: [number, string][] = [
+      [401, 'UNAUTHENTICATED'],
+      [403, 'USER_NOT_REGISTERED'],
+      [403, 'REGISTRATION_CODE_INVALID'],
+      [409, 'ALREADY_REGISTERED'],
+    ];
+    for (const [status, code] of cases) {
+      reply(status, JSON.stringify({ error: { code, message: 'must not escape' } }));
+      expect((await fail(apiFetch('/api/x'))).code).toBe(code);
+    }
+  });
+
+  it('E7 maps bodyless and malformed responses by status', async () => {
+    const cases: [number, string, string, string][] = [
+      [401, '', 'UNAUTHENTICATED', 'Authentication is required.'],
+      [403, '', 'FORBIDDEN', 'You do not have permission to view this.'],
+      [404, '<html>gone</html>', 'NOT_FOUND', 'This project or task was not found.'],
+      [409, 'not-json', 'CONFLICT_STATE', 'This changed elsewhere. Reload before trying again.'],
+      [422, '', 'VALIDATION_FAILED', 'Check the highlighted fields.'],
+      [429, '', 'RATE_LIMITED', 'Please wait before trying again.'],
+      [500, '', 'INTERNAL', 'Something went wrong. Try again.'],
+    ];
+    for (const [status, body, code, message] of cases) {
+      reply(status, body);
+      const e = await fail(apiFetch('/api/x'));
+      expect([e.status, e.code, e.message]).toEqual([status, code, message]);
+    }
+    expect(signOutUser).toHaveBeenCalledTimes(1);
+  });
+
   it('E62 a JSON body without error maps to INTERNAL', async () => {
     reply(400, '{"x":1}');
-    expect((await fail(apiFetch('/api/x'))).code).toBe('INTERNAL');
+    expect((await fail(apiFetch('/api/x'))).code).toBe('INTERNAL_ERROR');
   });
 
   it('E62 a non-string code maps to INTERNAL', async () => {
     reply(400, '{"error":{"code":5,"message":"m"}}');
-    expect((await fail(apiFetch('/api/x'))).code).toBe('INTERNAL');
+    expect((await fail(apiFetch('/api/x'))).code).toBe('INTERNAL_ERROR');
   });
 
   it('E62 missing details and requestId give [] and null', async () => {
@@ -247,12 +308,33 @@ describe('error body mapping', () => {
     details.unshift(null as never, { x: 1 } as never);
     reply(400, JSON.stringify({ error: { code: 'c'.repeat(200), message: 'm'.repeat(900), requestId: 'r'.repeat(200), details } }));
     const e = await fail(apiFetch('/api/x'));
-    expect(e.code).toHaveLength(100);
-    expect(e.message).toHaveLength(500);
+    expect([e.code, e.message]).toEqual(['INTERNAL_ERROR', 'Something went wrong. Try again.']);
     expect(e.requestId).toHaveLength(100);
     expect(e.details).toHaveLength(50);
     expect(e.details[0].field).toHaveLength(200);
     expect(e.details[0].message).toHaveLength(500);
+  });
+
+  it('E7 maps HTTP failures to fixed safe messages', async () => {
+    const cases: [number, string, string][] = [
+      [403, 'FORBIDDEN_ROLE', 'You do not have permission to view this.'],
+      [404, 'NOT_FOUND', 'This project or task was not found.'],
+      [409, 'CONFLICT_VERSION', 'This changed elsewhere. Reload before trying again.'],
+      [422, 'VALIDATION_FAILED', 'Check the highlighted fields.'],
+      [429, 'RATE_LIMITED', 'Please wait before trying again.'],
+      [500, 'SERVER_SECRET', 'Something went wrong. Try again.'],
+    ];
+    for (const [status, code, message] of cases) {
+      reply(status, JSON.stringify({ error: { code, message: 'server detail must not escape' } }));
+      const e = await fail(apiFetch('/api/x'));
+      expect([e.code, e.message]).toEqual([code === 'SERVER_SECRET' ? 'INTERNAL' : code, message]);
+    }
+  });
+
+  it('E8 maps a rejected fetch to a fixed NETWORK error', async () => {
+    fetchMock.mockRejectedValue(new Error('server detail must not escape'));
+    const e = await fail(apiFetch('/api/x'));
+    expect([e.code, e.message]).toEqual(['NETWORK', 'Something went wrong. Try again.']);
   });
 });
 
@@ -287,5 +369,153 @@ describe('endpoints', () => {
     const [url, init] = fetchMock.mock.calls[0];
     expect([url, init.method]).toEqual(['/api/me', 'GET']);
     expect(u.role).toBe('DEVELOPER');
+  });
+
+  it('W8 Health data functions call the facts and digest endpoints', async () => {
+    reply(200, '{"asOf":"2026-11-12T00:00:00.000Z","pointsTotal":10,"pointsDone":4,"pointsRemaining":6,"unestimatedTasks":1,"velocity":[],"avgVelocity":null,"projectedCompletionDate":null,"checkpoints":[],"overload":[]}');
+    await getFacts_42('project-1');
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/projects/project-1/facts');
+    expect(fetchMock.mock.calls[0][1].method).toBe('GET');
+
+    reply(200, '{"id":"digest-1","projectId":"project-1","facts":{"asOf":"2026-11-12T00:00:00.000Z","pointsTotal":10,"pointsDone":4,"pointsRemaining":6,"unestimatedTasks":1,"velocity":[],"avgVelocity":null,"projectedCompletionDate":null,"checkpoints":[],"overload":[]},"explanation":"Steady progress.","degraded":false,"flagged":false,"proposalId":null,"cached":false,"createdAt":"2026-11-12T00:00:01.000Z"}');
+    await createDigest_44('project-1');
+    expect(fetchMock.mock.calls[1][0]).toBe('/api/lead/projects/project-1/digests');
+    expect(fetchMock.mock.calls[1][1].method).toBe('POST');
+    expect(fetchMock.mock.calls[1][1].body).toBe('{}');
+
+    await getLatestDigest_45('project-1');
+    expect(fetchMock.mock.calls[2][0]).toBe('/api/lead/projects/project-1/digests/latest');
+    expect(fetchMock.mock.calls[2][1].method).toBe('GET');
+  });
+
+  it('F1/E4 project clients use zero-based paging and encode project IDs', async () => {
+    reply(200, '{}');
+    await listProjectsLive_6();
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/projects?page=0&size=20');
+
+    await getProjectLive_7('project 1');
+    expect(fetchMock.mock.calls[1][0]).toBe('/api/projects/project%201');
+
+    await getProgressLive_33('project 1');
+    expect(fetchMock.mock.calls[2][0]).toBe('/api/projects/project%201/progress');
+  });
+
+  it('F2/E5 member and checkpoint clients serialize project-scoped requests', async () => {
+    reply(200, '[]');
+    await listMembersLive_9('project 1');
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/projects/project%201/members');
+
+    fetchMock.mockResolvedValueOnce(new Response('{}', { status: 200 })).mockResolvedValueOnce(new Response('[]', { status: 200 }));
+    await addMemberLive_10('project 1', 'dev@example.com');
+    expect(fetchMock.mock.calls[1][0]).toBe('/api/projects/project%201/members');
+    expect(fetchMock.mock.calls[1][1].method).toBe('POST');
+    expect(fetchMock.mock.calls[1][1].body).toBe('{"email":"dev@example.com"}');
+    expect(fetchMock.mock.calls[2][0]).toBe('/api/projects/project%201/members');
+
+    reply(200, '[]');
+    await listCheckpointsLive_12('project 1');
+    expect(fetchMock.mock.calls[3][0]).toBe('/api/projects/project%201/checkpoints');
+
+    reply(200, '{}');
+    await createCheckpointLive_13('project 1', { name: 'Launch', targetDate: '2026-12-01', extra: 'omit' } as never);
+    expect(fetchMock.mock.calls[4][0]).toBe('/api/projects/project%201/checkpoints');
+    expect(fetchMock.mock.calls[4][1].body).toBe('{"name":"Launch","targetDate":"2026-12-01"}');
+  });
+
+  it('E11 member add reloads and deduplicates reloaded members by userId', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ userId: 'u1', displayName: 'New', role: 'DEVELOPER', addedAt: 'now' }), { status: 201 }));
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([
+      { userId: 'u1', displayName: 'First', role: 'DEVELOPER', addedAt: 'a' },
+      { userId: 'u1', displayName: 'Duplicate', role: 'DEVELOPER', addedAt: 'b' },
+      { userId: 'u2', displayName: 'Other', role: 'DEVELOPER', addedAt: 'c' },
+    ]), { status: 200 }));
+
+    const member = await addMemberLive_10('project 1', 'dev@example.com');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(member).toEqual({ userId: 'u1', displayName: 'First', role: 'DEVELOPER', addedAt: 'a' });
+  });
+
+  it('E11 direct member listing deduplicates by userId and preserves an empty reload fallback', async () => {
+    reply(200, JSON.stringify([
+      { userId: 'u1', displayName: 'First', role: 'DEVELOPER', addedAt: 'a' },
+      { userId: 'u1', displayName: 'Duplicate', role: 'DEVELOPER', addedAt: 'b' },
+    ]));
+    await expect(listMembersLive_9('project 1')).resolves.toEqual([
+      { userId: 'u1', displayName: 'First', role: 'DEVELOPER', addedAt: 'a' },
+    ]);
+
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ userId: 'u3', displayName: 'Created', role: 'DEVELOPER', addedAt: 'now' }), { status: 201 }));
+    fetchMock.mockResolvedValueOnce(new Response('[]', { status: 200 }));
+    await expect(addMemberLive_10('project 1', 'empty@example.com')).resolves.toEqual({
+      userId: 'u3', displayName: 'Created', role: 'DEVELOPER', addedAt: 'now',
+    });
+
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ userId: 'u4', displayName: 'Created', role: 'DEVELOPER', addedAt: 'later' }), { status: 201 }));
+    fetchMock.mockRejectedValueOnce(new TypeError('reload failed'));
+    await expect(addMemberLive_10('project 1', 'reload-fails@example.com')).resolves.toEqual({
+      userId: 'u4', displayName: 'Created', role: 'DEVELOPER', addedAt: 'later',
+    });
+  });
+
+  it('F3/E6 epic and task list clients serialize paging and supported filters', async () => {
+    reply(200, '{}');
+    await listEpicsLive_16('project 1');
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/projects/project%201/epics?page=0&size=20');
+
+    await listEpicsLive_16('project 1', 2, 5);
+    expect(fetchMock.mock.calls[1][0]).toBe('/api/projects/project%201/epics?page=2&size=5');
+
+    await createEpicLive_17('project 1', { title: 'Release', description: null, checkpointId: null, extra: 'omit' } as never);
+    expect(fetchMock.mock.calls[2][0]).toBe('/api/projects/project%201/epics');
+    expect(fetchMock.mock.calls[2][1].method).toBe('POST');
+    expect(fetchMock.mock.calls[2][1].body).toBe('{"title":"Release","description":null,"checkpointId":null}');
+
+    await listTasksLive_20('project 1', 3, 7, { status: 'IN_PROGRESS', epicId: 'epic/1', assigneeId: 'user/1', blocked: false, extra: 'omit' } as never);
+    expect(fetchMock.mock.calls[3][0]).toBe('/api/projects/project%201/tasks?page=3&size=7&status=IN_PROGRESS&epicId=epic%2F1&assigneeId=user%2F1&blocked=false');
+  });
+
+  it('F4/E9 task creation sends the supported fields and no sprintId', async () => {
+    reply(200, '{}');
+    await createTaskLive_21('project 1', {
+      epicId: 'epic/1',
+      title: 'Build it',
+      description: null,
+      acceptanceCriteria: ['It works'],
+      storyPoints: 5,
+      assigneeId: null,
+      sprintId: 'must-not-send',
+    } as never);
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/projects/project%201/tasks');
+    expect(fetchMock.mock.calls[0][1].method).toBe('POST');
+    expect(fetchMock.mock.calls[0][1].body).toBe('{"epicId":"epic/1","title":"Build it","description":null,"acceptanceCriteria":["It works"],"storyPoints":5,"assigneeId":null}');
+    expect(fetchMock.mock.calls[0][1].body).not.toContain('sprintId');
+  });
+
+  it('F5/E11 task read and update encode IDs and include versions without sprintId', async () => {
+    reply(200, '{}');
+    await getTaskLive_22('task 1');
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/tasks/task%201');
+
+    await updateTaskLive_23('task 1', { title: 'Updated', storyPoints: null, version: 4, sprintId: 'must-not-send' } as never);
+    expect(fetchMock.mock.calls[1][0]).toBe('/api/tasks/task%201');
+    expect(fetchMock.mock.calls[1][1].method).toBe('PATCH');
+    expect(fetchMock.mock.calls[1][1].body).toBe('{"title":"Updated","storyPoints":null,"version":4}');
+    expect(fetchMock.mock.calls[1][1].body).not.toContain('sprintId');
+
+    await updateTaskLive_23('task 1', { description: null, assigneeId: null, version: 5, extra: 'omit' } as never);
+    expect(fetchMock.mock.calls[2][1].body).toBe('{"description":null,"assigneeId":null,"version":5}');
+    expect(fetchMock.mock.calls[2][1].body).not.toContain('title');
+    expect(fetchMock.mock.calls[2][1].body).not.toContain('acceptanceCriteria');
+  });
+
+  it('F6/E12/E13/E15 task status sends exact backend status and version', async () => {
+    reply(200, '{}');
+    await setTaskStatusLive_24('task 1', { status: 'IN_REVIEW', blocked: true, blockedReason: 'Waiting', version: 6 });
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/tasks/task%201/status');
+    expect(fetchMock.mock.calls[0][1].method).toBe('POST');
+    expect(fetchMock.mock.calls[0][1].body).toBe('{"status":"IN_REVIEW","blocked":true,"blockedReason":"Waiting","version":6}');
+
+    await setTaskStatusLive_24('task 1', { status: 'TODO', blocked: false, blockedReason: null, version: 7, extra: 'omit' } as never);
+    expect(fetchMock.mock.calls[1][1].body).toBe('{"status":"TODO","blocked":false,"blockedReason":null,"version":7}');
   });
 });
