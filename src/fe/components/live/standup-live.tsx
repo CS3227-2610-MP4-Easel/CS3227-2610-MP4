@@ -1,12 +1,13 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { ApiError } from '../../lib/api';
-import { summaries_50, upload_49, useProjectId, type UploadResult } from '../../lib/api/dev';
+import { myStandup_52, nextStandupDate, standup_51, summaries_50, todaySgt, upload_49, useProjectId, type LiveStandup, type UploadResult } from '../../lib/api/dev';
 import { DownloadExample } from './standup-block';
 import { toast } from './toast';
 
-// S20 in `firebase` mode (spec 2026-11-12-w9-screen-wiring-design.md): upload (49), summaries (50) and,
-// from T3, the standup (51, 52). Untrusted text is rendered only as text nodes; list keys are indexes.
+// S20 in `firebase` mode (spec 2026-11-12-w9-screen-wiring-design.md): upload (49), summaries (50) and
+// the standup (51, 52). Untrusted text is rendered only as text nodes; list keys are indexes.
+// Edit, Use as is and thumbs (53, 54) are hidden until W16 (branch decision C~2).
 
 const icon = (id: string) => <svg className="ic" aria-hidden="true"><use href={`#i-${id}`} /></svg>;
 const MAX_BYTES = 1_048_576;
@@ -38,6 +39,7 @@ export function LiveStandupScreen() {
       {archived && <div className="banner b-bad">{icon('alert')}<span>This project is archived. Upload and generate are off.</span></div>}
       <UploadPanel screen={screen} onNeeds={(ids) => setRun((r) => ({ n: r.n + 1, ids }))} />
       {run.ids.length > 0 && <SummariesPanel key={run.n} screen={screen} ids={run.ids} />}
+      <StandupPanel screen={screen} />
     </div>
   );
 }
@@ -185,6 +187,130 @@ function SummariesPanel({ screen, ids }: { screen: Screen; ids: string[] }) {
           <button className="btn sm" disabled={running || screen.archived} onClick={() => void runAll(failed)}>{icon('refresh')}{`Retry failed (${failed.length})`}</button>
         )}
       </div>
+    </section>
+  );
+}
+
+const dayLabel = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+const asText = (c: LiveStandup['content']) => {
+  const list = (xs: string[]) => xs.map((x) => `- ${x}`).join('\n');
+  return `Yesterday\n${list(c.yesterday)}\nToday\n${list(c.today)}\nBlockers\n${c.blockers.length ? list(c.blockers) : 'Nothing to report.'}`;
+};
+
+function Lines({ title, items }: { title: string; items: string[] }) {
+  return (
+    <div>
+      <h3>{title}</h3>
+      {items.length ? <ul className="pl">{items.map((x, i) => <li key={i}>{x}</li>)}</ul> : <p className="muted">Nothing to report.</p>}
+    </div>
+  );
+}
+
+function StandupPanel({ screen }: { screen: Screen }) {
+  const [days] = useState(() => { const now = new Date(); return { next: nextStandupDate(now), today: todaySgt(now) }; });
+  const [date, setDate] = useState(days.next);
+  const [loaded, setLoaded] = useState<{ date: string; s: LiveStandup | null } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
+  const [holdUntil, setHoldUntil] = useState(0);
+  const current = useRef(date);
+  current.current = date;
+  const screenRef = useRef(screen);
+  screenRef.current = screen;
+
+  useEffect(() => {
+    let live = true;
+    setNote(null);
+    setProblem(null);
+    myStandup_52(screen.projectId, date).then(
+      (s) => { if (live) setLoaded({ date, s }); },
+      (e) => { if (live && !screenRef.current.fail(e)) toast(e instanceof ApiError ? e.message : 'Something went wrong.', 'bad'); },
+    );
+    return () => { live = false; };
+  }, [screen.projectId, date]);
+
+  useEffect(() => {
+    if (!holdUntil) return;
+    const t = setTimeout(() => setHoldUntil(0), Math.max(0, holdUntil - Date.now()));
+    return () => clearTimeout(t);
+  }, [holdUntil]);
+
+  const generate = async () => {
+    const asked = date;
+    setBusy(true);
+    setNote(null);
+    setProblem(null);
+    try {
+      const s = await standup_51(screen.projectId, asked);
+      if (current.current !== asked) return;
+      setLoaded({ date: asked, s });
+      if (s.cached) setNote('Nothing has changed since this was generated. Upload new activity to refresh it.');
+    } catch (e) {
+      if (current.current !== asked || screen.fail(e)) return;
+      if (e instanceof ApiError && (e.code === 'AI_BUSY' || e.code === 'RATE_LIMITED')) {
+        setProblem(`AI is busy. Try again in ${wait(e)} s.`);
+        setHoldUntil(Date.now() + wait(e) * 1000);
+      } else if (e instanceof ApiError && e.status === 422) setProblem('That date cannot be used for a standup.');
+      else if (e instanceof ApiError && e.code === 'AI_DISABLED') setProblem('AI features are off for this deployment.');
+      else toast(e instanceof ApiError ? e.message : 'Something went wrong.', 'bad');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const copy = async (s: LiveStandup) => {
+    try {
+      await navigator.clipboard.writeText(asText(s.content));
+      toast('Standup copied to the clipboard.');
+    } catch {
+      toast('Copy is blocked in this browser. Select the text and copy it.', 'bad');
+    }
+  };
+
+  const s = loaded?.date === date ? loaded.s : undefined;
+  const off = busy || screen.archived || holdUntil > 0;
+  const choice = (d: string, label: string) => (
+    <button type="button" role="tab" aria-selected={d === date} className={d === date ? 'on' : undefined} onClick={() => setDate(d)}>{label}</button>
+  );
+  return (
+    <section className="card stack">
+      <div className="row wrap between">
+        <div className="row"><span className="chip c-acc">3</span><h2>Standup</h2></div>
+        <div className="seg" role="tablist" aria-label="Standup day">
+          {choice(days.next, `For the next standup · ${dayLabel(days.next)}`)}
+          {choice(days.today, `For today · ${dayLabel(days.today)}`)}
+        </div>
+      </div>
+      {problem && <div className="banner b-warn" role="alert">{icon('alert')}<span>{problem}</span></div>}
+      {s === undefined && <p className="muted">Loading…</p>}
+      {s === null && (
+        <div className="row between">
+          <span className="muted">{`No standup for ${dayLabel(date)} yet.`}</span>
+          <button className="btn p" disabled={off} onClick={() => void generate()}>{busy ? 'Generating…' : 'Generate standup'}</button>
+        </div>
+      )}
+      {s && (
+        <>
+          <div className="row wrap">
+            {s.outcome === 'EDITED' && <span className="chip c-info">Edited</span>}
+            {s.degraded && <span className="chip c-warn">{icon('info')}Built from your task activity only</span>}
+            {s.flagged && <span className="flagm">{icon('flag')}Flagged for review</span>}
+          </div>
+          <div className="g3" style={{ alignItems: 'start' }}>
+            <Lines title="Yesterday" items={s.content.yesterday} />
+            <Lines title="Today" items={s.content.today} />
+            <Lines title="Blockers" items={s.content.blockers} />
+          </div>
+          {s.outcome === 'ACCEPTED' && <div className="banner b-ok">{icon('check')}<span>You accepted this standup as written.</span></div>}
+          {note && <p className="hint">{note}</p>}
+          <div className="row">
+            <button className="btn" disabled={off} onClick={() => void generate()}>{icon('refresh')}{busy ? 'Regenerating…' : 'Regenerate'}</button>
+            <button className="btn" onClick={() => void copy(s)}>{icon('copy')}Copy</button>
+          </div>
+        </>
+      )}
+      <p className="hint">Only you see your own standup.</p>
     </section>
   );
 }

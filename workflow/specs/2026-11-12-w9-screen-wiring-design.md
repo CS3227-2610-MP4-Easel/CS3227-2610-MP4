@@ -75,7 +75,7 @@ Tests render with a `LiveTestProvider` (`src/fe/test/live-provider.tsx`) that se
 - [x] T0 Merge `development` once PR #29 has merged.
 - [x] T1 `dev.ts` functions, `useProjectId`, date helpers, the example file, the `AuthModeCtx` export and `LiveTestProvider`. Tests: `src/fe/test/dev-api.test.ts` (E1, E2, E8, E16, each path and body). Satisfies F1, F6.
 - [x] T2 `LiveStandupScreen` upload and summaries panels, and the switch in `canvas/Standup.tsx`. Tests: `src/fe/test/standup-live.test.tsx` (E3-E7, E14, E17). Satisfies F2, F3, N1.
-- [ ] T3 `LiveStandupScreen` standup panel. Tests: the same file (E9-E11, E18) and E15 against the existing tests. Satisfies F4, F6.
+- [x] T3 `LiveStandupScreen` standup panel. Tests: the same file (E9-E11, E18) and E15 against the existing tests. Satisfies F4, F6.
 - [ ] T4 `LiveTeamStandups` and the switch in `canvas/Standups.tsx`. Tests: `src/fe/test/team-standups-live.test.tsx` (E12-E14). Satisfies F5.
 - [ ] T5 Close-out: fe typecheck and `vitest` green, Implementer review, branch state updated.
 

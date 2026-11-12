@@ -8,6 +8,8 @@ vi.mock('../lib/auth/firebase', () => ({ idToken: async () => 't', signOutUser: 
 vi.mock('next/navigation', () => ({ usePathname: () => pathname }));
 
 import { LiveStandupScreen } from '../components/live/standup-live';
+import Standup from '../components/canvas/Standup';
+import { nextStandupDate, todaySgt, type LiveStandup } from '../lib/api/dev';
 import { LiveTestProvider } from './live-provider';
 
 type Handler = (body: any, url: string) => Response | Promise<Response>;
@@ -15,18 +17,26 @@ const ok = (body: unknown) => new Response(JSON.stringify(body), { status: 200 }
 const err = (status: number, code: string, headers: Record<string, string> = {}) => new Response(JSON.stringify({ error: { code, message: `server says ${code}` } }), { status, headers });
 const uploadRes = (over: object = {}) => ({ received: 3, created: 2, updated: 1, unchanged: 0, rejected: [], needsSummary: [], ...over });
 
-function stub(routes: { uploads?: Handler; summaries?: Handler }) {
+// Routes: uploads (49), summaries (50), generate (51), mine (52; default 404 = no standup yet).
+function stub(routes: { uploads?: Handler; summaries?: Handler; generate?: Handler; mine?: Handler }) {
   const calls: { path: string; body: any }[] = [];
   const fetchMock = vi.fn(async (url: string, init: RequestInit) => {
     const body = init.body ? JSON.parse(init.body as string) : undefined;
     calls.push({ path: url, body });
-    const key = url.endsWith('/uploads') ? 'uploads' : url.endsWith('/summaries') ? 'summaries' : null;
+    const key = url.endsWith('/uploads') ? 'uploads' : url.endsWith('/summaries') ? 'summaries' : url.endsWith('/standups') ? 'generate' : url.includes('/standups/mine') ? 'mine' : null;
     const h = key && routes[key];
-    return h ? h(body, url) : new Response('{}', { status: 500 });
+    if (h) return h(body, url);
+    return key === 'mine' ? err(404, 'NOT_FOUND') : new Response('{}', { status: 500 });
   });
   vi.stubGlobal('fetch', fetchMock);
-  return { calls, fetchMock, summaryCalls: () => calls.filter((c) => c.path.endsWith('/summaries')).map((c) => c.body.itemIds) };
+  const of = (suffix: string) => calls.filter((c) => c.path.endsWith(suffix));
+  return { calls, fetchMock, uploadCalls: () => of('/uploads'), generateCalls: () => of('/standups').map((c) => c.body), summaryCalls: () => of('/summaries').map((c) => c.body.itemIds) };
 }
+
+const standup = (over: Partial<LiveStandup> = {}): LiveStandup => ({
+  id: 's1', developerId: 'd1', date: nextStandupDate(new Date()), content: { yesterday: ['Fixed the menu card'], today: ['Wire the detail page'], blockers: [] },
+  degraded: false, flagged: false, cached: false, outcome: null, version: 1, ...over,
+});
 
 const view = () => render(<LiveTestProvider><LiveStandupScreen /></LiveTestProvider>);
 const fileOf = (content: string, name = 'activity.json') => new File([content], name, { type: 'application/json' });
@@ -56,7 +66,9 @@ describe('S20 live: upload (F2)', () => {
     expect(await screen.findByText('That file is not valid JSON.')).toBeTruthy();
     await choose(fileOf(items(101)));
     expect(await screen.findByText('A file can hold at most 100 items.')).toBeTruthy();
-    expect(s.fetchMock).not.toHaveBeenCalled();
+    await choose(fileOf('{"things":[]}'));
+    expect(await screen.findByText('That file has no items list.')).toBeTruthy();
+    expect(s.uploadCalls()).toEqual([]);
   });
 
   it('E4 sends every item in one call and shows the counts and each rejection', async () => {
@@ -65,7 +77,7 @@ describe('S20 live: upload (F2)', () => {
     await choose(fileOf(items(3)));
     expect(await screen.findByText('2 new, 1 changed, 0 unchanged, 1 rejected')).toBeTruthy();
     expect(screen.getByText('Item 3: title: Required')).toBeTruthy();
-    expect(s.calls).toEqual([{ path: `/api/dev/projects/${P}/uploads`, body: JSON.parse(items(3)) }]);
+    expect(s.uploadCalls()).toEqual([{ path: `/api/dev/projects/${P}/uploads`, body: JSON.parse(items(3)) }]);
   });
 
   it('E17 a 409 on upload shows the archived banner and turns the file input off', async () => {
@@ -152,5 +164,110 @@ describe('S20 live: summaries (F3)', () => {
     await choose(fileOf(items(2)));
     await waitFor(() => expect(screen.getAllByText(evil)).toHaveLength(2));
     expect(container.querySelector('img')).toBeNull();
+  });
+});
+
+describe('S20 live: standup (F4)', () => {
+  const next = () => nextStandupDate(new Date());
+  const today = () => todaySgt(new Date());
+
+  it('loads the next standup date; none yet offers Generate, which sends that date', async () => {
+    const s = stub({ generate: () => ok(standup()) });
+    view();
+    expect(await screen.findByText(/^No standup for .* yet\.$/)).toBeTruthy();
+    expect(s.calls[0].path).toBe(`/api/dev/projects/${P}/standups/mine?date=${next()}`);
+    await userEvent.click(screen.getByRole('button', { name: 'Generate standup' }));
+    expect(await screen.findByText('Fixed the menu card')).toBeTruthy();
+    expect(s.generateCalls()).toEqual([{ date: next() }]);
+  });
+
+  it('E9 a cached regenerate shows the nothing-has-changed note', async () => {
+    stub({ mine: () => ok(standup()), generate: () => ok(standup({ cached: true })) });
+    view();
+    await userEvent.click(await screen.findByRole('button', { name: 'Regenerate' }));
+    expect(await screen.findByText('Nothing has changed since this was generated. Upload new activity to refresh it.')).toBeTruthy();
+  });
+
+  it('E10 a degraded standup shows its badge and its blocker line; empty lists read Nothing to report', async () => {
+    stub({ mine: () => ok(standup({ degraded: true, flagged: true, outcome: 'EDITED', content: { yesterday: [], today: [], blockers: ['Task 7 blocked: waiting on the API key'] } })) });
+    view();
+    expect(await screen.findByText('Task 7 blocked: waiting on the API key')).toBeTruthy();
+    expect(screen.getByText('Built from your task activity only')).toBeTruthy();
+    expect(screen.getByText('Flagged for review')).toBeTruthy();
+    expect(screen.getByText('Edited')).toBeTruthy();
+    expect(screen.getAllByText('Nothing to report.')).toHaveLength(2);
+  });
+
+  it('E11 live mode has no Edit, Use as is or thumbs controls', async () => {
+    stub({ mine: () => ok(standup()) });
+    view();
+    await screen.findByRole('button', { name: 'Regenerate' });
+    for (const name of [/Edit/, /Use as is/, /Thumbs/]) expect(screen.queryByRole('button', { name })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
+  });
+
+  it('E18 a response for the previous date is dropped after a switch', async () => {
+    let release!: (r: Response) => void;
+    stub({ mine: (_b, url) => (url.endsWith(next()) ? new Promise<Response>((r) => { release = r; }) : ok(standup({ content: { yesterday: ['for today'], today: [], blockers: [] } }))) });
+    view();
+    await userEvent.click(screen.getByRole('tab', { name: new RegExp(`^For today`) }));
+    expect(await screen.findByText('for today')).toBeTruthy();
+    await act(async () => { release(ok(standup({ content: { yesterday: ['stale next'], today: [], blockers: [] } }))); });
+    expect(screen.queryByText('stale next')).toBeNull();
+    expect(screen.getByText('for today')).toBeTruthy();
+    expect(today()).not.toBe(next());
+  });
+
+  it('a 429 on generate shows the wait and holds Regenerate', async () => {
+    stub({ mine: () => ok(standup()), generate: () => err(429, 'AI_BUSY', { 'Retry-After': '5' }) });
+    view();
+    await userEvent.click(await screen.findByRole('button', { name: 'Regenerate' }));
+    expect(await screen.findByText('AI is busy. Try again in 5 s.')).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'Regenerate' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('a 422 and a 503 AI_DISABLED on generate show their messages', async () => {
+    let n = 0;
+    stub({ mine: () => ok(standup()), generate: () => (++n === 1 ? err(422, 'VALIDATION_FAILED') : err(503, 'AI_DISABLED')) });
+    view();
+    await userEvent.click(await screen.findByRole('button', { name: 'Regenerate' }));
+    expect(await screen.findByText('That date cannot be used for a standup.')).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Regenerate' }));
+    expect(await screen.findByText('AI features are off for this deployment.')).toBeTruthy();
+  });
+
+  it('E17 a 409 on generate shows the archived banner, turns Regenerate and the file input off, keeps Copy', async () => {
+    stub({ mine: () => ok(standup()), generate: () => err(409, 'CONFLICT_STATE') });
+    view();
+    await userEvent.click(await screen.findByRole('button', { name: 'Regenerate' }));
+    expect(await screen.findByText('This project is archived. Upload and generate are off.')).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'Regenerate' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByLabelText('Activity file') as HTMLInputElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Copy' }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('E14 standup lines render as literal text', async () => {
+    const evil = '<img src=x onerror=alert(1)>';
+    stub({ mine: () => ok(standup({ content: { yesterday: [evil, evil], today: [], blockers: [evil] } })) });
+    const { container } = view();
+    await waitFor(() => expect(screen.getAllByText(evil)).toHaveLength(3));
+    expect(container.querySelector('img')).toBeNull();
+  });
+});
+
+describe('S20 prototype mode (F6)', () => {
+  it('E15 the canvas page keeps its mock markup and sends no request', () => {
+    const s = stub({});
+    render(<Standup />);
+    expect(screen.getByText('activity-priya.json')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Edit/ })).toBeTruthy();
+    expect(s.fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('the canvas page renders the live screen in firebase mode', async () => {
+    stub({});
+    render(<LiveTestProvider><Standup /></LiveTestProvider>);
+    expect(await screen.findByText(/^No standup for .* yet\.$/)).toBeTruthy();
+    expect(screen.queryByText('activity-priya.json')).toBeNull();
   });
 });
