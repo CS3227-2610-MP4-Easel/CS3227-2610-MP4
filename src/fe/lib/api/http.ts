@@ -53,12 +53,19 @@ function errorCode(status: number, code: unknown): string {
 }
 
 function errorMessage(status: number, code: string): string {
-  if (status === 401 || code === 'UNAUTHENTICATED') return 'Authentication is required.';
-  if (status === 403 || code === 'FORBIDDEN' || code === 'FORBIDDEN_ROLE') return 'You do not have permission to view this.';
-  if (status === 404 || code === 'NOT_FOUND') return 'This project or task was not found.';
-  if (status === 409 || code === 'CONFLICT_VERSION' || code === 'CONFLICT_STATE' || code === 'ALREADY_REGISTERED') return 'This changed elsewhere. Reload before trying again.';
-  if (status === 422 || code === 'VALIDATION_FAILED') return 'Check the highlighted fields.';
-  if (status === 429 || code === 'RATE_LIMITED') return 'Please wait before trying again.';
+  if (status >= 500 || code === 'NETWORK' || code === 'INTERNAL' || code === 'INTERNAL_ERROR') return GENERIC;
+  if (status === 401) return 'Authentication is required.';
+  if (status === 403) return 'You do not have permission to view this.';
+  if (status === 404) return 'This project or task was not found.';
+  if (status === 409) return 'This changed elsewhere. Reload before trying again.';
+  if (status === 422) return 'Check the highlighted fields.';
+  if (status === 429) return 'Please wait before trying again.';
+  if (code === 'UNAUTHENTICATED') return 'Authentication is required.';
+  if (code === 'FORBIDDEN' || code === 'FORBIDDEN_ROLE') return 'You do not have permission to view this.';
+  if (code === 'NOT_FOUND') return 'This project or task was not found.';
+  if (code === 'CONFLICT_VERSION' || code === 'CONFLICT_STATE' || code === 'ALREADY_REGISTERED') return 'This changed elsewhere. Reload before trying again.';
+  if (code === 'VALIDATION_FAILED') return 'Check the highlighted fields.';
+  if (code === 'RATE_LIMITED') return 'Please wait before trying again.';
   return GENERIC;
 }
 
