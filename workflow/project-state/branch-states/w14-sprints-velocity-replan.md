@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — T5 accepted; T6 frontend API consumers dispatched
+- **Last updated:** 2026-11-13 by Codex — T6 complete; W14 close-out checks next
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | T6 frontend API types and pagination consumers | Validate the T6 handover and review frontend request/response types, status filters, bounds and live consumers | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Active | T6 complete; preparing W14 close-out | Run close-out plan/build/contract/Prisma checks, review the branch diff and prepare Gate 3 | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -92,6 +92,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-13 | Read-only attacker review of T5 commit f2d52a8 found route contract and observability blockers; no source or test files edited | W14 | review |
 | 2026-11-13 | T5 implementer review passed composition, route registration, typecheck and current OpenAPI tests but found spec-contract gaps in proposal filtering, mutation bounds, proposal responses and endpoint-48 error status; no source edits made | W14 | review; lesson L~1 |
 | 2026-11-13 | Applied T5 contract and security fixes: proposal status filtering, non-empty approval, optimistic PATCH/delete bounds, session outcomes, member-gated rejection, mutation audit records, deleted-sprint resolution and composition-root-only source-scan exemption; full test suite passes | W14 | working tree; final review |
+| 2026-11-13 | Completed T6 live frontend sprint/progress/proposal clients, strict request-body serialization, paged response types and typed suggestion-ID error details; fixture W10 helpers remain unchanged | W14 | commit `002528e`; handover `T6.json` |
 
 ## 4. Decisions
 
