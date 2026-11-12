@@ -37,6 +37,21 @@ Rules the flows follow (W10). Screen-level detail is in the spec: `workflow/spec
 - **Standups:** the Dev Lead reads the team's standups read only; a Developer generates their own for the next standup or for today.
 - **Archived project:** everything is read only.
 
+## Core planning and role features
+
+- **Core planning:** membership, project, epic, task and checkpoint reads are project-scoped;
+  archived projects are read-only; task moves, sprint closure, plan application and membership
+  mutations enforce their domain rules and serialize through the project lock (W5).
+- **Dev Lead facts and digest:** facts include only allow-listed member-visible data; forecast and
+  digest ordering are deterministic; persisted `factsAsOf` supports safe latest-digest selection;
+  degraded gateway results do not expose private context (W8).
+- **Security verification:** the authorization corpus must exercise the production route and
+  package seams, deny unexpected filesystem/network/process capabilities, and remain independent
+  of the guard author's review (W11).
+- **Deployment safety:** recovery accepts only the code-owned synthetic target; production
+  migrations run from protected CI with exact target/checksum validation, and deployment is
+  triggered only after a successful migration (W13).
+
 ## Known limitations
 
 - The data holds one project; every project id shows the same one.

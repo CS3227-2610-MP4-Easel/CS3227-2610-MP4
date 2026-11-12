@@ -4,6 +4,135 @@ The full chronological record of every change, newest first. One line each: what
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-13 | Developer guide checkpoint documented W5, W8, W11 and W13: setup, architecture, components, requirements and testing sections updated; stale W5 context note removed | W5, W8, W11, W13 | `docs/guide/` |
+| 2026-11-13 | Folded branch state `w13-deployment-continuation` | — | archive |
+| 2026-11-13 | Fixed the CI-only E48 concurrency test failure: the test now asserts the W7 contract (exactly one winner and one `CONFLICT_STATE`) without assuming database lock queue order. | W13 | pending verification |
+| 2026-11-13 | Full tests, typecheck, lint, contract, workflow, agent-policy, secret-scan, and diff checks pass after the merge. | W13 | verification |
+| 2026-11-13 | Merged current `origin/development` (including W11) into W13; reconciled the deployment runbook with the expand/contract rollback guidance and retained both skill-feedback entries. | W13 | 21ebeb0 |
+| 2026-11-12 | Operator approved Gate 3 after the E34 timer repair and verification. | W13 | owner approval |
+| 2026-11-12 | Latest CI run `43152832330` exposed the actual E34 failure: synchronous fake-timer advancement did not flush the cooldown interval update on the runner. The test now uses asynchronous timer advancement; five focused E34 runs, full tests, typecheck, lint, contract, secret scan, and diff checks pass. | W13 | 317e8e7 |
+| 2026-11-12 | Operator approved Gate 3 after the CI registration-test race repair and verification. | W13 | owner approval |
+| 2026-11-12 | CI run `43151342460` failed because frontend E32 asserted before the fire-and-forget registration flow completed; the test now waits for the observable registration order and navigation. Three focused reruns and the full frontend suite pass. | W13 | 09021ce |
+| 2026-11-12 | Operator re-approved Gate 3 after the checker hardening and runbook correction. | W13 | owner approval |
+| 2026-11-12 | Restricted `push` triggers to the exact W13 production workflow and added a regression test for arbitrary push-only privileged workflows; full tests, typecheck, lint, contract, workflow checker, secret scan, and diff checks pass. | W13 | 44f88a8 |
+| 2026-11-12 | Review found the generic workflow checker accepts an arbitrary push-only workflow with a protected environment; only the exact W13 filename receives the production contract, so a regression fix is required. | W13 | blocker pending |
+| 2026-11-12 | Corrected the runbook so the owner merges to `main`, observes the workflow pause, and then approves the protected `production` Environment for that run. | W13 | pending renewed Gate 3 |
+| 2026-11-12 | Operator approved Gate 3 after the authenticated SHA-guard repair and close-out verification; branch is ready for normal integration. | W13 | owner approval |
+| 2026-11-12 | Replaced the unauthenticated `git ls-remote` release-SHA guard with a `contents: read` GitHub refs API check using `github.token`, `pipefail`, and a fail-closed JSON SHA comparison; focused and full close-out checks pass. | W13 | 1c22eb9 |
+| 2026-11-12 | Gate 3 review identified that the pre-hook SHA check used unauthenticated `git ls-remote`; the repair replaced it with an authenticated read-only GitHub API check using `github.token`. | W13 | resolved by 1c22eb9 |
+| 2026-11-12 | Owner reports the Vercel Deploy Hook and protected GitHub production Environment with both secrets are configured; values remain unrecorded. | W13 | owner report |
+| 2026-11-12 | T3 target correction completed: runtime validation remains pooled, migration validation requires the verified direct host, and all close-out checks pass. | W13 | ca06561 |
+| 2026-11-12 | Operator confirmed production runtime must remain pooled while `DIRECT_DATABASE_URL` uses the verified non-pooled host; the W13 spec and T3 task were amended accordingly. | W13 | 541dbe8 |
+| 2026-11-12 | Neon production console shows the non-pooled direct host `ep-summer-heart-b3767eul.c-4.ap-southeast-1.aws.neon.tech`; repository validation still expects the pooled `-pooler` host. | W13 | operator confirmation required |
+| 2026-11-12 | Owner reports the Vercel `main` Deploy Hook and protected GitHub `production` Environment are configured with `DIRECT_DATABASE_URL` and `VERCEL_DEPLOY_HOOK_URL`; secret values are not recorded. | W13 | owner report |
+| 2026-11-12 | Final close-out verification passes: 543 backend tests with 28 skipped, 149 frontend tests, typecheck, lint, contract, workflow checker, plan closeout, handover lint, and branch/worktree diff checks. | W13 | pending state commit |
+| 2026-11-12 | Final hardening redacts CLI failures, rejects local wrapper execution, checks the remote `main` SHA before the Deploy Hook, and asserts `curl --fail`; branch-diff whitespace was normalized. | W13 | 2be871b |
+| 2026-11-12 | T4 completed with the CI-only runbook, migration failure-safety tests, and root `vercel.json` disabling Git deployments for `main`; handover and task checks pass. | W13 | bc5e075 |
+| 2026-11-12 | Wave 2 verification passes: 538 backend tests with 28 skipped, 149 frontend tests, typecheck, lint, contract, workflow checker, handover lint, and diff check. | W13 | pending state commit |
+| 2026-11-12 | T3 restored the protected push-main production workflow with pinned Actions, least-privilege checkout, migration wrapper, and post-migration Deploy Hook; workflow and repository checks pass. | W13 | 5e4e9c0 |
+| 2026-11-12 | Wave 1 checks pass after dependency-backed verification: 564 backend tests (536 pass, 28 skipped), 149 frontend tests, typecheck, lint, contract, workflow checker, plan lint, and diff check. | W13 | pending state commit |
+| 2026-11-12 | T1 exact recovery target binding and T2 explicit workflow contract completed; handovers validate. | W13 | f7843a4 + 8c1b32e |
+| 2026-11-12 | Operator approved Gate 1 and Gate 2; four-task safety-repair plan is ready for execution. | W13 | 23321e2 + plan commit |
+| 2026-11-12 | Drafted and linted the high-risk safety-repair spec covering exact recovery targeting, AD-32-preserving production CI, workflow-contract validation, and runbook sequencing; Implementer, Tester/QA, Attacker, and Maintainer reviews completed. | W13 | pending Gate 1 approval |
+| 2026-11-08 | Final review found a sequencing race: Vercel's automatic `main` deployment can start before the protected migration workflow completes; T6 is blocked until tokenless sequencing is chosen. | W13 | this commit |
+| 2026-11-08 | T6 close-out passed: 488 tests (462 passed, 26 skipped), typecheck, lint, contract, Prisma validation, workflow validation, agent-policy, secret scan, and diff check; branch is ready for owner review. | W13 | this commit |
+| 2026-11-08 | Owner verified Vercel Git integration is connected to `CS3227-2610-MP4-Easel/CS3227-2610-MP4`; Production Branch is `main`, and Vercel reports every commit pushed to `main` creates a Production Deployment. | W13 | this commit |
+| 2026-11-08 | Owner added the protected GitHub `production` Environment secret `DIRECT_DATABASE_URL`; Vercel Git integration confirmation remains before T6 can proceed. | W13 | this commit |
+| 2026-11-09 | Opened PR #26 from `w13-deployment-continuation` into `development`; branch remains at Gate 3 awaiting owner review and merge. | W13 | this commit |
+| 2026-11-09 | Owner added the dev and prod Firebase variables in Vercel; Firebase configuration handover is complete, pending redeploy and runtime verification. | W13 | this commit |
+| 2026-11-09 | Applied the corrected Neon mapping to the immutable manifest, runtime target map, and regression fixtures; development requires the confirmed pooled host and `falling-rice-06970921`, while production remains `super-sunset-36592949`. Focused tests, full suite, typecheck, lint, contract, Prisma, workflow, policy, secret-scan, and diff checks pass. | W13 | this commit |
+| 2026-11-09 | Operator corrected the canonical Neon project mapping: development uses `falling-rice-06970921`; production remains `super-sunset-36592949`. | W13 | this commit |
+| 2026-11-09 | Operator reversed T6 under C87: removed the protected production workflow, identity script, tests, and Deploy Hook requirement; production migration/deployment is now a manual owner handover. | W13 | this commit |
+| 2026-11-09 | Operator approved amendment C86: replace the unsafe tokenless Git auto-deploy handoff with a post-validation Vercel Deploy Hook, while keeping C85's no-token boundary. | W13 | this commit |
+| 2026-11-08 | Operator kept C85; removed token-based Vercel link/deploy/inspect steps from T6 and replaced them with a protected, tokenless Vercel Git integration handoff. | W13 | this commit |
+| 2026-11-08 | Deviation found before configuration: the T6 draft references `VERCEL_TOKEN`/`VERCEL_TEAM_ID`, conflicting with approved C85's no-token repository-workflow boundary; no production secrets should be added until resolved. | W13 | this commit |
+| 2026-11-08 | T6 implementation is complete through validation: protected `main` workflow, detached SHA/artifact identity checks, production migration invocation, and candidate deployment verification are covered; owner production configuration is now the required gate. | W13 | this commit |
+| 2026-11-08 | Owner supplied the Vercel deployment ID and timestamps; reduced T4 evidence is complete with health/auth/foreign-token/tier checks passing and outcome `pass`. | W13 | this commit |
+| 2026-11-08 | Owner reported the reduced health, authenticated identity, foreign-token, and dev-tier checks as verified; T4 remains pending only for the redacted deployment metadata fields. | W13 | this commit |
+| 2026-11-08 | Operator verified the reduced T4 gate and authorized continuation; remaining work is owner-recorded deployment metadata plus health/auth/tier evidence. | W13 | this commit |
+| 2026-11-08 | Operator reversed C85's standup/AI prerequisite: T4 now requires only deployment metadata plus health/auth/foreign-token/tier evidence; W9 remains separate. | W13 | this commit |
+| 2026-11-08 | Route audit found only endpoints 1–4 registered; the required endpoint 51 belongs to W9's unimplemented Developer slice, so W13 T4 is blocked on W9 before owner smoke evidence can pass. | W13 | this commit |
+| 2026-11-08 | Owner reported partial manual T4 evidence: `GET /api/health` passes, unauthenticated `GET /api/me` returns the expected 401, and no seeded development data exists yet; T4 remains incomplete. | W13 | this commit |
+| 2026-11-08 | Operator approved the amended W13 safety spec at Gate 1; the removed automated dev-check is replaced by owner-recorded Vercel metadata plus fixed development smoke evidence. | W13 | this commit |
+| 2026-11-08 | Removed the dead dev-check verifier, dedicated test, and runbook section; historical plan/spec/state references remain for audit history. | W13 | this commit |
+| 2026-11-08 | T6 preflight found the plan's `.github/workflows/w13-dev-check.yml` was removed in `c9ed369`; option 1 cannot run until the owner chooses to recreate that workflow or accept an explicit audit exception. | W13 | this commit |
+| 2026-11-08 | Owner `teleifo` verified the recovered branch and seed data; redacted T5 evidence records 20-second RPO/RTO (0.0056 hours each) and a passing outcome. | W13 | this commit |
+| 2026-11-08 | Owner confirmed `w13-recovery-past` contains the state from before the controlled changes to `w13-recovery-baseline`; restore verification passed, with timing and post-restore seed evidence still pending. | W13 | this commit |
+| 2026-11-08 | Operator amended the recovery target: seed `w13-recovery-baseline` and create `w13-recovery-past` from its pre-change point; the validator now accepts only the baseline name. | W13 | this commit |
+| 2026-11-08 | Added a narrowly scoped tier-validator exception for the exact approved W13 rehearsal branch; regression and full-suite tests pass. | W13 | this commit |
+| 2026-11-08 | Amended the recovery runbook to permit the approved isolated development target under synthetic-data-only and no-production-wiring constraints; ordinary previews and production targets remain forbidden. | W13 | this commit |
+| 2026-11-08 | Operator approved `agile-platform-dev / w13-recovery-rehearsal` as the restricted Neon target for original W13 T5; owner-operated backup/restore evidence is now the next action. | W13 | this commit |
+| 2026-11-08 | Completed the redacted T4 audit: generic Preview is `APP_TIER=preview`; no forbidden names have generic/fork Preview scope; dev-tier variables are exact-`development` scoped; Vercel repository linkage and GitHub AD-32 protection pass. | W13 | this commit |
+| 2026-11-08 | Owner authorized revealing only generic Preview `APP_TIER`; Vercel required owner MFA, so the audit page was handed off without entering or recording a code. | W13 | this commit |
+| 2026-11-08 | T4 read-only audit confirmed exact development scoping, no generic forbidden variable names, expected Vercel repository link, and AD-32 branch protection; the generic `APP_TIER` value remains intentionally unobserved. | W13 | this commit |
+| 2026-11-08 | Operator approved the amended W13 T4 audit plan at Gate 2. | W13 | this commit |
+| 2026-11-08 | Plan review corrected an obsolete completion reference to the removed development verification workflow; the T4 audit now completes on its own redacted evidence. | W13 | this commit |
+| 2026-11-08 | Amended the sole outstanding legacy T4 audit for AD-53's protected development exception; retained the historical plan instead of creating a partial v2 plan that cannot truthfully trace already-merged requirements. | W13 | this commit |
+| 2026-11-08 | Operator approved the amended W13 safety specification at Gate 1. | W13 | this commit |
+| 2026-11-08 | Amended the high-risk safety spec to make the protected development exception auditable; Implementer, Tester/QA, Attacker, and Maintainer reviews found no remaining blocking issues. | W13 | this commit |
+| 2026-11-08 | Operator chose to retain AD-53; amended F6 will apply credential denial to untrusted PR previews, not protected `development`. | W13 | this commit |
+| 2026-11-08 | Redacted Vercel audit found development-scoped Preview variables that F6 forbids but AD-53 permits for the protected development branch; T4 stopped for an owner decision. | W13 | this commit |
+| 2026-11-08 | Corrected the false legacy-linter blocker: the approved spec is Format v2, whose design intentionally has no implementation-order section; resumed T4. | W13 | this commit |
+| 2026-11-08 | Created continuation branch and recorded the invalid-plan blocker before the owner-gated preview audit. | W13 | this commit |
+| 2026-11-13 | Folded branch state `w11-security-corpus-authorisation-tests` | — | archive |
+| 2026-11-13 | Reinstalled workspace links and passed full tests (878 backend, 149 frontend), typecheck, lint, contract, workflow, agent-policy, secret-scan, and diff checks | W11 | verification |
+| 2026-11-13 | Merged current `development` into W11; combined the auth package-boundary imports with the shared route/body-limit helpers, accepted the lockfile merge, and updated the route-source test for centralized route metadata | W11 | 05f0f4a |
+| 2026-11-12 | Hardened filesystem containment against traversal and stream/copy writes, exposed auth subpaths through the package boundary, and added regressions | W11 | b110ade |
+| 2026-11-12 | Closed the isolation and repeated-registration review blockers: deny bare child-process imports and filesystem promise/write APIs, and drive 21 attempts through the registered auth route; full verification passes | W11 | e0ac907 |
+| 2026-11-12 | Bundled the deny setup and imported it as an isolated worker module so Node 20 CI protects E22 workers; workspace tests and lint pass | W11 | 59c0d71 |
+| 2026-11-12 | Loaded the deny setup inside E22 workers and drove E14 through createLlmGateway to assert AI_BUSY; full backend, frontend, lint, and root test verification pass | W11 | a99a562 |
+| 2026-11-12 | Wired the deny setup into the discovered security-test process and replaced E14/E15 inline barriers with the production rate-limit and session seams; focused, full backend, frontend, lint, and root test verification pass | W11 | ccd60e3 |
+| 2026-11-10 | Closed the network deny gaps for DNS promises and socket instances, allowed the platform temp directory for the TypeScript loader, and made route-source discovery accept new `.ts` route files | W11 | uncommitted |
+| 2026-11-09 | Fixed the dedicated deny-all command so the real rate-limit IP parser may import `node:net` while connect/createConnection remain blocked; full verification passes | W11 | uncommitted |
+| 2026-11-09 | Resolved review blockers by routing markdown, context, registration-code, limiter, and replay corpus cases through production seams; aligned schema/spec and declared esbuild directly | W11 | uncommitted |
+| 2026-11-09 | Fixed E22 worker execution across Node 20/22 by bundling the TypeScript runner with esbuild before starting the isolated worker and resolving its corpus from the workspace root; exact workspace launcher passes locally | W11 | 8c88f3a |
+| 2026-11-09 | Amended T1-E2/T2-E2 to match the frozen guard contract, then passed all focused and full verification suites | W11 | 46d2c0e |
+| 2026-11-09 | T2 hardening exercises the real registration seam, barrier release/upstream assertions, and worker timeout, but focused corpus verification fails T1-E2 because the frozen input guard leaves `W11_CANARY_ALPHA` and `<script>`; no production guard change is authorized by T2 | W11 | 6bcd277 |
+| 2026-11-09 | Completed T3 policy-derived authorization and source-rule tests after two review rounds and final correction | W11 | 53b7195 |
+| 2026-11-09 | Completed T1 corpus schema and manifest, including review fixes and validated handover | W11 | 57b889d |
+| 2026-11-09 | Recorded Gate 2 approval and began Wave 1 execution | W11 | uncommitted |
+| 2026-11-09 | Added the three-task W11 implementation plan and passed plan lint | W11 | uncommitted |
+| 2026-11-09 | Added and review-tightened the W11 declarative security corpus and policy-derived authorization spec | W11 | uncommitted |
+| 2026-11-09 | Created an isolated linked worktree and branch from `origin/development` so W11 work does not alter the current checkout | W11 | uncommitted |
+| 2026-11-13 | Folded branch state `w8-dev-lead-facts-digest` | — | archive |
+| 2026-11-13 | Project owner confirmed fold readiness; completed session rows were cleared and W8 marked Approved for project-state sync | W8 | owner confirmation |
+| 2026-11-12 | Preserved the formula-derived null projected date for completed checkpoints without velocity while retaining `ON_TRACK` risk; added the missing assertion | W8 | this commit |
+| 2026-11-12 | Repaired caller-scoped endpoint-42 facts, bounded trusted numeric formatting, latest-row digest caching, captured-facts assembly, completed-checkpoint risk, and the asynchronous registration CI assertion; added regressions | W8 | this commit |
+| 2026-11-09 | Resolved review findings with compatibility-triggered expand/contract migration, forward-only restore recovery, offset-bearing backfill validation, final non-null Prisma shape, migration manifest updates, and a CI-gated PostgreSQL migration regression; full suite passed | W8 | 9975055 |
+| 2026-11-09 | Attacker review found the two migration phases still deploy together before the new writer and the documented production path has no down migration; query bounds, tenant scoping, and session-cap mapping otherwise passed | W8 | pending task commit |
+| 2026-11-09 | Implementer/tester/attacker lenses found rollout, invalid-backfill, rollback, and bounded-query gaps; spec and T2 were amended with expand/contract phases and explicit regression requirements | W8 | pending task commit |
+| 2026-11-09 | Operator approved amending W8 to persist `Facts.asOf` as `ProjectDigest.factsAsOf` with a composite latest-order index; spec and T2 plan are being regenerated before implementation | W8 | pending task commit |
+| 2026-11-09 | Added red regressions and minimal fixes so endpoint 42 uses target-only facts and cached/latest digests expose only public fields | W8 | pending task commit |
+| 2026-11-09 | Added regressions and minimal fixes for complete latest-digest selection and gateway-exception session persistence | W8 | this commit |
+| 2026-11-09 | Started post-review blocker repair: latest digest selection and admitted-session degraded close semantics | W8 | this commit |
+| 2026-11-09 | Preserved auth parser 400 mappings and made strict 415/422 body parsing opt-in for W8 lead routes; focused and full verification passed | W8 | pending task commit |
+| 2026-11-09 | Project operator chose deterministic pagination and a short-history regression test over accepting a bounded-read limitation | W8 | pending follow-up commit |
+| 2026-11-09 | T1 repair cycle fixed membership, cross-project velocity, deterministic ordering, and hash tests; review still requires bounded facts reads and a short-history regression | W8 | pending operator direction |
+| 2026-11-09 | Execution baseline passed: typecheck, lint, contract and 534 tests (28 integration skips); T1 started under S2 | W8 | pending task commit |
+| 2026-11-09 | Project operator approved the W8 implementation plan at Gate 2 | W8 | this commit |
+| 2026-11-09 | W8 three-task implementation plan drafted, linted, independently reviewed, and tightened for self-contained contracts plus transaction/concurrency evidence | W8 | this commit |
+| 2026-11-09 | W8 spec approved at Gate 1 by project operator | W8 | this commit |
+| 2026-11-09 | W8 Big design spec drafted, linted, reviewed, and amended with the shared-digest overload privacy decision | W8 | this commit |
+| 2026-11-13 | Folded branch state `w5-core-planning` | — | archive |
+| 2026-11-13 | Project owner confirmed fold readiness; completed session rows were cleared and W5 marked Approved for project-state sync | W5 | owner confirmation |
+| 2026-11-07 | Drafted and linted the W5 High-tier spec; Implementer, Tester, Attacker, and Maintainer reviews ran for two rounds and blocking findings were fixed, including archive probing, apply transactions, resolver seams, task events, and source serialization | W5 | working tree |
+| 2026-11-07 | Started W5 on a managed worktree from `development` tip `faa1c08`; local branch creation is blocked by shared read-only `.git` metadata | W5 | working tree |
+| 2026-11-08 | Operator renamed the intended branch from `codex/w5-core-planning` to `w5-core-planning`; branch creation was initially blocked by shared read-only `.git` metadata | W5 | working tree |
+| 2026-11-08 | Operator approved the W5 spec at Gate 1; branch `w5-core-planning` was created from `faa1c08` | W5 | working tree |
+| 2026-11-08 | Drafted and linted the W5 six-task implementation plan; review round 1 found route injection, auth lookup, frozen resolver-kind, and post-parse ADDER blockers; all were revised and review round 2 found no blockers | W5 | working tree |
+| 2026-11-08 | Operator approved the W5 six-task implementation plan at Gate 2; execution may begin with T1 | W5 | plan |
+| 2026-11-08 | T1's second full-review round still found two resolver defects; execution paused at the review-round limit | W5 | D25 |
+| 2026-11-08 | Operator approved the two contained T1 resolver corrections after the review-round limit | W5 | D25 |
+| 2026-11-08 | Completed T1: `@agile/core` membership/writability and fail-closed resolver seams; D25 corrections approved by operator | W5 | 8e36378 |
+| 2026-11-08 | Merged latest `origin/development` (including the W12 Gitleaks retry follow-up) into W5 with no conflicts | W5 | merge |
+| 2026-11-08 | Verified blocker repairs: 531 tests passed, 28 skipped; typecheck, lint, Prisma validation, and diff checks passed | W5 | blocker repair |
+| 2026-11-08 | Branch review found two remaining blockers; added closed-sprint clearing regression and project-row mutation locks for task, checkpoint, and membership writes | W5 | blocker repair |
+| 2026-11-08 | Completed the five approved W5 fixes with focused regressions; repository tests, typecheck, lint, and Prisma validation pass | W5 | this commit |
+| 2026-11-08 | Started five approved W5 fixes: live-sprint task PATCH validation, applyPlan task eligibility, active-membership guards, transaction-scoped mutation authorization/archive checks, and locked max-position allocation | W5 | review follow-up |
+| 2026-11-08 | Completed focused branch-review repairs: conditional task version writes, live epic/project points, and exact core-source rendering, ordering and standup windows; added regression coverage | W5 | T6 |
+| 2026-11-08 | Focused tests 22/22 and lint pass; full suite 529 pass, 5 fail, 28 skip: migration checksum and four agent-hook mediation tests | W5 | review follow-up |
+| 2026-11-08 | Allowed unestimated backlog tasks in plans and serialized re-plan application against project archive; added regressions | W5 | review follow-up |
+| 2026-11-08 | Prevented task moves from closed sprints and added a regression test | W5 | review follow-up |
 | 2026-11-13 | Developer guide checkpoint documented the W4 sign-in screen and W9 (backend): sections 2, 3 (with a standup sequence diagram), 4 (new Developer entry), 5, 7 and the index; section 7's CI sentence corrected (CI now runs PostgreSQL) | W4, W9 | `docs/guide/` |
 | 2026-11-13 | Folded branch state `w9-dev-slice` (PR #29); its Untouched Architecture claim corrected at fold with a new dev-area Now, approved by ludannnn | W9 | archive |
 | 2026-11-13 | Folded branch state `w4-sign-in-screen` (PR #25); its Untouched Architecture claim corrected at fold with a new web-area Now, approved by ludannnn | W4 | archive |
