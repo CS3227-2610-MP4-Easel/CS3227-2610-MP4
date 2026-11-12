@@ -1,6 +1,7 @@
 import { strict as assert } from "node:assert";
 import { createRequire, Module, register, syncBuiltinESMExports } from "node:module";
 import { tmpdir } from "node:os";
+import { isAbsolute, relative, resolve } from "node:path";
 
 const blocked = (name: string): never => { throw new Error(`W11_FORBIDDEN_${name}`); };
 const originalFetch = globalThis.fetch;
@@ -18,13 +19,17 @@ register(`data:text/javascript,${encodeURIComponent(`export async function resol
 const fs = createRequire(import.meta.url)("node:fs") as Record<string, (...args: unknown[]) => unknown>;
 const promises = createRequire(import.meta.url)("node:fs/promises") as Record<string, (...args: unknown[]) => unknown>;
 const temporaryRoots = ["/node_modules/", "/private/tmp/", "/tmp/", tmpdir(), `/private${tmpdir()}`];
-const filesystemWrites = ["write", "writeFile", "writeFileSync", "appendFile", "appendFileSync", "open", "openSync", "mkdir", "mkdirSync", "rm", "rmSync", "unlink", "unlinkSync", "rename", "renameSync", "copyFile", "copyFileSync", "link", "linkSync", "symlink", "symlinkSync", "truncate", "truncateSync", "chmod", "chmodSync", "chown", "chownSync", "utimes", "utimesSync", "lutimes", "lutimesSync"];
+const filesystemWrites = ["write", "writeFile", "writeFileSync", "appendFile", "appendFileSync", "open", "openSync", "mkdir", "mkdirSync", "rm", "rmSync", "unlink", "unlinkSync", "rename", "renameSync", "copyFile", "copyFileSync", "cp", "cpSync", "link", "linkSync", "symlink", "symlinkSync", "truncate", "truncateSync", "chmod", "chmodSync", "chown", "chownSync", "utimes", "utimesSync", "lutimes", "lutimesSync", "mkdtemp", "mkdtempSync", "createWriteStream"];
+const allowed = (target: string) => temporaryRoots.some((root) => {
+  const relativeTarget = relative(resolve(root), resolve(target));
+  return relativeTarget === "" || (!relativeTarget.startsWith("..") && !isAbsolute(relativeTarget));
+});
 for (const targetModule of [fs, promises]) for (const name of filesystemWrites) {
   const original = targetModule[name];
   if (typeof original !== "function") continue;
   targetModule[name] = (...args: unknown[]) => {
     const target = typeof args[0] === "string" ? args[0] : "";
-    if (temporaryRoots.some((root) => target.includes(root) || target.startsWith(root))) return original(...args);
+    if (allowed(target)) return original(...args);
     return blocked("FILESYSTEM");
   };
 }

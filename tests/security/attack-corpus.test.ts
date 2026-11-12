@@ -172,12 +172,12 @@ test("E22 isolated workers install the network deny setup", async () => {
   assert.match(result, /W11_FORBIDDEN_NETWORK_OR_PROCESS/);
 });
 
-test("E22 isolated workers block bare child_process and filesystem promise writes", async () => {
+test("E22 isolated workers block bare child_process and filesystem writes", async () => {
   const setupUrl = new URL("./w11-network-deny.setup.ts", import.meta.url);
   const setupSource = buildSync({ entryPoints: [fileURLToPath(setupUrl)], bundle: true, format: "esm", platform: "node", target: "node20", define: { "import.meta.url": JSON.stringify(setupUrl.href) }, write: false }).outputFiles[0].text;
   const setupModule = `data:text/javascript,${encodeURIComponent(setupSource)}`;
   const result = await new Promise<string>((resolve, reject) => {
-    const worker = new Worker(`import { parentPort } from 'node:worker_threads'; import ${JSON.stringify(setupModule)}; const results = []; try { const childProcess = await import('child_process'); childProcess.spawnSync('true'); results.push('child-process-allowed'); } catch (error) { results.push(String(error)); } try { const fs = await import('node:fs/promises'); await fs.writeFile('/outside-w11-fixture.txt', 'blocked'); results.push('filesystem-allowed'); } catch (error) { results.push(String(error)); } parentPort.postMessage(results.join('\\n'));`, { eval: true, type: "module", execArgv: [], env: { ...process.env, NODE_OPTIONS: "" } });
+    const worker = new Worker(`import { parentPort } from 'node:worker_threads'; import ${JSON.stringify(setupModule)}; const results = []; try { const childProcess = await import('child_process'); childProcess.spawnSync('true'); results.push('child-process-allowed'); } catch (error) { results.push(String(error)); } try { const fs = await import('node:fs/promises'); await fs.writeFile('/outside-w11-fixture.txt', 'blocked'); results.push('filesystem-write-allowed'); } catch (error) { results.push(String(error)); } try { const fs = await import('node:fs'); fs.writeFileSync('/tmp/../outside-w11-traversal.txt', 'blocked'); results.push('filesystem-traversal-allowed'); } catch (error) { results.push(String(error)); } try { const fs = await import('node:fs'); fs.createWriteStream('/outside-w11-stream.txt'); results.push('filesystem-stream-allowed'); } catch (error) { results.push(String(error)); } parentPort.postMessage(results.join('\\n'));`, { eval: true, type: "module", execArgv: [], env: { ...process.env, NODE_OPTIONS: "" } });
     worker.on("message", (message) => { void worker.terminate(); resolve(String(message)); });
     worker.on("error", reject);
   });

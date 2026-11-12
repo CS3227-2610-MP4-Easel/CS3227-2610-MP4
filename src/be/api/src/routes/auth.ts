@@ -1,8 +1,8 @@
 import { z } from "zod/v3";
 import { policyForRoute, type RouteDefinition } from "@agile/contracts";
-import { AlreadyRegistered, checkRegistrationCode, createUser, getUser } from "../../../auth/src/registration.js";
-import { clientIpKey, type RatePurpose } from "../../../auth/src/rate-limit.js";
-import type { AuthRuntime } from "../../../auth/src/runtime.js";
+import { AlreadyRegistered, checkRegistrationCode, createUser, getUser } from "@agile/auth/registration";
+import { clientIpKey, type RatePurpose } from "@agile/auth/rate-limit";
+import type { AuthRuntime } from "@agile/auth/runtime";
 import { errorResponse, HttpError } from "../errors.js";
 
 const MAX_BODY_BYTES = 4096;

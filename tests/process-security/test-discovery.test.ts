@@ -35,3 +35,10 @@ test("W11 registration corpus cases use the production route for repeated attemp
   assert.match(source, /\.request\(/);
   assert.doesNotMatch(source, /count:\s*21/);
 });
+
+test("W11 API routes use the auth package public surface", () => {
+  const source = readFileSync("src/be/api/src/routes/auth.ts", "utf8");
+  assert.match(source, /@agile\/auth\/registration/);
+  assert.match(source, /@agile\/auth\/rate-limit/);
+  assert.doesNotMatch(source, /\.\.\/\.\.\/\.\.\/auth\/src/);
+});
