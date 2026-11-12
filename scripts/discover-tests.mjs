@@ -22,10 +22,26 @@ export async function discoverTests(root = ".") {
   return files.sort();
 }
 
+export function buildTestRuns(files) {
+  const security = files.filter((file) => file.startsWith("tests/security/"));
+  const regular = files.filter((file) => !file.startsWith("tests/security/"));
+  const setup = (includeNetworkDeny) => [
+    "./tests/setup-auth-env.ts",
+    ...(includeNetworkDeny ? ["./tests/security/w11-network-deny.setup.ts"] : []),
+  ];
+  return [
+    regular.length === 0 ? null : { files: regular, setup: setup(false) },
+    security.length === 0 ? null : { files: security, setup: setup(true) },
+  ].filter(Boolean);
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   discoverTests(process.cwd()).then((files) => {
-    const result = spawnSync(process.execPath, ["--import", "tsx", "--import", "./tests/setup-auth-env.ts", "--test", ...files], { stdio: "inherit" });
-    process.exitCode = result.status ?? 1;
+    for (const run of buildTestRuns(files)) {
+      const result = spawnSync(process.execPath, ["--import", "tsx", ...run.setup.flatMap((module) => ["--import", module]), "--test", ...run.files], { stdio: "inherit" });
+      if (result.status !== 0) { process.exitCode = result.status ?? 1; return; }
+    }
+    process.exitCode = 0;
   }).catch((error) => {
     process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
     process.exitCode = 1;
