@@ -8,7 +8,7 @@ const CANONICAL_SOCLAAS = "https://soclaas-api.comp.nus.edu.sg/v1";
 const dev = {
   APP_TIER: "dev", LLM_MODE: "live", SOCLAAS_API_KEY: "sk-test-key", SOCLAAS_BASE_URL: CANONICAL_SOCLAAS,
   DATABASE_URL: "postgresql://user:password@ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb",
-  NEON_HOST: "ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech", NEON_PROJECT: "super-sunset-36592949",
+  NEON_HOST: "ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech", NEON_PROJECT: "falling-rice-06970921",
 };
 const prod = {
   APP_TIER: "prod", LLM_MODE: "live", SOCLAAS_API_KEY: "sk-test-key", SOCLAAS_BASE_URL: CANONICAL_SOCLAAS,

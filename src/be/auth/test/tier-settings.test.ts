@@ -10,7 +10,7 @@ const base = {
   VERCEL_ENV: "preview",
   VERCEL_GIT_COMMIT_REF: "development",
   NEON_HOST: "ep-fragrant-union-aod4nxjd-pooler.c-2.ap-southeast-1.aws.neon.tech",
-  NEON_PROJECT: "super-sunset-36592949",
+  NEON_PROJECT: "falling-rice-06970921",
   SOCLAAS_BASE_URL: "https://soclaas-api.comp.nus.edu.sg/v1",
   REGISTRATION_CODE_PM: "pm-code-0123456789",
   REGISTRATION_CODE_DEV_LEAD: "lead-code-0123456789",
@@ -62,7 +62,7 @@ const prodDatabaseUrl = "postgresql://user:password@ep-summer-heart-b3767eul-poo
 
 test("E3/E4 valid dev and prod auth runtimes construct only after target validation", () => {
   assert.doesNotThrow(() => createAuthRuntime({ ...base, DATABASE_URL: devDatabaseUrl }, { base: fakeBase, verifier: fakeVerifier }));
-  assert.doesNotThrow(() => createAuthRuntime({ ...base, APP_TIER: "prod", FIREBASE_PROJECT_ID: "agile-platform-prod", VERCEL_ENV: "production", VERCEL_GIT_COMMIT_REF: "main", NEON_HOST: "ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech", SOCLAAS_BASE_URL: "https://soclaas-api.comp.nus.edu.sg/v1", DATABASE_URL: prodDatabaseUrl }, { base: fakeBase, verifier: fakeVerifier }));
+  assert.doesNotThrow(() => createAuthRuntime({ ...base, APP_TIER: "prod", FIREBASE_PROJECT_ID: "agile-platform-prod", VERCEL_ENV: "production", VERCEL_GIT_COMMIT_REF: "main", NEON_HOST: "ep-summer-heart-b3767eul-pooler.c-4.ap-southeast-1.aws.neon.tech", NEON_PROJECT: "super-sunset-36592949", SOCLAAS_BASE_URL: "https://soclaas-api.comp.nus.edu.sg/v1", DATABASE_URL: prodDatabaseUrl }, { base: fakeBase, verifier: fakeVerifier }));
 });
 
 test("E3/E4/E5/E14 auth rejects cross-tier, malformed, missing, and local/test production URLs before the client is used", () => {
