@@ -94,6 +94,21 @@ describe('top bar', () => {
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
+  it('preserves each live project link while already inside a project', async () => {
+    const B = '660e8400-e29b-41d4-a716-446655440001';
+    fetchMock
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'u1', email: 'p@x.io', displayName: 'PM', role: 'PM' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ items: [
+        { id: A, name: 'Current project', brief: null, status: 'ACTIVE', createdBy: 'u1', createdAt: '', updatedAt: '', version: 1, progress: { pointsTotal: 0, pointsDone: 0, percent: 0, unestimatedTasks: 0 } },
+        { id: B, name: 'Other project', brief: null, status: 'ACTIVE', createdBy: 'u1', createdAt: '', updatedAt: '', version: 1, progress: { pointsTotal: 0, pointsDone: 0, percent: 0, unestimatedTasks: 0 } },
+      ], page: 0, size: 100, total: 2 }), { status: 200 }));
+    render(<AuthRoot mode="firebase"><ProjectRouteContext.Provider value={projectRoute(`/projects/${A}`)}><Top /></ProjectRouteContext.Provider></AuthRoot>);
+    await act(async () => fbCb!({ uid: 'a', email: 'p@x.io' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Switch project' }));
+    expect(screen.getByRole('menuitem', { name: /Current project/ }).getAttribute('href')).toBe(`/projects/${A}`);
+    expect(screen.getByRole('menuitem', { name: /Other project/ }).getAttribute('href')).toBe(`/projects/${B}`);
+  });
+
   it('E1 keeps the live list in loading state before the first response and then shows its empty state', async () => {
     let resolve!: (response: Response) => void;
     fetchMock.mockReturnValue(new Promise<Response>((r) => { resolve = r; }));
