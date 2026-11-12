@@ -23,3 +23,27 @@ export async function lockEpic(tx: FilteredTransactionClient, proposalId: string
   }
   return tx.proposalEpic.findFirst({ where: { proposalId, index } });
 }
+
+/** Takes the bound AI session lock and re-reads the session. */
+export async function lockSession(tx: FilteredTransactionClient, sessionId: string) {
+  try {
+    await tx.aiSession.update({ where: { id: sessionId }, data: { lastActivityAt: new Date() }, select: { id: true } });
+  } catch (error) {
+    if (isMissing(error)) return null;
+    throw error;
+  }
+  return tx.aiSession.findFirst({ where: { id: sessionId } });
+}
+
+/** Locks a referenced domain row without changing its logical value. */
+export async function lockDomainRow(tx: FilteredTransactionClient, kind: "checkpoint" | "epic" | "task", id: string, projectId: string) {
+  const model = (tx as unknown as Record<string, unknown>)[kind] as { updateMany?: (args: Record<string, unknown>) => Promise<{ count: number }>; update?: (args: Record<string, unknown>) => Promise<unknown>; findFirst(args: Record<string, unknown>): Promise<unknown | null> };
+  if (model.updateMany) {
+    const result = await model.updateMany({ where: { id, projectId }, data: { updatedAt: new Date() } });
+    if (result.count === 0) return null;
+  } else {
+    if (!await model.findFirst({ where: { id, projectId } })) return null;
+    await model.update?.({ where: { id }, data: { updatedAt: new Date() } });
+  }
+  return model.findFirst({ where: { id, projectId } });
+}

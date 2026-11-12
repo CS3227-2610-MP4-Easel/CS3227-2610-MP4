@@ -1,5 +1,5 @@
 import { z } from "zod/v3";
-import type { Core, ReplanApproval, ReplanProposal, Suggestion } from "@agile/contracts";
+import type { Core, ReplanApproval, ReplanProposal } from "@agile/contracts";
 import { ReplanProposalSchema, SuggestionSchema } from "@agile/contracts";
 import { inMutationTransaction, type FilteredDbClient, type MutationTransactionClient } from "@agile/db";
 import type { Prisma } from "@prisma/client";
@@ -39,6 +39,7 @@ type Row = Record<string, any>;
 type Tx = MutationTransactionClient & Record<string, any>;
 
 const suggestionList = z.array(SuggestionSchema).max(100);
+type Suggestion = z.infer<typeof SuggestionSchema>;
 const iso = (value: Date | string) => value instanceof Date ? value.toISOString() : value;
 const codeOf = (error: unknown) => error instanceof Error ? error.message : "";
 
@@ -51,8 +52,6 @@ function validateSuggestions(value: unknown): Suggestion[] {
   if (!parsed.success) throw new ProposalError("VALIDATION_FAILED", { field: "suggestions" });
   const ids = parsed.data.map((suggestion) => suggestion.id);
   if (new Set(ids).size !== ids.length) throw new ProposalError("VALIDATION_FAILED", { field: "suggestionIds", message: "Suggestion IDs must be unique." });
-  const targets = parsed.data.map((suggestion) => suggestion.type === "MOVE_CHECKPOINT_DATE" ? `${suggestion.type}:${suggestion.checkpointId}` : suggestion.type === "MOVE_EPIC_TO_CHECKPOINT" ? `${suggestion.type}:${suggestion.epicId}` : `${suggestion.type}:${suggestion.taskId}`);
-  if (new Set(targets).size !== targets.length) throw new ProposalError("VALIDATION_FAILED", { field: "suggestions", message: "A domain row may only be changed once." });
   return parsed.data;
 }
 
@@ -163,7 +162,7 @@ export function createProposalService(options: { db: FilteredDbClient; core: Pic
     const projectId = input.projectId ?? await proposalHint(db, input.proposalId);
     return inMutationTransaction(db, (tx) => lockProject(tx as Tx, projectId), (tx) => projectAccess(tx as Tx, input.actorId, projectId, true), async (txInput) => {
       const tx = txInput as Tx;
-      const proposal = await lockProposal(txInput, input.proposalId) as Row | null;
+      const proposal = await lockProposal(tx, input.proposalId) as Row | null;
       if (!proposal || proposal.projectId !== projectId || proposal.kind !== "REPLAN") throw new ProposalError("NOT_FOUND");
       const payload = payloadOf(proposal.payload);
       if (proposal.status === "APPROVED") {
@@ -173,7 +172,7 @@ export function createProposalService(options: { db: FilteredDbClient; core: Pic
       }
       if (proposal.status !== "PENDING") throw new ProposalError("CONFLICT_STATE");
       if (proposal.version !== input.version) throw new ProposalError("CONFLICT_VERSION");
-      const session = await lockSession(txInput, proposal.sessionId) as Row | null;
+      const session = await lockSession(tx, proposal.sessionId) as Row | null;
       if (!session || session.feature !== "LEAD_DIGEST" || session.projectId !== projectId || session.userId !== proposal.createdBy || session.env !== environment || session.outcome !== "OPEN") throw new ProposalError("CONFLICT_STATE");
       const suggestions = validateSuggestions(payload.suggestions);
       if (!Array.isArray(input.suggestionIds) || input.suggestionIds.length > 100 || new Set(input.suggestionIds).size !== input.suggestionIds.length) throw new ProposalError("VALIDATION_FAILED", { field: "suggestionIds" });
@@ -182,7 +181,7 @@ export function createProposalService(options: { db: FilteredDbClient; core: Pic
       const chosen = selected as Suggestion[];
       await lockReferencedRows(tx, projectId, chosen);
       try {
-        await core.applyReplan(txInput, projectId, chosen, input.actorId);
+        await core.applyReplan(tx, projectId, { suggestions: chosen }, input.actorId);
       } catch (error) {
         const message = codeOf(error);
         if (message === "FORBIDDEN_ROLE") throw new ProposalError("FORBIDDEN_ROLE");
@@ -191,7 +190,7 @@ export function createProposalService(options: { db: FilteredDbClient; core: Pic
         throw error;
       }
       await tx.aiProposal.update({ where: { id: proposal.id }, data: { status: "APPROVED", appliedBy: input.actorId, appliedAt: new Date(), payload: { ...payload, appliedSuggestionIds: input.suggestionIds } as Prisma.InputJsonValue, version: proposal.version + 1 }, select: { id: true } });
-      await sessionCloser.closeInTransaction(txInput, { sessionId: session.id, proposalId: proposal.id, projectId, feature: "LEAD_DIGEST", ownerId: session.userId, outcome: "ACCEPTED", actorId: input.actorId });
+      await sessionCloser.closeInTransaction(tx, { sessionId: session.id, proposalId: proposal.id, projectId, feature: "LEAD_DIGEST", ownerId: session.userId, outcome: "ACCEPTED", actorId: input.actorId });
       return { proposalId: proposal.id, status: "APPROVED" as const, applied: input.suggestionIds };
     });
   }
@@ -200,15 +199,15 @@ export function createProposalService(options: { db: FilteredDbClient; core: Pic
     const projectId = input.projectId ?? await proposalHint(db, input.proposalId);
     return inMutationTransaction(db, (tx) => lockProject(tx as Tx, projectId), (tx) => projectAccess(tx as Tx, input.actorId, projectId, true), async (txInput) => {
       const tx = txInput as Tx;
-      const proposal = await lockProposal(txInput, input.proposalId) as Row | null;
+      const proposal = await lockProposal(tx, input.proposalId) as Row | null;
       if (!proposal || proposal.projectId !== projectId || proposal.kind !== "REPLAN") throw new ProposalError("NOT_FOUND");
       if (proposal.status !== "PENDING") throw new ProposalError("CONFLICT_STATE");
       if (proposal.version !== input.version) throw new ProposalError("CONFLICT_VERSION");
-      const session = await lockSession(txInput, proposal.sessionId) as Row | null;
+      const session = await lockSession(tx, proposal.sessionId) as Row | null;
       if (!session || session.feature !== "LEAD_DIGEST" || session.projectId !== projectId || session.userId !== proposal.createdBy || session.env !== environment || session.outcome !== "OPEN") throw new ProposalError("CONFLICT_STATE");
       if (session.userId !== input.actorId) throw new ProposalError("NOT_FOUND");
       await tx.aiProposal.update({ where: { id: proposal.id }, data: { status: "REJECTED", version: proposal.version + 1 }, select: { id: true } });
-      await sessionCloser.closeInTransaction(txInput, { sessionId: session.id, proposalId: proposal.id, projectId, feature: "LEAD_DIGEST", ownerId: session.userId, outcome: "REJECTED", actorId: input.actorId });
+      await sessionCloser.closeInTransaction(tx, { sessionId: session.id, proposalId: proposal.id, projectId, feature: "LEAD_DIGEST", ownerId: session.userId, outcome: "REJECTED", actorId: input.actorId });
       return replanView({ ...proposal, status: "REJECTED", version: proposal.version + 1 });
     });
   }
