@@ -36,11 +36,9 @@ export async function generateStandup(deps: StandupFlowDeps, caller: { userId: s
     throw error;
   }
   const window = standupActivityWindowFor(day, now);
-  let assembled: { sections: ContextSections; provenance: Provenance } = { sections: [], provenance: [] };
-  try {
-    if (window.from < window.to) assembled = await deps.ai.assembleWith(caller, "DEV_STANDUP", projectId, { window });
-    else await deps.write.requireMember(caller.userId, projectId);
-  } catch (error) {
+  let assembled: { sections: ContextSections; provenance: Provenance };
+  // An empty window (00:00 SGT, tomorrow's date) still assembles: current blockers ignore the window.
+  try { assembled = await deps.ai.assembleWith(caller, "DEV_STANDUP", projectId, { window }); } catch (error) {
     if (error instanceof NotMember || (error instanceof Error && error.message === "NOT_FOUND")) throw new Error("NOT_FOUND");
     throw error;
   }

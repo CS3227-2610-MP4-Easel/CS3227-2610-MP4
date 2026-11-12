@@ -23,7 +23,7 @@ type Opts = {
 };
 
 function harness(o: Opts = {}) {
-  const log = { runs: 0, opens: 0, regens: 0, hits: [] as any[], assembles: 0, commits: 0, upserts: 0, summaryLookups: [] as string[][], runSessions: [] as string[], openArgs: [] as any[], regenArgs: [] as any[], inTx: false, inTxDuringRun: false };
+  const log = { runs: 0, opens: 0, regens: 0, hits: [] as any[], assembles: 0, commits: 0, upserts: 0, summaryLookups: [] as string[][], runSessions: [] as string[], windows: [] as unknown[], openArgs: [] as any[], regenArgs: [] as any[], inTx: false, inTxDuringRun: false };
   let stored: any = o.row ?? null;
   const sections = o.sections ?? [sec("task-events", "line a\nline b")];
   const provenance = o.provenance ?? [];
@@ -46,7 +46,7 @@ function harness(o: Opts = {}) {
   };
   const deps: StandupFlowDeps = {
     db, write, now: () => o.now ?? NOW,
-    ai: { assembleWith: async () => { log.assembles++; if (o.assembleError) throw o.assembleError; return { sections, provenance: provenance as any }; } },
+    ai: { assembleWith: async (_c, _f, _p, opts) => { log.assembles++; log.windows.push(opts.window); if (o.assembleError) throw o.assembleError; return { sections, provenance: provenance as any }; } },
     gateway: { run: async (call: any) => { log.runs++; log.inTxDuringRun = log.inTx; log.runSessions.push(call.sessionId); return (o.run ?? (async () => okResult({ yesterday: ["m"], today: ["t"], blockers: [] })))(call); } },
     sessions: {
       open: async (i) => { log.opens++; log.openArgs.push(i); return o.open ? o.open() : `new-${log.opens}`; },
@@ -105,11 +105,19 @@ test("F4 an invalid or past date gives VALIDATION_FAILED 422", async () => {
   assert.equal(h.log.assembles, 0);
 });
 
-test("E76 empty window skips assembleWith and stores empty content", async () => {
-  const h = harness({ now: new Date("2026-11-08T16:00:00Z"), date: "2026-11-10" });
+test("E76 an empty window still assembles, so a current blocker is in the standup", async () => {
+  const at = new Date("2026-11-08T16:00:00Z");
+  const sections = [sec("blocked-tasks", "Task 7 blocked: waiting on the API key")];
+  const h = harness({ now: at, date: "2026-11-10", sections, run: async () => ({ ok: false, code: "LLM_CALL_FAILED" }) as LlmResult });
   const s = await h.call();
-  assert.equal(h.log.assembles, 0);
-  assert.deepEqual([s.content, h.log.runs, h.log.opens, s.degraded], [{ yesterday: [], today: [], blockers: [] }, 0, 1, false]);
+  assert.deepEqual(h.log.windows, [{ from: at, to: at }]);
+  assert.deepEqual([s.content, h.log.runs, s.degraded], [{ yesterday: [], today: [], blockers: ["Task 7 blocked: waiting on the API key"] }, 1, true]);
+});
+
+test("E76 an empty window with no blockers stores empty content without a run", async () => {
+  const h = harness({ now: new Date("2026-11-08T16:00:00Z"), date: "2026-11-10", sections: [] });
+  const s = await h.call();
+  assert.deepEqual([s.content, h.log.assembles, h.log.runs, h.log.opens, s.degraded], [{ yesterday: [], today: [], blockers: [] }, 1, 0, 1, false]);
 });
 
 test("E27 a changed input regenerates the stored session and bumps the version", async () => {
@@ -218,10 +226,10 @@ test("NotMember from assembleWith becomes NOT_FOUND with no session, run or writ
   assert.deepEqual([h.log.opens, h.log.regens, h.log.runs, h.log.commits, h.stored()], [0, 0, 0, 0, null]);
 });
 
-test("E76 a non-member on the empty-window path gets NOT_FOUND with no session", async () => {
-  const h = harness({ now: new Date("2026-11-08T16:00:00Z"), date: "2026-11-10", member: false });
+test("E76 a non-member with an empty window gets NOT_FOUND with no session", async () => {
+  const h = harness({ now: new Date("2026-11-08T16:00:00Z"), date: "2026-11-10", assembleError: new NotMember(U, P) });
   await assert.rejects(h.call(), { message: "NOT_FOUND" });
-  assert.deepEqual([h.log.assembles, h.log.opens, h.log.regens, h.log.runs, h.log.commits, h.stored()], [0, 0, 0, 0, 0, null]);
+  assert.deepEqual([h.log.assembles, h.log.opens, h.log.regens, h.log.runs, h.log.commits, h.stored()], [1, 0, 0, 0, 0, null]);
 });
 
 test("F4 a malformed date gives 422 before assemble, open or run", async () => {
