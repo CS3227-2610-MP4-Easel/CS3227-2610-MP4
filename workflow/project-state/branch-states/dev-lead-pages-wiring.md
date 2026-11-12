@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** project operator
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-12 by Codex — Gate 1 approved; implementation plan pending Gate 2
+- **Last updated:** 2026-11-12 by Codex — Gate 2 approved; implementation starting at Wave 1
 
 **Untouched:** Architecture, Conventions, Known Gaps, Decisions, Deviations
 
@@ -26,13 +26,14 @@ pages. W14 sprint/re-plan interactions remain out of scope.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W5 | Active | Gate 1 approved; preparing the W5 implementation plan | Review and approve the plan at Gate 2 before implementation | 2026-11-12 |
+| S1 | 2026-11-12 | Codex | W5 | Active | Gate 2 approved; executing Wave 1 tasks T1 and T2 | Implement T1 and T2, then dispatch Wave 2 | 2026-11-12 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human` (name the question).
 
 **Remaining** — work no session has claimed, in order.
 
 - [x] Obtain Gate 1 approval for the revised W5 UI design spec covering blockers 1–7.
+- [x] Obtain Gate 2 approval for the five-task W5 implementation plan.
 - [ ] Implement approved W5 frontend API clients and screen wiring.
 - [ ] Add focused frontend coverage and run full verification.
 
@@ -40,7 +41,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human` (name the ques
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W5 | Core planning (projects to tasks) | Spec’d | `workflow/specs/2026-11-12-w5-dev-lead-ui-design.md` (approved 2026-11-12) | — | Approved W5 Dev Lead UI scope; implementation plan pending Gate 2 | — |
+| W5 | Core planning (projects to tasks) | Building | `workflow/specs/2026-11-12-w5-dev-lead-ui-design.md` (approved 2026-11-12) | `workflow/plans/2026-11-12-w5-dev-lead-ui-wiring/plan.md` (approved 2026-11-12) | Wave 1 in flight: T1 route/error seam and T2 typed clients | — |
 | W8 | Dev Lead facts and digest | In review | — | — | Existing Health wiring retained on branch | — |
 
 ## 3. Changes
