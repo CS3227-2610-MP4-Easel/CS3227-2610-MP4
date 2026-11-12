@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError, addCheckpoint_13, createCheckpointLive_13, healthOf, listCheckpointsLive_12, useDb, type LiveCheckpoint } from '../../lib/api';
 import { useProjectRoute } from '../../lib/api/project-mode';
 import { useRouter } from 'next/navigation';
@@ -43,11 +43,18 @@ function LiveCheckpointCards({ projectId }: { projectId: string }) {
   const [rows, setRows] = useState<LiveCheckpoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const load = () => { setLoading(true); listCheckpointsLive_12(projectId).then(setRows).catch((e) => setError(e instanceof ApiError ? e.message : 'Something went wrong.')).finally(() => setLoading(false)); };
-  useEffect(() => { load(); const onChange = () => load(); window.addEventListener('easel-checkpoints-changed', onChange); return () => window.removeEventListener('easel-checkpoints-changed', onChange); }, [projectId]);
+  const generation = useRef(0);
+  const load = useCallback(() => {
+    const request = ++generation.current;
+    let active = true;
+    setLoading(true); setError('');
+    listCheckpointsLive_12(projectId).then((next) => { if (active && request === generation.current) setRows(next); }).catch((e) => { if (active && request === generation.current) setError(e instanceof ApiError ? e.message : 'Something went wrong.'); }).finally(() => { if (active && request === generation.current) setLoading(false); });
+    return () => { active = false; };
+  }, [projectId]);
+  useEffect(() => { const cancel = load(); const onChange = () => { void load(); }; window.addEventListener('easel-checkpoints-changed', onChange); return () => { cancel?.(); window.removeEventListener('easel-checkpoints-changed', onChange); }; }, [load]);
   if (loading) return <div className="card"><div className="sk" style={{ width: '45%' }} /><div className="sk" style={{ marginTop: 10 }} /></div>;
-  if (error) return <div className="banner b-bad"><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg><span>{error}</span></div>;
-  return <>{rows.map((checkpoint) => <article className="card" key={checkpoint.id}><div className="row wrap between"><div className="row"><svg className="ic lg muted" aria-hidden="true"><use href="#i-flag" /></svg><h3 style={{ margin: 0 }}>{checkpoint.name}</h3></div></div><div className="row wrap" style={{ gap: 24, margin: '8px 0 12px' }}><span><span className="muted">Target </span><b className="num">{fmtFull(checkpoint.targetDate)}</b></span></div><div className="pill-list"><span className="muted">No linked epics in checkpoint response.</span></div></article>)}{rows.length === 0 && <div className="card"><b>No checkpoints yet.</b> <span className="muted">A checkpoint is a date the team commits to.</span></div>}</>;
+  if (error) return <div className="banner b-bad"><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg><span>{error}</span><button className="btn sm" type="button" onClick={() => { void load(); }}>Try again</button></div>;
+  return <>{rows.map((checkpoint) => <article className="card" key={checkpoint.id}><div className="row wrap between"><div className="row"><svg className="ic lg muted" aria-hidden="true"><use href="#i-flag" /></svg><h3 style={{ margin: 0 }}>{checkpoint.name}</h3></div></div><div className="row wrap" style={{ gap: 24, margin: '8px 0 12px' }}><span><span className="muted">Target </span><b className="num">{fmtFull(checkpoint.targetDate)}</b></span></div><div className="pill-list"><span className="muted">No linked epics in checkpoint response.</span></div></article>)}{rows.length === 0 && <div className="card"><b>No checkpoints yet.</b> <span className="muted">This project has no checkpoints yet. Add one to track a committed date.</span></div>}</>;
 }
 
 // Add-checkpoint form (endpoint 13).

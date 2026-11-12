@@ -1,5 +1,5 @@
 'use client';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { A, r, useRoute } from '../../lib/nav';
 import { ApiError, deleteTask_25, getTaskLive_22, setTaskStatus_24, setTaskStatusLive_24, updateTaskLive_23, updateTask_23, useDb, type LiveTask, type TaskStatus } from '../../lib/api';
@@ -27,25 +27,37 @@ function LiveDrawer({ taskId, projectId }: { taskId: string; projectId: string }
   const [task, setTask] = useState<LiveTask | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [missing, setMissing] = useState(false);
+  const generation = useRef(0);
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
   const [pts, setPts] = useState('');
   const [err, setErr] = useState('');
-  const load = () => {
+  const load = useCallback(() => {
+    const request = ++generation.current;
+    let active = true;
     setLoading(true);
     setLoadError('');
+    setMissing(false);
     setTask(null);
     getTaskLive_22(taskId).then((next) => {
-      if (!next) { setLoadError('This task could not be loaded.'); return; }
-      if (next.projectId !== projectId) { setLoadError('This task is not in the selected project.'); return; }
+      if (!active || request !== generation.current) return;
+      if (!next || next.projectId !== projectId) { setMissing(true); return; }
       setTask(next);
-    }).catch((e) => setLoadError(e instanceof ApiError ? e.message : 'Something went wrong.')).finally(() => setLoading(false));
-  };
-  useEffect(() => { load(); }, [taskId, projectId]);
+    }).catch((e) => {
+      if (!active || request !== generation.current) return;
+      if (e instanceof ApiError && (e.status === 404 || e.code === 'NOT_FOUND')) setMissing(true);
+      else setLoadError(e instanceof ApiError ? e.message : 'Something went wrong.');
+    }).finally(() => {
+      if (active && request === generation.current) setLoading(false);
+    });
+    return () => { active = false; };
+  }, [taskId, projectId]);
+  useEffect(() => load(), [load]);
   if (loading) return <aside className="drawer" role="dialog" aria-modal="true"><div className="sk" style={{ width: '60%' }} /><div className="sk" style={{ marginTop: 12 }} /></aside>;
   if (loadError) return <aside className="drawer" role="dialog" aria-modal="true"><h2>Unable to load task</h2><p className="muted">{loadError}</p><button className="btn p" type="button" onClick={load}>Try again</button></aside>;
-  if (!task) return <aside className="drawer" role="dialog" aria-modal="true"><h2>Task not found</h2><p className="muted">This task is unavailable.</p><A className="btn" href={r('Board.dc.html')}>Back to the board</A></aside>;
+  if (missing || !task) return <aside className="drawer" role="dialog" aria-modal="true"><h2>Task not found</h2><p className="muted">This task is unavailable.</p><A className="btn" href={r('Board.dc.html')}>Back to the board</A></aside>;
   const canMutate = role === 'lead' || (role === 'dev' && task.assigneeId === session?.user?.id);
   const save = async () => {
     try { const updated = await updateTaskLive_23(task.id, { title, description: desc, storyPoints: pts ? Number(pts) as any : null, version: task.version }); setTask(updated); setEditing(false); setErr(''); window.dispatchEvent(new Event('easel-board-refresh')); toast('Task saved.'); }
@@ -57,6 +69,7 @@ function LiveDrawer({ taskId, projectId }: { taskId: string; projectId: string }
     catch (e) { setErr(e instanceof ApiError ? e.message : 'Something went wrong.'); }
   };
   return <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="tt"><div className="row between"><span className="small muted">Epic {task.epicId}</span><div className="row">{canMutate && !editing && <button className="btn sm" onClick={() => { setTitle(task.title); setDesc(task.description ?? ''); setPts(task.storyPoints ? String(task.storyPoints) : ''); setEditing(true); }}>Edit</button>}{canMutate && editing && <button className="btn sm p" onClick={save}>Save</button>}<A className="btn g sm ib" href={r('Board.dc.html')} aria-label="Close"><svg className="ic" aria-hidden="true"><use href="#i-x" /></svg></A></div></div>
+    {err && <div className="banner b-bad" role="alert"><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg><span>{err}</span><button className="btn sm" type="button" onClick={load}>Reload</button></div>}
     {editing ? <div className="field"><input className={`in${err ? ' err' : ''}`} aria-label="Title" value={title} onChange={(e) => setTitle(e.target.value)} />{err && <span className="err-t">{err}</span>}</div> : <h2 id="tt">{task.title}</h2>}
     <div className="row wrap"><StatusChip status={status} />{task.blocked && <span className="chip c-bad"><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg>Blocked</span>}</div>
     {task.blocked && <div className="banner b-bad"><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg><div><div className="b">Blocked</div>{task.blockedReason || 'This task is blocked.'}</div></div>}

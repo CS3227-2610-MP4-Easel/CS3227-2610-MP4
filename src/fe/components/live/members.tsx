@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { A } from '../../lib/nav';
 import { ApiError, addMember_10, addMemberLive_10, listMembersLive_9, useDb, type LiveMember, type Member } from '../../lib/api';
 import { useProjectRoute } from '../../lib/api/project-mode';
@@ -15,13 +15,19 @@ export function MemberTable({ canRemove, removeRole, wide = false }: { canRemove
   const db = useDb();
   const [liveMembers, setLiveMembers] = useState<LiveMember[]>([]);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const generation = useRef(0);
   useEffect(() => {
     if (route.mode !== 'live' || !route.projectId) return;
     let current = true;
-    const load = () => listMembersLive_9(route.projectId!).then((members) => {
+    const load = () => {
+      const request = ++generation.current;
+      setLoading(true); setError('');
+      return listMembersLive_9(route.projectId!).then((members) => {
       const unique = [...new Map(members.map((member) => [member.userId, member])).values()];
-      if (current) setLiveMembers(unique);
-    }).catch((e) => current && setError(e instanceof ApiError ? e.message : 'Something went wrong.'));
+      if (current && request === generation.current) setLiveMembers(unique);
+    }).catch((e) => { if (current && request === generation.current) setError(e instanceof ApiError ? e.message : 'Something went wrong.'); }).finally(() => { if (current && request === generation.current) setLoading(false); });
+    };
     load();
     window.addEventListener('easel-members-changed', load);
     return () => { current = false; window.removeEventListener('easel-members-changed', load); };
@@ -30,10 +36,11 @@ export function MemberTable({ canRemove, removeRole, wide = false }: { canRemove
   const rows = live ? liveMembers : db.members;
   return <section className="card pad0" style={{ flex: wide ? '1 1 100%' : '2 1 460px', minWidth: 0 }}>
     <div className="ch"><h3 style={{ margin: 0 }}>Members</h3><span className="small muted">{rows.length} people</span></div>
-    {error && <div className="banner b-bad"><span>{error}</span></div>}
-    <table className="tbl"><thead><tr><th>Name</th><th>Role</th><th>Email</th><th className="r"><span style={{ position: 'absolute', left: '-9999px' }}>Actions</span></th></tr></thead><tbody>
+    {error && <div className="banner b-bad"><span>{error}</span><button className="btn sm" type="button" onClick={() => window.dispatchEvent(new Event('easel-members-changed'))}>Try again</button></div>}
+    {loading && live ? <div className="card"><div className="sk" style={{ width: '40%' }} /></div> : <table className="tbl"><thead><tr><th>Name</th><th>Role</th><th>Email</th><th className="r"><span style={{ position: 'absolute', left: '-9999px' }}>Actions</span></th></tr></thead><tbody>
       {live ? liveMembers.map((member, i) => <tr key={member.userId}><td><div className="row"><span className={`av ${AV[i % 4]}`}>{ini(member.displayName)}</span><b>{member.displayName}</b></div></td><td><RoleBadge role={ROLE[member.role]} /></td><td className="muted">{member.userId}</td><td className="r" /></tr>) : db.members.map((member, i) => <tr key={member.id}><td><div className="row"><span className={`av ${AV[i % 4]}`}>{ini(member.name)}</span><b>{member.name}</b></div></td><td><RoleBadge role={ROLE[member.role]} /></td><td className="muted">{member.email}</td><td className="r">{canRemove && member.role === removeRole && <A className="btn g sm" href={`/projects/p1/members?view=remove&member=${member.id}`} style={{ color: 'var(--danger)' }}>Remove</A>}</td></tr>)}
-    </tbody></table>
+      {live && !liveMembers.length && <tr><td colSpan={4}><span className="muted">No members are assigned to this project yet.</span></td></tr>}
+    </tbody></table>}
   </section>;
 }
 

@@ -140,7 +140,7 @@ function LiveBoard({ projectId, role = 'lead', archived = false }: { projectId: 
         </div>
         {role === 'lead' && !archived && <A className="btn p" href={r('BacklogAddTask.dc.html')}><svg className="ic" aria-hidden="true"><use href="#i-plus" /></svg>Add task</A>}
       </div>
-      {error && <div className="banner b-bad"><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg><span>{error}</span></div>}
+      {error && <div className="banner b-bad"><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg><span>{error}</span><button className="btn sm" type="button" onClick={() => { void load(); }}>Try again</button></div>}
       {loading ? <div className="cols"><div className="col"><div className="sk" /><div className="tcard"><div className="sk" /><div className="sk" /></div></div></div> : (
         <div className="cols" style={css(`grid-template-columns: repeat(${Math.max(grouped.length, 1)}, minmax(0, 1fr))`)}>
           {grouped.map((column) => <section className="col" aria-label={column.label} key={column.status}>

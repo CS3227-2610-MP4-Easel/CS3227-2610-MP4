@@ -2,11 +2,13 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProjectRouteContext, projectRoute } from '../lib/api/project-mode';
 import { RoleCtx } from '../lib/nav';
+import { ApiError } from '../lib/api';
 
 const listTasks = vi.fn();
 const listEpics = vi.fn();
 const listMembers = vi.fn();
 const listCheckpoints = vi.fn();
+const createCheckpoint = vi.fn();
 const getTask = vi.fn();
 const updateTask = vi.fn();
 const setStatus = vi.fn();
@@ -28,6 +30,7 @@ vi.mock('../lib/api', async () => {
     listEpicsLive_16: (...args: unknown[]) => listEpics(...args),
     listMembersLive_9: (...args: unknown[]) => listMembers(...args),
     listCheckpointsLive_12: (...args: unknown[]) => listCheckpoints(...args),
+    createCheckpointLive_13: (...args: unknown[]) => createCheckpoint(...args),
     getTaskLive_22: (...args: unknown[]) => getTask(...args),
     updateTaskLive_23: (...args: unknown[]) => updateTask(...args),
     setTaskStatusLive_24: (...args: unknown[]) => setStatus(...args),
@@ -46,6 +49,7 @@ import { MemberTable, AddMember } from '../components/live/members';
 import { AddTaskForm } from '../components/live/forms';
 import BacklogList from '../components/live/backlog-list';
 import TaskDrawer from '../components/live/task-drawer';
+import { AddCheckpointForm, CheckpointCards } from '../components/live/checkpoints';
 
 const PROJECT = '550e8400-e29b-41d4-a716-446655440000';
 const route = projectRoute(`/projects/${PROJECT}/board`);
@@ -65,6 +69,7 @@ beforeEach(() => {
   listEpics.mockReset().mockResolvedValue({ items: [{ id: 'epic-1', projectId: PROJECT, checkpointId: null, title: 'Live epic', description: null, position: 0, taskCount: 1, pointsTotal: 3, createdAt: '', updatedAt: '', version: 1 }], page: 0, size: 100, total: 1 });
   listMembers.mockReset().mockResolvedValue([{ userId: 'user-1', displayName: 'Ada Lead', role: 'DEVELOPER', addedAt: '' }, { userId: 'user-1', displayName: 'Ada Lead', role: 'DEVELOPER', addedAt: '' }]);
   listCheckpoints.mockReset().mockResolvedValue([]);
+  createCheckpoint.mockReset().mockResolvedValue({ id: 'checkpoint-1', projectId: PROJECT, name: 'Launch', targetDate: '2026-12-01', createdAt: '', updatedAt: '', version: 1 });
   getTask.mockReset().mockResolvedValue(task);
   updateTask.mockReset().mockResolvedValue({ ...task, title: 'Saved task', version: 5 });
   setStatus.mockReset().mockResolvedValue({ ...task, status: 'IN_PROGRESS', version: 5 });
@@ -101,6 +106,15 @@ describe('W5 live planning surfaces', () => {
     expect(listTasks.mock.calls.length).toBeGreaterThan(before);
   });
 
+  it('F5 E13 sends live Mark blocked for the selected task with its version', async () => {
+    render(liveView(<BoardView role="lead" />));
+    expect(await screen.findByText('Live task')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Change status' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Mark blocked' }));
+    await act(async () => {});
+    expect(setStatus).toHaveBeenCalledWith('task-1', expect.objectContaining({ blocked: true, blockedReason: 'Blocked', version: 4 }));
+  });
+
   it('F7 E10 E12 loads and reloads live members without a remove control', async () => {
     render(liveView(<><MemberTable canRemove removeRole="DEVELOPER" /><AddMember role="DEVELOPER" label="Developer" /></>));
     expect(await screen.findByText('Ada Lead')).toBeTruthy();
@@ -130,6 +144,30 @@ describe('W5 live planning surfaces', () => {
     expect(createTask.mock.calls[0][1]).not.toHaveProperty('sprintId');
   });
 
+  it('F8 E4 persists live checkpoint form values on conflict and does not auto-retry', async () => {
+    createCheckpoint.mockRejectedValue(new ApiError('CONFLICT_VERSION', 'This changed elsewhere. Reload before trying again.', { status: 409 }));
+    render(liveView(<AddCheckpointForm />));
+    fireEvent.change(document.getElementById('cn')!, { target: { value: 'Launch' } });
+    fireEvent.change(document.getElementById('cd')!, { target: { value: '2026-12-01' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    await act(async () => {});
+    expect(createCheckpoint).toHaveBeenCalledTimes(1);
+    expect(screen.getByDisplayValue('Launch')).toBeTruthy();
+    expect(screen.getByDisplayValue('2026-12-01')).toBeTruthy();
+  });
+
+  it('F4 E9 keeps failed live task creation open without a phantom row or retry', async () => {
+    createTask.mockRejectedValue(new ApiError('VALIDATION_FAILED', 'Check the highlighted fields.', { status: 422 }));
+    render(liveView(<AddTaskForm />));
+    expect(await screen.findByRole('option', { name: 'Live epic' })).toBeTruthy();
+    fireEvent.change(document.getElementById('t1')!, { target: { value: 'Rejected task' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
+    await act(async () => {});
+    expect(createTask).toHaveBeenCalledTimes(1);
+    expect(screen.getByDisplayValue('Rejected task')).toBeTruthy();
+    expect(screen.queryByText('Rejected task', { selector: '.t' })).toBeNull();
+  });
+
   it('F5 E11 E13 reads and updates a live task with its server version and no sprintId', async () => {
     render(liveView(<TaskDrawer />));
     expect(await screen.findByRole('heading', { name: 'Live task' })).toBeTruthy();
@@ -145,6 +183,18 @@ describe('W5 live planning surfaces', () => {
     expect(screen.getByRole('link', { name: 'Close' }).getAttribute('href')).toBe(`/projects/${PROJECT}/board`);
   });
 
+  it('E7 keeps task mutation conflicts visible with an explicit reload action', async () => {
+    updateTask.mockRejectedValue(new ApiError('CONFLICT_VERSION', 'This changed elsewhere. Reload before trying again.', { status: 409 }));
+    render(liveView(<TaskDrawer />));
+    expect(await screen.findByRole('heading', { name: 'Live task' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await act(async () => {});
+    expect(screen.getByRole('alert').textContent).toContain('This changed elsewhere. Reload before trying again.');
+    expect(screen.getByRole('button', { name: 'Reload' })).toBeTruthy();
+    expect(updateTask).toHaveBeenCalledTimes(1);
+  });
+
   it('E7 shows a safe retryable task-load error and rejects a task from another project', async () => {
     getTask.mockRejectedValueOnce(new Error('server detail must stay hidden'));
     render(liveView(<TaskDrawer projectId={PROJECT} />));
@@ -153,7 +203,38 @@ describe('W5 live planning surfaces', () => {
     expect(screen.queryByText('server detail must stay hidden')).toBeNull();
     getTask.mockResolvedValueOnce({ ...task, projectId: '550e8400-e29b-41d4-a716-446655440001' });
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
-    expect(await screen.findByText('This task is not in the selected project.')).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Task not found' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+  });
+
+  it('E7 treats a live 404 and a project mismatch as the same normal missing-task result', async () => {
+    getTask.mockRejectedValueOnce(new ApiError('NOT_FOUND', 'This project or task was not found.', { status: 404 }));
+    render(liveView(<TaskDrawer projectId={PROJECT} />));
+    expect(await screen.findByRole('heading', { name: 'Task not found' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+    expect(screen.queryByText('This project or task was not found.')).toBeNull();
+  });
+
+  it('E3 ignores stale task responses after the live route changes', async () => {
+    let resolveA!: (value: typeof task) => void;
+    let resolveB!: (value: typeof task) => void;
+    getTask.mockImplementationOnce(() => new Promise((resolve) => { resolveA = resolve; })).mockImplementationOnce(() => new Promise((resolve) => { resolveB = resolve; }));
+    const rendered = render(<ProjectRouteContext.Provider value={projectRoute(`/projects/${PROJECT}`)}><RoleCtx.Provider value="lead"><TaskDrawer projectId={PROJECT} /></RoleCtx.Provider></ProjectRouteContext.Provider>);
+    rendered.rerender(<ProjectRouteContext.Provider value={projectRoute('/projects/550e8400-e29b-41d4-a716-446655440001')}><RoleCtx.Provider value="lead"><TaskDrawer projectId="550e8400-e29b-41d4-a716-446655440001" /></RoleCtx.Provider></ProjectRouteContext.Provider>);
+    await act(async () => { resolveA({ ...task, title: 'Stale task' } as any); });
+    expect(screen.queryByText('Stale task')).toBeNull();
+    await act(async () => { resolveB({ ...task, projectId: '550e8400-e29b-41d4-a716-446655440001', title: 'Current task' } as any); });
+    expect(screen.getByRole('heading', { name: 'Current task' })).toBeTruthy();
+  });
+
+  it('E4 shows checkpoint loading and retries a safe list error', async () => {
+    listCheckpoints.mockRejectedValueOnce(new Error('server details must stay hidden')).mockResolvedValueOnce([]);
+    render(liveView(<CheckpointCards showRisk />));
+    expect(await screen.findByRole('button', { name: 'Try again' })).toBeTruthy();
+    expect(screen.queryByText('server details must stay hidden')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByText('No checkpoints yet.')).toBeTruthy();
+    expect(listCheckpoints).toHaveBeenCalledTimes(2);
   });
 
   it('E14 keeps PM live board and task drawer read-only', async () => {

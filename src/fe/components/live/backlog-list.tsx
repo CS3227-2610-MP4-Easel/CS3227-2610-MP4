@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { A, useRoute } from '../../lib/nav';
 import { ApiError, listCheckpointsLive_12, listEpicsLive_16, listTasksLive_20, useDb, type LiveCheckpoint, type LiveEpic, type LiveTask } from '../../lib/api';
 import { useProjectRoute } from '../../lib/api/project-mode';
@@ -29,22 +29,26 @@ function LiveBacklogList({ projectId }: { projectId: string }) {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  useEffect(() => {
+  const generation = useRef(0);
+  const load = useCallback(() => {
+    const request = ++generation.current;
     let current = true;
     setLoading(true); setError('');
     Promise.all([listEpicsLive_16(projectId, 0, 100), listTasksLive_20(projectId, page, 20), listCheckpointsLive_12(projectId)]).then(([epicPage, taskPage, checkpointRows]) => {
-      if (!current) return;
+      if (!current || request !== generation.current) return;
       setEpics(epicPage.items); setTasks(taskPage.items); setTotal(taskPage.total); setCheckpoints(checkpointRows);
-    }).catch((e) => current && setError(e instanceof ApiError ? e.message : 'Something went wrong.')).finally(() => current && setLoading(false));
+    }).catch((e) => current && request === generation.current && setError(e instanceof ApiError ? e.message : 'Something went wrong.')).finally(() => current && request === generation.current && setLoading(false));
     return () => { current = false; };
   }, [projectId, page]);
+  useEffect(() => load(), [load]);
   const grouped = useMemo(() => epics.map((epic) => ({ epic, tasks: tasks.filter((task) => task.epicId === epic.id) })), [epics, tasks]);
   if (loading) return <div className="card"><div className="sk" style={{ width: '40%' }} /><div className="sk" style={{ marginTop: 12 }} /></div>;
-  if (error) return <div className="banner b-bad"><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg><span>{error}</span></div>;
-  return <>{grouped.map(({ epic, tasks: epicTasks }) => { const checkpoint = checkpoints.find((item) => item.id === epic.checkpointId); return <section className="card pad0" key={epic.id}>
+  if (error) return <div className="banner b-bad"><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg><span>{error}</span><button className="btn sm" type="button" onClick={() => { void load(); }}>Try again</button></div>;
+  const visibleGroups = page === 0 ? grouped : grouped.filter(({ tasks: epicTasks }) => epicTasks.length > 0);
+  return <>{visibleGroups.map(({ epic, tasks: epicTasks }) => { const checkpoint = checkpoints.find((item) => item.id === epic.checkpointId); return <section className="card pad0" key={epic.id}>
     <div className="ch" style={{ background: 'var(--head)', borderRadius: '12px 12px 0 0' }}><div className="row"><svg className="ic" aria-hidden="true"><use href="#i-down" /></svg><h3 style={{ margin: 0 }}>{epic.title}</h3>{checkpoint && <span className="chip c-acc"><svg className="ic" aria-hidden="true"><use href="#i-flag" /></svg>{checkpoint.name}</span>}</div><div className="row"><span className="small muted">{epic.taskCount} task{epic.taskCount === 1 ? '' : 's'} · {epic.pointsTotal} pts</span></div></div>
     {epicTasks.length ? epicTasks.map((task) => <LiveTaskRow task={task} key={task.id} />) : <div className="trow"><span className="small muted">No tasks in this epic yet.</span></div>}
-  </section>; })}{epics.length === 0 && total === 0 && <div className="card"><b>The backlog is empty.</b></div>}{epics.length === 0 && total > 0 && <div className="card"><span className="muted">No tasks on this page.</span></div>}
+  </section>; })}{visibleGroups.length === 0 && total === 0 && <div className="card"><b>The backlog is empty.</b></div>}{visibleGroups.length === 0 && total > 0 && <div className="card"><span className="muted">No tasks on this page.</span></div>}
   <div className="row between"><span className="small muted">Page {page + 1} of {Math.max(1, Math.ceil(total / 20))}</span><div className="row"><button className="btn sm" disabled={page === 0} onClick={() => setPage((current) => current - 1)}>Previous</button><button className="btn sm" disabled={(page + 1) * 20 >= total} onClick={() => setPage((current) => current + 1)}>Next</button></div></div></>;
 }
 

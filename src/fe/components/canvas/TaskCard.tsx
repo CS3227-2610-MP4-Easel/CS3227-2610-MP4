@@ -22,13 +22,13 @@ export default function TaskCard(props: any = {}) {
   const editable = solo || props.editable !== 'no';
   const assignee = props.assigneeName || (who ? who[2] : '');
   const initials = assignee ? assignee.split(/\s+/).filter(Boolean).slice(0, 2).map((part: string) => part[0]).join('').toUpperCase() : '';
-  const changeStatus = async (next: string, unblock = false) => {
+  const changeStatus = async (next: string, options: { unblock?: boolean; blocked?: boolean; blockedReason?: string } = {}) => {
     if (!props.id || busy) return;
     setBusy(true);
     try {
       const updated = live
-        ? await setTaskStatusLive_24(props.id, { status: ({ todo: 'TODO', prog: 'IN_PROGRESS', rev: 'IN_REVIEW', done: 'DONE' } as any)[next], blocked: unblock ? false : !!props.blocked, blockedReason: unblock ? null : undefined, version: props.version })
-        : await setTaskStatus_24(props.id, next, unblock ? '' : undefined);
+        ? await setTaskStatusLive_24(props.id, { status: ({ todo: 'TODO', prog: 'IN_PROGRESS', rev: 'IN_REVIEW', done: 'DONE' } as any)[next], blocked: options.unblock ? false : options.blocked ?? !!props.blocked, blockedReason: options.unblock ? null : options.blockedReason, version: props.version })
+        : await setTaskStatus_24(props.id, next, options.unblock ? '' : options.blockedReason);
       props.onStatus?.(updated);
       setOpen(false);
     } catch (e) {
@@ -44,7 +44,7 @@ export default function TaskCard(props: any = {}) {
       {open && <div className="card" role="menu" style={{ position: 'absolute', right: 8, top: 40, zIndex: 8, width: 190, padding: 6, boxShadow: '0 8px 24px rgba(0,0,0,.25)' }}>
         {rows.map((row) => <Fragment key={row.key}><div className="row" role="menuitem" tabIndex={0} style={{ padding: '6px 8px', cursor: busy ? 'wait' : 'pointer' }} onClick={() => changeStatus(row.key)}><svg className="ic" aria-hidden="true"><use href={row.icon} /></svg>{row.label}<span className="sp" />{row.cur && <svg className="ic" aria-hidden="true"><use href="#i-check" /></svg>}</div></Fragment>)}
         <hr className="hr" style={{ margin: '4px 0' }} />
-        {blocked ? <div className="row" role="menuitem" tabIndex={0} style={{ padding: '6px 8px', cursor: busy ? 'wait' : 'pointer' }} onClick={() => changeStatus(status, true)}><svg className="ic" aria-hidden="true"><use href="#i-check" /></svg>Unblock</div> : <A href={r('BoardBlocked.dc.html')} className="row" role="menuitem" style={{ padding: '6px 8px', color: 'var(--danger)' }}><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg>Mark blocked</A>}
+        {blocked ? <div className="row" role="menuitem" tabIndex={0} style={{ padding: '6px 8px', cursor: busy ? 'wait' : 'pointer' }} onClick={() => changeStatus(status, { unblock: true })}><svg className="ic" aria-hidden="true"><use href="#i-check" /></svg>Unblock</div> : live ? <div className="row" role="menuitem" tabIndex={0} style={{ padding: '6px 8px', cursor: busy ? 'wait' : 'pointer', color: 'var(--danger)' }} onClick={() => changeStatus(status, { blocked: true, blockedReason: 'Blocked' })}><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg>Mark blocked</div> : <A href={r('BoardBlocked.dc.html')} className="row" role="menuitem" style={{ padding: '6px 8px', color: 'var(--danger)' }}><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg>Mark blocked</A>}
       </div>}
     </article>
   </div>;
