@@ -2,7 +2,8 @@
 // Generated from the design canvas page ProjectHead.dc.html. Source of truth from here on is this file.
 import { Fragment } from 'react';
 import { A, css, r, useRole } from '../../lib/nav';
-import { useDb } from '../../lib/api';
+import { isLive, useDb } from '../../lib/api';
+import { useLiveProject } from '../live/project-hooks';
 
 
 class Logic {
@@ -33,6 +34,9 @@ return { archived: arch, notArchived: !arch, tabs: all.filter((x) => x.roles.inc
 export default function ProjectHead(props: any = {}) {
   const role = useRole();
   const db = useDb();
-  const v = new Logic({ ...props, role, archived: props.archived || db.project.status === 'ARCHIVED' ? 'yes' : '' }).renderVals();
-  return (<><div className="phead" style={{margin: "0", borderTopLeftRadius: "8px", borderTopRightRadius: "8px", borderBottomRightRadius: "10px", borderBottomLeftRadius: "10px"}}><div className="row wrap" style={{width: "1065px"}}><h1>Campus Eats Mobile App</h1>{" "}{v.archived ? (<><span className="chip c-line"><svg className="ic" aria-hidden="true"><use href="#i-lock" /></svg>Archived</span></>) : null}{" "}{v.notArchived ? (<><span className="chip c-ok"><svg className="ic" aria-hidden="true"><use href="#i-check" /></svg>Active</span></>) : null}</div>{" "}<nav className="tabs" aria-label="Project">{(v.tabs || []).map((L_t: any, i_t: number) => (<Fragment key={i_t}><A href={r(L_t.href)} className={L_t.cls}>{L_t.label}</A></Fragment>))}</nav></div></>);
+  const liveProject = useLiveProject();
+  const live = isLive();
+  const archived = live ? liveProject?.status === 'ARCHIVED' : db.project.status === 'ARCHIVED';
+  const v = new Logic({ ...props, role, archived: props.archived || archived ? 'yes' : '' }).renderVals();
+  return (<><div className="phead" style={{margin: "0", borderTopLeftRadius: "8px", borderTopRightRadius: "8px", borderBottomRightRadius: "10px", borderBottomLeftRadius: "10px"}}><div className="row wrap" style={{width: "1065px"}}><h1>{live ? (liveProject ? liveProject.name : 'Loading…') : 'Campus Eats Mobile App'}</h1>{" "}{v.archived ? (<><span className="chip c-line"><svg className="ic" aria-hidden="true"><use href="#i-lock" /></svg>Archived</span></>) : null}{" "}{v.notArchived ? (<><span className="chip c-ok"><svg className="ic" aria-hidden="true"><use href="#i-check" /></svg>Active</span></>) : null}</div>{" "}<nav className="tabs" aria-label="Project">{(v.tabs || []).map((L_t: any, i_t: number) => (<Fragment key={i_t}><A href={r(L_t.href)} className={L_t.cls}>{L_t.label}</A></Fragment>))}</nav></div></>);
 }

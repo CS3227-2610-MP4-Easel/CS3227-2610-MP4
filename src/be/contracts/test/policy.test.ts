@@ -4,11 +4,11 @@ import { test } from "node:test";
 import { getPolicyMap, translateRoleAlias, type PolicyEntry } from "../src/policy.js";
 import { validateRouteRegistration, type RouteDefinition } from "../src/routes.js";
 
-test("F3 policy map contains exactly 60 unique normative entries", () => {
+test("F3 policy map contains exactly 61 unique normative entries", () => {
   const policies = getPolicyMap();
-  assert.equal(policies.length, 60);
-  assert.equal(new Set(policies.map((policy) => policy.policyKey)).size, 60);
-  assert.equal(new Set(policies.map((policy) => `${policy.method} ${policy.path}`)).size, 60);
+  assert.equal(policies.length, 61);
+  assert.equal(new Set(policies.map((policy) => policy.policyKey)).size, 61);
+  assert.equal(new Set(policies.map((policy) => `${policy.method} ${policy.path}`)).size, 61);
 });
 
 test("W1 conventions keep operation identifiers stable and uppercase", () => {

@@ -1,0 +1,16 @@
+{
+  "task": "T6",
+  "status": "done",
+  "summary": "Implemented plan-wide expansion, guarded failure handling, rest-of-plan context and runtime bindings.",
+  "commit": "pending",
+  "produces": [
+    { "kind": "symbol", "name": "PlanFlow.expandAll", "where": "src/be/pm/src/plan-flow.ts", "note": "Claims eligible epics, makes one model call, stores guarded results and returns fresh PlanProposal." },
+    { "kind": "symbol", "name": "PlanFlowDeps.onExpandAll", "where": "src/be/pm/src/plan-flow.ts", "note": "Receives only targets, written and skipped counts after successful store." }
+  ],
+  "next": "T7: call flow().expandAll({ caller: { userId, role: PM }, proposalId, version }) and return 200; existing respond helper maps PlanFlowError.",
+  "deviations": [
+    { "what": "Endpoint 61 lists RATE_LIMITED but no expand path can raise it.", "why": "Gateway results exclude RATE_LIMITED; only session opening and regeneration can raise it.", "needs": "orchestrator" }
+  ],
+  "edge_cases": ["E10", "E11", "E12", "E16", "E21", "E22", "E34"],
+  "checks": { "build": "pass", "tests": "PM suite 66 passed, 0 failed, 0 skipped including integration; after test-only strengthening, W7c targeted suite 6 passed, 0 failed, 0 skipped.", "lint": "handover lint passed" }
+}

@@ -2,7 +2,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import { A, r } from '../../lib/nav';
-import { ApiError, createEpic_17, createSprint_28, createTask_21, useDb, type Person } from '../../lib/api';
+import { ApiError, createEpic_17, createSprint_28, createTask_21, useDb, validPoints, type Person } from '../../lib/api';
 import { toast } from './toast';
 
 const Err = ({ text }: { text: string }) => (
@@ -69,7 +69,6 @@ export function AddEpicForm() {
   );
 }
 
-const POINTS = ['', '1', '2', '3', '5', '8', '13'];
 const PEOPLE: [Person, string][] = [['pn', 'Priya Nair'], ['ml', 'Marcus Lim'], ['wo', 'Wei Ling Ong']];
 
 export function AddTaskForm() {
@@ -80,10 +79,11 @@ export function AddTaskForm() {
   const [crit, setCrit] = useState<string[]>(['']);
   const [pts, setPts] = useState('');
   const [who, setWho] = useState('');
+  const pointsValid = pts === '' || validPoints(pts);
   const f = useSubmit('Backlog.dc.html', 'Task added.');
   const setAt = (i: number, v: string) => setCrit((c) => c.map((x, j) => (j === i ? v : x)));
   return (
-    <form className="dialog" role="dialog" aria-modal="true" aria-labelledby="at1" style={{ width: 'min(640px, 100%)' }} onSubmit={(e) => { e.preventDefault(); f.go(() => createTask_21({ epicId: epic, title, description: desc, criteria: crit, points: pts ? Number(pts) : null, assignee: (who || null) as Person | null })); }}>
+    <form noValidate className="dialog" role="dialog" aria-modal="true" aria-labelledby="at1" style={{ width: 'min(640px, 100%)' }} onSubmit={(e) => { e.preventDefault(); if (!pointsValid) return; f.go(() => createTask_21({ epicId: epic, title, description: desc, criteria: crit, points: pts ? Number(pts) : null, assignee: (who || null) as Person | null })); }}>
       <div className="row between"><h2 id="at1">Add task</h2><Close to="Backlog.dc.html" /></div>
       <div className="field"><label htmlFor="e1">Epic <span style={{ color: 'var(--danger)' }}>*</span></label>
         <select id="e1" className="in" value={epic} onChange={(e) => setEpic(e.target.value)}>{db.epics.map((e) => <option key={e.id} value={e.id}>{e.title}</option>)}</select></div>
@@ -102,8 +102,8 @@ export function AddTaskForm() {
         <span className="hint">Up to 12 criteria of 300 characters. Plain text.</span></div>
       <div className="g2">
         <div className="field"><label htmlFor="sp">Story points</label>
-          <select id="sp" className="in" value={pts} onChange={(e) => setPts(e.target.value)}>{POINTS.map((p) => <option key={p} value={p}>{p || 'None'}</option>)}</select>
-          <span className="hint">1, 2, 3, 5, 8, 13 or none</span></div>
+          <input id="sp" className="in" type="number" min={1} max={20} step={1} value={pts === 'invalid' ? '' : pts} onChange={(e) => setPts(e.currentTarget.validity.badInput ? 'invalid' : e.currentTarget.value)} />
+          <span className="hint">1 to 20, or none</span>{!pointsValid && <Err text="Whole number from 1 to 20." />}</div>
         <div className="field"><label htmlFor="as">Assignee</label>
           <select id="as" className="in" value={who} onChange={(e) => setWho(e.target.value)}><option value="">Unassigned</option>{PEOPLE.map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select>
           <span className="hint">Project members only</span></div>

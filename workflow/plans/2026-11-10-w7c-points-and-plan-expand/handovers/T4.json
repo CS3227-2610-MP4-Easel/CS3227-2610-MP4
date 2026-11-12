@@ -1,0 +1,15 @@
+{
+  "task": "T4",
+  "status": "done",
+  "summary": "Added bulk and rest-of-plan prompts, strict target-index validation, and bulk mock; PM tests pass including integration.",
+  "commit": "pending",
+  "produces": [
+    { "kind": "symbol", "name": "PlanTargetEpic, PlanContextEpic, PM_PROMPT", "where": "src/be/pm/src/sections.ts", "note": "Shared target and context types and prompt budgets." },
+    { "kind": "symbol", "name": "bulkStaticSections, buildBulkSections, buildExpandSections, bulkQuery", "where": "src/be/pm/src/sections.ts", "note": "Bulk sections and query; single sections accept optional others." },
+    { "kind": "symbol", "name": "bulkOutputSchema", "where": "src/be/pm/src/schemas.ts", "note": "Validates exact target indexes and shared task schema." }
+  ],
+  "next": "T6: buildBulkSections({ approach, targets, done, assembled }); query with bulkQuery(targets); output uses bulkOutputSchema(targets.map(t => t.index)). Single expansion passes others. T9: sections.ts has no old points list.",
+  "deviations": [],
+  "edge_cases": ["E16", "E17", "E23", "E24", "E25", "E32", "E33", "E34"],
+  "checks": { "build": "pass", "tests": "60 pass, 0 fail, 0 skipped including integration; final prompt rerun 8 pass", "lint": "pass" }
+}

@@ -5,6 +5,14 @@ export type Screen = { file: string; path: string; view?: string; roles?: Role[]
 
 export const PROJECT = 'p1';
 
+// The project the open page belongs to. The prototype always uses p1; in live mode the screen sets it from the URL
+// (Screen) so every project link and data call follows the project the user opened.
+let current = PROJECT;
+export const setCurrentProject = (id: string) => {
+  current = id;
+};
+export const currentProject = () => current;
+
 export const HOME: Record<Role, string> = { pm: '/projects', lead: '/lead/overview', dev: '/my-work' };
 
 const P = '/projects/:id';
@@ -74,7 +82,7 @@ export const SCREENS: Screen[] = [
 ];
 
 export function urlOf(s: Screen): string {
-  const p = s.path.replace(':id', PROJECT);
+  const p = s.path.replace(':id', current);
   return s.view ? `${p}?view=${s.view}` : p;
 }
 

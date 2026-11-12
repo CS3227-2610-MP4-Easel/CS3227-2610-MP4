@@ -3,6 +3,7 @@ export * from "./create.js";
 export * from "./view.js";
 export * from "./resolvers.js";
 export * from "./expand-store.js";
+export * from "./bulk-store.js";
 export * from "./decide.js";
 export * from "./edit-common.js";
 export * from "./edit-store.js";

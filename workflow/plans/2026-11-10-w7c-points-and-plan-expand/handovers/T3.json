@@ -1,0 +1,14 @@
+{
+  "task": "T3",
+  "status": "done",
+  "summary": "Configured expand-specific gateway timeout, deadline, lease and token limits; gateway suite passes with integration tests.",
+  "commit": "this commit",
+  "produces": [
+    { "kind": "symbol", "name": "FeatureConfig", "where": "src/be/llm-gateway/src/config.ts", "note": "Optional attemptTimeoutMs, deadlineMs and leaseMs." },
+    { "kind": "symbol", "name": "FEATURES.PM_PLAN_EXPAND", "where": "src/be/llm-gateway/src/config.ts", "note": "maxPromptTokens 7000, maxTokens 4200; timeouts 54000 ms, lease 75000 ms." }
+  ],
+  "next": "T4 prompt size test must use FEATURES.PM_PLAN_EXPAND.maxPromptTokens (7000).",
+  "deviations": [],
+  "edge_cases": ["E8", "E9"],
+  "checks": { "build": "pass", "tests": "149 pass, 0 fail, 0 skipped, including integration", "lint": "pass" }
+}

@@ -6,11 +6,15 @@ import { lockEpic, lockProposal } from "./locks.js";
 import { toPlanEpic } from "./view.js";
 
 type PlanEpic = PlanProposal["epics"][number];
-export const EXPAND_LEASE_MS = 60_000;
-export type EpicTask = { title: string; description: string; acceptanceCriteria: string[]; storyPoints: 1 | 2 | 3 | 5 | 8 | 13 };
+export const EXPAND_LEASE_MS = 75_000;
+export type EpicTask = { title: string; description: string; acceptanceCriteria: string[]; storyPoints: number };
+export type PlanContextEpic = { index: number; title: string; description: string; checkpointName: string | null; tasks: EpicTask[] | null };
+export function planContextEpic(row: { index: number; title: string; description: string; checkpointName: string | null; tasks: unknown }): PlanContextEpic {
+  return { index: row.index, title: row.title, description: row.description, checkpointName: row.checkpointName, tasks: Array.isArray(row.tasks) && row.tasks.length ? row.tasks as EpicTask[] : null };
+}
 export type ClaimResult =
   | { kind: "DONE"; epic: PlanEpic }
-  | { kind: "CLAIMED"; projectId: string; sessionId: string; approach: string; epic: { title: string; description: string; checkpointName: string | null }; claimedVersion: number };
+  | { kind: "CLAIMED"; projectId: string; sessionId: string; approach: string; epic: { title: string; description: string; checkpointName: string | null }; claimedVersion: number; others: PlanContextEpic[] };
 
 export async function claimEpic(db: FilteredDbClient, input: { proposalId: string; index: number; actorId: string; now?: Date; mode?: "EXPAND" | "REGENERATE"; expectedProposalVersion?: number }): Promise<ClaimResult> {
   const now = input.now ?? new Date();
@@ -26,7 +30,7 @@ export async function claimEpic(db: FilteredDbClient, input: { proposalId: strin
     if (row.expansionStatus === "DONE" && input.mode !== "REGENERATE") return { kind: "DONE" as const, epic: toPlanEpic(row, now) };
     if (isLive(row, now)) throw new ProposalError("CONFLICT_STATE");
     const payload = (proposal.payload ?? {}) as { approach?: string; epicVersionWatermark?: number; [key: string]: unknown };
-    const rows = await tx.proposalEpic.findMany({ where: { proposalId: input.proposalId }, select: { version: true } });
+    const rows = await tx.proposalEpic.findMany({ where: { proposalId: input.proposalId }, orderBy: { index: "asc" } });
     const version = Math.max(payload.epicVersionWatermark ?? 0, ...rows.map((r) => r.version)) + 1;
     if (version > 2_147_483_646) throw new ProposalError("CONFLICT_STATE");
     await tx.aiProposal.update({ where: { id: input.proposalId }, data: { payload: { ...payload, epicVersionWatermark: version } }, select: { id: true } });
@@ -38,6 +42,7 @@ export async function claimEpic(db: FilteredDbClient, input: { proposalId: strin
       kind: "CLAIMED" as const, projectId: proposal.projectId, sessionId: proposal.sessionId,
       approach: typeof payload.approach === "string" ? payload.approach : "",
       epic: { title: row.title, description: row.description, checkpointName: row.checkpointName }, claimedVersion: claimed.version,
+      others: rows.filter(r => r.index !== input.index).map(planContextEpic),
     };
   });
 }

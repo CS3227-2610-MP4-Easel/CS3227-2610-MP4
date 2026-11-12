@@ -3,6 +3,7 @@ import './canvas.css';
 import Icons from '../components/canvas/Icons';
 import RoleBar from '../components/role-bar';
 import { ToastHost } from '../components/live/toast';
+import { ModeProvider } from '../lib/api';
 import { authMode } from '../lib/auth/mode';
 import { AuthRoot } from '../lib/auth/mode-context';
 
@@ -18,7 +19,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <Icons />
         </div>
         <AuthRoot mode={mode}>
-          {children}
+          <ModeProvider live={process.env.LLM_MODE === 'live'}>{children}</ModeProvider>
           <RoleBar />
         </AuthRoot>
         <ToastHost />

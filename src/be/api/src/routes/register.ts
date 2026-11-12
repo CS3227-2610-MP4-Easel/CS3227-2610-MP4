@@ -10,7 +10,7 @@ type RegisteredRoute = RouteDefinition & { [STRICT_BODY_PARSER]?: true };
 
 const registered = new WeakMap<object, RouteDefinition[]>();
 const isSchema = (value: unknown): value is z.ZodTypeAny => Boolean(value) && typeof (value as { safeParse?: unknown }).safeParse === "function";
-const EDIT_BODY_KEYS = new Set(["endpoint-38", "endpoint-39", "endpoint-58", "endpoint-59"]);
+const EDIT_BODY_KEYS = new Set(["endpoint-38", "endpoint-39", "endpoint-58", "endpoint-59", "endpoint-61"]);
 const honoPath = (path: string) => path.replace(/\{(\w+)\}/g, ":$1");
 
 /** Routes registered on `app` through `registerRoute`; `apiApp` must contain nothing else. */

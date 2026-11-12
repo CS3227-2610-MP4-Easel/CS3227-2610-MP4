@@ -78,6 +78,10 @@ export function pmRoutes(flow: () => PlanFlow): RouteDefinition[] {
       },
     },
     {
+      ...route("endpoint-61"), bodySchema: ProposalVersionBodySchema, responseSchema: PlanProposalSchema, before: bodyLimit(SMALL_MAX_BYTES),
+      handler: ({ requestId, principal, request, input }) => respond(requestId, 200, () => flow().expandAll({ caller: caller(principal!.userId), proposalId: request.params.proposalId!, version: (input.body as { version: number }).version })),
+    },
+    {
       ...route("endpoint-58"), bodySchema: PlanCheckpointsBodySchema, responseSchema: PlanProposalSchema, before: bodyLimit(16_384),
       handler: ({ requestId, principal, request, input }) => respond(requestId, 200, () => flow().replaceCheckpoints({ caller: caller(principal!.userId), proposalId: request.params.proposalId!, ...(input.body as Omit<Parameters<PlanFlow["replaceCheckpoints"]>[0], "caller" | "proposalId">) })),
     },

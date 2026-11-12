@@ -536,10 +536,10 @@ test("E28 a session idle over 30 minutes at expand is 409 with the session-expir
   assert.deepEqual(await sessionOutcomes(h, a), ["ABANDONED"]);
 }));
 
-test("E29 stage 2 answers with 9 tasks, points 4 or a URL in a title are 503 AI_UNAVAILABLE and the row FAILED", opts, withHarness({ real: true }, async (h) => {
+test("E29 stage 2 answers with 9 tasks, points 21 or a URL in a title are 503 AI_UNAVAILABLE and the row FAILED", opts, withHarness({ real: true }, async (h) => {
   const bad: Record<string, unknown> = {
     "9 tasks": tasks(9),
-    "points 4": { tasks: [{ title: "T", description: "d", acceptanceCriteria: ["x"], storyPoints: 4 }] },
+    "points 21": { tasks: [{ title: "T", description: "d", acceptanceCriteria: ["x"], storyPoints: 21 }] },
     "url in title": { tasks: [{ title: "Go to https://example.com", description: "d", acceptanceCriteria: ["x"], storyPoints: 3 }] },
   };
   for (const [label, value] of Object.entries(bad)) {
@@ -626,4 +626,145 @@ test("approve and reject map version conflicts and close the session REJECTED", 
   assert.deepEqual(await sessionOutcomes(h, a), ["REJECTED"]);
   const again = await flowError(h.flow.approve({ caller: a.caller, proposalId: plan.id, version: rejected.version }));
   assert.equal(again.status, 409);
+}));
+
+test("W7c E10 E12 N1 bulk expand makes one call, logs counts, and returns completed plans without another call", opts, withHarness({}, async (h) => {
+  const a = await h.actor();
+  const plan = await create(h, a);
+  const logs: unknown[] = [];
+  const flow = createPlanFlow({ proposals: h.proposals, gateway: { run: async (call) => { h.runs.push(call); return okResult({ epics: [0, 1, 2].map((index) => ({ index, ...tasks() })) }); } }, sessions: h.sessions, aiContext: h.ctx as unknown as AiContextWith, clock: h.clock, onExpandAll: (event) => logs.push(event) });
+  const stale = await flowError(flow.expandAll({ caller: a.caller, proposalId: plan.id, version: plan.version + 1 }));
+  assert.equal(stale.code, "CONFLICT_VERSION"); assert.equal(h.runs.length, 1); assert.deepEqual(logs, []);
+  const expanded = await flow.expandAll({ caller: a.caller, proposalId: plan.id, version: plan.version });
+  assert.equal(h.runs.length, 2);
+  assert.deepEqual(expanded.epics.map((e) => e.expansion.status), ["DONE", "DONE", "DONE"]);
+  assert.equal(expanded.version, plan.version);
+  assert.deepEqual(await sessionOutcomes(h, a), ["OPEN"]);
+  assert.deepEqual(logs, [{ targets: 3, written: 3, skipped: 0 }]);
+  await h.sessions.close(h.runs[0].sessionId, "ABANDONED", a.userId);
+  const beforeProposal = await h.base.aiProposal.findUniqueOrThrow({ where: { id: plan.id } });
+  const beforeEpics = await h.base.proposalEpic.findMany({ where: { proposalId: plan.id }, orderBy: { index: "asc" } });
+  const beforeSession = await h.base.aiSession.findUniqueOrThrow({ where: { id: h.runs[0].sessionId } });
+  const again = await flow.expandAll({ caller: a.caller, proposalId: plan.id, version: plan.version });
+  const afterProposal = await h.base.aiProposal.findUniqueOrThrow({ where: { id: plan.id } });
+  assert.deepEqual({ ...afterProposal, updatedAt: beforeProposal.updatedAt }, beforeProposal);
+  assert.deepEqual(await h.base.proposalEpic.findMany({ where: { proposalId: plan.id }, orderBy: { index: "asc" } }), beforeEpics);
+  assert.deepEqual(await h.base.aiSession.findUniqueOrThrow({ where: { id: h.runs[0].sessionId } }), beforeSession);
+  assert.deepEqual(again, await h.flow.getProposal({ caller: a.caller, proposalId: plan.id }));
+  assert.equal(h.runs.length, 2);
+  assert.equal(logs.length, 1);
+}));
+
+test("W7c E11 F6 done context and single calls include other epics only", opts, withHarness({}, async (h) => {
+  const a = await h.actor();
+  h.state.script = (call) => okResult(call.feature === "PM_PLAN_OUTLINE" ? outline({ epics: [0, 1, 2, 3].map((i) => ({ title: `Epic ${i}`, description: `Description ${i}`, checkpointName: null })) }) : tasks());
+  let plan = await create(h, a);
+  for (const index of [0, 2]) plan = await h.flow.editEpic({ caller: a.caller, proposalId: plan.id, index, version: plan.version, tasks: [{ title: `Edited ${index}`, description: "d", acceptanceCriteria: ["done"], storyPoints: 4 }] });
+  const before = await Promise.all([epicRow(h, plan.id, 0), epicRow(h, plan.id, 2)]);
+  h.state.script = () => okResult({ epics: [1, 3].map((index) => ({ index, ...tasks() })) });
+  const result = await h.flow.expandAll({ caller: a.caller, proposalId: plan.id, version: plan.version });
+  const sections = h.runs.at(-1)!.sections;
+  const done = sections.find((s) => s.name === "done-epics")!.text;
+  const targets = sections.find((s) => s.name === "epics")!.text;
+  assert.match(done, /Epic 0/); assert.match(done, /Edited 0/); assert.match(done, /Epic 2/); assert.match(done, /Edited 2/);
+  assert.match(targets, /Epic 1/); assert.match(targets, /Epic 3/); assert.doesNotMatch(targets, /Epic 0|Epic 2/);
+  assert.deepEqual(await Promise.all([epicRow(h, plan.id, 0), epicRow(h, plan.id, 2)]), before);
+  h.state.script = () => okResult(tasks());
+  const editedTarget = await h.flow.editEpic({ caller: a.caller, proposalId: plan.id, index: 1, version: result.version, tasks: [{ title: "Target only", description: "d", acceptanceCriteria: ["done"], storyPoints: 3 }] });
+  await h.flow.regenerateEpic({ caller: a.caller, proposalId: plan.id, index: 1, version: editedTarget.version });
+  const others = h.runs.at(-1)!.sections.find((s) => s.name === "other-epics")!.text;
+  assert.match(others, /Epic 0/); assert.match(others, /Epic 2/); assert.doesNotMatch(others, /Epic 1/);
+  assert.match(others, /Edited 0/); assert.match(others, /Edited 2/); assert.doesNotMatch(others, /Target only/);
+  h.state.script = (call) => okResult(call.feature === "PM_PLAN_OUTLINE" ? outline({ epics: [0, 1, 2].map((i) => ({ title: `Epic ${i}`, description: "d", checkpointName: null })) }) : tasks());
+  const b = await h.actor(); let second = await create(h, b);
+  for (const index of [0, 1, 2]) second = await h.flow.editEpic({ caller: b.caller, proposalId: second.id, index, version: second.version, tasks: [{ title: index === 1 ? "Single target only" : `Single other ${index}`, description: "d", acceptanceCriteria: ["done"], storyPoints: 3 }] });
+  await h.base.proposalEpic.update({ where: { proposalId_index: { proposalId: second.id, index: 1 } }, data: { expansionStatus: "FAILED" } });
+  await h.flow.expandEpic({ caller: b.caller, proposalId: second.id, index: 1 });
+  const singleOthers = h.runs.at(-1)!.sections.find((s) => s.name === "other-epics")!.text;
+  assert.match(singleOthers, /Epic 0/); assert.match(singleOthers, /Epic 2/); assert.doesNotMatch(singleOthers, /Epic 1/);
+  assert.match(singleOthers, /Single other 0/); assert.match(singleOthers, /Single other 2/); assert.doesNotMatch(singleOthers, /Single target only/);
+}));
+
+test("W7c E16 invalid bulk outputs fail all targets in the real gateway", opts, withHarness({ real: true }, async (h) => {
+  const entry = (index: number, n = 1) => ({ index, ...tasks(n) });
+  const bad = [
+    { epics: [entry(0), entry(1)] }, { epics: [entry(0), entry(1), entry(7)] },
+    { epics: [entry(0, 0), entry(1), entry(2)] }, { epics: [entry(0, 9), entry(1), entry(2)] },
+    { epics: [{ index: 0, tasks: [{ title: "T", description: "d", acceptanceCriteria: ["done"] }] }, entry(1), entry(2)] },
+  ];
+  for (const value of bad) {
+    const a = await h.actor(); const plan = await create(h, a);
+    h.mock.set("PM_PLAN_EXPAND", () => JSON.stringify(value));
+    const error = await flowError(h.flow.expandAll({ caller: a.caller, proposalId: plan.id, version: plan.version }));
+    assert.deepEqual([error.status, error.code], [503, "AI_UNAVAILABLE"]);
+    const rows = await h.base.proposalEpic.findMany({ where: { proposalId: plan.id } });
+    assert.ok(rows.every((row) => row.expansionStatus === "FAILED" && row.error === "AI_UNAVAILABLE"));
+  }
+}));
+
+test("W7c E21 model and store failures mark claims and allow retry", opts, withHarness({}, async (h) => {
+  const cases = [
+    ["AI_BUSY", 429, "AI_BUSY"], ["AI_UNAVAILABLE", 503, "AI_UNAVAILABLE"], ["AI_DISABLED", 503, "AI_DISABLED"],
+    ["REQUEST_REFUSED", 422, "REQUEST_REFUSED"], ["BLOCKED_INPUT", 422, "VALIDATION_FAILED"],
+  ] as const;
+  for (const [reason, status, code] of cases) {
+    const a = await h.actor(); h.state.script = defaultScript; const plan = await create(h, a);
+    h.state.script = () => fail(reason);
+    const error = await flowError(h.flow.expandAll({ caller: a.caller, proposalId: plan.id, version: plan.version }));
+    assert.deepEqual([error.status, error.code], [status, code]);
+    let rows = await h.base.proposalEpic.findMany({ where: { proposalId: plan.id } });
+    assert.ok(rows.every((row) => row.expansionStatus === "FAILED" && row.error === reason));
+    h.state.script = () => okResult({ epics: [0, 1, 2].map((index) => ({ index, ...tasks() })) });
+    await h.flow.expandAll({ caller: a.caller, proposalId: plan.id, version: plan.version });
+    rows = await h.base.proposalEpic.findMany({ where: { proposalId: plan.id } }); assert.ok(rows.every((row) => row.expansionStatus === "DONE"));
+  }
+  const a = await h.actor(); h.state.script = defaultScript; const plan = await create(h, a);
+  h.state.script = () => okResult({ epics: [0, 1, 2].map((index) => ({ index, ...tasks() })) });
+  const store = h.proposals.storePlanEpics; h.proposals.storePlanEpics = async () => { throw new Error("store failed"); };
+  assert.match(String(await rejection(h.flow.expandAll({ caller: a.caller, proposalId: plan.id, version: plan.version }))), /store failed/);
+  const rows = await h.base.proposalEpic.findMany({ where: { proposalId: plan.id } }); assert.ok(rows.every((row) => row.expansionStatus === "FAILED" && row.error === "INTERNAL"));
+  h.proposals.storePlanEpics = store;
+  assert.ok((await h.flow.expandAll({ caller: a.caller, proposalId: plan.id, version: plan.version })).epics.every((e) => e.expansion.status === "DONE"));
+}));
+
+test("W7c E22 moved claims are preserved on model failure and all moved returns conflict", opts, withHarness({}, async (h) => {
+  for (const indexes of [[0], [0, 1, 2]]) {
+    const a = await h.actor(); h.state.script = defaultScript; const plan = await create(h, a);
+    h.state.script = async () => {
+      h.clock.advance(76_000);
+      let version = plan.version;
+      for (const index of indexes) {
+        const edited = await h.flow.editEpic({ caller: a.caller, proposalId: plan.id, index, version, tasks: tasks().tasks });
+        version = edited.version;
+      }
+      return fail("AI_UNAVAILABLE");
+    };
+    const error = await flowError(h.flow.expandAll({ caller: a.caller, proposalId: plan.id, version: plan.version }));
+    assert.equal(error.code, indexes.length === 3 ? "CONFLICT_STATE" : "AI_UNAVAILABLE");
+    const rows = await h.base.proposalEpic.findMany({ where: { proposalId: plan.id }, orderBy: { index: "asc" } });
+    rows.forEach((row) => assert.equal(row.expansionStatus, indexes.includes(row.index) ? "DONE" : "FAILED"));
+  }
+}));
+
+test("W7c E34 registered mock expands ten epics without network", opts, withHarness({ real: true }, async (h) => {
+  const a = await h.actor();
+  h.mock.set("PM_PLAN_OUTLINE", () => JSON.stringify(outline({ epics: Array.from({ length: 10 }, (_, i) => ({ title: `Epic ${i}`, description: "Build this part.", checkpointName: null })) })));
+  const plan = await create(h, a);
+  const result = await h.flow.expandAll({ caller: a.caller, proposalId: plan.id, version: plan.version });
+  assert.equal(result.epics.length, 10); assert.ok(result.epics.every((e) => e.expansion.status === "DONE"));
+  assert.equal(h.runs.filter((r) => r.feature === "PM_PLAN_EXPAND").length, 1); assert.ok(h.inTx.every((value) => !value));
+}));
+
+
+test("W7c E38 bulk flow sends proposal checkpoint dates in untrusted prompt", opts, withHarness({}, async (h) => {
+  const a = await h.actor();
+  const plan = await create(h, a);
+  await h.base.aiProposal.update({ where: { id: plan.id }, data: { payload: { approach: "approach", checkpoints: [{ name: "Launch", targetDate: "2027-01-15" }], retrieved: [] } } });
+  await h.base.proposalEpic.update({ where: { proposalId_index: { proposalId: plan.id, index: 0 } }, data: { checkpointName: "Launch" } });
+  const flow = createPlanFlow({ proposals: h.proposals, gateway: { run: async (call) => { h.runs.push(call); return okResult({ epics: [0, 1, 2].map(index => ({ index, ...tasks() })) }); } }, sessions: h.sessions, aiContext: h.ctx as unknown as AiContextWith, clock: h.clock });
+  await flow.expandAll({ caller: a.caller, proposalId: plan.id, version: plan.version });
+  const sections = h.runs.at(-1)!.sections;
+  assert.match(sections.find(s => s.name === "epics")!.text, /checkpoint date: 2027-01-15/);
+  const context = sections.find(s => s.name === "proposal-checkpoints")!;
+  assert.equal(context.trusted, false); assert.match(context.text, /Launch: 2027-01-15/);
 }));

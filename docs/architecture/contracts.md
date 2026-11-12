@@ -25,7 +25,7 @@ Decisions cited as AD-nn are in [decision-log.md](decision-log.md); tags A-nn ar
 | `Member` | `userId`, `displayName`, `role`, `addedAt` |
 | `Checkpoint` | `id`, `projectId`, `name` (1 to 200), `targetDate`, `createdAt`, `updatedAt`, `version` |
 | `Epic` | `id`, `projectId`, `checkpointId` (null), `title` (1 to 200), `description` (null, at most 4000), `position`, `taskCount`, `pointsTotal`, `createdAt`, `updatedAt`, `version` |
-| `Task` | `id`, `projectId`, `epicId`, `sprintId` (null), `assigneeId` (null), `title` (1 to 200), `description` (null, at most 4000), `acceptanceCriteria` (list of strings, at most 12, each at most 300), `status` (`TODO` / `IN_PROGRESS` / `IN_REVIEW` / `DONE`), `blocked`, `blockedReason` (null, at most 500), `storyPoints` (null or 1, 2, 3, 5, 8, 13), `doneAt` (null), `createdAt`, `updatedAt`, `version` |
+| `Task` | `id`, `projectId`, `epicId`, `sprintId` (null), `assigneeId` (null), `title` (1 to 200), `description` (null, at most 4000), `acceptanceCriteria` (list of strings, at most 12, each at most 300), `status` (`TODO` / `IN_PROGRESS` / `IN_REVIEW` / `DONE`), `blocked`, `blockedReason` (null, at most 500), `storyPoints` (null or a whole number from 1 to 20), `doneAt` (null), `createdAt`, `updatedAt`, `version` |
 | `Sprint` | `id`, `projectId`, `name`, `startDate`, `endDate`, `status` (`PLANNED` / `ACTIVE` / `CLOSED`), `completedPoints` (null until closed), `version` |
 | `TaskEvent` | `id`, `taskId`, `actorId`, `type` (`CREATED` / `STATUS_CHANGED` / `ASSIGNEE_CHANGED` / `BLOCKED` / `UNBLOCKED` / `POINTS_CHANGED` / `SPRINT_CHANGED`), `from`, `to`, `at` |
 | `PlanProposal` | `id`, `projectId`, `kind` = `PLAN`, `status` (`PENDING` / `APPROVED` / `REJECTED` / `SUPERSEDED`), `approach` (text), `checkpoints` (list of `{ name, targetDate }`), `epics` (list of `PlanEpic`), `retrieved` (list of `{ source, projectId, projectName, id, title }`, the provenance of similar items used), `flagged`, `createdBy`, `createdAt`, `updatedAt`, `version` |
@@ -104,6 +104,7 @@ Mutations on an archived project return 409 `CONFLICT_STATE` (one check in `core
 | 58 | `PATCH /api/pm/proposals/{proposalId}/checkpoints` | PM; member | `{ checkpoints, version }` | 200 `PlanProposal` | 409 version or state | replaces checkpoints |
 | 59 | `POST /api/pm/proposals/{proposalId}/epics` | PM; member | `{ title, description, checkpointName, version }` | 201 `PlanProposal` | 409 version or state | adds an epic |
 | 60 | `DELETE /api/pm/proposals/{proposalId}/epics/{index}` | PM; member | `?version=` | 200 `PlanProposal` | 409 version or state | deletes an epic |
+| 61 | `POST /api/pm/proposals/{proposalId}/expand` | PM; member; creator | `{ version }` | 200 `PlanProposal` | 404; 409 `CONFLICT_STATE` unless PENDING or while any epic is live; 409 `CONFLICT_VERSION`; 422 `VALIDATION_FAILED` or `REQUEST_REFUSED`; 429 `AI_BUSY`, `RATE_LIMITED`; 503 `AI_UNAVAILABLE`, `AI_DISABLED` | one gateway call for every PENDING, FAILED or expired-lease epic; DONE epics are context; proposal `version` unchanged |
 
 Edits are creator-only and guarded by the proposal `version`.
 
@@ -147,9 +148,9 @@ POST /api/auth/register
 
 Validation error (23):
 ```
-PATCH /api/tasks/9a1c…   { "storyPoints": 4, "version": 3 }
+PATCH /api/tasks/9a1c…   { "storyPoints": 21, "version": 3 }
 422 { "error": { "code": "VALIDATION_FAILED", "message": "The request body is not valid.",
-     "details": [{ "field": "storyPoints", "message": "Must be one of 1, 2, 3, 5, 8, 13." }],
+     "details": [{ "field": "storyPoints", "message": "Must be a whole number from 1 to 20." }],
      "requestId": "7d1c…" } }
 ```
 

@@ -30,7 +30,8 @@ describe("PlanInputSchema and countPlan", () => {
       ["unknown checkpoint name", { ...base, epics: [{ ...base.epics[0], checkpointName: "Nope" }] }, "custom@epics.0.checkpointName"],
       ["case-duplicate names", { ...base, checkpoints: [{ name: "Alpha", targetDate: "2027-01-31" }, { name: "alpha", targetDate: "2027-02-01" }] }, "custom@checkpoints.1.name"],
       ["11 epics", { ...base, epics: Array.from({ length: 11 }, () => base.epics[1]) }, "too_big@epics"],
-      ["4 points", { ...base, epics: [{ ...base.epics[1], tasks: [{ ...task, storyPoints: 4 }] }] }, "invalid_union@epics.0.tasks.0.storyPoints"],
+      ["0 points", { ...base, epics: [{ ...base.epics[1], tasks: [{ ...task, storyPoints: 0 }] }] }, "too_small@epics.0.tasks.0.storyPoints"],
+      ["21 points", { ...base, epics: [{ ...base.epics[1], tasks: [{ ...task, storyPoints: 21 }] }] }, "too_big@epics.0.tasks.0.storyPoints"],
       ["unknown projectId key", { ...base, projectId: "x" }, "unrecognized_keys@"],
       ["unknown assigneeId key", { ...base, epics: [{ ...base.epics[1], tasks: [{ ...task, assigneeId: "x" }] }] }, "unrecognized_keys@epics.0.tasks.0"],
       ["impossible date", { ...base, checkpoints: [{ name: "Alpha", targetDate: "2027-02-30" }], epics: [{ ...base.epics[1] }] }, "custom@checkpoints.0.targetDate"],
@@ -52,6 +53,7 @@ describe("PlanInputSchema and countPlan", () => {
       ["9 epics", { ...base, epics: Array.from({ length: 9 }, (_, i) => ({ ...base.epics[1], title: `E${i}` })) }],
       ["8 checkpoints", { ...base, checkpoints: Array.from({ length: 8 }, (_, i) => ({ name: `C${i}`, targetDate: "2027-01-31" })), epics: [base.epics[1]] }],
       ["8 tasks per epic", { ...base, epics: [{ ...base.epics[1], tasks: eight }] }],
+      ["4-point task", { ...base, epics: [{ ...base.epics[1], tasks: [{ ...task, storyPoints: 4 }] }] }],
       ["13-point task", { ...base, epics: [{ ...base.epics[1], tasks: [{ ...task, storyPoints: 13 }] }] }],
       ["MVP and Beta names", { ...base, checkpoints: [{ name: "MVP", targetDate: "2027-01-31" }, { name: "Beta", targetDate: "2027-03-01" }], epics: [{ ...base.epics[1], checkpointName: "MVP" }] }],
     ];
@@ -246,5 +248,12 @@ describe("applyPlan against the database", { skip: !integrationUrl }, () => {
       assert.equal(await base.taskEvent.count({ where: { projectId } }), 3);
       assert.equal((await base.project.findUniqueOrThrow({ where: { id: projectId } })).status, "ARCHIVED");
     });
+  });
+});
+
+describe("W7c E4 invalid point plans", () => {
+  it("rejects 0 and 21 before database access", async () => {
+    const tx = new Proxy({}, { get() { throw new Error("db touched"); } });
+    for (const storyPoints of [0, 21]) await assert.rejects(applyPlan(tx as never, "p", { ...plan(), epics: [{ ...plan().epics[0], tasks: [{ ...task, storyPoints }] }] }, "u"), /INVALID_PLAN/);
   });
 });
