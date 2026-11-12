@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-12 by Codex — second review pass resolved replay, creation and session-seam gaps
+- **Last updated:** 2026-11-12 by Codex — W14 spec is ready for Gate 1 approval
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | Second review findings are being folded into the spec | Lint, record review outcome, commit the spec/state, then request Gate 1 approval | 2026-11-12 |
+| S1 | 2026-11-12 | Codex | W14 | Active | Reviewed W14 spec is ready for Gate 1 | Ask the operator to approve or request changes to the spec | 2026-11-12 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
