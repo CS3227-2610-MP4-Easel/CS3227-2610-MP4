@@ -1,20 +1,17 @@
 {
   "task": "T5",
-  "status": "blocked",
-  "summary": "Added the F1-F8/N1-N3/E1-E15 matrix; frontend and root typechecks are blocked by tsconfig.tsbuildinfo EPERM.",
-  "blocked_reason": "Q~1 / F8,N2: required frontend and root typecheck commands cannot write src/fe/tsconfig.tsbuildinfo in the managed worktree (TS5033 EPERM).",
-  "commit": "this commit",
+  "status": "done",
+  "summary": "Added the labelled closeout matrix and verified frontend/root tests, lint, and typechecks.",
+  "commit": "560ac31",
   "produces": [
     { "kind": "file", "name": "W5 verification matrix", "where": "src/fe/test/w5-closeout.test.ts", "note": "26 requirement-labelled checks covering F1-F8, N1-N3 and E1-E15." },
-    { "kind": "file", "name": "T5 verification handover", "where": "workflow/plans/2026-11-12-w5-dev-lead-ui-wiring/handovers/T5.json", "note": "Blocked evidence and exact typecheck failure." }
+    { "kind": "file", "name": "T5 verification handover", "where": "workflow/plans/2026-11-12-w5-dev-lead-ui-wiring/handovers/T5.json", "note": "Green closeout evidence for the W5 branch." }
   ],
-  "next": "Restore write permission for src/fe/tsconfig.tsbuildinfo, rerun frontend and root typecheck, then complete the W5 Gate 3 review.",
-  "deviations": [
-    { "what": "The required incremental typechecks fail before checking source files with TS5033/EPERM on src/fe/tsconfig.tsbuildinfo.", "why": "The managed worktree denies the generated build-info write.", "needs": "operator" }
-  ],
+  "next": "Request W5 Gate 3 branch review approval.",
+  "deviations": [],
   "edge_cases": ["F8", "N1", "N2", "N3", "E8", "E10"],
   "checks": {
-    "build": "blocked: npm run typecheck",
+    "build": "pass",
     "tests": "225 pass, 0 fail",
     "lint": "frontend pass; root pass",
     "focused_matrix": "26 pass, 0 fail",

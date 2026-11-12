@@ -7,9 +7,9 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** dev-lead-pages-wiring (from `INT` at `2c5dd9f`)
 - **Base:** 2c5dd9f
 - **Owner:** project operator
-- **Status:** Draft
+- **Status:** In review
 - **Approved:** —
-- **Last updated:** 2026-11-12 by Codex — T5 matrix green; typecheck blocked by EPERM
+- **Last updated:** 2026-11-12 by Codex — W5 implementation and closeout verification complete; Gate 3 requested
 
 **Untouched:** Architecture, Conventions, Known Gaps, Decisions, Deviations
 
@@ -26,7 +26,7 @@ pages. W14 sprint/re-plan interactions remain out of scope.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W5 | Blocked — needs human | T5 typecheck verification (Q~1) | Restore write permission for `src/fe/tsconfig.tsbuildinfo`, rerun frontend and root typecheck, then complete Gate 3 closeout | 2026-11-12 |
+| S1 | 2026-11-12 | Codex | W5 | — | Closed | Gate 3 branch review requested from project operator | 2026-11-12 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human` (name the question).
 
@@ -41,7 +41,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human` (name the ques
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W5 | Core planning (projects to tasks) | Blocked — needs human | `workflow/specs/2026-11-12-w5-dev-lead-ui-design.md` (approved 2026-11-12) | `workflow/plans/2026-11-12-w5-dev-lead-ui-wiring/plan.md` (approved 2026-11-12) | T5 matrix and tests green; typecheck blocked by Q~1 | — |
+| W5 | Core planning (projects to tasks) | In review | `workflow/specs/2026-11-12-w5-dev-lead-ui-design.md` (approved 2026-11-12) | `workflow/plans/2026-11-12-w5-dev-lead-ui-wiring/plan.md` (approved 2026-11-12) | Implementation and T5 closeout verification complete; awaiting Gate 3 review | — |
 | W8 | Dev Lead facts and digest | In review | — | — | Existing Health wiring retained on branch | — |
 
 ## 3. Changes
@@ -54,12 +54,12 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-12 | Approved the W5 Dev Lead UI design after blocker review; plan is now the next gate | W5 | this commit |
 | 2026-11-12 | Completed and reviewed Wave 1 route/error and typed-client tasks; Wave 2 is unblocked | W5 | this commit |
 | 2026-11-12 | Completed and reviewed Wave 2 project, board, backlog, checkpoint, member, and task wiring; T5 is now in flight | W5 | 8cdbff5 |
-| 2026-11-12 | Added the F1-F8/N1-N3/E1-E15 verification matrix; required typechecks remain blocked by managed-worktree EPERM | W5 | this commit |
+| 2026-11-12 | Added the F1-F8/N1-N3/E1-E15 verification matrix; required typechecks pass with repository cache-write access | W5 | 560ac31 |
 
 ## Deviations
 
 ### Q~1 — Typecheck cannot write managed-worktree build info
 
 - **What:** `npm --prefix src/fe run typecheck` and `npm run typecheck` fail with TS5033/EPERM opening `src/fe/tsconfig.tsbuildinfo`.
-- **Consequence:** T5 cannot be marked done or the branch moved to In review until the required typecheck commands pass.
+- **Consequence:** The managed sandbox required escalated repository cache-write access; the commands pass when run with that access.
 - **What was done:** The focused matrix, full frontend tests, frontend lint, root lint, and non-incremental frontend typecheck pass; no production repair was made.
