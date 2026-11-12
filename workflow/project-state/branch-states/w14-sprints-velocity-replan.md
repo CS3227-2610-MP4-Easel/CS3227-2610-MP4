@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — aligned sprint velocity labels with bars
+- **Last updated:** 2026-11-13 by Codex — left-aligned sprint velocity graph and labels
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -126,6 +126,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-13 | Verified live Sprints rendering plus frontend typecheck, 237 tests and diff check | W14 | T6 UI follow-up |
 | 2026-11-13 | Put each live sprint value, bar and name in one shared grid cell so labels remain aligned with their data | W14 | T6 UI follow-up |
 | 2026-11-13 | Committed the backlog banner removal, checkpoint copy removal and live velocity chart as `50808cd` | W14 | T6 close-out |
+| 2026-11-13 | Left-aligned live velocity columns and moved sprint names into a matching row below the chart baseline; verified typecheck, 237 tests and diff check | W14 | T6 UI follow-up |
 
 ## 4. Decisions
 
