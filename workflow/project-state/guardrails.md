@@ -26,6 +26,12 @@
 - **AI context checks rows, not sources** — `assembleWith` catches inconsistent rows (wrong project, owner, type, size, unrequested items, free text in facts), not a source that lies about a row's `projectId` or `ownerId`; each source owner's tests must prove their rows (W5, W7-W9).
 - **The source scan cannot see data passed between unrelated files** — a route can query in one module and pass plain values into a gateway-calling file it does not import; review and the runtime checks cover it.
 - **The gap between `assembleWith` and the model call** — membership is checked before and after the reads, not at `run` time.
+- **Upload storage is unbounded** — endpoint 49 has no per-user rate limit or row cap and activity items are never deleted; spend is bounded by the session caps and AI windows, storage is not.
+- **A regeneration or summary retry can spend a session without storing anything** — `regenerate` counts before `run`, so a busy or refused standup call uses one of the five regenerations and stores nothing.
+- **Concurrent W9 writes to one project can exhaust the transaction retries** — writes queue on the project-row lock and each waiter is retried after a serialization error; `inMutationTransaction` allows 3 attempts, so four or more simultaneous uploads, summary inserts or standup writes on one project can fail (plan P6). Measured on Postgres: 5 concurrent uploads → 2 fail on every run, no partial writes; since C72 they get 429 `RATE_LIMITED` with `Retry-After: 1` instead of 500.
+- **An oversize `Content-Length` gets 413 before authentication** — endpoints 49-51 check the header (only the header; no body is read) before the token, so an unauthenticated client sees 413 instead of 401.
+- **A summary session is opened before context assembly** — if assembly fails (membership removed, a source error), the opened DEV_SUMMARY session stays OPEN and counts toward the caller's own caps.
+- **A Developer on four or more projects can hit the 3-open DEV_STANDUP cap** — W9 leaves standup sessions open for W16's edit and accept (53, 54), so a fourth standup within 30 minutes gets 429 `RATE_LIMITED`.
 - **Nested writes require explicit authorization** — callers must validate every connected resource inside the mutation transaction.
 
 ## Explicitly Out of Scope

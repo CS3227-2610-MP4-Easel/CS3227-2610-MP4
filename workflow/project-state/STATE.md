@@ -5,8 +5,8 @@
 - **Phase:** Pre-implementation. The architecture passed its readiness gate for the first slice on 2026-10-29; the W10 clickable prototype, W1 foundation/API skeleton, W2 gateway, W3 guards, W4 auth, W6 AI context and W12 CI are merged, while the role features (W5, W7-W9) remain.
 - **Stack:** TypeScript monorepo, Next.js App Router with a Hono API under `/api`, Prisma, Postgres (Neon), Firebase Auth, Vercel (Hobby), NUS SoCLaaS
 - **Branch:** `INT` = `development`; `main` is the release branch. This file describes `INT` only.
-- **Last updated:** 2026-11-13 by Claude Opus 5.5 — folded w4-sign-in-screen
-- **Last verified against repo:** 2026-11-13 (W4 areas only, at the w4-sign-in-screen fold)
+- **Last updated:** 2026-11-13 by Claude Opus 5.5 — folded w4-sign-in-screen, w9-dev-slice
+- **Last verified against repo:** 2026-11-13 (W4 and W9 areas only, at their folds)
 - **Developer guide:** seeded 2026-11-02 from W10, [guide](../../docs/guide/index.md)
 - **Deadline:** 13 Nov 2026. Feature freeze end of 10 Nov (AD-69), production deploy 11 Nov (AD-70).
 
@@ -41,7 +41,7 @@ Verification commands are configured in `workflow/config.json`: `npm test`, `npm
 | Item | Kind | Context / done when | Source | Added |
 |---|---|---|---|---|
 | W5 `requireMember` and project/core resolver seams | Post-merge | implement filtered compound membership lookup and register W5 resource resolvers | handed over from w1 | 2026-11-03 |
-| W7/W9 resource resolvers | Post-merge | implement proposal, activity/summary/standup resolvers and register them (session/usage resolvers are W15's) | handed over from w1, w2-gateway | 2026-11-03 |
+| W7 resource resolvers | Post-merge | implement proposal resolvers and register them (W9's activity/summary/standup resolvers are done) (session/usage resolvers are W15's) | handed over from w1, w2-gateway | 2026-11-03 |
 | W9 SELF membership check | Post-merge | ensure removed developers cannot access endpoints 52–54 through owner-only resolution | handed over from w1 | 2026-11-03 |
 | W5 ADDER target-role semantics | Post-merge | resolve target roles and preserve 422/NOT_FOUND behavior for endpoints 10 and 11 | handed over from w1 | 2026-11-03 |
 | W13 Deploy hello-world calling SoCLaaS `GET /v1/models` | Todo | answers G-26, G-32, G-33 with something running | delivery-plan P0 | 2026-10-31 |
@@ -57,20 +57,27 @@ Verification commands are configured in `workflow/config.json`: `npm test`, `npm
 | Tell the Dev Lead about `requireMember` and emails | Todo | W5 now owns `requireMember`, and endpoint 10 must lowercase emails before lookup | handed over from w4-auth | 2026-11-07 |
 | Section rules for W6-W9 | Todo | follow W3's rules for sections (spec conventions.md § Rules for features): `trusted: true` only for server-built text; anything users typed or uploaded, and any stored model output reused as input, is `trusted: false`; `STATIC` sections are always trusted (`run` throws `INVALID_LLM_CALL` otherwise) and section names are literals; each untrusted section's budget leaves room for the 49-character wrapper plus its name line, and the statics leave room for the ~280-character suffix | handed over from w3-guards | 2026-11-07 |
 | W7 blocked-input handling | Todo | W7 checks "empty after sanitising" with `sanitiseInput(text).blocked`; every feature maps `BLOCKED_INPUT` to 422 `VALIDATION_FAILED`; PM endpoints map `REQUEST_REFUSED` to 422, Dev Lead and Developer endpoints to the degraded 200 (architecture §8) | handed over from w3-guards | 2026-11-07 |
-| W9 `flagged` and `GUARD_VERSION` | Todo | W9 calls `sanitiseInput` per item to store each item's and summary's own `flagged`, and imports `GUARD_VERSION` (never copies it) into the `item_summaries` unique key (AD-67) | handed over from w3-guards | 2026-11-07 |
-| W7/W9 output schemas | Todo | must not need URLs, angle brackets, HTML entities, `](`, `![`, `scheme:` values or dotted-quad numbers; such strings fail the output guard | handed over from w3-guards | 2026-11-07 |
+| W7 output schemas | Todo | must not need URLs, angle brackets, HTML entities, `](`, `![`, `scheme:` values or dotted-quad numbers; such strings fail the output guard | handed over from w3-guards | 2026-11-07 |
 | W11 corpus reads the guard rules | Todo | the corpus can read the rule tables (`DELIMITER_RULES`, `PII_RULES`, `INJECTION_RULES`, `OUTPUT_RULES`) and the `reason` codes from `checkOutput`; per AD-26 the corpus is reviewed by a different owner than the guards' author (Developer) | handed over from w3-guards | 2026-11-07 |
 | Changing a guard rule | Todo | whoever changes a guard rule bumps `GUARD_VERSION` and adds its `KNOWN` entry in `src/be/llm-gateway/test/guards.test.ts` (spec conventions.md § bump checklist) | handed over from w3-guards | 2026-11-07 |
 | W5 delivery estimate | Todo | the operator is asking W5's owner (Dev Lead) for a delivery estimate; W6's membership check and its core-owned sections depend on W5 | handed over from w6-ai-context | 2026-11-07 |
 | Contracts §5.2 follow-up for `assembleWith` | Todo | SD4 is signed off (C59); the follow-up names `assembleWith` as the entry point for every feature, with `assemble` kept but throwing for `DEV_SUMMARY` and `DEV_STANDUP` (D18) | handed over from w6-ai-context | 2026-11-07 |
 | W5 `requireMember` placement and boot test | Todo | confirm where `requireMember` lives (architecture §4 says `auth`, frozen contracts §5.4 says `Core`; W6 follows §5.4) and that it throws `NotMember` for archived projects; the API composition root calls `registerCore(core)` and registers `core.projectBrief`, `core.checkpoints`, `core.taskEvents`, `core.blockedTasks`; `core` must not import `@agile/ai-context`; add a boot test asserting the core and all ten source ids are registered | handed over from w6-ai-context | 2026-11-07 |
-| W7/W8/W9 context sources and `assembleWith` | Todo | register your sources at module load with `registerContextSource` (rules in [W6 spec conventions.md § Rules for source owners](../specs/2026-11-06-w6-ai-context-design/conventions.md): `ownerId` meanings, rows most important first, filtered client, no unsafe raw SQL); call `assembleWith`, not `assemble`; keep gateway-calling files free of database imports (the source scan enforces it); never catch `ContextScopeViolation`. W7: `pm.similarItems` filters by the caller's member projects before searching, titles only, at most 5. W8: `lead.facts` emits only `FACT_KEYS` rows (add keys to `allow-list.ts` by PR, and update `facts`' max chars, which a test pins); test that the overload fact covers only member projects (C-28). W9: `dev.itemSummaries` never returns standup text | handed over from w6-ai-context | 2026-11-07 |
+| W7/W8 context sources and `assembleWith` | Todo | register your sources at module load with `registerContextSource` (rules in [W6 spec conventions.md § Rules for source owners](../specs/2026-11-06-w6-ai-context-design/conventions.md): `ownerId` meanings, rows most important first, filtered client, no unsafe raw SQL); call `assembleWith`, not `assemble`; keep gateway-calling files free of database imports (the source scan enforces it); never catch `ContextScopeViolation`. W7: `pm.similarItems` filters by the caller's member projects before searching, titles only, at most 5. W8: `lead.facts` emits only `FACT_KEYS` rows (add keys to `allow-list.ts` by PR, and update `facts`' max chars, which a test pins); test that the overload fact covers only member projects (C-28) | handed over from w6-ai-context | 2026-11-07 |
 | Slicing: W8 also depends on W6 | Todo | `workflow/specs/slicing.md` lists W8's dependencies as W2, W3, W5; it also depends on W6 | handed over from w6-ai-context | 2026-11-07 |
 | W10 canvas screens are fixed-size | Todo | to the PM (W10): the canvas screens, including the live sign-in and register screens that reuse their markup, are fixed-size (`.app { min-height: 1000px }` in `src/fe/app/canvas.css`, fixed flex bases such as `1 1 420px`), so they do not adapt to short or very wide windows (seen by the operator on an ultrawide monitor) | handed over from w4-sign-in-screen | 2026-11-13 |
 | Guide: W4 sign-in setup and testing | Todo | guide out of date: setup (Firebase dev project, `src/fe/.env.local` from `.env.example`, local Postgres and the `agile-pg-test` container for integration tests) and testing (fe Vitest suite under root `npm test`) | handed over from w4-sign-in-screen | 2026-11-13 |
 | W13 Firebase projects per tier | Todo | to the repo owner (W13): `agile-platform-dev` exists (owner ludannnn; add the repo owner as Owner); create `agile-platform-prod` with that exact ID (`src/be/db/src/tier-targets.ts`) and add the Vercel domains to Authorized domains on both projects; set the four `NEXT_PUBLIC_FIREBASE_*` values per tier | handed over from w4-sign-in-screen | 2026-11-13 |
 | W12 pin the fe test script | Todo | to the Dev Lead (W12): `tests/process-security/ci-workflow.test.ts` now pins the chained root `test` script (C63) but not `src/fe/package.json` `scripts.test` (`vitest run`) or `src/fe/vitest.config.ts`; consider asserting the fe script too (T1 Attacker review nit) | handed over from w4-sign-in-screen | 2026-11-13 |
 | Lazy-load the Firebase SDK | Todo | `AuthRoot` in the root layout statically imports `lib/auth/firebase` and `session`, so `@firebase/app` and `@firebase/auth` ship in every page bundle, including prototype previews; load them lazily (`next/dynamic` or `import()`) only in `firebase` mode. `force-dynamic` on the layout is deliberate (mode read per request) | handed over from w4-sign-in-screen | 2026-11-13 |
+| W5 member removal and archive must lock the project | Todo | to the Dev Lead (W5): W9 adds an export of `lockProjectForMutation` to `src/be/core/src/index.ts` (C71); its no-op `version: { increment: 0 }` update bumps `projects.updated_at` (`@updatedAt`) on every task, checkpoint, membership and now W9 write. When member removal (endpoint 11) and project archive are built, they must update the project row (`lockProjectForMutation`) so they serialise with W9's writes; W9's seam reads membership through core's `requireMember`, which does not take the transaction | handed over from w9-dev-slice | 2026-11-13 |
+| Contracts rows 49-51: list W9's errors | Todo | contracts.md rows 50 and 51 list fewer errors than W9 returns (`RATE_LIMITED`, `AI_DISABLED`, 422 for `BLOCKED_INPUT`, 404, 409); add them as a clarification (they follow architecture §8 and the W3 handover). Rows 49-51 also gain 429 `RATE_LIMITED` with `Retry-After: 1` when concurrent writes to one project exhaust the retries (C72) | handed over from w9-dev-slice | 2026-11-13 |
+| W17: dev `CACHE_HIT` rows | Todo | tell W17 that `CACHE_HIT` rows now exist for DEV_SUMMARY and DEV_STANDUP (spec SD13); summary hits have a null `session_id` | handed over from w9-dev-slice | 2026-11-13 |
+| S20/S18 wiring to the live W9 API | Workstream | Medium follow-up (C69), in progress on branch `w9-screen-wiring`; the browser must cut bodies over 2000 characters instead of rejecting them (spec SD4), send `{}` (not an empty body) to endpoint 51, and render summaries and standup lines as plain text only | handed over from w9-dev-slice | 2026-11-13 |
+| W5: `core.blockedTasks` ignores the window | Todo | to the Dev Lead (W5): `core.blockedTasks` now ignores `options.window` and lists every task assigned to the caller that is blocked now (D23); `context-sources.test.ts` was updated to match (the W5 spec names no window for this source, so it is unchanged). DEV_STANDUP is its only consumer | handed over from w9-dev-slice | 2026-11-13 |
+| Merge the two `bodyTooLarge` helpers | Todo | two identical `bodyTooLarge` helpers exist (`src/be/api/src/body-limit.ts` from W9, `src/be/api/src/routes/shared.ts` from W7/W8; `auth.ts` and `pm.ts` use the latter); fold them into one in a Small change. W4: `auth.ts` keeps 4,096 bytes. W1: `RouteDefinition.bodyLimitBytes` (plan P1) reads the body after authorisation; endpoints 49 (1 MiB), 50 and 51 (16 KiB) use it | handed over from w9-dev-slice | 2026-11-13 |
+| W9 integration test follow-ups | Todo | poll `pg_locks` instead of a 300 ms wait in the E47 lock test, and await the pending write before cleanup on failure (`src/be/dev/test/dev-integration.test.ts`) | handed over from w9-dev-slice | 2026-11-13 |
+| Guide: W9 dev package | Todo | guide out of date: the dev package (`src/be/dev`), endpoints 49-52 and 55, the gateway additions (`openOrReuse`, `recordCacheHit`), `RouteDefinition.bodyLimitBytes`, and the Postgres integration tests | handed over from w9-dev-slice | 2026-11-13 |
 
 ---
 
@@ -86,7 +93,7 @@ Verification commands are configured in `workflow/config.json`: `npm test`, `npm
 | W6 | AI context assembly | Done | [spec](../../specs/2026-11-06-w6-ai-context-design.md) | [plan](../../plans/2026-11-06-w6-ai-context.md) | PR #16 merged 2026-11-07; SD4 signed off (C59); depends on W5 for `requireMember`; guide confirmed 2026-11-07 | Documented 2026-11-07 |
 | W7 | PM plan flow (proposals, pm) | Not started | — | — | Tier 1 · Big · owner PM · after W2, W3, W5, W6 | — |
 | W8 | Dev Lead facts and digest | Not started | — | — | Tier 1 · Big · owner Dev Lead · after W2, W3, W5 | — |
-| W9 | Developer upload, summaries, standup | Not started | — | — | Tier 1 · Big · owner Developer · after W2, W3, W5, W6 | — |
+| W9 | Developer upload, summaries, standup | Done | [spec](../../specs/2026-11-08-w9-dev-slice-design.md) (approved 2026-11-08, amended 2026-11-09) | [plan](../../plans/2026-11-09-w9-dev-slice/plan.md) (approved 2026-11-09) | PR #29 merged 2026-11-13; S20/S18 wiring follows on `w9-screen-wiring` | — |
 | W10 | UI mockups and shell | Done | [spec folder](../../specs/2026-11-01-w10-ui-design/ui.md) ([index](../../specs/2026-11-01-w10-ui-design.md), approved 2026-11-02) | [plan](../../plans/2026-11-02-w10-prototype.md) (approved 2026-11-02) | Tier 1 · Big · owner PM · merged 2026-11-02 (PR #6), confirmed 2026-11-02 | Documented 2026-11-02 |
 | W11 | Security corpus and authorisation tests | Not started | — | — | Tier 1 · Big · owner Dev Lead · after W1, W3 | — |
 | W12 | CI and process security | Done | [spec](../../specs/2026-11-02-w12-ci-process-security-design.md) | [plan](../../plans/2026-11-02-w12-ci-process-security-plan.md) | T1–T7 merged (PR #9); agent policy narrowed (PR #13, C55); guide confirmed 2026-11-07 | Documented 2026-11-07 |
@@ -177,6 +184,17 @@ Status: `Not started` · `Spec'd` · `Planned` · `Building` · `Blocked — nee
 | C66 | T7 replaces the role cookie with a real auth gate | [C66](decisions/C66.md) |
 | C67 | Mock previews keep the prototype role buttons | [C67](decisions/C67.md) |
 | C68 | `src/fe` UI tests use Vitest, Testing Library and jsdom | [C68](decisions/C68.md) |
+| C69 | W9 is backend only; screen wiring is a follow-up | [C69](decisions/C69.md) |
+| C70 | Amend the W9 spec to W5's merged code before planning | [C70](decisions/C70.md) |
+| C71 | W9 writes lock with W5's exported `lockProjectForMutation` | [C71](decisions/C71.md) |
+| C72 | An exhausted write retry returns 429, not 500 | [C72](decisions/C72.md) |
+| C73 | Fix the three PR #29 review findings before merge | [C73](decisions/C73.md) |
+| C74 | An empty standup window still includes current blockers | [C74](decisions/C74.md) |
+| C75 | The standup activity window is anchored to the standup date | [C75](decisions/C75.md) |
+| C76 | W9 is High risk | [C76](decisions/C76.md) |
+| C77 | W9 spec now, build after W5 merges | [C77](decisions/C77.md) |
+| C78 | An unchanged input hash returns the stored standup, even when degraded | [C78](decisions/C78.md) |
+| C79 | W9 adds `recordCacheHit` and `openOrReuse` to the gateway | [C79](decisions/C79.md) |
 
 ---
 
@@ -195,4 +213,4 @@ Status: `Not started` · `Spec'd` · `Planned` · `Building` · `Blocked — nee
 The Done ledger is **[`ledger/done-ledger.md`](ledger/done-ledger.md)**, newest first.
 
 - **Latest entry:** 2026-11-13
-- **Entries (live file):** 251
+- **Entries (live file):** 286
