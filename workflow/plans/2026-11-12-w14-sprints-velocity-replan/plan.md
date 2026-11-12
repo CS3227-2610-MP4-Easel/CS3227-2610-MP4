@@ -1,6 +1,6 @@
 # W14 Sprints, Velocity and Re-plan Implementation Plan
 
-- **Status:** Draft
+- **Status:** Approved (operator, 2026-11-13)
 - **Format:** v2
 - **Spec:** [W14 design](../../specs/2026-11-12-w14-sprints-velocity-replan-design.md) | **Spec hash:** a4a3b3b5b8ef
 - **Workstream:** W14
