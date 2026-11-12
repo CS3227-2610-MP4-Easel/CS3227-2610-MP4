@@ -102,7 +102,9 @@ export function createApply() {
       if (!parsed.success) throw new Error("VALIDATION_FAILED");
       const tx = transaction as ApplyDb;
       await tx.project?.update?.({ where: { id: projectId }, data: { version: { increment: 0 } } });
-      await actor(tx, actorId, "DEV_LEAD"); await projectAccess(tx, actorId, projectId); await proposal(tx, parsed.data.id, projectId, "REPLAN", parsed.data.version);
+      // Proposal ownership, replay and lifecycle are handled by @agile/proposals.
+      // Core owns only the domain validation and mutation for a selected re-plan.
+      await actor(tx, actorId, "DEV_LEAD"); await projectAccess(tx, actorId, projectId);
       for (const item of parsed.data.suggestions) {
         if (item.type === "MOVE_CHECKPOINT_DATE") {
           if (!await tx.checkpoint?.findFirst({ where: { id: item.checkpointId, projectId } })) throw new Error("VALIDATION_FAILED");
@@ -119,7 +121,6 @@ export function createApply() {
           await writeTaskEvent(tx as Required<Pick<ApplyDb, "taskEvent">>, { taskId: item.taskId, projectId, actorId, type: "ASSIGNEE_CHANGED", fromValue: existing.assigneeId ?? null, toValue: item.assigneeId });
         }
       }
-      await applied(tx, parsed.data.id, actorId, parsed.data.version);
     },
   };
 }

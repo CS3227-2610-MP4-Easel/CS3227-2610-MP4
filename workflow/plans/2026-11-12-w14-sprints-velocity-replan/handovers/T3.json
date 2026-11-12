@@ -1,0 +1,45 @@
+{
+  "task": "T3",
+  "status": "done",
+  "summary": "Added the injected ProposalService REPLAN lifecycle, transaction-aware session close adapter, immutable applied suggestion IDs and domain-only Core.applyReplan while preserving PM applyPlan lifecycle.",
+  "commit": "e3b85f5",
+  "produces": [
+    {
+      "kind": "symbol",
+      "name": "createProposalService",
+      "where": "src/be/proposals/src/service.ts",
+      "note": "Provides list, createReplan, createReplanInTransaction, approve and reject with project/proposal/session transaction ordering, supersession, replay and selected full suggestion ordering."
+    },
+    {
+      "kind": "symbol",
+      "name": "TransactionSessionCloser",
+      "where": "src/be/proposals/src/service.ts",
+      "note": "Structural closeInTransaction port; proposals has no dependency on @agile/llm-gateway."
+    },
+    {
+      "kind": "symbol",
+      "name": "createTransactionSessionCloser",
+      "where": "src/be/llm-gateway/src/sessions.ts",
+      "note": "Concrete LEAD_DIGEST session outcome adapter; public Sessions API is unchanged."
+    },
+    {
+      "kind": "change",
+      "name": "domain-only applyReplan",
+      "where": "src/be/core/src/apply.ts",
+      "note": "REPLAN no longer reads or updates aiProposal; applyPlan remains unchanged."
+    }
+  ],
+  "deviations": [
+    "The llm-gateway test suite has one pre-existing environment/network failure in E46 live SoCLaaS fetch; the new T3 adapter typechecks and does not alter that provider path.",
+    "Uncommitted T2 changes in core derived/index/sprints and proposals locks were present concurrently and were not staged or modified by T3."
+  ],
+  "checks": {
+    "build": "pass: npm run typecheck",
+    "service_tests": "pass: 2/2 via node --import tsx --test src/be/proposals/test/service.test.ts",
+    "core_tests": "pass: 11/11 via node --import tsx --test src/be/core/test/apply.test.ts",
+    "proposals_tests": "pass: 3 passed, 33 skipped (integration URL absent)",
+    "gateway_tests": "known failure: E46 live SoCLaaS fetch expected LIVE_SOCLAAS_IN_TESTS but environment returned fetch failed",
+    "diff_check": "pass: git diff --check"
+  },
+  "next": "T4 should inject the ProposalService and concrete session closer into lead persistence and call createReplanInTransaction inside the digest transaction."
+}

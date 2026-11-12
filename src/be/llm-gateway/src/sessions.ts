@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import type { FilteredTransactionClient } from "@agile/db";
 import { SESSION_CAPS, type Feature, type Sessions } from "@agile/contracts";
 import { LIMITS, SESSION_FEATURE } from "./config.js";
 import { systemClock, type Clock } from "./clock.js";
@@ -16,6 +17,41 @@ export type GatewaySessions = Sessions & {
   regenerate(sessionId: string, userId: string): Promise<void>;
   openOrReuse(input: { feature: Feature; userId: string; projectId: string | null }): Promise<string>;
 };
+
+export type TransactionSessionCloseInput = {
+  sessionId: string;
+  proposalId: string;
+  projectId: string;
+  feature: "LEAD_DIGEST";
+  ownerId: string;
+  outcome: "ACCEPTED" | "REJECTED";
+  actorId: string;
+};
+
+export type TransactionSessionCloser = {
+  closeInTransaction(tx: FilteredTransactionClient, input: TransactionSessionCloseInput): Promise<void>;
+};
+
+/**
+ * Internal proposal/session bridge. The public Sessions contract remains
+ * non-transactional; proposal mutations inject this adapter when they need
+ * session outcome and proposal/domain writes to commit together.
+ */
+export function createTransactionSessionCloser(options: { env?: string } = {}): TransactionSessionCloser {
+  const env = options.env ?? process.env.APP_TIER ?? "test";
+  return {
+    async closeInTransaction(tx, input) {
+      if (!UUID.test(input.sessionId) || !UUID.test(input.proposalId) || !UUID.test(input.projectId) || !UUID.test(input.ownerId) || !UUID.test(input.actorId)) throw new Error("INVALID_SESSION");
+      const proposal = await (tx as any).aiProposal.findFirst({ where: { id: input.proposalId, projectId: input.projectId, sessionId: input.sessionId, kind: "REPLAN", createdBy: input.ownerId }, select: { id: true } });
+      if (!proposal) throw new Error("CONFLICT_STATE");
+      const session = await (tx as any).aiSession.findFirst({ where: { id: input.sessionId } });
+      if (!session || session.env !== env || session.feature !== input.feature || session.projectId !== input.projectId || session.userId !== input.ownerId) throw new Error("CONFLICT_STATE");
+      if (session.outcome !== "OPEN") throw new Error("CONFLICT_STATE");
+      const result = await (tx as any).aiSession.updateMany({ where: { id: input.sessionId, outcome: "OPEN" }, data: { outcome: input.outcome, endedAt: new Date() } });
+      if (result.count !== 1) throw new Error("CONFLICT_STATE");
+    },
+  };
+}
 
 const CLOSED_OUTCOMES = ["ACCEPTED", "EDITED", "REJECTED", "ABANDONED"] as const;
 type ClosedOutcome = (typeof CLOSED_OUTCOMES)[number];
