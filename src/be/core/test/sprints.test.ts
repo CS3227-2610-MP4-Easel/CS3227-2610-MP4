@@ -127,7 +127,9 @@ test("sprint lifecycle enforces dates, overlap, and transitions", async () => {
   const service = createSprintService(state.db as any, access);
   const created = await service.create({ userId: actorId, role: "DEV_LEAD" }, projectId, { name: "Sprint 1", startDate: "2026-01-01", endDate: "2026-01-14" });
   assert.equal(created.status, "PLANNED");
+  const beforeOverlap = JSON.stringify(state.sprints);
   await assert.rejects(() => service.create({ userId: actorId, role: "DEV_LEAD" }, projectId, { name: "Overlap", startDate: "2026-01-14", endDate: "2026-01-20" }), /VALIDATION_FAILED/);
+  assert.equal(JSON.stringify(state.sprints), beforeOverlap);
   const started = await service.start({ userId: actorId, role: "DEV_LEAD" }, created.id, 1);
   assert.equal(started.status, "ACTIVE");
   await assert.rejects(() => service.remove({ userId: actorId, role: "DEV_LEAD" }, created.id), /CONFLICT_STATE/);
