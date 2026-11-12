@@ -215,6 +215,19 @@ export async function refreshDigest_44(): Promise<{ cached: boolean }> {
   return { cached };
 }
 
+// W8: Dev Lead facts and digest endpoints.
+export async function getFacts_42(projectId: string): Promise<import('./types').Facts> {
+  return apiFetch<import('./types').Facts>(`/api/projects/${encodeURIComponent(projectId)}/facts`);
+}
+
+export async function createDigest_44(projectId: string): Promise<import('./types').LeadDigest> {
+  return apiFetch<import('./types').LeadDigest>(`/api/lead/projects/${encodeURIComponent(projectId)}/digests`, { method: 'POST', body: {} });
+}
+
+export async function getLatestDigest_45(projectId: string): Promise<import('./types').LeadDigest> {
+  return apiFetch<import('./types').LeadDigest>(`/api/lead/projects/${encodeURIComponent(projectId)}/digests/latest`);
+}
+
 // 47 and 48: apply or dismiss re-plan suggestions
 export async function applySuggestions_47(ids: string[]): Promise<number> {
   await wait();

@@ -13,7 +13,7 @@ vi.mock('../lib/auth/firebase', () => ({
 }));
 
 import { apiFetch } from '../lib/api/http';
-import { ApiError, checkCode_2, me_4, register_3 } from '../lib/api';
+import { ApiError, checkCode_2, createDigest_44, getFacts_42, getLatestDigest_45, me_4, register_3 } from '../lib/api';
 
 const fetchMock = vi.fn();
 
@@ -287,5 +287,22 @@ describe('endpoints', () => {
     const [url, init] = fetchMock.mock.calls[0];
     expect([url, init.method]).toEqual(['/api/me', 'GET']);
     expect(u.role).toBe('DEVELOPER');
+  });
+
+  it('W8 Health data functions call the facts and digest endpoints', async () => {
+    reply(200, '{"asOf":"2026-11-12T00:00:00.000Z","pointsTotal":10,"pointsDone":4,"pointsRemaining":6,"unestimatedTasks":1,"velocity":[],"avgVelocity":null,"projectedCompletionDate":null,"checkpoints":[],"overload":[]}');
+    await getFacts_42('project-1');
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/projects/project-1/facts');
+    expect(fetchMock.mock.calls[0][1].method).toBe('GET');
+
+    reply(200, '{"id":"digest-1","projectId":"project-1","facts":{"asOf":"2026-11-12T00:00:00.000Z","pointsTotal":10,"pointsDone":4,"pointsRemaining":6,"unestimatedTasks":1,"velocity":[],"avgVelocity":null,"projectedCompletionDate":null,"checkpoints":[],"overload":[]},"explanation":"Steady progress.","degraded":false,"flagged":false,"proposalId":null,"cached":false,"createdAt":"2026-11-12T00:00:01.000Z"}');
+    await createDigest_44('project-1');
+    expect(fetchMock.mock.calls[1][0]).toBe('/api/lead/projects/project-1/digests');
+    expect(fetchMock.mock.calls[1][1].method).toBe('POST');
+    expect(fetchMock.mock.calls[1][1].body).toBe('{}');
+
+    await getLatestDigest_45('project-1');
+    expect(fetchMock.mock.calls[2][0]).toBe('/api/lead/projects/project-1/digests/latest');
+    expect(fetchMock.mock.calls[2][1].method).toBe('GET');
   });
 });

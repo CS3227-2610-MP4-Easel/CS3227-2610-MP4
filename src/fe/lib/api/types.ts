@@ -25,6 +25,19 @@ export type Checkpoint = { id: string; name: string; targetDate: string };
 export type Project = { id: string; name: string; status: 'ACTIVE' | 'ARCHIVED'; version: number };
 export type Standup = { id: string; date: string; yesterday: string[]; today: string[]; blockers: string[]; outcome: 'GENERATED' | 'EDITED' | 'ACCEPTED' };
 export type Digest = { generatedAt: string; cached: boolean };
+export type Facts = {
+  asOf: string;
+  pointsTotal: number;
+  pointsDone: number;
+  pointsRemaining: number;
+  unestimatedTasks: number;
+  velocity: { sprintId: string; name: string; completedPoints: number }[];
+  avgVelocity: number | null;
+  projectedCompletionDate: string | null;
+  checkpoints: { id: string; name: string; targetDate: string; remainingPoints: number; projectedDate: string | null; risk: 'ON_TRACK' | 'AT_RISK' | 'UNKNOWN' }[];
+  overload: { userId: string; displayName: string; openPoints: number; avgCompletedPerSprint: number | null; projects: { projectId: string; name: string; openPoints: number }[] }[];
+};
+export type LeadDigest = { id: string; projectId: string; facts: Facts; explanation: string | null; degraded: boolean; flagged: boolean; proposalId: string | null; cached: boolean; createdAt: string };
 export type Suggestion = { id: string; text: string; state: 'PENDING' | 'APPLIED' | 'DISMISSED' };
 
 export type TeamStandup = { date: string; person: Person; yesterday: string[]; today: string[]; blockers: string[]; outcome: 'GENERATED' | 'EDITED' | 'ACCEPTED'; activityOnly: boolean; flagged: boolean };
