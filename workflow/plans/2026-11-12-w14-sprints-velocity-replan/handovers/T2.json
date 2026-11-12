@@ -2,7 +2,7 @@
   "task": "T2",
   "status": "done",
   "summary": "Added focused T2 coverage for rollback, races, lifecycle, close validation, deletion, pagination, progress, and out-of-scope carry-over; planned-sprint deletion now clears assigned tasks atomically.",
-  "commit": "TBD",
+  "commit": "176a27a",
   "produces": [
     { "kind": "symbol", "name": "createSprintService/createSprints", "where": "src/be/core/src/sprints.ts", "note": "Actor-aware list/create/patch/start/close/remove/delete plus progress and velocity; mutations use RepeatableRead inMutationTransaction and project locking." },
     { "kind": "symbol", "name": "SprintService", "where": "src/be/core/src/index.ts", "note": "Public service and input/query types exported from @agile/core." },
