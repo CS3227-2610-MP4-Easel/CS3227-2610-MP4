@@ -1,0 +1,20 @@
+{
+  "task": "T1",
+  "status": "done",
+  "summary": "Added UUID project route context, id-preserving navigation, forbidden resolution, Health race protection, and fixed safe API error mapping; 162 tests pass.",
+  "commit": "pending",
+  "produces": [
+    { "kind": "file", "name": "project-mode.ts", "where": "src/fe/lib/api/project-mode.ts", "note": "Exports isProjectUuid, projectRoute, ProjectRouteContext, and useProjectRoute." },
+    { "kind": "symbol", "name": "routeOf", "where": "src/fe/lib/screens.ts", "note": "Accepts an optional project id and preserves it in generated project URLs." },
+    { "kind": "symbol", "name": "resolve", "where": "src/fe/lib/screens.ts", "note": "Returns forbidden for role-excluded state and mutation-dialog views." },
+    { "kind": "symbol", "name": "apiFetch", "where": "src/fe/lib/api/http.ts", "note": "Maps HTTP failures to fixed safe messages while retaining bounded retry and field details." }
+  ],
+  "next": "T3 should consume useProjectRoute for project surfaces. T4 should use the same live/prototype seam for collections and mutations. T5 should run route/error regressions.",
+  "deviations": [],
+  "edge_cases": ["F7", "F8", "N1", "N2", "E3", "E7", "E8", "E14"],
+  "checks": {
+    "build": "frontend typecheck passes with --incremental false; exact npm run typecheck is blocked by EPERM writing pre-existing tsconfig.tsbuildinfo",
+    "tests": "162 pass, 0 fail",
+    "lint": "pass"
+  }
+}

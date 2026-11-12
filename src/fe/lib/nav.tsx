@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { createContext, useContext, type CSSProperties, type ReactNode } from 'react';
+import { useProjectRoute } from './api/project-mode';
 import { routeOf, type Role } from './screens';
 
 export const RoleCtx = createContext<Role>('pm');
@@ -22,6 +23,12 @@ export function css(str: string | undefined): CSSProperties {
 
 export const r = routeOf;
 
+function withProjectId(href: string, projectId: string | null): string {
+  if (!projectId) return href;
+  return href.replace(/^\/projects\/[^/?#]+(?=\/|\?|#|$)/i, `/projects/${projectId}`);
+}
+
 export function A({ href, children, ...rest }: { href: string; children?: ReactNode; [k: string]: unknown }) {
-  return <Link href={href} {...(rest as object)}>{children}</Link>;
+  const { projectId } = useProjectRoute();
+  return <Link href={withProjectId(href, projectId)} {...(rest as object)}>{children}</Link>;
 }

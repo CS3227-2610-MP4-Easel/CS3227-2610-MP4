@@ -269,12 +269,33 @@ describe('error body mapping', () => {
     details.unshift(null as never, { x: 1 } as never);
     reply(400, JSON.stringify({ error: { code: 'c'.repeat(200), message: 'm'.repeat(900), requestId: 'r'.repeat(200), details } }));
     const e = await fail(apiFetch('/api/x'));
-    expect(e.code).toHaveLength(100);
-    expect(e.message).toHaveLength(500);
+    expect([e.code, e.message]).toEqual(['INTERNAL_ERROR', 'Something went wrong. Try again.']);
     expect(e.requestId).toHaveLength(100);
     expect(e.details).toHaveLength(50);
     expect(e.details[0].field).toHaveLength(200);
     expect(e.details[0].message).toHaveLength(500);
+  });
+
+  it('E7 maps HTTP failures to fixed safe messages', async () => {
+    const cases: [number, string, string][] = [
+      [403, 'FORBIDDEN_ROLE', 'You do not have permission to view this.'],
+      [404, 'NOT_FOUND', 'This project or task was not found.'],
+      [409, 'CONFLICT_VERSION', 'This changed elsewhere. Reload before trying again.'],
+      [422, 'VALIDATION_FAILED', 'Check the highlighted fields.'],
+      [429, 'RATE_LIMITED', 'Please wait before trying again.'],
+      [500, 'SERVER_SECRET', 'Something went wrong. Try again.'],
+    ];
+    for (const [status, code, message] of cases) {
+      reply(status, JSON.stringify({ error: { code, message: 'server detail must not escape' } }));
+      const e = await fail(apiFetch('/api/x'));
+      expect([e.code, e.message]).toEqual([code === 'SERVER_SECRET' ? 'INTERNAL' : code, message]);
+    }
+  });
+
+  it('E8 maps a rejected fetch to a fixed NETWORK error', async () => {
+    fetchMock.mockRejectedValue(new Error('server detail must not escape'));
+    const e = await fail(apiFetch('/api/x'));
+    expect([e.code, e.message]).toEqual(['NETWORK', 'Something went wrong. Try again.']);
   });
 });
 

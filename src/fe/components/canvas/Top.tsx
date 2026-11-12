@@ -2,6 +2,7 @@
 // Generated from the design canvas page Top.dc.html. Source of truth from here on is this file.
 import { Fragment, useState } from 'react';
 import { A, css, r, useRole } from '../../lib/nav';
+import { useProjectRoute } from '../../lib/api/project-mode';
 import { initialsOf, ROLE_LABEL, useSession } from '../../lib/auth/session';
 
 
@@ -29,9 +30,10 @@ name: m.name, email: m.email, initials: m.initials, avClass: m.av, roleClass: m.
 
 export default function Top(props: any = {}) {
   const role = useRole();
+  const route = useProjectRoute();
   const [open, setOpen] = useState(false);
   const session = useSession();
-  const v = new Logic({ ...props, role, menu: props.menu || open ? 'open' : '' }).renderVals();
+  const v = new Logic({ ...props, role, project: route.projectId ?? props.project, menu: props.menu || open ? 'open' : '' }).renderVals();
   const u = session && session.user;
   if (u) {
     const k = { PM: ['a1', 'r-pm'], DEV_LEAD: ['a2', 'r-lead'], DEVELOPER: ['a3', 'r-dev'] }[u.role] || ['a3', 'r-dev'];

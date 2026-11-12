@@ -9,6 +9,8 @@ import Screen from './screen';
 
 const OPEN = ['/styleguide', '/states'];
 
+const projectIdOf = (pathname: string) => pathname.match(/^\/projects\/([^/?#]+)/i)?.[1];
+
 function Loading() {
   return (
     <main className="app" style={{ alignItems: 'center', justifyContent: 'center' }}>
@@ -37,7 +39,7 @@ export default function AuthGate({ pathname, view }: { pathname: string; view?: 
   }, [target, router]);
 
   if (!session) return <Loading />;
-  if (isOpen) return <Screen found={resolve(pathname, view, 'pm')} role="pm" home={HOME.pm} />;
+  if (isOpen) return <Screen found={resolve(pathname, view, 'pm')} role="pm" home={HOME.pm} pathname={pathname} projectId={projectIdOf(pathname)} />;
   if (status === 'error') {
     const id = session.error?.requestId;
     return (
@@ -53,7 +55,7 @@ export default function AuthGate({ pathname, view }: { pathname: string; view?: 
   if (isRegister) return <Register />;
   if (status === 'ready' && session.user) {
     const role = toRole(session.user.role);
-    return <Screen found={resolve(pathname, view, role)} role={role} home={HOME[role]} />;
+    return <Screen found={resolve(pathname, view, role)} role={role} home={HOME[role]} pathname={pathname} projectId={projectIdOf(pathname)} />;
   }
   return <Loading />;
 }
