@@ -40,4 +40,19 @@ export function createApiApp(deps?: AuthDependencies, routes?: readonly RouteDef
   return app;
 }
 
-export const apiApp = createApiApp();
+let cachedApiApp: ReturnType<typeof createApiApp> | undefined;
+
+/** Build the process-wide API only when the first request needs it.
+ * This keeps framework build-time route collection free of runtime credential validation. */
+export function getApiApp() {
+  return (cachedApiApp ??= createApiApp());
+}
+
+/** Preserve the public app export without constructing it during framework builds. */
+export const apiApp = new Proxy({} as ReturnType<typeof createApiApp>, {
+  get(_target, property) {
+    const app = getApiApp();
+    const value = Reflect.get(app, property, app);
+    return typeof value === "function" ? value.bind(app) : value;
+  },
+});
