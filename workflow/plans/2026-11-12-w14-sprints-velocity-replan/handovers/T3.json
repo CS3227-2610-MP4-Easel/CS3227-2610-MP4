@@ -31,7 +31,7 @@
   ],
   "deviations": [
     "The llm-gateway test suite has one pre-existing environment/network failure in E46 live SoCLaaS fetch; the new T3 adapter typechecks and does not alter that provider path.",
-    "Uncommitted T2 changes in core derived/index/sprints and proposals locks were present concurrently and were not staged or modified by T3."
+    "Uncommitted concurrent changes in core.ts, core derived/index/sprints, proposals locks, and proposals service were present after T3 and were not staged or modified by T3."
   ],
   "checks": {
     "build": "pass: npm run typecheck",
