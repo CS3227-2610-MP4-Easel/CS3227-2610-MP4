@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — close modal button check passed after loading-state fix
+- **Last updated:** 2026-11-13 by Codex — live-site close modal error fixed and verified
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | Close modal button verified | Run W14 close-out checks, review the branch diff and prepare Gate 3 | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Active | Live-site close modal verified after 422 fix | Run W14 close-out checks, review the branch diff and prepare Gate 3 | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -100,6 +100,8 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-13 | Verified sprint action follow-up with frontend typecheck, 234 frontend tests and diff check | W14 | T6 close-out |
 | 2026-11-13 | Checked the live close button: it submits endpoint 31 with sprint version and carry-over choices; corrected the pre-load state so the disabled button says “Loading active sprint…” instead of implying no active sprint | W14 | T6 button check |
 | 2026-11-13 | Re-verified with frontend typecheck, 234 frontend tests and diff check | W14 | T6 button check |
+| 2026-11-13 | Reproduced the live close-modal error: task loading used endpoint-20 size 1000, exceeding the API bound and producing 422 `VALIDATION_FAILED`; reduced the request to size 100 and verified the live modal now shows three unfinished tasks and an enabled close button | W14 | T6 live-site verification |
+| 2026-11-13 | Re-verified with live browser UI, frontend typecheck, 234 frontend tests and diff check; close action was intentionally not submitted | W14 | T6 live-site verification |
 
 ## 4. Decisions
 

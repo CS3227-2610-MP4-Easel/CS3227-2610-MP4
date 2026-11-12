@@ -27,7 +27,7 @@ export default function LiveCloseSprintDialog() {
     listSprintsLive_27(project.projectId, 0, 100).then(async (page) => {
       const active = page.items.find((item) => item.status === 'ACTIVE') ?? null;
       if (!active) { if (current) setSprint(null); return; }
-      const sprintTasks = await listTasksLive_20(project.projectId!, 0, 1000, { sprintId: active.id });
+      const sprintTasks = await listTasksLive_20(project.projectId!, 0, 100, { sprintId: active.id });
       if (!current) return;
       setSprint(active);
       setTasks(sprintTasks.items.filter((task) => task.status !== 'DONE'));
