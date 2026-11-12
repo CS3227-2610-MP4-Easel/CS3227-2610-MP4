@@ -11,6 +11,7 @@ type RegisteredRoute = RouteDefinition & { [STRICT_BODY_PARSER]?: true };
 
 const registered = new WeakMap<object, RouteDefinition[]>();
 const isSchema = (value: unknown): value is z.ZodTypeAny => Boolean(value) && typeof (value as { safeParse?: unknown }).safeParse === "function";
+const EDIT_BODY_KEYS = new Set(["endpoint-38", "endpoint-39", "endpoint-58", "endpoint-59", "endpoint-61"]);
 const honoPath = (path: string) => path.replace(/\{(\w+)\}/g, ":$1");
 
 /** Body read with a byte cap (413), then the same content-type and JSON rules as `parseJsonBody`. */
@@ -50,10 +51,16 @@ export function registerRoute(app: Hono<ApiEnv>, route: RegisteredRoute, deps?: 
     const scope = await authorizeRequest(policy, deps as AuthDependencies, c.req.header("authorization"), request, policy.predicate === "ADDER");
     let settled = false;
     try {
+      const parseBody = async () => {
+        try { return route.bodyLimitBytes === undefined ? await parseJsonBody(c.req.raw, { strict: route[STRICT_BODY_PARSER] === true }) : await parseLimitedJson(c.req.raw, route.bodyLimitBytes, { strict: route[STRICT_BODY_PARSER] === true }); } catch (error) {
+          if (EDIT_BODY_KEYS.has(route.policyKey) && (c.req.header("content-type") ?? "").toLowerCase().startsWith("application/json") && error instanceof HttpError && error.code === "BAD_REQUEST") throw new HttpError("VALIDATION_FAILED", 422, "The request body is not valid.");
+          throw error;
+        }
+      };
       const input = {
         params: isSchema(route.paramsSchema) ? parseInput(route.paramsSchema, request.params) : request.params,
         query: isSchema(route.querySchema) ? parseInput(route.querySchema, Object.fromEntries(url.searchParams)) : Object.fromEntries(url.searchParams),
-        body: isSchema(route.bodySchema) ? parseInput(route.bodySchema, route.bodyLimitBytes === undefined ? await parseJsonBody(c.req.raw, { strict: route[STRICT_BODY_PARSER] === true }) : await parseLimitedJson(c.req.raw, route.bodyLimitBytes, { strict: route[STRICT_BODY_PARSER] === true })) : undefined,
+        body: isSchema(route.bodySchema) ? parseInput(route.bodySchema, await parseBody()) : undefined,
       };
       if (policy.predicate === "ADDER" && scope.principal && "userId" in scope.principal) {
         request.body = input.body;

@@ -43,6 +43,30 @@ export type Suggestion = { id: string; text: string; state: 'PENDING' | 'APPLIED
 export type TeamStandup = { date: string; person: Person; yesterday: string[]; today: string[]; blockers: string[]; outcome: 'GENERATED' | 'EDITED' | 'ACCEPTED'; activityOnly: boolean; flagged: boolean };
 export type AiSession = { id: string; feature: string; startedAt: string; outcome: 'Accepted' | 'Rejected' | 'Open'; regens: number; feedback: 'up' | 'down' | null; calls: number; prompt: number; completion: number; cost: number; elapsed: number };
 
+// Plan proposal (endpoints 34 to 41); mirrors PlanProposalSchema in @agile/contracts.
+export type PlanTask = { title: string; description: string; acceptanceCriteria: string[]; storyPoints: number | null };
+export type PlanEpic = { index: number; title: string; description: string; checkpointName: string | null; contentHash: string; expansion: { status: 'PENDING' | 'IN_PROGRESS' | 'DONE' | 'FAILED'; tasks: PlanTask[] | null; error: string | null } };
+export type PlanProposal = {
+  id: string;
+  projectId: string;
+  kind: 'PLAN';
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUPERSEDED';
+  approach: string;
+  checkpoints: { name: string; targetDate: string }[];
+  epics: PlanEpic[];
+  retrieved: { source: string; projectId: string; projectName: string; id: string; title: string }[];
+  flagged: boolean;
+  createdAt: string;
+  version: number;
+};
+export type CheckpointDraft = { name: string; targetDate: string; previousName?: string };
+export type EpicPatch = { title?: string; description?: string; checkpointName?: string | null; tasks?: PlanTask[] };
+
+// Created data, read back after approve (endpoints 12, 16, 20); mirrors CheckpointSchema, EpicSchema, TaskSchema.
+export type LiveProject = { id: string; name: string; brief: string | null; status: 'ACTIVE' | 'ARCHIVED'; version: number; progress?: { pointsTotal: number; pointsDone: number; percent: number; unestimatedTasks: number } };
+
+export type PlanApproved ={ proposalId: string; status: 'APPROVED'; created: { checkpoints: number; epics: number; tasks: number } };
+
 export type Db = {
   project: Project;
   epics: Epic[];
@@ -62,7 +86,7 @@ export type Page<T> = { items: T[]; page: number; size: number; total: number };
 export type LiveUserRole = 'PM' | 'DEV_LEAD' | 'DEVELOPER';
 export type LiveProjectStatus = 'ACTIVE' | 'ARCHIVED';
 export type LiveTaskStatus = 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE';
-export type LiveStoryPoints = 1 | 2 | 3 | 5 | 8 | 13;
+export type LiveStoryPoints = number;
 
 export type LiveProjectDetail = {
   id: string;

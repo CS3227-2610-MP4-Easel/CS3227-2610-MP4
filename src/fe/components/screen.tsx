@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { ModalCtx, RoleCtx, type ModalRequest } from '../lib/nav';
 import { ProjectRouteContext, projectRoute } from '../lib/api/project-mode';
-import { resolve, type Resolved, type Role } from '../lib/screens';
+import { resolve, setCurrentProject, PROJECT, type Resolved, type Role } from '../lib/screens';
 import { SCREEN_COMPONENTS } from './screens-index';
 import Top from './canvas/Top';
 
@@ -14,6 +14,7 @@ const MODAL_BASE: Record<string, string> = {
 };
 
 export default function Screen({ found, role, home, pathname = '', projectId }: { found: Resolved; role: Role; home: string; pathname?: string; projectId?: string }) {
+  setCurrentProject(projectId ?? PROJECT);
   const route = projectRoute(pathname, projectId);
   const [modal, setModal] = useState<ModalRequest | null>(null);
   const modalContext = { modal, open: setModal, close: () => setModal(null) };

@@ -1,0 +1,12 @@
+{
+  "task": "T10",
+  "status": "done",
+  "summary": "Added three-month outline guidance and checkpoint-aware, developer-assignable bulk task guidance.",
+  "commit": "pending",
+  "produces": [{ "kind": "file", "name": "sections.ts", "where": "src/be/pm/src/sections.ts", "note": "Bounded, untrusted checkpoint context and prompt guidance." }],
+  "next": "Run live E36 and the 10-epic measurement at close-out.",
+  "deviations": [],
+  "edge_cases": ["E38"],
+  "checks": { "build": "pass", "tests": "PM 68 passed; proposals 78 passed; targeted prompt 9 passed; 0 failed, 0 skipped", "lint": "passed" },
+  "note": "Implementer, Tester and Attacker review complete; separator coverage finding fixed and re-reviewed. Live model behavior not yet checked."
+}

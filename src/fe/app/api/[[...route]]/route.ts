@@ -1,5 +1,7 @@
 import { getApiApp } from '@agile/api';
 
+export const maxDuration = 60;
+
 async function forward(request: Request): Promise<Response> {
   return getApiApp().fetch(request);
 }

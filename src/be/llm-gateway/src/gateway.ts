@@ -74,7 +74,7 @@ export function createLlmGateway(deps: GatewayDeps): LlmGateway {
     return null;
   }
 
-  /** One attempt, then at most one retry for a 429 (after 2 s) or a 5xx/network error, only with 8 s left of the 25 s deadline. */
+  /** One attempt, then at most one retry for a 429 (after 2 s) or a 5xx/network error, only with 8 s left of the deadline. */
   async function attempts(request: Omit<Parameters<LlmProvider["complete"]>[0], "timeoutMs">): Promise<{ last: Attempt; count: number }> {
     const tryOnce = async (timeoutMs: number): Promise<Attempt> => {
       try {
@@ -83,12 +83,13 @@ export function createLlmGateway(deps: GatewayDeps): LlmGateway {
         return { ok: false, kind: error instanceof UpstreamError ? error.kind : "OTHER" };
       }
     };
+    const feature = FEATURES[request.call.feature];
     const start = clock.now().getTime();
-    let last = await tryOnce(LIMITS.attemptTimeoutMs);
+    let last = await tryOnce(feature.attemptTimeoutMs ?? LIMITS.attemptTimeoutMs);
     if (last.ok || last.kind === "TIMEOUT" || last.kind === "OTHER") return { last, count: 1 };
     const elapsed = clock.now().getTime() - start;
     const wait = last.kind === "HTTP_429" ? LIMITS.backoff429Ms : 0;
-    const left = LIMITS.deadlineMs - elapsed - wait;
+    const left = (feature.deadlineMs ?? LIMITS.deadlineMs) - elapsed - wait;
     if (left < LIMITS.minRetryMs) return { last, count: 1 };
     if (wait) await clock.sleep(wait);
     last = await tryOnce(left);
@@ -150,7 +151,7 @@ export function createLlmGateway(deps: GatewayDeps): LlmGateway {
       const reserved = reservation(call.feature, model);
       const { id: callId } = await db.llmCall.create({
         data: {
-          ...base, createdAt: now, promptVersion: prefixHash.slice(0, 12), prefixHash, status: "IN_FLIGHT", leaseExpiresAt: new Date(now.getTime() + LIMITS.leaseMs),
+          ...base, createdAt: now, promptVersion: prefixHash.slice(0, 12), prefixHash, status: "IN_FLIGHT", leaseExpiresAt: new Date(now.getTime() + (feature.leaseMs ?? LIMITS.leaseMs)),
           attempts: 0, estimatedPromptTokens: fitted.estimatedPromptTokens, sectionTokens: fitted.sectionTokens, flagged, truncated: fitted.truncated || cut, costMicrousd: BigInt(reserved),
         },
         select: { id: true },

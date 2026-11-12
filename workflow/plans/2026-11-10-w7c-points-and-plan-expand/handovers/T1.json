@@ -1,0 +1,15 @@
+{
+  "task": "T1",
+  "status": "done",
+  "summary": "Added shared points validation and endpoint 61 policy and OpenAPI schemas; targeted and contract tests pass.",
+  "commit": "this commit",
+  "produces": [
+    { "kind": "symbol", "name": "StoryPointsSchema", "where": "@agile/contracts", "note": "Integer 1 to 20 with shared validation message." },
+    { "kind": "route", "name": "endpoint-61 / PM_PROPOSAL_EXPAND_ALL", "where": "src/be/contracts/src/policy.ts", "note": "POST /api/pm/proposals/{proposalId}/expand; PM MEMBER; body version; 200 PlanProposal." },
+    { "kind": "other", "name": "PM_PROPOSAL_EXPAND_ALL request and response", "where": "src/be/contracts/src/openapi-schemas.ts", "note": "ProposalVersionBodySchema and PlanProposalSchema." }
+  ],
+  "next": "T2: use StoryPointsSchema in core, api and pm. T7: register endpoint-61 with ProposalVersionBodySchema and PlanProposalSchema. T8: POST { version }; range 1 to 20. T9: scan contracts for old literal union.",
+  "deviations": [],
+  "edge_cases": ["E1", "E2", "E3", "E6", "E29"],
+  "checks": { "build": "pass", "tests": "targeted 25 pass, 0 fail, 0 skipped; contract 7 pass, 0 fail, 0 skipped", "lint": "not run" }
+}

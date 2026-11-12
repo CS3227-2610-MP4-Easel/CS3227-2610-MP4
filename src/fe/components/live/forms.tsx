@@ -110,7 +110,7 @@ export function AddEpicForm() {
   );
 }
 
-const POINTS = ['', '1', '2', '3', '5', '8', '13'];
+
 const PEOPLE: [Person, string][] = [['pn', 'Priya Nair'], ['ml', 'Marcus Lim'], ['wo', 'Wei Ling Ong']];
 
 export function AddTaskForm() {
@@ -169,8 +169,8 @@ export function AddTaskForm() {
         <span className="hint">Up to 12 criteria of 300 characters. Plain text.</span></div>
       <div className="g2">
         <div className="field"><label htmlFor="sp">Story points</label>
-          <select id="sp" className="in" value={pts} onChange={(e) => setPts(e.target.value)}>{POINTS.map((p) => <option key={p} value={p}>{p || 'None'}</option>)}</select>
-          <span className="hint">1, 2, 3, 5, 8, 13 or none</span></div>
+          <input id="sp" className="in" type="number" min={1} max={20} step={1} value={pts} onChange={(e) => setPts(e.target.value)} />
+          <span className="hint">Whole number from 1 to 20, or none</span></div>
         <div className="field"><label htmlFor="as">Assignee</label>
           <select id="as" className="in" value={who} onChange={(e) => setWho(e.target.value)}><option value="">Unassigned</option>{live ? liveMembers.map((member) => <option key={member.userId} value={member.userId}>{member.displayName}</option>) : PEOPLE.map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select>
           <span className="hint">Project members only</span></div>

@@ -1,0 +1,30 @@
+{
+  "task": "T8",
+  "status": "done",
+  "summary": "Wired bulk expansion and 1\u201320 numeric points inputs.",
+  "commit": "pending",
+  "produces": [
+    {
+      "kind": "symbol",
+      "name": "expandAll_61",
+      "where": "src/fe/lib/api/index.ts",
+      "note": "POST proposal expand with version and return fresh PlanProposal."
+    },
+    {
+      "kind": "other",
+      "name": "Points number inputs",
+      "where": "src/fe/components/live/live-plan.tsx, forms.tsx, task-drawer.tsx",
+      "note": "Whole numbers 1\u201320, optional in forms and drawer."
+    }
+  ],
+  "next": "T9: the old points lists and hint are removed from the three front-end components. E36 manual browser checklist remains for close-out.",
+  "deviations": [],
+  "edge_cases": [
+    "E36"
+  ],
+  "checks": {
+    "build": "pass",
+    "tests": "Points validation self-check: 8 passed; E36 manual checklist pending close-out",
+    "lint": "FE data-layer lint pass"
+  }
+}

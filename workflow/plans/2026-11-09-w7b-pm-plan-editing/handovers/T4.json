@@ -1,0 +1,14 @@
+{
+  "task": "T4",
+  "status": "done",
+  "summary": "Added regenerate precheck and claims, durable version watermark, guarded store and fail results.",
+  "commit": "pending",
+  "produces": [
+    {"kind":"symbol","name":"claimEpic","where":"src/be/proposals/src/expand-store.ts","note":"mode and expectedProposalVersion; every claim allocates and persists watermark"},
+    {"kind":"symbol","name":"storeEpic, failEpic, precheckRegenerate","where":"src/be/proposals/src/expand-store.ts","note":"optional proposal-version bump, boolean fail, locked creator/version precheck"}
+  ],
+  "next": "T3 must allocate the same proposal payload watermark on every delete. T7 mirrors the new API and handles false fail results. The failEpic boolean return type was updated in pm/src/plan-flow.ts for typecheck.",
+  "deviations": [{"what":"T4 updates the mirrored failEpic type in pm/src/plan-flow.ts","why":"Promise<boolean> was incompatible with the existing Promise<void> seam; orchestrator approved task correction D~6","needs":"none"}],
+  "edge_cases": ["E3","E4","E29","E38","E41","E42","E43","E60"],
+  "checks": {"build":"pass","tests":"60 passed, 0 failed, 0 skipped serially; earlier parallel run had four transaction timeouts and first serial run had intermittent E48 winner-order failure","lint":"handover lint pass; full lint not run"}
+}

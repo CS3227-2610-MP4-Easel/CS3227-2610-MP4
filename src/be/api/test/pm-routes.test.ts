@@ -57,6 +57,7 @@ function fakeFlow(failure?: () => Error) {
     createPlan: hit("createPlan", { id: OWN }),
     getProposal: hit("getProposal", { id: OWN }),
     expandEpic: hit("expandEpic", { index: 0 }),
+    expandAll: hit("expandAll", { id: OWN }),
     approve: hit("approve", { proposalId: OWN, status: "APPROVED" }),
     reject: hit("reject", { id: OWN }),
   } as unknown as PlanFlow;

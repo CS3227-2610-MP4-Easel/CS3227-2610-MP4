@@ -2,11 +2,14 @@
 // The data layer: one function per endpoint of docs/architecture/contracts.md, named with its number.
 // Screens call these and nothing else. Linking the backend replaces the bodies with calls to /api
 // through the contracts client; the signatures stay. Fixtures are used only inside this folder.
+import { StoryPointsSchema } from '@agile/contracts';
 import { read, write } from './store';
+import { LiveError, openProjectId } from './live';
 import { ApiError } from './errors';
 import { apiFetch } from './http';
 import type {
   Checkpoint,
+  CheckpointDraft, EpicPatch, LiveProject, PlanApproved, PlanEpic, PlanProposal,
   Epic,
   LiveCheckpoint,
   LiveCheckpointCreateInput,
@@ -38,11 +41,79 @@ import type {
 } from './types';
 
 export { useDb, reset as resetPrototypeData } from './store';
+export { isLive, ModeProvider } from './mode';
 export * from './types';
 export { ApiError } from './errors';
 export * as live from './dev';
 
 const wait = (ms = 250) => new Promise((r) => setTimeout(r, ms));
+
+const live = <T,>(method: 'GET' | 'POST' | 'PATCH' | 'DELETE', path: string, body?: unknown): Promise<T> => apiFetch<T>(`/api${path}`, { method, body });
+
+// The project of the open page, as an ApiError when the page has none.
+const pid = (): string => {
+  try {
+    return openProjectId();
+  } catch (e) {
+    throw e instanceof LiveError ? new ApiError(e.code, e.message) : e;
+  }
+};
+
+// 5: create a project (the creator becomes a member)
+export const createProject_5 = (name: string, brief: string) => live<LiveProject>('POST', '/pm/projects', { name, ...(brief.trim() ? { brief } : {}) });
+// 6: the projects of the signed-in user, newest first
+export const listLiveProjects_6 = () => live<Page<LiveProject>>('GET', '/projects?size=100');
+// 7: one project
+export const getLiveProject_7 = (id?: string) => live<LiveProject>('GET', `/projects/${id ?? pid()}`);
+
+// 34: draft a plan from an idea
+export const createPlan_34 = (idea: string) => live<PlanProposal>('POST', `/pm/projects/${pid()}/plans`, { idea });
+// 35: read a proposal
+export const getProposal_35 = (id: string) => live<PlanProposal>('GET', `/pm/proposals/${id}`);
+// 61: expand all unexpanded epics
+export const expandAll_61 = (id: string, version: number) => live<PlanProposal>('POST', `/pm/proposals/${id}/expand`, { version });
+// A numeric input must contain digits only; the shared schema validates the range.
+export const validPoints = (value: string) => /^\d+$/.test(value) && StoryPointsSchema.safeParse(Number(value)).success;
+// 37: expand one epic into tasks
+export const expandEpic_37 = (id: string, index: number) => live<PlanEpic>('POST', `/pm/proposals/${id}/epics/${index}/expand`, {});
+// 36: earlier proposals of the project, newest first
+export const listProposals_36 = (projectId = pid(), page = 0, status?: PlanProposal['status']) => {
+  const query = new URLSearchParams({ size: '20', page: String(page) });
+  if (status) query.set('status', status);
+  return live<Page<PlanProposal>>('GET', `/pm/projects/${projectId}/proposals?${query}`);
+};
+// 38: edit one epic (title, description, checkpoint, and the whole task list); every edit needs the proposal's version
+export const editEpic_38 = (id: string, index: number, version: number, patch: EpicPatch) => live<PlanProposal>('PATCH', `/pm/proposals/${id}/epics/${index}`, { ...patch, version });
+// 39: regenerate one expanded epic with the model
+export const regenerateEpic_39 = (id: string, index: number, version: number) => live<PlanProposal>('POST', `/pm/proposals/${id}/epics/${index}/regenerate`, { version });
+// 58: replace the checkpoint list; `previousName` keeps epics attached to a renamed checkpoint
+export const setCheckpoints_58 = (id: string, version: number, checkpoints: CheckpointDraft[]) => live<PlanProposal>('PATCH', `/pm/proposals/${id}/checkpoints`, { checkpoints, version });
+// 59: add an epic
+export const addEpic_59 = (id: string, version: number, epic: { title: string; description: string; checkpointName: string | null }) => live<PlanProposal>('POST', `/pm/proposals/${id}/epics`, { ...epic, version });
+// 60: delete an epic
+export const deleteEpic_60 = (id: string, index: number, version: number) => live<PlanProposal>('DELETE', `/pm/proposals/${id}/epics/${index}?version=${version}`);
+// 40: approve; creates the checkpoints, epics and tasks
+export const approvePlan_40 = (id: string, version: number) => live<PlanApproved>('POST', `/pm/proposals/${id}/approve`, { version });
+// 41: reject
+export const rejectPlan_41 = (id: string, version: number) => live<PlanProposal>('POST', `/pm/proposals/${id}/reject`, { version });
+
+// 12, 16, 20: what approve created, read back for the live backlog
+export const listLiveCheckpoints_12 = (projectId = pid()) => live<LiveCheckpoint[]>('GET', `/projects/${projectId}/checkpoints`);
+export const listLiveMembers_9 = (projectId: string) => live<LiveMember[]>('GET', `/projects/${projectId}/members`);
+export const listLiveSprints_27 = (projectId: string) => live<LiveSprint[]>('GET', `/projects/${projectId}/sprints`);
+export const updateLiveCheckpoint_14 = (id: string, patch: { name?: string; targetDate?: string; version: number }) => live<LiveCheckpoint>('PATCH', `/checkpoints/${id}`, patch);
+export const updateLiveEpic_18 = (id: string, patch: { title?: string; description?: string | null; checkpointId?: string | null; version: number }) => live<LiveEpic>('PATCH', `/epics/${id}`, patch);
+export const updateLiveTask_23 = (id: string, patch: { title?: string; description?: string | null; acceptanceCriteria?: string[]; storyPoints?: number | null; epicId?: string; assigneeId?: string | null; sprintId?: string | null; version: number }) => live<LiveTask>('PATCH', `/tasks/${id}`, patch);
+async function all<T extends { id: string }>(path: string): Promise<T[]> {
+  const items: T[] = [];
+  for (let page = 0; ; page++) {
+    const res = await live<Page<T>>('GET', `${path}?size=100&page=${page}`);
+    items.push(...res.items);
+    if (res.items.length === 0 || items.length >= res.total) return [...new Map(items.map((item) => [item.id, item])).values()];
+  }
+}
+export const listLiveEpics_16 = (projectId = pid()) => all<LiveEpic>(`/projects/${projectId}/epics`);
+export const listLiveTasks_20 = (projectId = pid()) => all<LiveTask>(`/projects/${projectId}/tasks`);
 
 // 8: archive the project
 export async function archiveProject_8(): Promise<void> {
