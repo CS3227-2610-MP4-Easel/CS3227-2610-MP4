@@ -276,7 +276,12 @@ export async function listMembersLive_9(projectId: string): Promise<LiveMember[]
 
 export async function addMemberLive_10(projectId: string, email: string): Promise<LiveMember> {
   const added = await apiFetch<LiveMember>(`/api/projects/${encodeURIComponent(projectId)}/members`, { method: 'POST', body: { email } });
-  const members = await listMembersLive_9(projectId);
+  let members: LiveMember[];
+  try {
+    members = await listMembersLive_9(projectId);
+  } catch {
+    return added;
+  }
   return members.find((member) => member.userId === added.userId) ?? added;
 }
 
@@ -303,7 +308,8 @@ export function createEpicLive_17(projectId: string, input: LiveEpicCreateInput)
 }
 
 export function listTasksLive_20(projectId: string, page = 0, size = 20, filters?: LiveTaskListFilters): Promise<Page<LiveTask>> {
-  return apiFetch<Page<LiveTask>>(`/api/projects/${encodeURIComponent(projectId)}/tasks?${pageParams(page, size, filters)}`);
+  const query = filters && { status: filters.status, epicId: filters.epicId, assigneeId: filters.assigneeId, blocked: filters.blocked };
+  return apiFetch<Page<LiveTask>>(`/api/projects/${encodeURIComponent(projectId)}/tasks?${pageParams(page, size, query)}`);
 }
 
 export function createTaskLive_21(projectId: string, input: LiveTaskCreateInput): Promise<LiveTask> {

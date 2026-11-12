@@ -435,6 +435,28 @@ describe('endpoints', () => {
     expect(member).toEqual({ userId: 'u1', displayName: 'First', role: 'DEVELOPER', addedAt: 'a' });
   });
 
+  it('E11 direct member listing deduplicates by userId and preserves an empty reload fallback', async () => {
+    reply(200, JSON.stringify([
+      { userId: 'u1', displayName: 'First', role: 'DEVELOPER', addedAt: 'a' },
+      { userId: 'u1', displayName: 'Duplicate', role: 'DEVELOPER', addedAt: 'b' },
+    ]));
+    await expect(listMembersLive_9('project 1')).resolves.toEqual([
+      { userId: 'u1', displayName: 'First', role: 'DEVELOPER', addedAt: 'a' },
+    ]);
+
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ userId: 'u3', displayName: 'Created', role: 'DEVELOPER', addedAt: 'now' }), { status: 201 }));
+    fetchMock.mockResolvedValueOnce(new Response('[]', { status: 200 }));
+    await expect(addMemberLive_10('project 1', 'empty@example.com')).resolves.toEqual({
+      userId: 'u3', displayName: 'Created', role: 'DEVELOPER', addedAt: 'now',
+    });
+
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ userId: 'u4', displayName: 'Created', role: 'DEVELOPER', addedAt: 'later' }), { status: 201 }));
+    fetchMock.mockRejectedValueOnce(new TypeError('reload failed'));
+    await expect(addMemberLive_10('project 1', 'reload-fails@example.com')).resolves.toEqual({
+      userId: 'u4', displayName: 'Created', role: 'DEVELOPER', addedAt: 'later',
+    });
+  });
+
   it('F3/E6 epic and task list clients serialize paging and supported filters', async () => {
     reply(200, '{}');
     await listEpicsLive_16('project 1');
@@ -448,7 +470,7 @@ describe('endpoints', () => {
     expect(fetchMock.mock.calls[2][1].method).toBe('POST');
     expect(fetchMock.mock.calls[2][1].body).toBe('{"title":"Release","description":null,"checkpointId":null}');
 
-    await listTasksLive_20('project 1', 3, 7, { status: 'IN_PROGRESS', epicId: 'epic/1', assigneeId: 'user/1', blocked: false });
+    await listTasksLive_20('project 1', 3, 7, { status: 'IN_PROGRESS', epicId: 'epic/1', assigneeId: 'user/1', blocked: false, extra: 'omit' } as never);
     expect(fetchMock.mock.calls[3][0]).toBe('/api/projects/project%201/tasks?page=3&size=7&status=IN_PROGRESS&epicId=epic%2F1&assigneeId=user%2F1&blocked=false');
   });
 
