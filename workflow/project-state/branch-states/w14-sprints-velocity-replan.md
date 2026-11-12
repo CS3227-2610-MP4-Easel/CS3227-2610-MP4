@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — T4 blocker fixes accepted; E27 fixture tightened
+- **Last updated:** 2026-11-13 by Codex — T4 accepted; session paused for T5 handover validation
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | T4 accepted after transaction, runtime and E27 fixes; T5 handover remains present | Validate T5 handover/review, then continue T6 from the T5 handover | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Paused | T4 accepted after transaction, runtime and E27 fixes; T5 handover remains present | Validate T5 handover/review, then continue T6 from the T5 handover | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
