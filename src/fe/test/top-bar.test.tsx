@@ -28,7 +28,10 @@ vi.mock('next/navigation', () => ({
 
 import RoleBar from '../components/role-bar';
 import Top from '../components/canvas/Top';
+import Projects from '../components/canvas/Projects';
 import { AuthRoot } from '../lib/auth/mode-context';
+import { ProjectRouteContext, projectRoute } from '../lib/api/project-mode';
+import { RoleCtx } from '../lib/nav';
 
 const fetchMock = vi.fn();
 
@@ -58,6 +61,30 @@ afterEach(() => {
 });
 
 describe('top bar', () => {
+  it('F1 E1 renders live UUID project rows and preserves each project id in links', async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({
+      items: [{
+        id: '550e8400-e29b-41d4-a716-446655440000', name: 'Live Campus', brief: 'Live brief', status: 'ACTIVE',
+        createdBy: 'u1', createdAt: '2026-11-12T00:00:00Z', updatedAt: '2026-11-12T00:00:00Z', version: 1,
+        progress: { pointsTotal: 10, pointsDone: 4, percent: 40, unestimatedTasks: 0 },
+      }], page: 0, size: 20, total: 1,
+    }), { status: 200 }));
+    render(
+      <ProjectRouteContext.Provider value={projectRoute('/projects/550e8400-e29b-41d4-a716-446655440000')}>
+        <RoleCtx.Provider value="pm"><Projects /></RoleCtx.Provider>
+      </ProjectRouteContext.Provider>,
+    );
+    expect(await screen.findByRole('heading', { name: 'Live Campus' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: /Live Campus/ }).getAttribute('href')).toBe('/projects/550e8400-e29b-41d4-a716-446655440000');
+    expect(screen.queryByRole('heading', { name: 'Campus Eats Mobile App' })).toBeNull();
+  });
+
+  it('F7 keeps prototype project rows on a non-UUID route', () => {
+    render(<Projects />);
+    expect(screen.getByRole('heading', { name: 'Campus Eats Mobile App' })).toBeTruthy();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('E77 shows the user, initials, role label and no role bar', async () => {
     const cases: [string, string, string, string, string, string][] = [
       ['DEVELOPER', 'Ana Lee', 'AL', 'Developer', 'r-dev', 'a3'],
