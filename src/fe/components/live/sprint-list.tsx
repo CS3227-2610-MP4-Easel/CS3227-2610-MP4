@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { A, r } from '../../lib/nav';
-import { ApiError, deleteSprintLive_32, listTasksLive_20, startSprintLive_30, deleteSprint_32, startSprint_30, useDb, type LiveSprint, type LiveTask, type Sprint } from '../../lib/api';
+import { ApiError, deleteSprintLive_32, listTasksLive_20, startSprintLive_30, deleteSprint_32, startSprint_30, useDb, type LiveMember, type LiveSprint, type LiveTask, type Sprint } from '../../lib/api';
 import StatusChip from '../canvas/StatusChip';
 import { toast } from './toast';
 import { WHO, fmtDay } from './people';
@@ -10,9 +10,9 @@ const ORDER = { ACTIVE: 0, PLANNED: 1, CLOSED: 2 } as const;
 const LIVE_STATUS: Record<LiveTask['status'], 'todo' | 'prog' | 'rev' | 'done'> = { TODO: 'todo', IN_PROGRESS: 'prog', IN_REVIEW: 'rev', DONE: 'done' };
 
 // Sprint sections for the Dev Lead, read from the data layer (endpoints 27, 30, 32).
-type SprintListProps = { readOnly?: boolean; live?: boolean; projectId?: string; sprints?: LiveSprint[]; loading?: boolean; error?: string | null; onRetry?: () => void; onChanged?: () => void | Promise<void> };
+type SprintListProps = { readOnly?: boolean; live?: boolean; projectId?: string; sprints?: LiveSprint[]; members?: LiveMember[]; loading?: boolean; error?: string | null; onRetry?: () => void; onChanged?: () => void | Promise<void> };
 
-export default function SprintList({ readOnly = false, live = false, projectId, sprints, loading = false, error, onRetry, onChanged }: SprintListProps) {
+export default function SprintList({ readOnly = false, live = false, projectId, sprints, members = [], loading = false, error, onRetry, onChanged }: SprintListProps) {
   const db = useDb();
   const [busy, setBusy] = useState('');
   const [expanded, setExpanded] = useState<Set<string>>(() => live ? new Set() : new Set(db.sprints.filter((sprint) => sprint.status === 'ACTIVE').map((sprint) => sprint.id)));
@@ -103,6 +103,7 @@ export default function SprintList({ readOnly = false, live = false, projectId, 
                 <span className={`pts${t.storyPoints ? '' : ' none'}`}>{t.storyPoints ?? ''}</span>
                 <StatusChip status={LIVE_STATUS[t.status]} />
                 <A className="t" href={`${r('Board.dc.html')}?task=${encodeURIComponent(t.id)}`}>{t.title}</A>
+                {(() => { const member = t.assigneeId ? members.find((item) => item.userId === t.assigneeId) : null; const name = member?.displayName ?? (t.assigneeId ? 'Unknown member' : null); return name ? <span className="who"><span className="av a4" aria-hidden="true">{name.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase()}</span>{name}</span> : <span className="chip c-line">Unassigned</span>; })()}
               </div>
             ))}
             {live && isExpanded && !taskError && Object.prototype.hasOwnProperty.call(liveTasks, s.id) && liveSprintTasks.length === 0 && <div className="trow"><span className="small muted">No tasks assigned to this sprint.</span></div>}
