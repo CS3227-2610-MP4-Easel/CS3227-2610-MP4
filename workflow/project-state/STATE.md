@@ -5,8 +5,8 @@
 - **Phase:** Pre-implementation. The architecture passed its readiness gate for the first slice on 2026-10-29; the W10 clickable prototype, W1 foundation/API skeleton, W2 gateway, W3 guards, W4 auth, W6 AI context and W12 CI are merged, while the role features (W5, W7-W9) remain.
 - **Stack:** TypeScript monorepo, Next.js App Router with a Hono API under `/api`, Prisma, Postgres (Neon), Firebase Auth, Vercel (Hobby), NUS SoCLaaS
 - **Branch:** `INT` = `development`; `main` is the release branch. This file describes `INT` only.
-- **Last updated:** 2026-11-07 by Claude Sonnet 5.5 — folded w2-gateway, w12, w4-auth, w12-agent-policy-scope, w3-guards, w6-ai-context
-- **Last verified against repo:** 2026-11-03
+- **Last updated:** 2026-11-13 by Claude Opus 5.5 — folded w4-sign-in-screen
+- **Last verified against repo:** 2026-11-13 (W4 areas only, at the w4-sign-in-screen fold)
 - **Developer guide:** seeded 2026-11-02 from W10, [guide](../../docs/guide/index.md)
 - **Deadline:** 13 Nov 2026. Feature freeze end of 10 Nov (AD-69), production deploy 11 Nov (AD-70).
 
@@ -53,7 +53,6 @@ Verification commands are configured in `workflow/config.json`: `npm test`, `npm
 | W13 environment variables | Todo | set `LLM_MODE`, `SOCLAAS_API_KEY` (dev and prod keys differ, AD-58) and, if SoCLaaS is unreachable from Vercel, `AI_ENABLED=false` per tier; add `REGISTRATION_CODE_*` and `RATE_KEY_SECRET` per tier and confirm `firebase-admin` verifies with only a project id on Vercel (Firebase's verify-token page says a service account is needed; if the smoke test fails, record a Deviation); `apiApp` validates auth settings at module load, so `next build`, `next dev` and every deployed tier need `APP_TIER`, `FIREBASE_PROJECT_ID`, the three `REGISTRATION_CODE_*` and `RATE_KEY_SECRET` (`src/fe/.env.local` locally; mock previews may omit all but `APP_TIER=preview`) | handed over from w2-gateway, w4-auth | 2026-11-07 |
 | W13 smoke checks on deployed tiers | Todo | the limiter trusts `x-vercel-forwarded-for`, so dev and prod must run behind Vercel (on any other host a client can pick its own bucket): a forged `x-vercel-forwarded-for` must not change the limiter bucket, and a token from another Firebase project must get 401; `RATE_KEY_SECRET` must differ between dev and prod | handed over from w4-auth | 2026-11-07 |
 | Export `DATABASE_URL` for `npm test` | Todo | since the Prisma 7 merge, `npm test` (its `pretest` runs `prisma generate`) fails without `DATABASE_URL` set; tell the team to export it locally | handed over from w2-gateway | 2026-11-07 |
-| Ask the PM about the W10 sign-in page | Todo | ask the PM whether W10 delivers a working sign-in page or a design only (W4 T7 follow-up, C46, target 10 Nov) | handed over from w4-auth | 2026-11-07 |
 | Correct architecture §7 | Todo | it says a valid token always belongs to a verified, enabled account; Firebase does not guarantee that; see Known Gaps | handed over from w4-auth | 2026-11-07 |
 | Tell the Dev Lead about `requireMember` and emails | Todo | W5 now owns `requireMember`, and endpoint 10 must lowercase emails before lookup | handed over from w4-auth | 2026-11-07 |
 | Section rules for W6-W9 | Todo | follow W3's rules for sections (spec conventions.md § Rules for features): `trusted: true` only for server-built text; anything users typed or uploaded, and any stored model output reused as input, is `trusted: false`; `STATIC` sections are always trusted (`run` throws `INVALID_LLM_CALL` otherwise) and section names are literals; each untrusted section's budget leaves room for the 49-character wrapper plus its name line, and the statics leave room for the ~280-character suffix | handed over from w3-guards | 2026-11-07 |
@@ -67,6 +66,11 @@ Verification commands are configured in `workflow/config.json`: `npm test`, `npm
 | W5 `requireMember` placement and boot test | Todo | confirm where `requireMember` lives (architecture §4 says `auth`, frozen contracts §5.4 says `Core`; W6 follows §5.4) and that it throws `NotMember` for archived projects; the API composition root calls `registerCore(core)` and registers `core.projectBrief`, `core.checkpoints`, `core.taskEvents`, `core.blockedTasks`; `core` must not import `@agile/ai-context`; add a boot test asserting the core and all ten source ids are registered | handed over from w6-ai-context | 2026-11-07 |
 | W7/W8/W9 context sources and `assembleWith` | Todo | register your sources at module load with `registerContextSource` (rules in [W6 spec conventions.md § Rules for source owners](../specs/2026-11-06-w6-ai-context-design/conventions.md): `ownerId` meanings, rows most important first, filtered client, no unsafe raw SQL); call `assembleWith`, not `assemble`; keep gateway-calling files free of database imports (the source scan enforces it); never catch `ContextScopeViolation`. W7: `pm.similarItems` filters by the caller's member projects before searching, titles only, at most 5. W8: `lead.facts` emits only `FACT_KEYS` rows (add keys to `allow-list.ts` by PR, and update `facts`' max chars, which a test pins); test that the overload fact covers only member projects (C-28). W9: `dev.itemSummaries` never returns standup text | handed over from w6-ai-context | 2026-11-07 |
 | Slicing: W8 also depends on W6 | Todo | `workflow/specs/slicing.md` lists W8's dependencies as W2, W3, W5; it also depends on W6 | handed over from w6-ai-context | 2026-11-07 |
+| W10 canvas screens are fixed-size | Todo | to the PM (W10): the canvas screens, including the live sign-in and register screens that reuse their markup, are fixed-size (`.app { min-height: 1000px }` in `src/fe/app/canvas.css`, fixed flex bases such as `1 1 420px`), so they do not adapt to short or very wide windows (seen by the operator on an ultrawide monitor) | handed over from w4-sign-in-screen | 2026-11-13 |
+| Guide: W4 sign-in setup and testing | Todo | guide out of date: setup (Firebase dev project, `src/fe/.env.local` from `.env.example`, local Postgres and the `agile-pg-test` container for integration tests) and testing (fe Vitest suite under root `npm test`) | handed over from w4-sign-in-screen | 2026-11-13 |
+| W13 Firebase projects per tier | Todo | to the repo owner (W13): `agile-platform-dev` exists (owner ludannnn; add the repo owner as Owner); create `agile-platform-prod` with that exact ID (`src/be/db/src/tier-targets.ts`) and add the Vercel domains to Authorized domains on both projects; set the four `NEXT_PUBLIC_FIREBASE_*` values per tier | handed over from w4-sign-in-screen | 2026-11-13 |
+| W12 pin the fe test script | Todo | to the Dev Lead (W12): `tests/process-security/ci-workflow.test.ts` now pins the chained root `test` script (C63) but not `src/fe/package.json` `scripts.test` (`vitest run`) or `src/fe/vitest.config.ts`; consider asserting the fe script too (T1 Attacker review nit) | handed over from w4-sign-in-screen | 2026-11-13 |
+| Lazy-load the Firebase SDK | Todo | `AuthRoot` in the root layout statically imports `lib/auth/firebase` and `session`, so `@firebase/app` and `@firebase/auth` ship in every page bundle, including prototype previews; load them lazily (`next/dynamic` or `import()`) only in `firebase` mode. `force-dynamic` on the layout is deliberate (mode read per request) | handed over from w4-sign-in-screen | 2026-11-13 |
 
 ---
 
@@ -77,7 +81,7 @@ Verification commands are configured in `workflow/config.json`: `npm test`, `npm
 | W1 | Foundation and API skeleton | Done | [review-repairs spec](../../specs/2026-11-02-w1-review-repairs-design.md); [backend source-root spec](../../specs/2026-11-02-w1-backend-source-root-design.md) | [review-repairs plan](../../plans/2026-11-02-w1-review-repairs-plan.md); [source-root plan](../../plans/2026-11-02-w1-backend-source-root-plan.md) | Merged 2026-11-03; resolver/auth handovers remain; confirmed 2026-11-03 | Documented 2026-11-03 |
 | W2 | Gateway runtime and mock | Done | [spec](../../specs/2026-11-05-w2-gateway-design.md) | [plan](../../plans/2026-11-05-w2-gateway.md) | T1–T7 done; approved at Gate 3; PR #14 merged 2026-11-06; guide confirmed 2026-11-07 | Documented 2026-11-07 |
 | W3 | Guards (untrusted-text pipeline) | Done | [spec](../../specs/2026-11-06-w3-guards-design.md) | [plan](../../plans/2026-11-06-w3-guards.md) | PR #15 merged 2026-11-07; guide confirmed 2026-11-07 | Documented 2026-11-07 |
-| W4 | Auth and registration | Done | [spec](../../specs/2026-10-31-w4-auth-design.md) | [plan](../../plans/2026-11-04-w4-auth.md) | T0–T6 done; PR #10 merged 2026-11-05; T7 sign-in screen is a follow-up (C46); guide confirmed 2026-11-07 | Documented 2026-11-07 |
+| W4 | Auth and registration | Done | [spec](../../specs/2026-10-31-w4-auth-design.md), [T7 spec](../../specs/2026-11-08-w4-sign-in-screen-design.md) (approved 2026-11-08) | [plan](../../plans/2026-11-08-w4-sign-in-screen/plan.md) (approved 2026-11-08) | T0–T6 PR #10 merged 2026-11-05; T7 sign-in screen PR #25 merged 2026-11-09 | Documented 2026-11-07 (before T7) |
 | W5 | Core planning (projects to tasks) | Not started | — | — | Tier 1 · Big · owner Dev Lead · after W1, W4 | — |
 | W6 | AI context assembly | Done | [spec](../../specs/2026-11-06-w6-ai-context-design.md) | [plan](../../plans/2026-11-06-w6-ai-context.md) | PR #16 merged 2026-11-07; SD4 signed off (C59); depends on W5 for `requireMember`; guide confirmed 2026-11-07 | Documented 2026-11-07 |
 | W7 | PM plan flow (proposals, pm) | Not started | — | — | Tier 1 · Big · owner PM · after W2, W3, W5, W6 | — |
@@ -166,6 +170,13 @@ Status: `Not started` · `Spec'd` · `Planned` · `Building` · `Blocked — nee
 | C59 | SD4 / D18 signed off under AD-11 | [C59](decisions/C59.md) |
 | C60 | Keep the frozen `assemble`; sign off `assembleWith` at the PR (AD-11) | [C60](decisions/C60.md) |
 | C61 | W6's scope choices | [C61](decisions/C61.md) |
+| C62 | Settle W4 before continuing W9 | [C62](decisions/C62.md) |
+| C63 | Update W12's pinned root `test` script assertion | [C63](decisions/C63.md) |
+| C64 | Use `@firebase/app` and `@firebase/auth`, not the `firebase` package | [C64](decisions/C64.md) |
+| C65 | Use the Firebase 12.19 versions of app and auth | [C65](decisions/C65.md) |
+| C66 | T7 replaces the role cookie with a real auth gate | [C66](decisions/C66.md) |
+| C67 | Mock previews keep the prototype role buttons | [C67](decisions/C67.md) |
+| C68 | `src/fe` UI tests use Vitest, Testing Library and jsdom | [C68](decisions/C68.md) |
 
 ---
 
@@ -183,5 +194,5 @@ Status: `Not started` · `Spec'd` · `Planned` · `Building` · `Blocked — nee
 
 The Done ledger is **[`ledger/done-ledger.md`](ledger/done-ledger.md)**, newest first.
 
-- **Latest entry:** 2026-11-07
-- **Entries (live file):** 228
+- **Latest entry:** 2026-11-13
+- **Entries (live file):** 251
