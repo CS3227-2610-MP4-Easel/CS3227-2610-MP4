@@ -120,7 +120,7 @@ export type ReplanProposalPage = Page<ReplanProposal>;
 export type ReplanApproval = { proposalId: string; status: 'APPROVED'; applied: string[]; sessionOutcome: 'ACCEPTED' };
 export type ReplanRejection = ReplanProposal & { sessionOutcome: 'REJECTED' };
 
-export type LiveMember = { userId: string; displayName: string; role: LiveUserRole; addedAt: string };
+export type LiveMember = { userId: string; email?: string; displayName: string; role: LiveUserRole; addedAt: string };
 
 export type LiveCheckpoint = {
   id: string;

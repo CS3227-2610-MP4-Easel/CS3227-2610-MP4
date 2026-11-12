@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — rounded project progress percentages up to whole numbers
+- **Last updated:** 2026-11-13 by Codex — styled close-sprint statuses and restored live member emails
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | Rounded Projects and overview progress percentages up to whole numbers; frontend checks pass | Continue W14 close-out or inspect the deployed UI | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Active | Styled close-sprint statuses and restored live member emails; repository checks pass | Continue W14 close-out or inspect the deployed UI | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -134,6 +134,8 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-13 | Made Dev Lead Projects the authenticated landing page, loaded `/projects` from the live project API in Firebase mode, prevented fixture links during header loading, and preserved UUID project links in the header dropdown; progress is capped at two decimals and velocity labels use `Sprint <number>` | W14 | T6 UI follow-up |
 | 2026-11-13 | Fixed overview progress display to two decimal places and bypassed current-project ID rewriting for live project-switcher links; added regressions for `33.33%` and distinct project destinations | W14 | T6 UI follow-up |
 | 2026-11-13 | Changed Projects and overview progress displays and bars to round percentages up with `Math.ceil`; added regression coverage for `33.333333% → 34%` | W14 | T6 UI follow-up |
+| 2026-11-13 | Replaced raw live close-sprint task status enums with the shared styled StatusChip mapping for To do, In progress and In review | W14 | T6 UI follow-up |
+| 2026-11-13 | Added member email to the live Member contract/API response and rendered it on the Members page instead of `userId`; repository typecheck and OpenAPI contract checks pass | W14 | T6 UI follow-up |
 
 ## 4. Decisions
 
