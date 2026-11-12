@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — verified health overload and assignee-name wiring across live surfaces
+- **Last updated:** 2026-11-13 by Codex — committed verified health overload and assignee-name wiring across live surfaces
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | Health overload and assignee-name wiring | Commit the verified live UI fixes and hand off W14 | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Active | Health overload and assignee-name wiring | Await owner review of commit `b063925` | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -109,6 +109,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-13 | Rendered the latest digest's overload rows on initial live Health load when caller facts have no cross-project overload, preserving the approved endpoint-42 versus digest contract; added regression coverage | W14 | T6 UI follow-up |
 | 2026-11-13 | Resolved live task assignee IDs through project members in the task sidebar and sprint task rows, rendering mockup-style initials and display names with Unassigned/Unknown fallbacks | W14 | T6 UI follow-up |
 | 2026-11-13 | Verified live Health, Sprints and Board task sidebar in the browser; frontend typecheck, 235 frontend tests and diff check pass | W14 | T6 UI follow-up |
+| 2026-11-13 | Committed the live Health, backlog, sprint-task and task-sidebar assignee fixes as `b063925` | W14 | T6 close-out |
 
 ## 4. Decisions
 
