@@ -1,0 +1,27 @@
+{
+  "task": "T2",
+  "status": "done",
+  "summary": "Added typed W5 live DTOs and apiFetch clients for projects, progress, members, checkpoints, epics and tasks. Live task create/update bodies allowlist fields and never serialize sprintId.",
+  "files": [
+    "src/fe/lib/api/types.ts",
+    "src/fe/lib/api/index.ts",
+    "src/fe/test/http.test.ts"
+  ],
+  "exports": {
+    "projects": ["listProjectsLive_6", "getProjectLive_7", "getProgressLive_33"],
+    "membership": ["listMembersLive_9", "addMemberLive_10"],
+    "planning": ["listCheckpointsLive_12", "createCheckpointLive_13", "listEpicsLive_16", "createEpicLive_17", "listTasksLive_20", "createTaskLive_21", "getTaskLive_22", "updateTaskLive_23", "setTaskStatusLive_24"]
+  },
+  "verification": [
+    {"command": "npm --workspace easel-fe run test -- --run", "result": "passed: 12 files, 159 tests"},
+    {"command": "npm --workspace easel-fe run lint", "result": "passed: data layer ok"},
+    {"command": "npm --prefix src/fe run typecheck -- --incremental false", "result": "passed"},
+    {"command": "npm run typecheck", "result": "frontend check could not write pre-existing src/fe/tsconfig.tsbuildinfo: EPERM; frontend typecheck passed with incremental false"},
+    {"command": "git diff --check", "result": "passed"}
+  ],
+  "handover": {
+    "T3": "Use listProjectsLive_6, getProjectLive_7 and getProgressLive_33 for UUID project routes.",
+    "T4": "Use the Live membership, checkpoint, epic and task clients; task updates require version and omit sprintId.",
+    "T5": "src/fe/test/http.test.ts contains the request-shape contract baseline for F1-F6 and E4-E6/E9/E11-E13/E15."
+  }
+}

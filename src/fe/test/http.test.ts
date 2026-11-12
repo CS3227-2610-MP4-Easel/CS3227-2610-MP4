@@ -13,7 +13,29 @@ vi.mock('../lib/auth/firebase', () => ({
 }));
 
 import { apiFetch } from '../lib/api/http';
-import { ApiError, checkCode_2, createDigest_44, getFacts_42, getLatestDigest_45, me_4, register_3 } from '../lib/api';
+import {
+  ApiError,
+  addMemberLive_10,
+  checkCode_2,
+  createCheckpointLive_13,
+  createDigest_44,
+  createEpicLive_17,
+  createTaskLive_21,
+  getFacts_42,
+  getLatestDigest_45,
+  getProgressLive_33,
+  getProjectLive_7,
+  getTaskLive_22,
+  listCheckpointsLive_12,
+  listEpicsLive_16,
+  listMembersLive_9,
+  listProjectsLive_6,
+  listTasksLive_20,
+  me_4,
+  register_3,
+  setTaskStatusLive_24,
+  updateTaskLive_23,
+} from '../lib/api';
 
 const fetchMock = vi.fn();
 
@@ -304,5 +326,92 @@ describe('endpoints', () => {
     await getLatestDigest_45('project-1');
     expect(fetchMock.mock.calls[2][0]).toBe('/api/lead/projects/project-1/digests/latest');
     expect(fetchMock.mock.calls[2][1].method).toBe('GET');
+  });
+
+  it('F1/E4 project clients use zero-based paging and encode project IDs', async () => {
+    reply(200, '{}');
+    await listProjectsLive_6();
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/projects?page=0&size=20');
+
+    await getProjectLive_7('project 1');
+    expect(fetchMock.mock.calls[1][0]).toBe('/api/projects/project%201');
+
+    await getProgressLive_33('project 1');
+    expect(fetchMock.mock.calls[2][0]).toBe('/api/projects/project%201/progress');
+  });
+
+  it('F2/E5 member and checkpoint clients serialize project-scoped requests', async () => {
+    reply(200, '[]');
+    await listMembersLive_9('project 1');
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/projects/project%201/members');
+
+    reply(200, '{}');
+    await addMemberLive_10('project 1', 'dev@example.com');
+    expect(fetchMock.mock.calls[1][0]).toBe('/api/projects/project%201/members');
+    expect(fetchMock.mock.calls[1][1].method).toBe('POST');
+    expect(fetchMock.mock.calls[1][1].body).toBe('{"email":"dev@example.com"}');
+
+    reply(200, '[]');
+    await listCheckpointsLive_12('project 1');
+    expect(fetchMock.mock.calls[2][0]).toBe('/api/projects/project%201/checkpoints');
+
+    reply(200, '{}');
+    await createCheckpointLive_13('project 1', { name: 'Launch', targetDate: '2026-12-01' });
+    expect(fetchMock.mock.calls[3][0]).toBe('/api/projects/project%201/checkpoints');
+    expect(fetchMock.mock.calls[3][1].body).toBe('{"name":"Launch","targetDate":"2026-12-01"}');
+  });
+
+  it('F3/E6 epic and task list clients serialize paging and supported filters', async () => {
+    reply(200, '{}');
+    await listEpicsLive_16('project 1');
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/projects/project%201/epics?page=0&size=20');
+
+    await listEpicsLive_16('project 1', 2, 5);
+    expect(fetchMock.mock.calls[1][0]).toBe('/api/projects/project%201/epics?page=2&size=5');
+
+    await createEpicLive_17('project 1', { title: 'Release', description: null, checkpointId: null });
+    expect(fetchMock.mock.calls[2][0]).toBe('/api/projects/project%201/epics');
+    expect(fetchMock.mock.calls[2][1].method).toBe('POST');
+    expect(fetchMock.mock.calls[2][1].body).toBe('{"title":"Release","description":null,"checkpointId":null}');
+
+    await listTasksLive_20('project 1', 3, 7, { status: 'IN_PROGRESS', epicId: 'epic/1', assigneeId: 'user/1', blocked: false });
+    expect(fetchMock.mock.calls[3][0]).toBe('/api/projects/project%201/tasks?page=3&size=7&status=IN_PROGRESS&epicId=epic%2F1&assigneeId=user%2F1&blocked=false');
+  });
+
+  it('F4/E9 task creation sends the supported fields and no sprintId', async () => {
+    reply(200, '{}');
+    await createTaskLive_21('project 1', {
+      epicId: 'epic/1',
+      title: 'Build it',
+      description: null,
+      acceptanceCriteria: ['It works'],
+      storyPoints: 5,
+      assigneeId: null,
+      sprintId: 'must-not-send',
+    } as never);
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/projects/project%201/tasks');
+    expect(fetchMock.mock.calls[0][1].method).toBe('POST');
+    expect(fetchMock.mock.calls[0][1].body).toBe('{"epicId":"epic/1","title":"Build it","description":null,"acceptanceCriteria":["It works"],"storyPoints":5,"assigneeId":null}');
+    expect(fetchMock.mock.calls[0][1].body).not.toContain('sprintId');
+  });
+
+  it('F5/E11 task read and update encode IDs and include versions without sprintId', async () => {
+    reply(200, '{}');
+    await getTaskLive_22('task 1');
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/tasks/task%201');
+
+    await updateTaskLive_23('task 1', { title: 'Updated', storyPoints: null, version: 4, sprintId: 'must-not-send' } as never);
+    expect(fetchMock.mock.calls[1][0]).toBe('/api/tasks/task%201');
+    expect(fetchMock.mock.calls[1][1].method).toBe('PATCH');
+    expect(fetchMock.mock.calls[1][1].body).toBe('{"title":"Updated","storyPoints":null,"version":4}');
+    expect(fetchMock.mock.calls[1][1].body).not.toContain('sprintId');
+  });
+
+  it('F6/E12/E13/E15 task status sends exact backend status and version', async () => {
+    reply(200, '{}');
+    await setTaskStatusLive_24('task 1', { status: 'IN_REVIEW', blocked: true, blockedReason: 'Waiting', version: 6 });
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/tasks/task%201/status');
+    expect(fetchMock.mock.calls[0][1].method).toBe('POST');
+    expect(fetchMock.mock.calls[0][1].body).toBe('{"status":"IN_REVIEW","blocked":true,"blockedReason":"Waiting","version":6}');
   });
 });

@@ -57,3 +57,101 @@ export type Db = {
   teamStandups: TeamStandup[];
   aiSessions: AiSession[];
 };
+
+export type Page<T> = { items: T[]; page: number; size: number; total: number };
+export type LiveUserRole = 'PM' | 'DEV_LEAD' | 'DEVELOPER';
+export type LiveProjectStatus = 'ACTIVE' | 'ARCHIVED';
+export type LiveTaskStatus = 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE';
+export type LiveStoryPoints = 1 | 2 | 3 | 5 | 8 | 13;
+
+export type LiveProjectDetail = {
+  id: string;
+  name: string;
+  brief: string | null;
+  status: LiveProjectStatus;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+  progress: { pointsTotal: number; pointsDone: number; percent: number; unestimatedTasks: number };
+};
+
+export type LiveProgress = {
+  pointsTotal: number;
+  pointsDone: number;
+  percent: number;
+  unestimatedTasks: number;
+  velocity: { sprintId: string; name: string; completedPoints: number }[];
+};
+
+export type LiveMember = { userId: string; displayName: string; role: LiveUserRole; addedAt: string };
+
+export type LiveCheckpoint = {
+  id: string;
+  projectId: string;
+  name: string;
+  targetDate: string;
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+};
+
+export type LiveEpic = {
+  id: string;
+  projectId: string;
+  checkpointId: string | null;
+  title: string;
+  description: string | null;
+  position: number;
+  taskCount: number;
+  pointsTotal: number;
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+};
+
+export type LiveTask = {
+  id: string;
+  projectId: string;
+  epicId: string;
+  sprintId: string | null;
+  assigneeId: string | null;
+  title: string;
+  description: string | null;
+  acceptanceCriteria: string[];
+  status: LiveTaskStatus;
+  blocked: boolean;
+  blockedReason: string | null;
+  storyPoints: LiveStoryPoints | null;
+  doneAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+};
+
+export type LiveTaskListFilters = {
+  status?: LiveTaskStatus;
+  epicId?: string;
+  assigneeId?: string;
+  blocked?: boolean;
+};
+
+export type LiveEpicCreateInput = { title: string; description?: string | null; checkpointId?: string | null };
+export type LiveCheckpointCreateInput = { name: string; targetDate: string };
+export type LiveTaskCreateInput = {
+  epicId: string;
+  title: string;
+  description?: string | null;
+  acceptanceCriteria?: string[];
+  storyPoints?: LiveStoryPoints | null;
+  assigneeId?: string | null;
+};
+export type LiveTaskUpdateInput = {
+  title?: string;
+  description?: string | null;
+  acceptanceCriteria?: string[];
+  storyPoints?: LiveStoryPoints | null;
+  assigneeId?: string | null;
+  version: number;
+};
+export type LiveTaskStatusInput = { status: LiveTaskStatus; blocked?: boolean; blockedReason?: string | null; version: number };
