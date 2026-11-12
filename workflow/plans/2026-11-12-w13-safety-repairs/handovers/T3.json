@@ -1,0 +1,40 @@
+{
+  "task": "T3",
+  "status": "done",
+  "summary": "Release-SHA guard now uses the read-only GitHub refs API with checkout credentials disabled; pooled runtime and direct migration targeting remain separate.",
+  "commit": "1c22eb98b29bd2976c5ec54d5edfb1eddf483fdc",
+  "produces": [
+    {
+      "kind": "symbol",
+      "name": "validateDirectMigrationTarget",
+      "where": "src/be/db/src/tier-targets.ts",
+      "note": "Accepts only the code-owned non-pooled production migration host, database, project, and pooled NEON_HOST observation."
+    },
+    {
+      "kind": "file",
+      "name": "production target manifest",
+      "where": "workflow/deployment/tier-manifest.json",
+      "note": "Records pooled neonHost and separate directMigrationHost for production."
+    },
+    {
+      "kind": "file",
+      "name": "target and migration regression tests",
+      "where": "src/be/db/test/tier-targets.test.ts, src/be/db/test/seed.test.ts, src/be/db/test/w13-migration.test.ts",
+      "note": "Covers pooled runtime DATABASE_URL acceptance, direct migration URL acceptance, pooled-host rejection for migration URLs, and required pooled observation."
+    }
+  ],
+  "next": "T4 can use the exact wrapper command and protected workflow; production runtime remains pooled while DIRECT_DATABASE_URL is direct, and the pre-hook release-SHA check is authenticated.",
+  "deviations": [],
+  "edge_cases": ["E4", "E5", "E6", "E9", "E10"],
+  "checks": {
+    "build": "pass",
+    "focused-tests": "543 backend pass, 28 skipped; 149 frontend pass",
+    "full-tests": "543 backend pass, 28 skipped; 149 frontend pass",
+    "typecheck": "pass",
+    "lint": "pass",
+    "contract": "7 pass",
+    "workflow-checker": "pass",
+    "secret-scan": "pass; no leaks found",
+    "git-diff-check": "pass"
+  }
+}

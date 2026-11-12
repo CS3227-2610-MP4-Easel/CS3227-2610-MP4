@@ -88,8 +88,11 @@ export function validateWorkflowText(text, pins, file = "workflow.yml") {
   if (triggers.some((trigger) => ["deployment", "deployment_status"].includes(trigger))) {
     errors.push(`${file}: deployment trigger is forbidden in pull-request workflows`);
   }
-  const allowedTriggers = trustedReviewWorkflow ? ["pull_request", "pull_request_review"] : ["pull_request"];
-  if (triggers.length !== allowedTriggers.length || triggers.some((trigger) => !allowedTriggers.includes(trigger))) {
+  const productionWorkflow = file === ".github/workflows/w13-production.yml";
+  const allowedTriggers = trustedReviewWorkflow
+    ? ["pull_request", "pull_request_review"]
+    : productionWorkflow ? ["push"] : ["pull_request"];
+  if (triggers.length === 0 || triggers.some((trigger) => !allowedTriggers.includes(trigger))) {
     errors.push(`${file}: unexpected workflow trigger (found: ${triggers.join(", ") || "none"})`);
   }
   if (trustedReviewWorkflow) {
@@ -108,7 +111,7 @@ export function validateWorkflowText(text, pins, file = "workflow.yml") {
   }
   for (const job of Object.values(jobs)) {
     if (!job || typeof job !== "object") continue;
-    if (Object.prototype.hasOwnProperty.call(job, "environment")) {
+    if (Object.prototype.hasOwnProperty.call(job, "environment") && triggers.some((trigger) => trigger.startsWith("pull_request"))) {
       errors.push(`${file}: environments are forbidden in pull-request workflows`);
     }
     if (containsSelfHosted(job["runs-on"])) {
@@ -131,6 +134,68 @@ export function validateWorkflowText(text, pins, file = "workflow.yml") {
       if (!image.includes("@sha256:")) errors.push(`${file}: container image ${image} is not pinned by digest`);
     }
   }
+  return errors;
+}
+
+function parseWorkflow(text, file) {
+  try {
+    const document = parseDocument(text, { uniqueKeys: true });
+    if (document.errors.length > 0) return { errors: [`${file}: invalid YAML: ${document.errors.map((error) => error.message).join("; ")}`] };
+    return { workflow: document.toJS() };
+  } catch (error) {
+    return { errors: [`${file}: invalid YAML: ${error instanceof Error ? error.message : String(error)}`] };
+  }
+}
+
+export function validateProductionWorkflowContract(text, file = ".github/workflows/w13-production.yml") {
+  const errors = [];
+  if (file !== ".github/workflows/w13-production.yml") {
+    errors.push(`${file}: production contract is restricted to .github/workflows/w13-production.yml`);
+  }
+  const parsed = parseWorkflow(text, file);
+  if (parsed.errors) return [...errors, ...parsed.errors];
+  const workflow = parsed.workflow;
+  if (!workflow || typeof workflow !== "object" || Array.isArray(workflow)) {
+    return [...errors, `${file}: workflow must be a YAML object`];
+  }
+  const triggerValue = workflow.on;
+  const triggers = triggerValue && typeof triggerValue === "object" && !Array.isArray(triggerValue)
+    ? Object.keys(triggerValue) : typeof triggerValue === "string" ? [triggerValue] : Array.isArray(triggerValue) ? triggerValue : [];
+  if (triggers.length !== 1 || triggers[0] !== "push") errors.push(`${file}: production workflow must use push only`);
+  const push = triggerValue && typeof triggerValue === "object" && !Array.isArray(triggerValue) ? triggerValue.push : null;
+  const branches = push && typeof push === "object" && !Array.isArray(push) ? push.branches : null;
+  if (!Array.isArray(branches) || branches.length !== 1 || branches[0] !== "main") {
+    errors.push(`${file}: production workflow must push only to main`);
+  }
+  const concurrency = workflow.concurrency;
+  if (!concurrency || typeof concurrency !== "object" || concurrency.group !== "production") {
+    errors.push(`${file}: concurrency.group must be production`);
+  }
+  if (concurrency?.["cancel-in-progress"] !== false) errors.push(`${file}: concurrency.cancel-in-progress must be false`);
+  const jobs = workflow.jobs && typeof workflow.jobs === "object" ? workflow.jobs : {};
+  const jobValues = Object.values(jobs).filter((job) => job && typeof job === "object");
+  const hasProductionEnvironment = jobValues.some((job) => job.environment === "production" || job.environment?.name === "production");
+  if (!hasProductionEnvironment) errors.push(`${file}: production environment is required`);
+  const actionErrors = [];
+  for (const job of jobValues) {
+    if (typeof job.uses === "string") validateActionReference(job.uses, BOOTSTRAP_ACTION_PINS, file, actionErrors);
+    for (const step of Array.isArray(job.steps) ? job.steps : []) {
+      if (typeof step?.uses === "string") validateActionReference(step.uses, BOOTSTRAP_ACTION_PINS, file, actionErrors);
+    }
+  }
+  errors.push(...actionErrors.map((error) => error.replace("Action repository", "production Action repository")));
+  const steps = jobValues.flatMap((job) => Array.isArray(job.steps) ? job.steps : []);
+  const runs = steps.map((step) => typeof step?.run === "string" ? step.run : "");
+  if (/(?:VERCEL_API_TOKEN|VERCEL_TOKEN)/i.test(text)) errors.push(`${file}: Vercel API tokens are forbidden`);
+  const checkoutRefs = steps.filter((step) => step?.uses?.startsWith("actions/checkout@")).map((step) => step.with?.ref);
+  if (checkoutRefs.length === 0 || checkoutRefs.some((ref) => ref !== "${{ github.sha }}")) errors.push(`${file}: checkout must use github.sha`);
+  const migrationIndex = runs.findIndex((run) => /node(?:\s+--import\s+tsx)?\s+scripts\/w13\/migrate-production\.mjs|npm run [^\n]*production-migration/i.test(run));
+  if (migrationIndex < 0) errors.push(`${file}: production migration wrapper is required`);
+  if (runs.some((run) => /\bprisma\s+migrate\s+deploy\b/i.test(run))) errors.push(`${file}: direct Prisma migration is forbidden`);
+  const deployIndex = runs.findIndex((run) => /deploy hook|DEPLOY_HOOK|VERCEL_DEPLOY_HOOK/i.test(run));
+  if (deployIndex >= 0 && migrationIndex >= 0 && deployIndex < migrationIndex) errors.push(`${file}: deployment trigger must follow the migration wrapper`);
+  if (deployIndex < 0) errors.push(`${file}: deployment trigger is required`);
+  if (deployIndex >= 0 && !/\bcurl\s+--fail\b/i.test(runs[deployIndex])) errors.push(`${file}: deploy hook must use curl --fail`);
   return errors;
 }
 
@@ -216,6 +281,7 @@ export async function validateWorkflowDirectory(root = ".", options = {}) {
   for (const file of files) {
     const text = await readFile(join(directory, file), "utf8");
     errors.push(...validateWorkflowText(text, manifest, `.github/workflows/${file}`));
+    if (file === "w13-production.yml") errors.push(...validateProductionWorkflowContract(text, `.github/workflows/${file}`));
     if (file === "ci.yml" || file === "ci.yaml") errors.push(...validateCiWorkflowContract(text, `.github/workflows/${file}`));
   }
   if (!files.some((file) => file === "ci.yml" || file === "ci.yaml")) {
