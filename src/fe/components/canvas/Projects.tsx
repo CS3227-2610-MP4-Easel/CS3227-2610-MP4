@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { A, r, useRole } from '../../lib/nav';
 import { ApiError, listProjectsLive_6, type LiveProjectDetail, type Page } from '../../lib/api';
+import { useAuthMode } from '../../lib/auth/mode-context';
 import { useProjectRoute } from '../../lib/api/project-mode';
 import Top from './Top';
 
@@ -20,7 +21,9 @@ function Prototype({ role }: { role: string }) {
 
 export default function Projects() {
   const role = useRole();
+  const authMode = useAuthMode();
   const { mode } = useProjectRoute();
+  const live = authMode === 'firebase' || mode === 'live';
   const [page, setPage] = useState(0);
   const [result, setResult] = useState<Page<LiveProjectDetail> | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -29,11 +32,10 @@ export default function Projects() {
   const request = useRef(0);
   useEffect(() => {
     const current = ++request.current;
-    if (mode !== 'live') { setPage(0); setResult(null); setError(null); setLoading(false); return; }
+    if (!live) { setPage(0); setResult(null); setError(null); setLoading(false); return; }
     setLoading(true); setResult(null); setError(null);
     listProjectsLive_6(page).then((next) => { if (request.current === current) setResult(next); }).catch((e: unknown) => { if (request.current === current && !isUnauthorized(e)) setError(safeError(e)); }).finally(() => { if (request.current === current) setLoading(false); });
-  }, [mode, page, retry]);
-  const live = mode === 'live';
+  }, [live, page, retry]);
   const total = result?.total ?? 0;
   const from = result && result.items.length ? page * result.size + 1 : 0;
   const to = result ? Math.min(page * result.size + result.items.length, total) : 0;

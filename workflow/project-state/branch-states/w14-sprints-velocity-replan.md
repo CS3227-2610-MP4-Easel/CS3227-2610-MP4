@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — populated realistic local project data
+- **Last updated:** 2026-11-13 by Codex — fixed Dev Lead project landing and live project links
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | Development merged cleanly; validating combined branch | Review merged test results and continue W14 | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Active | Fixed live project-list loading and header project routing; frontend checks pass | Continue W14 close-out or inspect the deployed UI | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -131,6 +131,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-13 | Fixed the checkpoint modal X button to close through ModalCtx, added a regression assertion, and verified typecheck, 237 tests and diff check | W14 | T6 UI follow-up |
 | 2026-11-13 | Merged `development` at `f045614` into W14 as merge commit `9e09ec1`; no conflicts required resolution | W14 | branch integration |
 | 2026-11-13 | Replaced the local demo domain data with Campus Eats: 3 real-user members, 3 checkpoints, 4 epics, 4 sprints and 12 tasks; preserved all users and the empty project | W14 | local test setup |
+| 2026-11-13 | Made Dev Lead Projects the authenticated landing page, loaded `/projects` from the live project API in Firebase mode, prevented fixture links during header loading, and preserved UUID project links in the header dropdown; progress is capped at two decimals and velocity labels use `Sprint <number>` | W14 | T6 UI follow-up |
 
 ## 4. Decisions
 

@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 let fbCb: ((u: { uid: string; email: string | null } | null) => void) | null = null;
@@ -84,6 +84,14 @@ describe('top bar', () => {
     render(<Projects />);
     expect(screen.getByRole('heading', { name: 'Campus Eats Mobile App' })).toBeTruthy();
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('closes the project switcher when clicking outside it', async () => {
+    await mountAs('DEV_LEAD', 'Dev Lead');
+    fireEvent.click(screen.getByRole('button', { name: 'Switch project' }));
+    expect(screen.getByRole('menu')).toBeTruthy();
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByRole('menu')).toBeNull();
   });
 
   it('E1 keeps the live list in loading state before the first response and then shows its empty state', async () => {

@@ -86,14 +86,14 @@ describe('gate', () => {
     fetchMock.mockResolvedValue(me('DEV_LEAD'));
     mount('/');
     await act(async () => fbCb!(fb));
-    expect(replace).toHaveBeenCalledWith('/lead/overview');
+    expect(replace).toHaveBeenCalledWith('/projects');
   });
 
-  it('authenticated Dev Lead visiting the PM project list is sent to the Dev Lead home', async () => {
+  it('authenticated Dev Lead can use the projects page as home', async () => {
     fetchMock.mockResolvedValue(me('DEV_LEAD'));
     mount('/projects');
     await act(async () => fbCb!(fb));
-    expect(replace).toHaveBeenCalledWith('/lead/overview');
+    expect(replace).not.toHaveBeenCalled();
   });
 
   it('E54 a 401 from me_4 on /projects, then onUserChanged(null), replaces to /sign-in with no error view', async () => {

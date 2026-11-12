@@ -25,13 +25,12 @@ export default function AuthGate({ pathname, view }: { pathname: string; view?: 
   const status = session?.status ?? 'loading';
   const isOpen = OPEN.includes(pathname);
   const isRoot = pathname === '/';
-  const isProjectsList = pathname === '/projects';
   const isSignIn = pathname === '/sign-in';
   const isRegister = pathname === '/register';
 
   let target: string | null = null;
   if (!isOpen) {
-    if (status === 'ready' && (isRoot || isSignIn || isRegister || (isProjectsList && session?.user && toRole(session.user.role) !== 'pm'))) target = session?.user && (isRoot || isProjectsList) ? HOME[toRole(session.user.role)] : '/projects';
+    if (status === 'ready' && (isRoot || isSignIn || isRegister)) target = session?.user && isRoot ? HOME[toRole(session.user.role)] : '/projects';
     else if (status === 'unregistered' && !isRegister) target = '/register';
     else if (status === 'signed-out' && !isSignIn && !isRegister) target = '/sign-in';
   }
