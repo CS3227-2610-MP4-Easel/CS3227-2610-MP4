@@ -2,7 +2,7 @@
   "task": "T3",
   "status": "done",
   "summary": "Added the injected ProposalService REPLAN lifecycle, transaction-aware session close adapter, immutable applied suggestion IDs and domain-only Core.applyReplan while preserving PM applyPlan lifecycle.",
-  "commit": "e3b85f5",
+  "commit": "3ef50f8",
   "produces": [
     {
       "kind": "symbol",
