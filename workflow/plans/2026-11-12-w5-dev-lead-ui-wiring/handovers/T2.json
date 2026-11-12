@@ -2,26 +2,25 @@
   "task": "T2",
   "status": "done",
   "summary": "Added typed W5 live DTOs and apiFetch clients for projects, progress, members, checkpoints, epics and tasks. Live task create/update bodies allowlist fields and never serialize sprintId.",
-  "files": [
-    "src/fe/lib/api/types.ts",
-    "src/fe/lib/api/index.ts",
-    "src/fe/test/http.test.ts"
+  "commit": "2d085bf",
+  "produces": [
+    { "kind": "symbol", "name": "listProjectsLive_6", "where": "src/fe/lib/api/index.ts", "note": "Typed live project page client." },
+    { "kind": "symbol", "name": "getProjectLive_7", "where": "src/fe/lib/api/index.ts", "note": "Typed live project detail client." },
+    { "kind": "symbol", "name": "getProgressLive_33", "where": "src/fe/lib/api/index.ts", "note": "Typed live progress client." },
+    { "kind": "symbol", "name": "listMembersLive_9", "where": "src/fe/lib/api/index.ts", "note": "Typed live member list client." },
+    { "kind": "symbol", "name": "addMemberLive_10", "where": "src/fe/lib/api/index.ts", "note": "POSTs, reloads members, and returns the deduplicated member by userId." },
+    { "kind": "symbol", "name": "listCheckpointsLive_12", "where": "src/fe/lib/api/index.ts", "note": "Typed live checkpoint list client." },
+    { "kind": "symbol", "name": "createCheckpointLive_13", "where": "src/fe/lib/api/index.ts", "note": "Typed live checkpoint create client." },
+    { "kind": "symbol", "name": "listEpicsLive_16", "where": "src/fe/lib/api/index.ts", "note": "Typed live epic page client." },
+    { "kind": "symbol", "name": "createEpicLive_17", "where": "src/fe/lib/api/index.ts", "note": "Typed live epic create client." },
+    { "kind": "symbol", "name": "listTasksLive_20", "where": "src/fe/lib/api/index.ts", "note": "Typed live task page/filter client." },
+    { "kind": "symbol", "name": "createTaskLive_21", "where": "src/fe/lib/api/index.ts", "note": "Typed live task create client." },
+    { "kind": "symbol", "name": "getTaskLive_22", "where": "src/fe/lib/api/index.ts", "note": "Typed live task read client." },
+    { "kind": "symbol", "name": "updateTaskLive_23", "where": "src/fe/lib/api/index.ts", "note": "Typed live task update client without sprintId." },
+    { "kind": "symbol", "name": "setTaskStatusLive_24", "where": "src/fe/lib/api/index.ts", "note": "Typed live task status client." }
   ],
-  "exports": {
-    "projects": ["listProjectsLive_6", "getProjectLive_7", "getProgressLive_33"],
-    "membership": ["listMembersLive_9", "addMemberLive_10"],
-    "planning": ["listCheckpointsLive_12", "createCheckpointLive_13", "listEpicsLive_16", "createEpicLive_17", "listTasksLive_20", "createTaskLive_21", "getTaskLive_22", "updateTaskLive_23", "setTaskStatusLive_24"]
-  },
-  "verification": [
-    {"command": "npm --workspace easel-fe run test -- --run", "result": "passed: 12 files, 159 tests"},
-    {"command": "npm --workspace easel-fe run lint", "result": "passed: data layer ok"},
-    {"command": "npm --prefix src/fe run typecheck -- --incremental false", "result": "passed"},
-    {"command": "npm run typecheck", "result": "frontend check could not write pre-existing src/fe/tsconfig.tsbuildinfo: EPERM; frontend typecheck passed with incremental false"},
-    {"command": "git diff --check", "result": "passed"}
-  ],
-  "handover": {
-    "T3": "Use listProjectsLive_6, getProjectLive_7 and getProgressLive_33 for UUID project routes.",
-    "T4": "Use the Live membership, checkpoint, epic and task clients; task updates require version and omit sprintId.",
-    "T5": "src/fe/test/http.test.ts contains the request-shape contract baseline for F1-F6 and E4-E6/E9/E11-E13/E15."
-  }
+  "next": "T3 uses project list/detail/progress clients. T4 uses membership, checkpoint, epic and task clients. T5 uses the request-shape tests as its API baseline.",
+  "deviations": ["Review fixes: member add reloads and deduplicates by userId; checkpoint and epic mutation bodies are allowlisted; task null clears and omitted fields are covered by request tests."],
+  "edge_cases": ["F1", "F2", "F3", "F4", "F5", "F6", "E4", "E9", "E11", "E12", "E13", "E15"],
+  "checks": { "build": "frontend typecheck pass with --incremental false", "tests": "170 pass, 0 fail", "lint": "pass" }
 }

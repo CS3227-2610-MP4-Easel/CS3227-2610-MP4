@@ -405,20 +405,34 @@ describe('endpoints', () => {
     await listMembersLive_9('project 1');
     expect(fetchMock.mock.calls[0][0]).toBe('/api/projects/project%201/members');
 
-    reply(200, '{}');
+    fetchMock.mockResolvedValueOnce(new Response('{}', { status: 200 })).mockResolvedValueOnce(new Response('[]', { status: 200 }));
     await addMemberLive_10('project 1', 'dev@example.com');
     expect(fetchMock.mock.calls[1][0]).toBe('/api/projects/project%201/members');
     expect(fetchMock.mock.calls[1][1].method).toBe('POST');
     expect(fetchMock.mock.calls[1][1].body).toBe('{"email":"dev@example.com"}');
+    expect(fetchMock.mock.calls[2][0]).toBe('/api/projects/project%201/members');
 
     reply(200, '[]');
     await listCheckpointsLive_12('project 1');
-    expect(fetchMock.mock.calls[2][0]).toBe('/api/projects/project%201/checkpoints');
+    expect(fetchMock.mock.calls[3][0]).toBe('/api/projects/project%201/checkpoints');
 
     reply(200, '{}');
-    await createCheckpointLive_13('project 1', { name: 'Launch', targetDate: '2026-12-01' });
-    expect(fetchMock.mock.calls[3][0]).toBe('/api/projects/project%201/checkpoints');
-    expect(fetchMock.mock.calls[3][1].body).toBe('{"name":"Launch","targetDate":"2026-12-01"}');
+    await createCheckpointLive_13('project 1', { name: 'Launch', targetDate: '2026-12-01', extra: 'omit' } as never);
+    expect(fetchMock.mock.calls[4][0]).toBe('/api/projects/project%201/checkpoints');
+    expect(fetchMock.mock.calls[4][1].body).toBe('{"name":"Launch","targetDate":"2026-12-01"}');
+  });
+
+  it('E11 member add reloads and deduplicates reloaded members by userId', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ userId: 'u1', displayName: 'New', role: 'DEVELOPER', addedAt: 'now' }), { status: 201 }));
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([
+      { userId: 'u1', displayName: 'First', role: 'DEVELOPER', addedAt: 'a' },
+      { userId: 'u1', displayName: 'Duplicate', role: 'DEVELOPER', addedAt: 'b' },
+      { userId: 'u2', displayName: 'Other', role: 'DEVELOPER', addedAt: 'c' },
+    ]), { status: 200 }));
+
+    const member = await addMemberLive_10('project 1', 'dev@example.com');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(member).toEqual({ userId: 'u1', displayName: 'First', role: 'DEVELOPER', addedAt: 'a' });
   });
 
   it('F3/E6 epic and task list clients serialize paging and supported filters', async () => {
@@ -429,7 +443,7 @@ describe('endpoints', () => {
     await listEpicsLive_16('project 1', 2, 5);
     expect(fetchMock.mock.calls[1][0]).toBe('/api/projects/project%201/epics?page=2&size=5');
 
-    await createEpicLive_17('project 1', { title: 'Release', description: null, checkpointId: null });
+    await createEpicLive_17('project 1', { title: 'Release', description: null, checkpointId: null, extra: 'omit' } as never);
     expect(fetchMock.mock.calls[2][0]).toBe('/api/projects/project%201/epics');
     expect(fetchMock.mock.calls[2][1].method).toBe('POST');
     expect(fetchMock.mock.calls[2][1].body).toBe('{"title":"Release","description":null,"checkpointId":null}');
@@ -465,6 +479,11 @@ describe('endpoints', () => {
     expect(fetchMock.mock.calls[1][1].method).toBe('PATCH');
     expect(fetchMock.mock.calls[1][1].body).toBe('{"title":"Updated","storyPoints":null,"version":4}');
     expect(fetchMock.mock.calls[1][1].body).not.toContain('sprintId');
+
+    await updateTaskLive_23('task 1', { description: null, assigneeId: null, version: 5, extra: 'omit' } as never);
+    expect(fetchMock.mock.calls[2][1].body).toBe('{"description":null,"assigneeId":null,"version":5}');
+    expect(fetchMock.mock.calls[2][1].body).not.toContain('title');
+    expect(fetchMock.mock.calls[2][1].body).not.toContain('acceptanceCriteria');
   });
 
   it('F6/E12/E13/E15 task status sends exact backend status and version', async () => {
@@ -473,5 +492,8 @@ describe('endpoints', () => {
     expect(fetchMock.mock.calls[0][0]).toBe('/api/tasks/task%201/status');
     expect(fetchMock.mock.calls[0][1].method).toBe('POST');
     expect(fetchMock.mock.calls[0][1].body).toBe('{"status":"IN_REVIEW","blocked":true,"blockedReason":"Waiting","version":6}');
+
+    await setTaskStatusLive_24('task 1', { status: 'TODO', blocked: false, blockedReason: null, version: 7, extra: 'omit' } as never);
+    expect(fetchMock.mock.calls[1][1].body).toBe('{"status":"TODO","blocked":false,"blockedReason":null,"version":7}');
   });
 });

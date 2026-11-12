@@ -269,12 +269,15 @@ export function getProgressLive_33(projectId: string): Promise<LiveProgress> {
   return apiFetch<LiveProgress>(`/api/projects/${encodeURIComponent(projectId)}/progress`);
 }
 
-export function listMembersLive_9(projectId: string): Promise<LiveMember[]> {
-  return apiFetch<LiveMember[]>(`/api/projects/${encodeURIComponent(projectId)}/members`);
+export async function listMembersLive_9(projectId: string): Promise<LiveMember[]> {
+  const members = await apiFetch<LiveMember[]>(`/api/projects/${encodeURIComponent(projectId)}/members`);
+  return [...members.reduce((unique, member) => unique.has(member.userId) ? unique : unique.set(member.userId, member), new Map<string, LiveMember>()).values()];
 }
 
-export function addMemberLive_10(projectId: string, email: string): Promise<LiveMember> {
-  return apiFetch<LiveMember>(`/api/projects/${encodeURIComponent(projectId)}/members`, { method: 'POST', body: { email } });
+export async function addMemberLive_10(projectId: string, email: string): Promise<LiveMember> {
+  const added = await apiFetch<LiveMember>(`/api/projects/${encodeURIComponent(projectId)}/members`, { method: 'POST', body: { email } });
+  const members = await listMembersLive_9(projectId);
+  return members.find((member) => member.userId === added.userId) ?? added;
 }
 
 export function listCheckpointsLive_12(projectId: string): Promise<LiveCheckpoint[]> {
@@ -282,7 +285,10 @@ export function listCheckpointsLive_12(projectId: string): Promise<LiveCheckpoin
 }
 
 export function createCheckpointLive_13(projectId: string, input: LiveCheckpointCreateInput): Promise<LiveCheckpoint> {
-  return apiFetch<LiveCheckpoint>(`/api/projects/${encodeURIComponent(projectId)}/checkpoints`, { method: 'POST', body: input });
+  return apiFetch<LiveCheckpoint>(`/api/projects/${encodeURIComponent(projectId)}/checkpoints`, {
+    method: 'POST',
+    body: { name: input.name, targetDate: input.targetDate },
+  });
 }
 
 export function listEpicsLive_16(projectId: string, page = 0, size = 20): Promise<Page<LiveEpic>> {
@@ -290,7 +296,10 @@ export function listEpicsLive_16(projectId: string, page = 0, size = 20): Promis
 }
 
 export function createEpicLive_17(projectId: string, input: LiveEpicCreateInput): Promise<LiveEpic> {
-  return apiFetch<LiveEpic>(`/api/projects/${encodeURIComponent(projectId)}/epics`, { method: 'POST', body: input });
+  const body: Record<string, unknown> = { title: input.title };
+  if (input.description !== undefined) body.description = input.description;
+  if (input.checkpointId !== undefined) body.checkpointId = input.checkpointId;
+  return apiFetch<LiveEpic>(`/api/projects/${encodeURIComponent(projectId)}/epics`, { method: 'POST', body });
 }
 
 export function listTasksLive_20(projectId: string, page = 0, size = 20, filters?: LiveTaskListFilters): Promise<Page<LiveTask>> {
