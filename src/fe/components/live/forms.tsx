@@ -1,8 +1,9 @@
 'use client';
 import { useRouter } from 'next/navigation';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { A, r, useRoute } from '../../lib/nav';
-import { ApiError, createEpic_17, createSprint_28, createTask_21, useDb, type Person } from '../../lib/api';
+import { ApiError, createEpic_17, createEpicLive_17, createSprint_28, createTask_21, createTaskLive_21, listCheckpointsLive_12, listEpicsLive_16, listMembersLive_9, useDb, type LiveCheckpoint, type LiveEpic, type LiveMember, type Person } from '../../lib/api';
+import { useProjectRoute } from '../../lib/api/project-mode';
 import { toast } from './toast';
 
 const Err = ({ text }: { text: string }) => (
@@ -53,17 +54,21 @@ export function NewSprintForm() {
 
 export function AddEpicForm() {
   const db = useDb();
+  const route = useProjectRoute();
+  const live = route.mode === 'live' && route.projectId;
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
   const [cp, setCp] = useState('');
+  const [liveCheckpoints, setLiveCheckpoints] = useState<LiveCheckpoint[]>([]);
+  useEffect(() => { if (live) listCheckpointsLive_12(route.projectId!).then(setLiveCheckpoints).catch(() => setLiveCheckpoints([])); }, [live, route.projectId]);
   const f = useSubmit('Backlog.dc.html', 'Epic added.');
   return (
-    <form className="dialog" role="dialog" aria-modal="true" aria-labelledby="ae1" style={{ width: 'min(560px, 100%)' }} onSubmit={(e) => { e.preventDefault(); f.go(() => createEpic_17(title, desc, cp || null)); }}>
+    <form className="dialog" role="dialog" aria-modal="true" aria-labelledby="ae1" style={{ width: 'min(560px, 100%)' }} onSubmit={(e) => { e.preventDefault(); f.go(() => live ? createEpicLive_17(route.projectId!, { title, description: desc, checkpointId: cp || null }) : createEpic_17(title, desc, cp || null)); }}>
       <div className="row between"><h2 id="ae1">Add epic</h2><Close to="Backlog.dc.html" /></div>
       <div className="field"><label htmlFor="t2">Title <span style={{ color: 'var(--danger)' }}>*</span></label><input id="t2" className={`in${f.err ? ' err' : ''}`} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Notifications" />{f.err && <Err text={f.err} />}</div>
       <div className="field"><label htmlFor="d2">Description</label><textarea id="d2" className="in" rows={3} value={desc} onChange={(e) => setDesc(e.target.value)} /></div>
       <div className="field"><label htmlFor="cp">Checkpoint</label>
-        <select id="cp" className="in" value={cp} onChange={(e) => setCp(e.target.value)}><option value="">None</option>{db.checkpoints.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
+        <select id="cp" className="in" value={cp} onChange={(e) => setCp(e.target.value)}><option value="">None</option>{(live ? liveCheckpoints : db.checkpoints).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
         <span className="hint">Optional. An epic belongs to at most one checkpoint.</span></div>
       <div className="dfoot"><A className="btn" href={r('Backlog.dc.html')}>Cancel</A><button className="btn p" disabled={f.busy}>Add epic</button></div>
     </form>
@@ -75,6 +80,11 @@ const PEOPLE: [Person, string][] = [['pn', 'Priya Nair'], ['ml', 'Marcus Lim'], 
 
 export function AddTaskForm() {
   const db = useDb();
+  const route = useProjectRoute();
+  const live = route.mode === 'live' && route.projectId;
+  const [liveEpics, setLiveEpics] = useState<LiveEpic[]>([]);
+  const [liveMembers, setLiveMembers] = useState<LiveMember[]>([]);
+  useEffect(() => { if (!live) return; Promise.all([listEpicsLive_16(route.projectId!, 0, 100), listMembersLive_9(route.projectId!)]).then(([epicPage, members]) => { setLiveEpics(epicPage.items); setLiveMembers(members); }).catch(() => { setLiveEpics([]); setLiveMembers([]); }); }, [live, route.projectId]);
   const [epic, setEpic] = useState(db.epics[0]?.id ?? '');
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
@@ -82,12 +92,13 @@ export function AddTaskForm() {
   const [pts, setPts] = useState('');
   const [who, setWho] = useState('');
   const f = useSubmit('Backlog.dc.html', 'Task added.');
+  useEffect(() => { if (live && !epic && liveEpics[0]) setEpic(liveEpics[0].id); }, [live, epic, liveEpics]);
   const setAt = (i: number, v: string) => setCrit((c) => c.map((x, j) => (j === i ? v : x)));
   return (
-    <form className="dialog" role="dialog" aria-modal="true" aria-labelledby="at1" style={{ width: 'min(640px, 100%)' }} onSubmit={(e) => { e.preventDefault(); f.go(() => createTask_21({ epicId: epic, title, description: desc, criteria: crit, points: pts ? Number(pts) : null, assignee: (who || null) as Person | null })); }}>
+    <form className="dialog" role="dialog" aria-modal="true" aria-labelledby="at1" style={{ width: 'min(640px, 100%)' }} onSubmit={(e) => { e.preventDefault(); f.go(() => live ? createTaskLive_21(route.projectId!, { epicId: epic, title, description: desc, acceptanceCriteria: crit, storyPoints: pts ? Number(pts) as any : null, assigneeId: who || null }) : createTask_21({ epicId: epic, title, description: desc, criteria: crit, points: pts ? Number(pts) : null, assignee: (who || null) as Person | null })); }}>
       <div className="row between"><h2 id="at1">Add task</h2><Close to="Backlog.dc.html" /></div>
       <div className="field"><label htmlFor="e1">Epic <span style={{ color: 'var(--danger)' }}>*</span></label>
-        <select id="e1" className="in" value={epic} onChange={(e) => setEpic(e.target.value)}>{db.epics.map((e) => <option key={e.id} value={e.id}>{e.title}</option>)}</select></div>
+        <select id="e1" className="in" value={epic} onChange={(e) => setEpic(e.target.value)}>{(live ? liveEpics : db.epics).map((e) => <option key={e.id} value={e.id}>{e.title}</option>)}</select></div>
       <div className="field"><label htmlFor="t1">Title <span style={{ color: 'var(--danger)' }}>*</span></label><input id="t1" className={`in${f.err ? ' err' : ''}`} value={title} onChange={(e) => setTitle(e.target.value)} />{f.err && <Err text={f.err} />}</div>
       <div className="field"><label htmlFor="d1">Description</label><textarea id="d1" className="in" rows={3} value={desc} onChange={(e) => setDesc(e.target.value)} /></div>
       <div className="field"><span className="lbl">Acceptance criteria</span>
@@ -106,7 +117,7 @@ export function AddTaskForm() {
           <select id="sp" className="in" value={pts} onChange={(e) => setPts(e.target.value)}>{POINTS.map((p) => <option key={p} value={p}>{p || 'None'}</option>)}</select>
           <span className="hint">1, 2, 3, 5, 8, 13 or none</span></div>
         <div className="field"><label htmlFor="as">Assignee</label>
-          <select id="as" className="in" value={who} onChange={(e) => setWho(e.target.value)}><option value="">Unassigned</option>{PEOPLE.map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select>
+          <select id="as" className="in" value={who} onChange={(e) => setWho(e.target.value)}><option value="">Unassigned</option>{live ? liveMembers.map((member) => <option key={member.userId} value={member.userId}>{member.displayName}</option>) : PEOPLE.map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select>
           <span className="hint">Project members only</span></div>
       </div>
       <div className="dfoot"><A className="btn" href={r('Backlog.dc.html')}>Cancel</A><button className="btn p" disabled={f.busy}>Add task</button></div>

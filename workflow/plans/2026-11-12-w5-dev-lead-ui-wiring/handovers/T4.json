@@ -1,0 +1,34 @@
+{
+  "task": "T4",
+  "status": "done",
+  "summary": "Wired live UUID board, backlog, checkpoint, member, and task flows while preserving prototype routes.",
+  "changed_files": [
+    "src/fe/components/canvas/BoardView.tsx",
+    "src/fe/components/canvas/CheckpointAdd.tsx",
+    "src/fe/components/canvas/TaskCard.tsx",
+    "src/fe/components/live/backlog-list.tsx",
+    "src/fe/components/live/checkpoints.tsx",
+    "src/fe/components/live/forms.tsx",
+    "src/fe/components/live/members.tsx",
+    "src/fe/components/live/task-drawer.tsx",
+    "src/fe/test/w5-pages.test.tsx"
+  ],
+  "behavior": [
+    "Live reads and writes use T1 route context and T2 clients.",
+    "Board filters use endpoint-20 fields and reset paging; live screens do not render sprint controls or send sprintId.",
+    "Live creates keep forms open on safe errors; successful checkpoint/member/task mutations refresh local data or navigate to a fresh collection.",
+    "Live task deletion and live member removal controls are absent; task updates/status changes include the server version."
+  ],
+  "verification": {
+    "focused_tests": "3 passed",
+    "full_tests": "14 files, 178 tests passed",
+    "lint": "passed",
+    "diff_check": "passed",
+    "typecheck": "blocked by pre-existing errors in src/fe/components/canvas/ProjectHead.tsx and src/fe/components/live/overview.tsx"
+  },
+  "manual_route_checks": [
+    "Open a live UUID board/backlog/checkpoints/members/task route in the browser and verify loading, safe error, success refresh, and pagination states against a running backend.",
+    "Verify backend role and tenancy responses remain authoritative for live reads and writes."
+  ],
+  "for_t5": "Route and API regressions should cover the live page adapter paths, no-sprintId request shapes, and the manual UUID route checks above."
+}

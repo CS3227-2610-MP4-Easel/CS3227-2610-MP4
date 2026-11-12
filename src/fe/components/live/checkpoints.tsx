@@ -1,13 +1,18 @@
 'use client';
-import { useState } from 'react';
-import { ApiError, addCheckpoint_13, healthOf, useDb } from '../../lib/api';
+import { useEffect, useState } from 'react';
+import { ApiError, addCheckpoint_13, createCheckpointLive_13, healthOf, listCheckpointsLive_12, useDb, type LiveCheckpoint } from '../../lib/api';
+import { useProjectRoute } from '../../lib/api/project-mode';
+import { useRouter } from 'next/navigation';
+import { useRoute } from '../../lib/nav';
 import RiskBadge from '../canvas/RiskBadge';
 import { toast } from './toast';
 import { fmtFull } from './people';
 
 // Checkpoint cards (endpoint 12). Risk comes from the facts endpoint in the real build; a new checkpoint has no forecast yet.
 export function CheckpointCards({ showRisk }: { showRisk: boolean }) {
+  const route = useProjectRoute();
   const db = useDb();
+  if (route.mode === 'live' && route.projectId) return <LiveCheckpointCards projectId={route.projectId} />;
   const rows = healthOf(db).rows;
   return (
     <>
@@ -34,8 +39,22 @@ export function CheckpointCards({ showRisk }: { showRisk: boolean }) {
   );
 }
 
+function LiveCheckpointCards({ projectId }: { projectId: string }) {
+  const [rows, setRows] = useState<LiveCheckpoint[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const load = () => { setLoading(true); listCheckpointsLive_12(projectId).then(setRows).catch((e) => setError(e instanceof ApiError ? e.message : 'Something went wrong.')).finally(() => setLoading(false)); };
+  useEffect(() => { load(); const onChange = () => load(); window.addEventListener('easel-checkpoints-changed', onChange); return () => window.removeEventListener('easel-checkpoints-changed', onChange); }, [projectId]);
+  if (loading) return <div className="card"><div className="sk" style={{ width: '45%' }} /><div className="sk" style={{ marginTop: 10 }} /></div>;
+  if (error) return <div className="banner b-bad"><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg><span>{error}</span></div>;
+  return <>{rows.map((checkpoint) => <article className="card" key={checkpoint.id}><div className="row wrap between"><div className="row"><svg className="ic lg muted" aria-hidden="true"><use href="#i-flag" /></svg><h3 style={{ margin: 0 }}>{checkpoint.name}</h3></div></div><div className="row wrap" style={{ gap: 24, margin: '8px 0 12px' }}><span><span className="muted">Target </span><b className="num">{fmtFull(checkpoint.targetDate)}</b></span></div><div className="pill-list"><span className="muted">No linked epics in checkpoint response.</span></div></article>)}{rows.length === 0 && <div className="card"><b>No checkpoints yet.</b> <span className="muted">A checkpoint is a date the team commits to.</span></div>}</>;
+}
+
 // Add-checkpoint form (endpoint 13).
-export function AddCheckpointForm() {
+export function AddCheckpointForm({ dialog = false }: { dialog?: boolean } = {}) {
+  const route = useProjectRoute();
+  const router = useRouter();
+  const routeFor = useRoute();
   const [name, setName] = useState('');
   const [date, setDate] = useState('');
   const [err, setErr] = useState('');
@@ -48,10 +67,13 @@ export function AddCheckpointForm() {
     }
     setBusy(true);
     try {
-      await addCheckpoint_13(name.trim(), date);
+      if (route.mode === 'live' && route.projectId) await createCheckpointLive_13(route.projectId, { name: name.trim(), targetDate: date });
+      else await addCheckpoint_13(name.trim(), date);
       toast(`Checkpoint "${name.trim()}" added.`);
       setName('');
       setDate('');
+      window.dispatchEvent(new Event('easel-checkpoints-changed'));
+      if (dialog) router.push(routeFor('Checkpoints.dc.html'));
     } catch (e) {
       setErr(e instanceof ApiError ? e.message : 'Something went wrong.');
     } finally {
@@ -59,8 +81,8 @@ export function AddCheckpointForm() {
     }
   };
   return (
-    <div className="card flat" style={{ borderStyle: 'dashed' }}>
-      <h3>Add checkpoint</h3>
+    <div className={dialog ? 'dialog' : 'card flat'} style={{ borderStyle: dialog ? undefined : 'dashed' }}>
+      <div className="row between"><h3>Add checkpoint</h3>{dialog && <span className="small muted">Required fields</span>}</div>
       <div className="field" style={{ marginBottom: 12 }}>
         <label htmlFor="cn">Name</label>
         <input id="cn" className="in" value={name} onChange={(e) => setName(e.target.value)} placeholder="Pilot with two canteens" />
