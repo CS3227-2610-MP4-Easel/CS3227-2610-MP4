@@ -86,6 +86,8 @@ describe('W5 live planning surfaces', () => {
   it('renders a close button for the checkpoint dialog', () => {
     render(liveView(<AddCheckpointForm dialog />));
     expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(router.push).toHaveBeenCalledWith(`/projects/${PROJECT}/checkpoints`);
   });
 
   it('F3 F6 E1 E2 loads UUID board data, maps supported filters, resets pagination, and renders no sprint control', async () => {

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError, addCheckpoint_13, createCheckpointLive_13, healthOf, listCheckpointsLive_12, useDb, type LiveCheckpoint } from '../../lib/api';
 import { useProjectRoute } from '../../lib/api/project-mode';
 import { useRouter } from 'next/navigation';
-import { useRoute } from '../../lib/nav';
+import { useModal, useRoute } from '../../lib/nav';
 import RiskBadge from '../canvas/RiskBadge';
 import { toast } from './toast';
 import { fmtFull } from './people';
@@ -62,10 +62,12 @@ export function AddCheckpointForm({ dialog = false }: { dialog?: boolean } = {})
   const route = useProjectRoute();
   const router = useRouter();
   const routeFor = useRoute();
+  const modal = useModal();
   const [name, setName] = useState('');
   const [date, setDate] = useState('');
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  const close = () => modal.modal ? modal.close() : router.push(routeFor('Checkpoints.dc.html'));
   const submit = async () => {
     setErr('');
     if (!name.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -89,7 +91,7 @@ export function AddCheckpointForm({ dialog = false }: { dialog?: boolean } = {})
   };
   return (
     <div className={dialog ? 'dialog' : 'card flat'} style={{ borderStyle: dialog ? undefined : 'dashed' }}>
-      <div className="row between"><h3>Add checkpoint</h3>{dialog ? <button className="btn g sm ib" type="button" aria-label="Close" onClick={() => router.push(routeFor('Checkpoints.dc.html'))}><svg className="ic" aria-hidden="true"><use href="#i-x" /></svg></button> : null}</div>
+      <div className="row between"><h3>Add checkpoint</h3>{dialog ? <button className="btn g sm ib" type="button" aria-label="Close" onClick={close}><svg className="ic" aria-hidden="true"><use href="#i-x" /></svg></button> : null}</div>
       <div className="field" style={{ marginBottom: 12 }}>
         <label htmlFor="cn">Name</label>
         <input id="cn" className="in" value={name} onChange={(e) => setName(e.target.value)} placeholder="Pilot with two canteens" />
