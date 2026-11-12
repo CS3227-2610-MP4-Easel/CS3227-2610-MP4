@@ -5,11 +5,11 @@ describes `INT`; read it for context and write here instead of editing it.
 `sync-project-state` folds this file in after the branch merges.
 
 - **Branch:** w13-deployment-continuation (from `INT` at `dc3447f`)
-- **Base:** dc3447f
+- **Base:** 82cbf9196f8bcc5af026094cfb41e2a7747d2252
 - **Owner:** operator / repository owner
 - **Status:** Approved
 - **Approved:** operator / repository owner, 2026-11-12
-- **Last updated:** 2026-11-12 by Codex — actual CI E34 timer failure repaired; operator approval recorded for push
+- **Last updated:** 2026-11-13 by Codex — merged current origin/development and verified the integrated branch
 
 **Untouched:** Architecture, Conventions, Known Gaps
 
@@ -25,7 +25,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| *(none)* | — | — | — | — | Branch approved; no active session | Push the approved tip; do not fold until merged | 2026-11-12 |
+| *(none)* | — | — | — | — | — | — | — |
 
 **Remaining**
 
@@ -111,6 +111,8 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-12 | Operator approved Gate 3 after the CI registration-test race repair and verification. | W13 | owner approval |
 | 2026-11-12 | Latest CI run `43152832330` exposed the actual E34 failure: synchronous fake-timer advancement did not flush the cooldown interval update on the runner. The test now uses asynchronous timer advancement; five focused E34 runs, full tests, typecheck, lint, contract, secret scan, and diff checks pass. | W13 | 317e8e7 |
 | 2026-11-12 | Operator approved Gate 3 after the E34 timer repair and verification. | W13 | owner approval |
+| 2026-11-13 | Merged current `origin/development` (including W11) into W13; reconciled the deployment runbook with the expand/contract rollback guidance and retained both skill-feedback entries. | W13 | 21ebeb0 |
+| 2026-11-13 | Full tests, typecheck, lint, contract, workflow, agent-policy, secret-scan, and diff checks pass after the merge. | W13 | verification |
 
 ### D~8 — Deploy Hook cannot carry an exact commit SHA
 

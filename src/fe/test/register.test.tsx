@@ -508,8 +508,10 @@ describe('finish setup', () => {
     await u.type(screen.getByLabelText('Display name'), 'Ana');
     await u.click(screen.getByRole('button', { name: 'Finish' }));
     expect(signUp).not.toHaveBeenCalled();
-    expect(replace).toHaveBeenCalledTimes(1);
-    expect(replace).toHaveBeenCalledWith('/projects');
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledTimes(1);
+      expect(replace).toHaveBeenCalledWith('/projects');
+    });
   });
 
   it('E52h a 500 at Finish then Retry reaches /projects', async () => {

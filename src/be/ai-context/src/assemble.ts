@@ -9,7 +9,7 @@ export type AssembleResult = { sections: ContextSections; provenance: Provenance
 type Caller = { userId: string; role: UserRole };
 /** The frozen `AiContext` plus `assembleWith`, which carries per-feature options and returns provenance (spec SD4). */
 export type AiContextWith = AiContext & {
-  assembleWith(caller: Caller, feature: Feature, targetProjectId: string, options: AssembleOptions): Promise<AssembleResult>;
+  assembleWith(caller: Caller, feature: Feature, targetProjectId: string, options: AssembleOptions, captured?: unknown): Promise<AssembleResult>;
 };
 
 const DEFAULT_SOURCE_TIMEOUT_MS = 10_000;
@@ -138,7 +138,7 @@ async function checkOtherProjects(spec: SectionSpec, snaps: Snapshot[], ctx: Che
 }
 
 function makeContext(getCore: () => MemberCheck | null, getSource: (id: SourceId) => ContextSource | undefined, sourceTimeoutMs: number): AiContextWith {
-  async function assembleWith(caller: Caller, feature: Feature, targetProjectId: string, options: AssembleOptions): Promise<AssembleResult> {
+  async function assembleWith(caller: Caller, feature: Feature, targetProjectId: string, options: AssembleOptions, captured?: unknown): Promise<AssembleResult> {
     // 1 input; 2 role; 3 core; 4 membership; 5 sources registered (spec api.md § assembleWith).
     const input = InputSchema.safeParse({ caller, feature, targetProjectId });
     const parsedOptions = input.success ? OPTION_SCHEMAS[input.data.feature].safeParse(options) : undefined;
@@ -156,7 +156,7 @@ function makeContext(getCore: () => MemberCheck | null, getSource: (id: SourceId
     // 6 every source at once, each with its own frozen copies, behind a deadline; an async wrapper turns a synchronous
     // throw into a settled rejection so the ordering below still holds.
     const validOptions = parsedOptions.data as AssembleOptions;
-    const argsFor = (): SourceArgs => ({ caller: Object.freeze({ ...validCaller }), projectId: targetProjectId, options: deepFreeze(structuredClone(validOptions)) });
+    const argsFor = (): SourceArgs => ({ caller: Object.freeze({ ...validCaller }), projectId: targetProjectId, options: deepFreeze(structuredClone(validOptions)), captured: captured === undefined ? undefined : deepFreeze(structuredClone(captured)) });
     const settled = await Promise.allSettled(sources.map((source) => withDeadline((async () => (source as ContextSource)(argsFor()))(), sourceTimeoutMs)));
 
     // 7 sections in allow-list order: the first failing section wins, whether it rejected or broke a check.

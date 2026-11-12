@@ -1,0 +1,19 @@
+{
+  "task": "T9",
+  "status": "done",
+  "summary": "Endpoints 49-52 and 55 served via createDevRuntime, createDevRoutes and withDevComposition; review round 1 applied (injected clock, 16 KiB limits, lowercase ids, real-runtime tests).",
+  "commit": "24d48d8",
+  "produces": [
+    { "kind": "symbol", "name": "createDevRuntime", "where": "src/be/dev/src/runtime.ts", "note": "createDevRuntime(deps: DevRuntimeDeps) -> { now, resolvers, upload, summaries, standup, mine, leadList }; overrides: Partial<{ gateway, sessions, ai, recordCacheHit }>; also exports DevRuntime, DevRuntimeDeps and DevError from @agile/dev" },
+    { "kind": "symbol", "name": "createDevRoutes", "where": "src/be/api/src/routes/dev.ts", "note": "createDevRoutes(services: DevRouteServices): RouteDefinition[]; optional now() drives 52's default date; 50 and 51 limited to 16 KiB; ids lowercased" },
+    { "kind": "symbol", "name": "createDevComposition", "where": "src/be/api/src/dev-composition.ts", "note": "createDevComposition(auth): { resolvers, routes }; uncached, registers process-wide sources once per auth runtime" },
+    { "kind": "symbol", "name": "getDevComposition", "where": "src/be/api/src/dev-composition.ts", "note": "getDevComposition(auth: AuthRuntime), cached per auth in a WeakMap" },
+    { "kind": "symbol", "name": "withDevComposition", "where": "src/be/api/src/dev-composition.ts", "note": "withDevComposition(core: CoreComposition, dev): CoreComposition; chains with Object.hasOwn" }
+  ],
+  "next": "T10: build createApiApp(createAppDependencies(rt, composition), composition.routes) with composition = withDevComposition(createCoreComposition(rt), createDevComposition(rt)), rt.db = createDbClient(base), after resetContextRegistries(). Runtime overrides: gateway, sessions, ai, recordCacheHit; deps also take now.",
+  "deviations": [
+    { "what": "Endpoint 52 validates date shape and calendar only, not the accepted-date window.", "why": "The task gives dateString as the only rule and the window would block reading older standups.", "needs": "orchestrator" }
+  ],
+  "edge_cases": ["E1", "E2", "E3", "E11", "E14", "E25", "E35", "E39", "E41", "E44", "E45", "E57", "E58", "E59", "E69", "F8"],
+  "checks": { "build": "pass", "tests": "786 pass / 0 fail (be) and 149 pass (fe)", "lint": "n/a" }
+}

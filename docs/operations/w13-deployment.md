@@ -38,6 +38,14 @@ The release evidence is redacted and limited to status labels, timestamps, commi
 owner, and approved target identifiers. Never record tokens, credential-bearing URLs, the deploy hook
 URL, secret values, or response bodies.
 
+The W8 expand migration installs a compatibility trigger that derives `facts_as_of` for old writers;
+this makes the full expand/contract sequence safe during a rolling deployment. The direct URL exists
+only in the migration process environment and is cleared in the finalizer. No down migration is used.
+If a migration fails, stop the job and preserve only redacted evidence. After the contract phase,
+application rollback is forward-only: restore the last known-good backup or apply a corrected forward
+migration, then deploy a compatible writer. The index and column are never dropped by an operational
+rollback.
+
 ## Manual recovery rehearsal
 
 The owner confirms that the active Neon plan supports RPO no greater than 24 hours and RTO no

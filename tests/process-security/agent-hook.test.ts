@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { test } from "node:test";
 import { join } from "node:path";
+import { mkdtemp, mkdir, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { mediatePreToolUse, requestFromToolCall } from "../../scripts/agent-pre-tool-hook.mjs";
 
 const root = process.cwd();
@@ -166,6 +168,39 @@ test("F8 pre-tool mediation rejects external paths hidden in read commands", asy
 const policyPath = join(root, "workflow/agent-permissions.json");
 const bash = (command: string) => mediatePreToolUse({ tool_name: "Bash", tool_input: { command } }, policyPath);
 const edit = (file_path: string) => mediatePreToolUse({ tool_name: "Edit", tool_input: { file_path } }, policyPath);
+
+test("external literal paths are denied regardless of parent existence", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "hook-path-"));
+  const parent = join(dir, "missing");
+  const outside = join(parent, "file").replaceAll("\\", "/");
+  try {
+    for (const command of [
+      `mv src/be/index.ts ${outside}`, `mkdir -p ${outside}`, `cat ${outside}`, `find ${outside}`,
+      `git diff --output=${outside}`, `echo x > ${outside}`, `echo x >> ${outside}`,
+      `sed -f ${outside} src/be/index.ts`, `sed -n '/^model/,/^}/p' ${outside}`,
+      `grep -f ${outside} src/be/index.ts`, `rg -f ${outside} src/be/index.ts`,
+      `rg -e pattern ${outside}`, `rg -f repo-patterns ${outside}`,
+      `grep -e one -f repo-patterns -e two ${outside}`,
+    ]) assert.deepEqual(await bash(command), { allowed: false, reason: "default-deny" }, command);
+    await mkdir(parent);
+    assert.deepEqual(await bash(`cat ${outside}`), { allowed: false, reason: "default-deny" });
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test("literal search expressions stay distinct from path operands", async () => {
+  for (const command of [
+    "sed -n '/^model Project {/,/^}/p' src/be/db/prisma/schema.prisma",
+    "grep '/^model/' src/be/db/prisma/schema.prisma",
+    "grep -e '/^model/' src/be/db/prisma/schema.prisma",
+    "rg '/^model/' src/be/db/prisma/schema.prisma",
+    "rg -e '/^model/' -e '/^enum/' src/be/db/prisma/schema.prisma",
+    `cat ${join(root, "src/be/index.ts").replaceAll("\\", "/")}`,
+  ]) assert.deepEqual(await bash(command), { allowed: true, reason: "allowed" }, command);
+  if (process.platform === "win32") {
+    assert.equal((await bash("cat Z:/nonexistent-hook-test/file")).reason, "default-deny");
+    assert.equal((await bash("cat //nonexistent-hook-server/share/file")).reason, "default-deny");
+  }
+});
 
 test("F8 pre-tool mediation allows ordinary repository work in the shell", async () => {
   for (const command of [

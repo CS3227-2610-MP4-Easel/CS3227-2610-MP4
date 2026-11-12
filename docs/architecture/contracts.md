@@ -199,7 +199,7 @@ Returns the sections a feature may use, from the allow-list below, built only fr
 
 | Feature | Entity types allowed |
 |---|---|
-| `PM_PLAN_OUTLINE`, `PM_PLAN_EXPAND` | the target project's brief and checkpoints; titles (not descriptions) of epics and tasks of the caller's member projects found by full-text search (top 5) |
+| `PM_PLAN_OUTLINE`, `PM_PLAN_EXPAND` | the target project's brief and checkpoints; titles (not descriptions) of epics and tasks of the caller's member projects found by case-insensitive keyword match on up to 8 keywords from the idea (top 5) |
 | `LEAD_DIGEST` | `Facts` for the target project; previous digest; the change list since it |
 | `DEV_SUMMARY` | the caller's own `activity_items` in the target project |
 | `DEV_STANDUP` | the caller's own item summaries, task events and blocked tasks in the target project |
@@ -207,7 +207,7 @@ Returns the sections a feature may use, from the allow-list below, built only fr
 Standup text and other users' activity items are never returned to any feature other than the one that owns them.
 
 ### 5.3 `Sessions`
-`open({ feature, userId, projectId }) → sessionId`; `assertUsable(sessionId, userId, feature)`; `touch(sessionId)`; `close(sessionId, outcome, actorId)` (idempotent; only the owner or the approving user may close). Caps: at most 5 regenerations per session, at most 20 new sessions per user per day, at most 3 OPEN sessions per user per feature (A-07).
+`open({ feature, userId, projectId }) → sessionId`; `assertUsable(sessionId, userId, feature)` (a session opened for `PM_PLAN_OUTLINE` also admits calls of feature `PM_PLAN_EXPAND`; the call row keeps its own feature); `touch(sessionId)`; `close(sessionId, outcome, actorId)` (idempotent; only the owner or the approving user may close). Caps: at most 5 regenerations per session, at most 20 new sessions per user per day, at most 3 OPEN sessions per user per feature (A-07).
 
 ### 5.4 `Core` (used by `proposals`, `lead`, `dev`, `pm`)
 `requireMember(userId, projectId)`; `assertWritable(projectId)`; `progress(projectId)`; `velocity(projectId, n)`; `applyPlan(tx, projectId, plan, actorId)`; `applyReplan(tx, projectId, suggestions, actorId)`. The apply functions run inside the caller's transaction, validate the payload with a strict schema, ignore any project id in it, re-check every id against the project, re-check assignee membership, the actor's role and that the project is writable, and write `task_events` in the same transaction (A-06).

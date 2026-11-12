@@ -1,0 +1,15 @@
+{
+  "task": "T1",
+  "status": "done",
+  "summary": "Added log-absence criteria to both registration-code cases and hardened closed criterion validation, UTF-8 bounds, and safe diagnostics.",
+  "commit": "57b889d15c430a402469c5ed5dcd1db8172d646d",
+  "produces": [
+    {"kind":"symbol","name":"loadCorpus","where":"tests/security/attack-corpus/schema.ts","note":"Loads and validates cases.json into CorpusCase[]"},
+    {"kind":"symbol","name":"validateCorpus","where":"tests/security/attack-corpus/schema.ts","note":"Rejects unknown fields, duplicate IDs, missing threats, and oversized recursive fixtures"},
+    {"kind":"file","name":"tests/security/attack-corpus/cases.json","where":"tests/security/attack-corpus/cases.json","note":"16 synthetic declarative cases across all 11 threats"}
+  ],
+  "next": "T2 should import loadCorpus/validateCorpus and preserve the fixture text and criterion unions exactly.",
+  "deviations": [],
+  "edge_cases": ["E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9", "E11", "E12", "E20"],
+  "checks": {"build":"pass", "tests":"inline strict-validator assertions pass; persistent corpus test unavailable because T2 owns it", "lint":"pass"}
+}

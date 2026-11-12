@@ -121,7 +121,6 @@ test("E4 F2 invalid input is INVALID_ASSEMBLE_INPUT before any call", async () =
   add("11 itemIds", (w) => run(w, "DEV_SUMMARY", { itemIds: Array.from({ length: 11 }, (_, i) => ITEM(i + 1)) }));
   add("duplicated itemId", (w) => run(w, "DEV_SUMMARY", { itemIds: [ITEM(1), ITEM(1)] }));
   add("non-uuid itemId", (w) => run(w, "DEV_SUMMARY", { itemIds: ["nope"] }));
-  add("from equal to to", (w) => run(w, "DEV_STANDUP", { window: { from: new Date(0), to: new Date(0) } }));
   add("to before from", (w) => run(w, "DEV_STANDUP", { window: { from: new Date(1000), to: new Date(0) } }));
   add("invalid Date", (w) => run(w, "DEV_STANDUP", { window: { from: new Date("nope"), to: new Date(0) } }));
   add("string date", (w) => run(w, "DEV_STANDUP", { window: { from: "2026-11-05", to: new Date() } }));
@@ -141,6 +140,11 @@ test("E40 F2 the option limits are inclusive", async () => {
   for (const query of ["a", "q".repeat(6000)]) await run(world(), "PM_PLAN_OUTLINE", { query });
   const ids = Array.from({ length: 10 }, (_, i) => ITEM(i + 1));
   await run(world({ "dev.activityItems": () => ids.map((id) => row("ACTIVITY_ITEM", id, { ownerId: U })) }), "DEV_SUMMARY", { itemIds: ids });
+  // An empty standup window (00:00 SGT, tomorrow's date) is valid: current blockers still apply.
+  const at = new Date("2026-11-05T16:00:00Z");
+  const w = world();
+  await run(w, "DEV_STANDUP", { window: { from: at, to: at } });
+  assert.deepEqual(w.calls["core.blockedTasks"]?.[0]?.args.options.window, { from: at, to: at });
 });
 
 // --- Membership and registries ---
