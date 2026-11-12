@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** ludannnn (Developer member)
 - **Status:** Approved
 - **Approved:** ludannnn 2026-11-13
-- **Last updated:** 2026-11-13 by Claude Opus 5.5 — Gate 3 approved by the owner
+- **Last updated:** 2026-11-13 by Codex — repaired the PR workspace-test assertion
 
 **Untouched:** Architecture, Conventions
 
@@ -32,7 +32,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] T0: merged `development` at `465c8fe` (W9 PR #29) on 2026-11-13.
 - [x] T1-T5 per the spec's task list (T5 review: one round, findings fixed or recorded).
 - [x] Gate 3: approved by ludannnn on 2026-11-13 ("yes").
-- [ ] Push and open the PR into `development` (owner).
+- [x] Pushed the CI assertion repair to the PR branch; GitHub should rerun workspace CI.
 - [ ] **Handover:** S20/S18 a11y follow-up: the day tabs (`role="tab"`) have no `tabpanel` or arrow-key navigation.
 - [ ] **Handover:** when the W7 PM-UI branch (`codex/w7c-pm-ui`) merges, it brings its own mock/live switch (`isLive()`, `openProjectId()`); S20/S18 use `useAuthMode()` and `useProjectId()` (SD1). Pick one mechanism for the web app then.
 
@@ -58,6 +58,7 @@ describes `INT`; read it for context and write here instead of editing it.
 | 2026-11-13 | T2 done: `LiveStandupScreen` (`src/fe/components/live/standup-live.tsx`) with the upload panel (file checks, one call to 49, result strip, rejections) and the summaries panel (sequential batches of 10, AI_BUSY countdown and resend, RATE_LIMITED stop, Retry failed); 404 shows the not-found text, 409 the archived banner with controls off. `canvas/Standup.tsx` renders it in `firebase` mode. Files are read with `FileReader` (jsdom lacks `Blob.text()`). Deviation D~1. Tests: `standup-live.test.tsx` (E1, E3-E7, E14, E17, 404, RATE_LIMITED). Checks: typecheck green; fe 165/165 | W~1 | `6dfcd17` |
 | 2026-11-13 | T1 done: `src/fe/lib/api/dev.ts` (endpoints 9, 49-52, 55; `useProjectId`/`projectIdFrom`; `todaySgt`, `nextStandupDate`), exported as `live`; `AuthModeCtx` exported; `LiveTestProvider`; the example file is now valid `ActivityItemInput` (it used `kind/text/at`, which the server rejects). Tests: `dev-api.test.ts` (E1, E2, E8, E16, paths and bodies). Checks: typecheck green; fe 155/155 | W~1 | `f36cbe0` |
 | 2026-11-13 | T0: merged `development` at `465c8fe` (W9, W7 backend, W8, PR #34); only `skill-feedback.md` conflicted (kept both rows) | W~1 | merge commit |
+| 2026-11-13 | Fixed the S18 live standup test to assert the API client's intentional generic 5xx message (`Something went wrong. Try again.`), resolving the stale `server broke` expectation in workspace CI | W~1 | CI repair |
 
 ---
 

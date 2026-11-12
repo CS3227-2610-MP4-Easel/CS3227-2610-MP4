@@ -104,7 +104,7 @@ describe('S18 live (F5)', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
     view();
-    expect(await screen.findByText('server broke')).toBeTruthy();
+    expect(await screen.findByText('Something went wrong. Try again.')).toBeTruthy();
     expect(screen.queryByText('Loading…')).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByText('a yesterday')).toBeTruthy();
