@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { createTransactionSessionCloser } from "@agile/llm-gateway";
 import { ProposalError, createProposalService } from "../src/index.js";
 
 const projectId = "00000000-0000-4000-8000-000000000001";
@@ -11,15 +12,17 @@ const proposalId = "00000000-0000-4000-8000-000000000004";
 const firstSuggestionId = "00000000-0000-4000-8000-000000000005";
 const secondSuggestionId = "00000000-0000-4000-8000-000000000006";
 const checkpointId = "00000000-0000-4000-8000-000000000007";
+const unknownSuggestionId = "00000000-0000-4000-8000-000000000099";
 
-type FixtureOptions = { failCore?: boolean; failCloser?: boolean; members?: string[]; projectStatus?: "ACTIVE" | "ARCHIVED"; session?: Partial<{ userId: string; projectId: string; feature: string; env: string; outcome: string }> };
+type FixtureOptions = { failCore?: boolean; failCoreCode?: string; failCloser?: boolean; role?: "DEV_LEAD" | "PM"; members?: string[]; proposalProjectId?: string; projectStatus?: "ACTIVE" | "ARCHIVED"; session?: Partial<{ userId: string; projectId: string; feature: string; env: string; outcome: string }> };
 
 function fixture(options: FixtureOptions = {}) {
+  const boundProjectId = options.proposalProjectId ?? projectId;
   const state: any = {
     project: { id: projectId, status: options.projectStatus ?? "ACTIVE", version: 1 },
-    session: { id: sessionId, projectId, userId: ownerId, feature: "LEAD_DIGEST", env: "test", outcome: "OPEN", lastActivityAt: new Date("2026-11-13T00:00:00.000Z"), ...options.session },
+    session: { id: sessionId, projectId: boundProjectId, userId: ownerId, feature: "LEAD_DIGEST", env: "test", outcome: "OPEN", lastActivityAt: new Date("2026-11-13T00:00:00.000Z"), ...options.session },
     proposal: {
-      id: proposalId, projectId, kind: "REPLAN", status: "PENDING", version: 1, sessionId, createdBy: ownerId, flagged: false,
+      id: proposalId, projectId: boundProjectId, kind: "REPLAN", status: "PENDING", version: 1, sessionId, createdBy: ownerId, flagged: false,
       createdAt: new Date("2026-11-13T00:00:00.000Z"), payload: {
         explanation: "Move the checkpoint and preserve the approval order.",
         suggestions: [
@@ -35,8 +38,8 @@ function fixture(options: FixtureOptions = {}) {
   const matches = (where: any, expected: any) => Object.entries(where ?? {}).every(([key, value]) => expected[key] === value);
   const tx: any = {
     project: {
-      update: async ({ where }: any) => { if (where.id !== projectId) missing(); return state.project; },
-      findFirst: async ({ where }: any) => where.id === projectId ? state.project : null,
+      update: async ({ where }: any) => { if (![projectId, otherProjectId].includes(where.id)) missing(); return state.project; },
+      findFirst: async ({ where }: any) => where.id === projectId ? state.project : where.id === otherProjectId ? { id: otherProjectId, status: "ACTIVE" } : null,
     },
     aiSession: {
       findFirst: async ({ where }: any) => matches(where, state.session) ? state.session : null,
@@ -81,7 +84,8 @@ function fixture(options: FixtureOptions = {}) {
   };
   const core = {
     applyReplan: async (_transaction: unknown, _project: string, input: any) => {
-      if (options.failCore) throw new Error("domain write failed");
+      if (options.role === "PM") throw new Error("FORBIDDEN_ROLE");
+      if (options.failCore) throw new Error(options.failCoreCode ?? "domain write failed");
       state.applies.push(input.suggestions);
     },
   };
@@ -109,6 +113,24 @@ test("approved replay returns stored ids without applying a new subset", async (
   assert.equal(f.state.applies.length, 1);
 });
 
+test("E13-E15 reject duplicate IDs, unknown IDs and current-state conflicts", async () => {
+  const duplicate = fixture();
+  const duplicateService = createProposalService({ db: duplicate.db, core: duplicate.core, sessionCloser: duplicate.closer });
+  assert.equal(await code(duplicateService.approve({ proposalId, version: 1, actorId: ownerId, suggestionIds: [firstSuggestionId, firstSuggestionId] })), "VALIDATION_FAILED");
+  assert.equal(duplicate.state.proposal.status, "PENDING");
+
+  const unknown = fixture();
+  const unknownService = createProposalService({ db: unknown.db, core: unknown.core, sessionCloser: unknown.closer });
+  assert.equal(await code(unknownService.approve({ proposalId, version: 1, actorId: ownerId, suggestionIds: [unknownSuggestionId] })), "VALIDATION_FAILED");
+  assert.equal(unknown.state.proposal.status, "PENDING");
+
+  const currentState = fixture({ failCore: true, failCoreCode: "CONFLICT_STATE" });
+  const currentStateService = createProposalService({ db: currentState.db, core: currentState.core, sessionCloser: currentState.closer });
+  assert.equal(await code(currentStateService.approve({ proposalId, version: 1, actorId: ownerId, suggestionIds: [firstSuggestionId] })), "CONFLICT_STATE");
+  assert.equal(currentState.state.proposal.status, "PENDING");
+  assert.equal(currentState.state.session.outcome, "OPEN");
+});
+
 test("E23 core failure rolls back proposal, domain and session state", async () => {
   const f = fixture({ failCore: true });
   const before = structuredClone({ proposal: f.state.proposal, session: f.state.session, applies: f.state.applies });
@@ -126,13 +148,18 @@ test("E23 session-close failure rolls back the approved proposal and domain muta
 });
 
 test("E16-E17 hide a foreign project and outsider from proposal approval/listing", async () => {
-  const foreign = fixture();
+  const foreign = fixture({ proposalProjectId: otherProjectId });
   const foreignService = createProposalService({ db: foreign.db, core: foreign.core, sessionCloser: foreign.closer });
   assert.equal(await code(foreignService.approve({ proposalId, projectId: otherProjectId, version: 1, actorId: ownerId, suggestionIds: [firstSuggestionId] })), "NOT_FOUND");
 
   const outsider = fixture({ members: [ownerId] });
   const outsiderService = createProposalService({ db: outsider.db, core: outsider.core, sessionCloser: outsider.closer });
   assert.equal(await code(outsiderService.list({ actorId: otherOwnerId, projectId, page: 0, size: 20 })), "NOT_FOUND");
+
+  const wrongRole = fixture({ role: "PM" });
+  const wrongRoleService = createProposalService({ db: wrongRole.db, core: wrongRole.core, sessionCloser: wrongRole.closer });
+  assert.equal(await code(wrongRoleService.approve({ proposalId, version: 1, actorId: ownerId, suggestionIds: [firstSuggestionId] })), "FORBIDDEN_ROLE");
+  assert.equal(wrongRole.state.proposal.status, "PENDING");
 });
 
 test("endpoint 48 rejects a non-session owner without changing the proposal", async () => {
@@ -162,4 +189,20 @@ test("terminal proposals and stale versions reject mutations", async () => {
   const stale = fixture();
   const staleService = createProposalService({ db: stale.db, core: stale.core, sessionCloser: stale.closer });
   assert.equal(await code(staleService.approve({ proposalId, version: 2, actorId: ownerId, suggestionIds: [firstSuggestionId] })), "CONFLICT_VERSION");
+});
+
+test("concrete transaction session closer verifies proposal binding and closes the session", async () => {
+  const session: any = { id: sessionId, projectId, userId: ownerId, feature: "LEAD_DIGEST", env: "test", outcome: "OPEN" };
+  const proposal: any = { id: proposalId, projectId, sessionId, kind: "REPLAN", createdBy: ownerId };
+  const tx: any = {
+    aiProposal: { findFirst: async ({ where }: any) => Object.entries(where).every(([key, value]) => proposal[key] === value) ? proposal : null },
+    aiSession: {
+      findFirst: async () => session,
+      updateMany: async ({ data }: any) => { session.outcome = data.outcome; session.endedAt = data.endedAt; return { count: 1 }; },
+    },
+  };
+  const closer = createTransactionSessionCloser({ env: "test" });
+  await closer.closeInTransaction(tx, { sessionId, proposalId, projectId, feature: "LEAD_DIGEST", ownerId, outcome: "ACCEPTED", actorId: ownerId });
+  assert.equal(session.outcome, "ACCEPTED");
+  await assert.rejects(() => closer.closeInTransaction(tx, { sessionId, proposalId, projectId: otherProjectId, feature: "LEAD_DIGEST", ownerId, outcome: "REJECTED", actorId: ownerId }), /CONFLICT_STATE/);
 });

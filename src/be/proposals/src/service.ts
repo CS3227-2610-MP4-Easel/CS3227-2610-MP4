@@ -38,7 +38,9 @@ type ReplanPayload = { suggestions?: unknown; explanation?: unknown; appliedSugg
 type Row = Record<string, any>;
 type Tx = MutationTransactionClient & Record<string, any>;
 
-const suggestionList = z.array(SuggestionSchema).max(100);
+// Stored proposal payloads and response envelopes are not capped here. The request contract
+// bounds only the selected suggestionIds array; this keeps replay/listing lossless.
+const suggestionList = z.array(SuggestionSchema);
 type Suggestion = z.infer<typeof SuggestionSchema>;
 const iso = (value: Date | string) => value instanceof Date ? value.toISOString() : value;
 const codeOf = (error: unknown) => error instanceof Error ? error.message : "";
