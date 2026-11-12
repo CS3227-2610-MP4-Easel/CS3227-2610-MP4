@@ -26,7 +26,7 @@ pages. W14 sprint/re-plan interactions remain out of scope.
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W5/W8 | Active | Modal, overview, local digest runtime, and role-home fixes complete | Owner review | 2026-11-12 |
+| S1 | 2026-11-12 | Codex | W5/W8 | Active | Modal, live overview, local digest runtime, role-home, and live project-switcher fixes complete | Owner review | 2026-11-12 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human` (name the question).
 
@@ -59,6 +59,7 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-12 | Kept live project overview data independent per request and moved W5 route dialogs onto their base pages with Escape/X close behavior | W5/W8 | working tree |
 | 2026-11-12 | Routed authenticated root visits to the role home; Dev Leads now land on `/lead/overview` and stale Projects-list copy was removed | W8 | working tree |
 | 2026-11-12 | Restricted the PM `/projects` list to PMs and redirected authenticated non-PM visitors to their role home | W8 | working tree |
+| 2026-11-12 | Wired the Dev Lead navbar project switcher and overview table to live project, facts, and digest data | W8 | working tree |
 
 ## Decisions
 
