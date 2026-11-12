@@ -74,7 +74,7 @@ One line per change on this branch: what changed and why, with a commit as the r
 | 2026-11-12 | Loaded the deny setup inside E22 workers and drove E14 through createLlmGateway to assert AI_BUSY; full backend, frontend, lint, and root test verification pass | W11 | a99a562 |
 | 2026-11-12 | Bundled the deny setup and imported it as an isolated worker module so Node 20 CI protects E22 workers; workspace tests and lint pass | W11 | 59c0d71 |
 | 2026-11-12 | Closed the isolation and repeated-registration review blockers: deny bare child-process imports and filesystem promise/write APIs, and drive 21 attempts through the registered auth route; full verification passes | W11 | e0ac907 |
-| 2026-11-12 | Hardened filesystem containment against traversal and stream/copy writes, exposed auth subpaths through the package boundary, and added regressions | W11 | pending |
+| 2026-11-12 | Hardened filesystem containment against traversal and stream/copy writes, exposed auth subpaths through the package boundary, and added regressions | W11 | b110ade |
 
 ## 4. Decisions
 
