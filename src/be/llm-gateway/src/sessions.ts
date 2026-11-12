@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { SESSION_CAPS, type Feature, type Sessions } from "@agile/contracts";
-import { LIMITS } from "./config.js";
+import { LIMITS, SESSION_FEATURE } from "./config.js";
 import { systemClock, type Clock } from "./clock.js";
 import type { GatewaySettings } from "./settings.js";
 
@@ -30,7 +30,9 @@ export function createSessions({ db, settings, clock = systemClock }: { db: Pris
 
   async function assertUsable(sessionId: string, userId: string, feature: Feature): Promise<void> {
     const row = UUID.test(sessionId) ? await db.aiSession.findUnique({ where: { id: sessionId } }) : null;
-    if (!row || row.env !== env || row.userId !== userId || row.feature !== feature) throw new Error("NOT_FOUND");
+    // A session serves its own feature and the feature mapped to it. Own keys only, so inherited names such as "constructor" never select a mapping.
+    const admitted = !!row && (row.feature === feature || (Object.hasOwn(SESSION_FEATURE, feature) && row.feature === SESSION_FEATURE[feature]));
+    if (!row || row.env !== env || row.userId !== userId || !admitted) throw new Error("NOT_FOUND");
     if (row.outcome !== "OPEN") throw new Error("CONFLICT_STATE");
     const now = clock.now();
     if (row.lastActivityAt < idleCutoff(now)) {

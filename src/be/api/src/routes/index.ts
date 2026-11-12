@@ -1,14 +1,16 @@
 import type { RouteDefinition } from "@agile/contracts";
 import { getAuthRuntime } from "@agile/auth";
+import { getPmRuntime } from "@agile/pm";
 import { authRoutes } from "./auth.js";
 import { healthRoute } from "./health.js";
+import { pmRoutes } from "./pm.js";
 import { createProjectsRoutes, type ProjectsRouteServices } from "./projects.js";
 import { createCheckpointsRoutes, type CheckpointsRouteServices } from "./checkpoints.js";
 import { createPlanningRoutes, type PlanningRouteServices } from "./planning.js";
 import { createLeadRoutes, type LeadRouteServices } from "./lead.js";
 
 /** One line per owner: append your module's `RouteDefinition[]` here; `createApiApp` registers each through the policy gate. */
-export const ROUTES: RouteDefinition[] = [healthRoute, ...authRoutes(getAuthRuntime)];
+export const ROUTES: RouteDefinition[] = [healthRoute, ...authRoutes(getAuthRuntime), ...pmRoutes(getPmRuntime)];
 
 export type W5RouteServices = { projects: ProjectsRouteServices; checkpoints: CheckpointsRouteServices; planning: PlanningRouteServices; lead?: LeadRouteServices };
 
