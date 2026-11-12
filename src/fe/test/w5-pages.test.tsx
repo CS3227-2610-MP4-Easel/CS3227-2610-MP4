@@ -46,7 +46,7 @@ vi.mock('../lib/auth/session', async () => {
 
 import BoardView from '../components/canvas/BoardView';
 import { MemberTable, AddMember } from '../components/live/members';
-import { AddTaskForm } from '../components/live/forms';
+import { AddEpicForm, AddTaskForm } from '../components/live/forms';
 import BacklogList from '../components/live/backlog-list';
 import TaskDrawer from '../components/live/task-drawer';
 import { AddCheckpointForm, CheckpointCards } from '../components/live/checkpoints';
@@ -104,6 +104,19 @@ describe('W5 live planning surfaces', () => {
     await act(async () => {});
     expect(setStatus).toHaveBeenCalledWith('task-1', expect.objectContaining({ status: 'IN_PROGRESS', version: 4 }));
     expect(listTasks.mock.calls.length).toBeGreaterThan(before);
+  });
+
+  it('E3 ignores an older board response after a newer mutation refresh', async () => {
+    let resolveOld!: (value: typeof task) => void;
+    listTasks.mockImplementationOnce(() => new Promise((resolve) => { resolveOld = (value) => resolve({ items: [value], page: 0, size: 20, total: 1 }); }));
+    listTasks.mockResolvedValueOnce({ items: [{ ...task, title: 'Fresh task' }], page: 0, size: 20, total: 1 });
+    render(liveView(<BoardView role="lead" />));
+    await act(async () => {});
+    await act(async () => { window.dispatchEvent(new Event('easel-board-refresh')); });
+    expect(await screen.findByText('Fresh task')).toBeTruthy();
+    await act(async () => { resolveOld({ ...task, title: 'Stale task' } as any); });
+    expect(screen.getByText('Fresh task')).toBeTruthy();
+    expect(screen.queryByText('Stale task')).toBeNull();
   });
 
   it('F5 E13 sends live Mark blocked for the selected task with its version', async () => {
@@ -166,6 +179,28 @@ describe('W5 live planning surfaces', () => {
     expect(createTask).toHaveBeenCalledTimes(1);
     expect(screen.getByDisplayValue('Rejected task')).toBeTruthy();
     expect(screen.queryByText('Rejected task', { selector: '.t' })).toBeNull();
+  });
+
+  it('E4 exposes checkpoint dependency failures with retry while preserving epic form values', async () => {
+    listCheckpoints.mockRejectedValueOnce(new Error('checkpoint details must stay hidden')).mockResolvedValueOnce([]);
+    render(liveView(<AddEpicForm />));
+    fireEvent.change(document.getElementById('t2')!, { target: { value: 'Notifications' } });
+    expect(await screen.findByRole('button', { name: 'Retry loading checkpoints' })).toBeTruthy();
+    expect(screen.queryByText('checkpoint details must stay hidden')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry loading checkpoints' }));
+    expect(await screen.findByDisplayValue('Notifications')).toBeTruthy();
+    expect(listCheckpoints).toHaveBeenCalledTimes(2);
+  });
+
+  it('E4 exposes epic/member dependency failures with retry while preserving task form values', async () => {
+    listEpics.mockRejectedValueOnce(new Error('epic details must stay hidden')).mockResolvedValueOnce({ items: [{ id: 'epic-1', title: 'Live epic' }], page: 0, size: 100, total: 1 });
+    render(liveView(<AddTaskForm />));
+    fireEvent.change(document.getElementById('t1')!, { target: { value: 'Keep this task' } });
+    expect(await screen.findByRole('button', { name: 'Retry loading task options' })).toBeTruthy();
+    expect(screen.queryByText('epic details must stay hidden')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry loading task options' }));
+    expect(await screen.findByDisplayValue('Keep this task')).toBeTruthy();
+    expect(listEpics).toHaveBeenCalledTimes(2);
   });
 
   it('F5 E11 E13 reads and updates a live task with its server version and no sprintId', async () => {

@@ -2,7 +2,7 @@
 // Generated from the design canvas page BoardView.dc.html. Source of truth from here on is this file.
 import { Fragment } from 'react';
 import { A, css, r, useRole } from '../../lib/nav';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ApiError, listEpicsLive_16, listMembersLive_9, listTasksLive_20, useDb, type LiveEpic, type LiveMember, type LiveTask, type LiveTaskListFilters } from '../../lib/api';
 import { useProjectRoute } from '../../lib/api/project-mode';
 import { useSession } from '../../lib/auth/session';
@@ -71,8 +71,10 @@ function LiveBoard({ projectId, role = 'lead', archived = false }: { projectId: 
   const [filters, setFilters] = useState<LiveTaskListFilters>({});
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const generation = useRef(0);
 
   const load = useCallback(() => {
+    const request = ++generation.current;
     let current = true;
     setLoading(true);
     setError('');
@@ -81,15 +83,15 @@ function LiveBoard({ projectId, role = 'lead', archived = false }: { projectId: 
       listEpicsLive_16(projectId, 0, 100),
       listMembersLive_9(projectId),
     ]).then(([taskPage, epicPage, memberRows]) => {
-      if (!current) return;
+      if (!current || request !== generation.current) return;
       setTasks(taskPage.items);
       setTotal(taskPage.total);
       setEpics(epicPage.items);
       setMembers(memberRows);
     }).catch((e) => {
-      if (current) setError(e instanceof ApiError ? e.message : 'Something went wrong.');
+      if (current && request === generation.current) setError(e instanceof ApiError ? e.message : 'Something went wrong.');
     }).finally(() => {
-      if (current) setLoading(false);
+      if (current && request === generation.current) setLoading(false);
     });
     return () => { current = false; };
   }, [projectId, page, filters.status, filters.epicId, filters.assigneeId, filters.blocked]);

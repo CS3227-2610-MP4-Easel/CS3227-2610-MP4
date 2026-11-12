@@ -1,8 +1,8 @@
 {
   "task": "T4",
   "status": "done",
-  "summary": "Applied T4 review fixes for UUID route identity, safe task loading, capability controls, mutation reconciliation, live task creation, backlog paging, member/checkpoint states, and mutation error recovery.",
-  "commit": "review-fixes",
+  "summary": "Hardened live planning routes, mutations, errors, paging, role/tenant boundaries, and stale-request protection.",
+  "commit": "final-review-fixes",
   "produces": [
     { "kind": "file", "name": "BoardView live flow", "where": "src/fe/components/canvas/BoardView.tsx", "note": "Live task loading/filter/paging and prototype fallback." },
     { "kind": "file", "name": "Backlog live flow", "where": "src/fe/components/live/backlog-list.tsx", "note": "Live epics/tasks with no sprint controls." },
@@ -28,12 +28,13 @@
     "Task loading failures use safe retryable messages distinct from not-found; PMs are read-only, Dev Leads may mutate, and Developers may mutate only their own assigned task.",
     "Board mutations refetch the active filter/page, drawer mutations notify the board, and live Mark blocked updates the selected task with its version.",
     "Task load 404s and project mismatches share the normal missing-task state; stale drawer responses are ignored; conflicts and mutation errors stay visible with explicit reload while the drawer remains open.",
-    "Live board, backlog, checkpoint, and member errors expose safe retry controls; checkpoint loading is generation-guarded with meaningful empty state; backlog paging avoids false empty epics.",
-    "Focused coverage verifies checkpoint create/loading, conflict and 422 form persistence, failed mutations without phantom rows or auto-retry, retry/error behavior, filters, pagination reset, visible member dedupe, and no sprintId."
+    "Live board, backlog, checkpoint, and member errors expose safe retry controls; board and checkpoint loading ignore stale responses; backlog paging avoids false empty epics.",
+    "Live epic/member/checkpoint dependency failures expose safe retry controls without clearing entered form values.",
+    "Focused coverage verifies checkpoint create/loading, conflict and 422 form persistence, failed mutations without phantom rows or auto-retry, retry/error behavior, stale board responses, filters, pagination reset, visible member dedupe, and no sprintId."
   ],
   "verification": {
-    "focused_tests": "16 passed",
-    "full_tests": "14 files, 196 tests passed",
+    "focused_tests": "19 passed",
+    "full_tests": "14 files, 199 tests passed",
     "lint": "passed",
     "diff_check": "passed",
     "typecheck": "non-incremental pass (tsc -b --force; frontend --incremental false)"
@@ -41,7 +42,7 @@
   "next": "T5 runs route/API regressions, full frontend verification, and manual UUID route checks.",
   "deviations": [],
   "edge_cases": ["F3", "F4", "F5", "F6", "F7", "F8", "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E9", "E10", "E11", "E12", "E13", "E14", "E15"],
-  "checks": { "build": "pass", "tests": "196 pass, 0 fail", "lint": "pass", "diff_check": "pass", "non_incremental_typecheck": "pass" },
+  "checks": { "build": "pass", "tests": "199 pass, 0 fail", "lint": "pass", "diff_check": "pass", "non_incremental_typecheck": "pass" },
   "manual_route_checks": [
     "Open a live UUID board/backlog/checkpoints/members/task route in the browser and verify loading, safe error, success refresh, and pagination states against a running backend.",
     "Verify backend role and tenancy responses remain authoritative for live reads and writes."
