@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — T5 contract fixes pass full tests; final archived-resource review remains
+- **Last updated:** 2026-11-13 by Codex — T5 accepted; T6 frontend API consumers dispatched
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | Final T5 security review | Confirm archived sprint/proposal mutation mapping and narrowed composition-root source-scan exemption before accepting T5 and starting T6 | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Active | T6 frontend API types and pagination consumers | Validate the T6 handover and review frontend request/response types, status filters, bounds and live consumers | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -54,7 +54,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W14 | Sprints, velocity and re-plan | Building | [spec](../../specs/2026-11-12-w14-sprints-velocity-replan-design.md) | [plan](../../plans/2026-11-12-w14-sprints-velocity-replan/plan.md) | T5 final review: contract fixes pass; archived-resource semantics pending | — |
+| W14 | Sprints, velocity and re-plan | Building | [spec](../../specs/2026-11-12-w14-sprints-velocity-replan-design.md) | [plan](../../plans/2026-11-12-w14-sprints-velocity-replan/plan.md) | T6 in progress: frontend API types and pagination consumers | — |
 
 ## 3. Changes
 

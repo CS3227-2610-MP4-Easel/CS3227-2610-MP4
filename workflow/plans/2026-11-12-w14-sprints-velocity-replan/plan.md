@@ -39,8 +39,8 @@
 | T2 Core sprint lifecycle, progress and velocity | `tasks/T2.md` | T1 | - | 2 | complex | full | Done |
 | T3 Proposal owner, atomic session seam and domain-only re-plan | `tasks/T3.md` | T1 | - | 2 | complex | full | Done |
 | T4 W8 digest persistence through ProposalService | `tasks/T4.md` | T3 | - | 3 | complex | full | Done |
-| T5 API routes, composition and integration contracts | `tasks/T5.md` | T2, T3, T4 | - | 4 | complex | full | In review (final security pass) |
-| T6 Frontend API types and pagination consumers | `tasks/T6.md` | T1, T5 | - | 5 | standard | full | Not started |
+| T5 API routes, composition and integration contracts | `tasks/T5.md` | T2, T3, T4 | - | 4 | complex | full | Done |
+| T6 Frontend API types and pagination consumers | `tasks/T6.md` | T1, T5 | - | 5 | standard | full | In progress |
 
 Bundles: none. Shared API composition is deliberately delayed until both service owners are available.
 
