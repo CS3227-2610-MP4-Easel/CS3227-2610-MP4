@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — live-site close modal error fixed and verified
+- **Last updated:** 2026-11-13 by Codex — live sprint tasks, expand/collapse and status chips verified
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | Live-site close modal verified after 422 fix | Run W14 close-out checks, review the branch diff and prepare Gate 3 | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Active | Live sprint task display verified | Run W14 close-out checks, review the branch diff and prepare Gate 3 | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -102,6 +102,8 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-13 | Re-verified with frontend typecheck, 234 frontend tests and diff check | W14 | T6 button check |
 | 2026-11-13 | Reproduced the live close-modal error: task loading used endpoint-20 size 1000, exceeding the API bound and producing 422 `VALIDATION_FAILED`; reduced the request to size 100 and verified the live modal now shows three unfinished tasks and an enabled close button | W14 | T6 live-site verification |
 | 2026-11-13 | Re-verified with live browser UI, frontend typecheck, 234 frontend tests and diff check; close action was intentionally not submitted | W14 | T6 live-site verification |
+| 2026-11-13 | Operator reported missing sprint tasks, static chevrons and unstyled live statuses; added per-sprint live task reads, real expand/collapse controls, live task links and StatusChip mapping for TODO, IN_PROGRESS, IN_REVIEW and DONE | W14 | T6 UI follow-up |
+| 2026-11-13 | Verified live browser rendering: active sprint expanded with three task rows and styled chips; closed sprints collapsed and expandable; typecheck, 234 frontend tests and diff check pass | W14 | T6 UI follow-up |
 
 ## 4. Decisions
 
