@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — merged Gate 3-approved dev-lead-pages-wiring; plan reassessment required
+- **Last updated:** 2026-11-13 by Codex — current-state review completed; plan refined and linted
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,14 +31,14 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | Reassessing W14 tasks against merged W5/W8/W7 seams | Amend and lint the plan before requesting Gate 2 approval again | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Active | Completed current-state plan review and seam corrections | Obtain Gate 2 approval for the six-task plan before implementation | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
 **Remaining**
 
-- [ ] Draft, review and obtain Gate 1 approval for the W14 design spec.
-- [ ] Produce the implementation plan after spec approval.
+- [x] Draft, review and obtain Gate 1 approval for the W14 design spec.
+- [x] Produce and review the implementation plan after spec approval.
 - [x] **Q~1:** Resolved by C~1: reverse C20 narrowly for W14 endpoint 27 and add bounded pagination.
 - [x] **Q~2:** Keep the existing 0–100 progress contract used by W8 and `ProgressSchema` (C~2).
 - [x] **Q~3:** Add a transaction-aware gateway session-close seam (C~3).
@@ -70,6 +70,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-12 | Gate 1 approved by operator; six-task W14 plan created, linted with 0 errors/0 warnings, and revised after plan review | W14 | this commit |
 | 2026-11-13 | Merged Gate 3-approved `dev-lead-pages-wiring` at `d5f3fda`; W14 plan must reuse its proposals, API composition, and frontend client seams | W14 | merge commit `fe8af2e` |
 | 2026-11-13 | Amended W14 tasks T3–T6 to reuse merged proposals/API/frontend seams; plan lint remains 0 errors/0 warnings | W14 | this commit |
+| 2026-11-13 | Current-state review corrected transaction-session injection, lead atomic persistence order, API service composition, route factory names, and distinct live frontend helper/type contracts; plan lint remains 0 errors/0 warnings | W14 | this commit |
 
 ## 4. Decisions
 
