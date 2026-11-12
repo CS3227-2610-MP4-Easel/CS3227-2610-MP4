@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — T2 second-review race and assertion gaps fixed; commit pending
+- **Last updated:** 2026-11-13 by Codex — T2 second-review race and assertion gaps committed and handed over
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | T2 second-review race and assertion gaps fixed; commit pending | Commit T2 follow-up, then return the validated handover JSON | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Active | T2 second-review race and assertion gaps committed and handed over | Continue with T3 review follow-up acceptance | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 

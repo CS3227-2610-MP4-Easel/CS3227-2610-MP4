@@ -2,7 +2,7 @@
   "task": "T2",
   "status": "done",
   "summary": "Replaced the serialized E4 race with a barrier-controlled concurrent mock and added direct E21 pagination, progress/velocity ordering, and exact 1000/1001 carry-over-bound assertions.",
-  "commit": "TBD",
+  "commit": "4ead320",
   "produces": [
     { "kind": "symbol", "name": "createSprintService/createSprints", "where": "src/be/core/src/sprints.ts", "note": "Actor-aware list/create/patch/start/close/remove/delete plus progress and velocity; mutations use RepeatableRead inMutationTransaction and project locking." },
     { "kind": "symbol", "name": "SprintService", "where": "src/be/core/src/index.ts", "note": "Public service and input/query types exported from @agile/core." },
