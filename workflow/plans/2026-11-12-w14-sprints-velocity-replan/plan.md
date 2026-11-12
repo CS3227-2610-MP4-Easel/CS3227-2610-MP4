@@ -35,7 +35,7 @@
 
 | Task | File | Depends on | Concurrent with | Wave | Weight | Review | Status |
 |---|---|---|---|---|---|---|---|
-| T1 Shared W14 contracts and route metadata | `tasks/T1.md` | - | - | 1 | complex | full | Not started |
+| T1 Shared W14 contracts and route metadata | `tasks/T1.md` | - | - | 1 | complex | full | In progress (Laplace) |
 | T2 Core sprint lifecycle, progress and velocity | `tasks/T2.md` | T1 | - | 2 | complex | full | Not started |
 | T3 Proposal owner, atomic session seam and domain-only re-plan | `tasks/T3.md` | T1 | - | 2 | complex | full | Not started |
 | T4 W8 digest persistence through ProposalService | `tasks/T4.md` | T3 | - | 3 | complex | full | Not started |
