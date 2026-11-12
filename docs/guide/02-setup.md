@@ -26,7 +26,17 @@ Since the Prisma 7 upgrade, `npm test` (its `pretest` runs `prisma generate`) fa
 | `SOCLAAS_API_KEY` | SoCLaaS key (dev and prod keys differ); sent only to the SoCLaaS URL |
 | `AI_ENABLED` | set `false` per tier to switch AI off |
 
-Locally, put them in `src/fe/.env.local`. Never commit secrets (AD-32).
+The browser needs four more, all from the Firebase console's web app settings (they identify the project; they are not secrets):
+
+| Variable | Purpose |
+|---|---|
+| `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID` | the Firebase web app the sign-in screen talks to |
+
+Locally, copy `src/fe/.env.example` to `src/fe/.env.local` and fill it in. Never commit secrets (AD-32).
+
+**Firebase for local sign-in.** In a Firebase project for development: turn on Email/Password sign-in, register a web app (its config gives the four values above), and keep `localhost` in Authorized domains. `FIREBASE_PROJECT_ID` is the same project's id.
+
+**Local PostgreSQL for integration tests.** Run PostgreSQL 16 locally (for example a Docker container named `agile-pg-test` on port 5433), apply the migrations, and set `W1_INTEGRATION_DATABASE_URL` to it; without it the integration tests skip.
 
 To run the frontend locally, change to `src/fe` and use its existing development script:
 
@@ -35,4 +45,8 @@ cd src/fe
 npm run dev        # http://localhost:3100
 ```
 
-Pick a role by opening `/api/as?role=pm&to=/` (also `lead`, `dev`). This sets a role cookie; the role bar on every page switches it too.
+**Auth modes.** `authMode` picks one per request (`src/fe/lib/auth/mode.ts`):
+
+- `firebase` — real sign-in and registration (endpoints 2-4). Used when the four `NEXT_PUBLIC_FIREBASE_*` values are set.
+- `prototype` — the clickable prototype, for mock previews only (`APP_TIER=preview`, none of the Firebase values, and not Vercel production). Pick a role by opening `/api/as?role=pm&to=/` (also `lead`, `dev`); this sets a role cookie, and the role bar on every page switches it too. `/api/as` returns 404 in every other mode.
+- `unconfigured` — any other combination; pages show "Sign-in is not configured for this deployment."
