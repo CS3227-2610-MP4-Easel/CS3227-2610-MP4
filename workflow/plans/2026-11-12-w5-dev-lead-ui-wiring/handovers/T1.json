@@ -1,8 +1,8 @@
 {
   "task": "T1",
   "status": "done",
-  "summary": "Closed T1 review gaps with context-aware imperative routes, status-based malformed/bodyless error mapping, safe idToken handling, 401 coverage, and Health stale-response coverage; 165 tests pass.",
-  "commit": "c9c9268",
+  "summary": "Finished T1 review fixes with request-generation tokens for Health, prototype-to-live masking, AuthGate 401 replacement, rendered UUID links, status-based safe errors, idToken handling, and explicit auth-code regressions; 169 tests pass.",
+  "commit": "c24a958",
   "produces": [
     { "kind": "file", "name": "project-mode.ts", "where": "src/fe/lib/api/project-mode.ts", "note": "Exports isProjectUuid, projectRoute, ProjectRouteContext, and useProjectRoute." },
     { "kind": "symbol", "name": "routeOf", "where": "src/fe/lib/screens.ts", "note": "Accepts an optional project id and preserves it in generated project URLs." },
@@ -16,7 +16,7 @@
   "edge_cases": ["F7", "F8", "N1", "N2", "E3", "E7", "E8", "E14"],
   "checks": {
     "build": "pass",
-    "tests": "165 pass, 0 fail",
+    "tests": "169 pass, 0 fail",
     "lint": "pass"
   }
 }
