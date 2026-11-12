@@ -2,7 +2,7 @@
   "task": "T2",
   "status": "done",
   "summary": "Added the Core-owned SprintService with bounded pagination, lifecycle transitions, atomic close carry-over/event writes, progress, and deterministic velocity.",
-  "commit": "c3360fd",
+  "commit": "bce36e4",
   "produces": [
     { "kind": "symbol", "name": "createSprintService/createSprints", "where": "src/be/core/src/sprints.ts", "note": "Actor-aware list/create/patch/start/close/remove/delete plus progress and velocity; mutations use RepeatableRead inMutationTransaction and project locking." },
     { "kind": "symbol", "name": "SprintService", "where": "src/be/core/src/index.ts", "note": "Public service and input/query types exported from @agile/core." },
