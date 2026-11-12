@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-12 by Codex — updated spec after W8 merge audit
+- **Last updated:** 2026-11-12 by Codex — final review found cross-workstream blockers
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | W8 merge audit complete; final spec review pending | Commit the amended spec/state, rerun final review lenses, then request Gate 1 | 2026-11-12 |
+| S1 | 2026-11-12 | Codex | W14 | Blocked — needs human | Final review found proposal/session and existing-contract conflicts | Owner resolves the listed W14 contract questions before the spec can reach Gate 1 | 2026-11-12 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -40,6 +40,10 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 - [ ] Draft, review and obtain Gate 1 approval for the W14 design spec.
 - [ ] Produce the implementation plan after spec approval.
 - [x] **Q~1:** Resolved by C~1: reverse C20 narrowly for W14 endpoint 27 and add bounded pagination.
+- [ ] **Q~2:** Keep the existing 0–100 progress contract used by W8 and `ProgressSchema`, or approve a project-wide ratio change.
+- [ ] **Q~3:** Choose proposal/session closure semantics: add a transaction-aware gateway seam, or accept post-commit idempotent retry/reconciliation.
+- [ ] **Q~4:** Decide whether endpoint 48 is restricted to the session owner or whether the session contract expands to permit any authorized project Dev Lead to reject.
+- [ ] **Q~5:** Approve the W14 refactor that moves `ai_proposals` validation/status access out of `Core.applyReplan` into the new proposals owner.
 
 ---
 
@@ -58,6 +62,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-12 | Operator approved C~1: reverse C20 narrowly for W14 endpoint 27 and add bounded pagination | W14 | this commit |
 | 2026-11-12 | Merged `origin/development` at `2c5dd9f`, including W8 PR #28, with no conflicts | W14 | merge commit |
 | 2026-11-12 | Amended W14 after review: endpoint-27 pagination, proposal service ownership, shared locks, session closure, exact errors and zero-velocity behavior | W14 | this commit |
+| 2026-11-12 | Final review found blockers: existing 0–100 progress behavior, proposal-table access in `Core.applyReplan`, and unresolved session/authorization atomicity | W14 | this commit |
 
 ## 4. Decisions
 
