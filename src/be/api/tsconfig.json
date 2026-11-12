@@ -2,5 +2,5 @@
   "extends": "../../../tsconfig.json",
   "compilerOptions": { "composite": true, "noEmit": false, "rootDir": "src", "outDir": "dist", "declaration": true, "emitDeclarationOnly": true },
   "include": ["src/**/*.ts"],
-  "references": [{ "path": "../contracts" }, { "path": "../auth" }, { "path": "../core" }, { "path": "../ai-context" }, { "path": "../lead" }]
+  "references": [{ "path": "../contracts" }, { "path": "../auth" }, { "path": "../core" }, { "path": "../ai-context" }, { "path": "../dev" }, { "path": "../pm" }, { "path": "../proposals" }, { "path": "../lead" }]
 }

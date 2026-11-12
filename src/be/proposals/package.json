@@ -1,0 +1,17 @@
+{
+  "name": "@agile/proposals",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@agile/contracts": "*",
+    "@agile/core": "*",
+    "@agile/db": "*",
+    "@prisma/client": "^7.10.1",
+    "zod": "^4.6.6"
+  }
+}

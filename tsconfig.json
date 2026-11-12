@@ -8,6 +8,8 @@
     { "path": "src/be/api" },
     { "path": "src/be/llm-gateway" },
     { "path": "src/be/ai-context" },
+    { "path": "src/be/proposals" },
+    { "path": "src/be/pm" },
     { "path": "src/be/lead" }
   ],
   "compilerOptions": {

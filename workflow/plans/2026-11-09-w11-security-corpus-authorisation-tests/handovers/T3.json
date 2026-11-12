@@ -1,0 +1,30 @@
+{
+  "task": "T3",
+  "status": "done",
+  "summary": "Final T3 correction makes downstream callbacks observable, auth-state success explicit, and source alias checks stronger.",
+  "commit": "53b7195d3454e88e5f4b60e5fdaa0faf1d1faae0",
+  "produces": [
+    {
+      "kind": "file",
+      "name": "authorization-generated.test.ts",
+      "where": "src/be/api/test/authorization-generated.test.ts",
+      "note": "Explicitly derives 57 AUTH_REQUIRED, 54 ROLE_ALLOW, 41 ROLE_DENY, 51 PREDICATE_ALLOW, and 51 PREDICATE_DENY rows (254 total); covers exact auth-state successes and USER_NOT_REGISTERED 403 behavior, observable downstream callbacks, hidden cross-project behavior, archived precedence, and parsed ADDER denial ordering."
+    },
+    {
+      "kind": "file",
+      "name": "authorization-source-rules.test.ts",
+      "where": "src/be/api/test/authorization-source-rules.test.ts",
+      "note": "Scans exactly src/be/api/src/routes/*.ts, rejects direct, bracket, destructured, or simple-propagated alias role/policy/predicate authorization in handlers, and requires register.ts authorization and parsing boundary controls."
+    }
+  ],
+  "next": "T2 can proceed; T3 has no production-code changes or task-file dependencies.",
+  "deviations": [],
+  "edge_cases": ["E10", "E16", "E17", "E18", "E19", "E20", "E23"],
+  "checks": {
+    "build": "pass",
+    "focused": "pass: 16 tests, 0 failures",
+    "lint": "pass: npm run lint",
+    "diff_check": "pass: git diff --check",
+    "secret_scan": "pass: pre-commit scan:secrets --staged"
+  }
+}

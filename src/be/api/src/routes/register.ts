@@ -1,7 +1,8 @@
 import type { Hono } from "hono";
 import type { z } from "zod/v3";
 import { policyForRoute, validateRouteRegistration, type ApiContext, type RouteDefinition } from "@agile/contracts";
-import { parseInput, parseJsonBody } from "../errors.js";
+import { readLimitedBody } from "../body-limit.js";
+import { HttpError, parseInput, parseJsonBody } from "../errors.js";
 import { authorizeAdder, authorizeRequest, type AuthDependencies } from "../middleware/auth.js";
 
 export type ApiEnv = { Variables: { requestId: string } };
@@ -11,6 +12,14 @@ type RegisteredRoute = RouteDefinition & { [STRICT_BODY_PARSER]?: true };
 const registered = new WeakMap<object, RouteDefinition[]>();
 const isSchema = (value: unknown): value is z.ZodTypeAny => Boolean(value) && typeof (value as { safeParse?: unknown }).safeParse === "function";
 const honoPath = (path: string) => path.replace(/\{(\w+)\}/g, ":$1");
+
+/** Body read with a byte cap (413), then the same content-type and JSON rules as `parseJsonBody`. */
+async function parseLimitedJson(request: Request, maxBytes: number, options: { strict?: boolean } = {}): Promise<unknown> {
+  if (!(request.headers.get("content-type") ?? "").toLowerCase().startsWith("application/json")) throw new HttpError("BAD_REQUEST", options.strict ? 415 : 400, "Request content type must be application/json.");
+  const read = await readLimitedBody(request, maxBytes);
+  if (read.tooLarge) throw new HttpError("PAYLOAD_TOO_LARGE", 413, "The request body is too large.");
+  try { return JSON.parse(read.text); } catch { throw new HttpError("BAD_REQUEST", options.strict ? 422 : 400, "Request body is not valid JSON."); }
+}
 
 /** Routes registered on `app` through `registerRoute`; `apiApp` must contain nothing else. */
 export function registeredRoutes(app: Hono<ApiEnv>): readonly RouteDefinition[] { return registered.get(app) ?? []; }
@@ -44,7 +53,7 @@ export function registerRoute(app: Hono<ApiEnv>, route: RegisteredRoute, deps?: 
       const input = {
         params: isSchema(route.paramsSchema) ? parseInput(route.paramsSchema, request.params) : request.params,
         query: isSchema(route.querySchema) ? parseInput(route.querySchema, Object.fromEntries(url.searchParams)) : Object.fromEntries(url.searchParams),
-        body: isSchema(route.bodySchema) ? parseInput(route.bodySchema, await parseJsonBody(c.req.raw, { strict: route[STRICT_BODY_PARSER] === true })) : undefined,
+        body: isSchema(route.bodySchema) ? parseInput(route.bodySchema, route.bodyLimitBytes === undefined ? await parseJsonBody(c.req.raw, { strict: route[STRICT_BODY_PARSER] === true }) : await parseLimitedJson(c.req.raw, route.bodyLimitBytes, { strict: route[STRICT_BODY_PARSER] === true })) : undefined,
       };
       if (policy.predicate === "ADDER" && scope.principal && "userId" in scope.principal) {
         request.body = input.body;

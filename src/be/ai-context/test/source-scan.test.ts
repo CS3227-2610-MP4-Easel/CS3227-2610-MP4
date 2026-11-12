@@ -168,6 +168,8 @@ test("E31 N2 the repository passes the source scan", async () => {
   await walk(join(ROOT, "src/fe"), files);
   const result = scan(files);
   assert.ok(result.filesScanned > 0, "the scan read real files");
+  assert.ok(files.has("src/be/dev/src/gateway-binding.ts"), "E44 the dev gateway binding is scanned");
+  assert.ok(ruleOneFile("src/be/dev/src/gateway-binding.ts"), "E44 rule one applies to the dev gateway binding");
   assert.deepEqual(result.findings, []);
 });
 
