@@ -46,9 +46,9 @@ One line per change on this branch: what changed and why, with a commit as the r
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-12 | Created isolated branch for wiring the W10 Dev Lead Health screen to W8 backend endpoints | W8 | this commit |
-| 2026-11-12 | Added typed frontend clients for endpoints 42, 44 and 45 with regression coverage | W8 | this commit |
-| 2026-11-12 | Connected real UUID Health routes to live facts, digest loading, refresh, degraded and flagged states while preserving prototype p1 behavior | W8 | this commit |
+| 2026-11-12 | Created isolated branch for wiring the W10 Dev Lead Health screen to W8 backend endpoints | W8 | 32d29db |
+| 2026-11-12 | Added typed frontend clients for endpoints 42, 44 and 45 with regression coverage | W8 | 32d29db |
+| 2026-11-12 | Connected real UUID Health routes to live facts, digest loading, refresh, degraded and flagged states while preserving prototype p1 behavior | W8 | 32d29db |
 
 ## 5. Close-out evidence
 
