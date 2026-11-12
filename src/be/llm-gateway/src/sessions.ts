@@ -20,7 +20,7 @@ export type GatewaySessions = Sessions & {
 
 export type TransactionSessionCloseInput = {
   sessionId: string;
-  proposalId: string;
+  proposalId: string | null;
   projectId: string;
   feature: "LEAD_DIGEST";
   ownerId: string;
@@ -41,9 +41,11 @@ export function createTransactionSessionCloser(options: { env?: string } = {}): 
   const env = options.env ?? process.env.APP_TIER ?? "test";
   return {
     async closeInTransaction(tx, input) {
-      if (!UUID.test(input.sessionId) || !UUID.test(input.proposalId) || !UUID.test(input.projectId) || !UUID.test(input.ownerId) || !UUID.test(input.actorId)) throw new Error("INVALID_SESSION");
-      const proposal = await (tx as any).aiProposal.findFirst({ where: { id: input.proposalId, projectId: input.projectId, sessionId: input.sessionId, kind: "REPLAN", createdBy: input.ownerId }, select: { id: true } });
-      if (!proposal) throw new Error("CONFLICT_STATE");
+      if (!UUID.test(input.sessionId) || (input.proposalId !== null && !UUID.test(input.proposalId)) || !UUID.test(input.projectId) || !UUID.test(input.ownerId) || !UUID.test(input.actorId)) throw new Error("INVALID_SESSION");
+      if (input.proposalId) {
+        const proposal = await (tx as any).aiProposal.findFirst({ where: { id: input.proposalId, projectId: input.projectId, sessionId: input.sessionId, kind: "REPLAN", createdBy: input.ownerId }, select: { id: true } });
+        if (!proposal) throw new Error("CONFLICT_STATE");
+      }
       const session = await (tx as any).aiSession.findFirst({ where: { id: input.sessionId } });
       if (!session || session.env !== env || session.feature !== input.feature || session.projectId !== input.projectId || session.userId !== input.ownerId) throw new Error("CONFLICT_STATE");
       if (session.outcome !== "OPEN") throw new Error("CONFLICT_STATE");

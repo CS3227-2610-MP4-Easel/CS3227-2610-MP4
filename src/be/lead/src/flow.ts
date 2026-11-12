@@ -42,8 +42,17 @@ export function createLeadFlow(deps: LeadFlowDependencies) {
         proposalId = proposal.proposalId;
         await tx.projectDigest.update({ where: { id: digest.id }, data: { proposalId } });
       } else if (admittedSessionId) {
-        // No proposal owns this session, so close it in the same persistence callback.
-        await deps.binding.sessions.close(admittedSessionId, "REJECTED", actorId);
+        // A degraded/no-proposal session still closes atomically with its digest.
+        if (!deps.binding.sessionCloser) throw new Error("TRANSACTION_SESSION_CLOSER_NOT_INITIALIZED");
+        await deps.binding.sessionCloser.closeInTransaction(tx, {
+          sessionId: admittedSessionId,
+          proposalId: null,
+          projectId,
+          feature: "LEAD_DIGEST",
+          ownerId: actorId,
+          outcome: "REJECTED",
+          actorId,
+        });
       }
       return { digest, proposalId };
     });
@@ -95,15 +104,7 @@ export function createLeadFlow(deps: LeadFlowDependencies) {
       if (result.ok) { const parsed = DigestOutputSchema.safeParse(result.value); if (parsed.success && await validOutput(parsed.data, facts, projectId)) output = parsed.data; }
     } catch { /* failure is represented by the degraded digest below */ }
     let saved: Awaited<ReturnType<typeof persist>>;
-    try {
-      saved = await persist(projectId, caller.userId, facts, factsHash, output, persistSessionId, flagged, !output, sessionId);
-    } catch (error) {
-      // The transaction rolled back. Preserve the existing cleanup guarantee for an admitted session.
-      if (sessionId) {
-        try { await deps.binding.sessions.close(sessionId, "REJECTED", caller.userId); } catch { /* preserve the persistence failure */ }
-      }
-      throw error;
-    }
+    saved = await persist(projectId, caller.userId, facts, factsHash, output, persistSessionId, flagged, !output, sessionId);
     return output ? publicDigest({ ...saved.digest, projectId, facts, explanation: output.explanation, degraded: false, flagged, proposalId: saved.proposalId }, false) : { ...degraded(facts, saved.digest.id, flagged), id: saved.digest.id, projectId };
   }
   return {

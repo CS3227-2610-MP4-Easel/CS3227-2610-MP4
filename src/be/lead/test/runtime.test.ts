@@ -10,3 +10,14 @@ test("runtime factory exposes flow methods and binds lookup to database identity
   const other = {} as any;
   assert.throws(() => getLeadRuntime(other), { message: "LEAD_RUNTIME_NOT_INITIALIZED" });
 });
+
+test("runtime cache is rebuilt when proposal wiring arrives after an unconfigured initialization", () => {
+  const db = { task: { findMany: async () => [] }, sprint: { findMany: async () => [] }, checkpoint: { findMany: async () => [] }, projectMember: { findMany: async () => [] }, taskEvent: { findMany: async () => [] }, projectDigest: { findMany: async () => [] } } as any;
+  const binding = { gateway: { run: async () => { throw new Error("unused"); } }, sessions: { open: async () => "s", close: async () => {} } } as any;
+  const first = createLeadRuntime(db, undefined, binding, { registerSources: false });
+  const proposalService = { createReplanInTransaction: async () => ({ proposalId: "p", supersededProposalIds: [] }) } as any;
+  const upgraded = createLeadRuntime(db, undefined, binding, { registerSources: false, proposalService });
+  assert.notEqual(upgraded, first);
+  assert.equal(initLeadRuntime(db, binding, { registerSources: false, proposalService }), upgraded);
+  assert.equal(getLeadRuntime(db), upgraded);
+});

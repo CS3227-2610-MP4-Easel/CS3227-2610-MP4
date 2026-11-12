@@ -15,7 +15,7 @@ test("digest cache is checked before session or gateway and persistence is the o
 test("degraded same-hash rows retry while healthy same-hash rows hit cache", async () => {
   let sessions = 0; let calls = 0; let writes = 0;
   const db = { projectDigest: { findFirst: async () => null, }, $transaction: async (fn: (tx: any) => Promise<unknown>) => { writes++; return fn({ projectDigest: { create: async () => ({ id: "d", createdAt: new Date() }) } }); } };
-  const flow = createLeadFlow({ db, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => { calls++; return { ok: false, code: "AI_DISABLED", flagged: false } as any; } }, sessions: { open: async () => { sessions++; return "s"; }, close: async () => {} } }, context: { assembleWith: async () => ({ sections: [], provenance: [] }) } as any });
+  const flow = createLeadFlow({ db, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => { calls++; return { ok: false, code: "AI_DISABLED", flagged: false } as any; } }, sessions: { open: async () => { sessions++; return "s"; }, close: async () => {} }, sessionCloser: { closeInTransaction: async () => {} } }, context: { assembleWith: async () => ({ sections: [], provenance: [] }) } as any });
   const degraded = await flow.createDigest({ userId: U, role: "DEV_LEAD" }, P);
   assert.equal(degraded.degraded, true); assert.equal(sessions, 1); assert.equal(calls, 1); assert.equal(writes, 1);
   const healthyDb = { projectDigest: { findFirst: async () => ({ id: "h", projectId: P, facts, factsHash: hashFacts(facts), degraded: false, proposalId: null }) }, $transaction: async () => { throw new Error("cache miss"); } };
@@ -35,6 +35,7 @@ test("createDigest only caches the latest project digest", async () => {
   const flow = createLeadFlow({ db, facts: { target: async () => facts, caller: async () => facts }, binding: {
     gateway: { run: async () => { gatewayCalls++; return { ok: false, code: "AI_DISABLED", flagged: false } as any; } },
     sessions: { open: async () => "s", close: async () => {} },
+    sessionCloser: { closeInTransaction: async () => {} },
   }, context: { assembleWith: async () => ({ sections: [], provenance: [] }) } as any });
   const result = await flow.createDigest({ userId: U, role: "DEV_LEAD" }, P);
   assert.equal(result.degraded, true);
@@ -49,7 +50,7 @@ test("createDigest passes its captured facts snapshot to context assembly", asyn
   const flow = createLeadFlow({ db, facts: { target: async () => facts, caller: async () => facts }, binding: {
     gateway: { run: async () => ({ ok: false, code: "AI_DISABLED", flagged: false } as any) },
     sessions: { open: async () => "s", close: async () => {} },
-  }, context: { assembleWith: async (...args: any[]) => { captured = args[4]; return { sections: [], provenance: [] }; } } as any });
+  }, sessionCloser: { closeInTransaction: async () => {} }, context: { assembleWith: async (...args: any[]) => { captured = args[4]; return { sections: [], provenance: [] }; } } as any });
   await flow.createDigest({ userId: U, role: "DEV_LEAD" }, P);
   assert.deepEqual(captured, { facts });
 });
@@ -67,7 +68,7 @@ test("cached and latest digests expose only public DigestSchema fields", async (
 test("flagged invalid output is persisted as flagged degraded with its admitted session", async () => {
   let persisted: any; let closed = "";
   const db = { projectDigest: { findFirst: async () => null }, task: { findMany: async () => [] }, $transaction: async (fn: (tx: any) => Promise<unknown>) => fn({ projectDigest: { create: async ({ data }: any) => { persisted = data; return { id: "d", createdAt: new Date() }; } } }) };
-  const flow = createLeadFlow({ db, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => ({ ok: true, flagged: true, value: { explanation: "bad foreign suggestion", suggestions: [{ id: "00000000-0000-4000-0000-000000000003", type: "REASSIGN_TASK", taskId: "00000000-0000-4000-0000-000000000004", assigneeId: U, rationale: "x" }] }, callId: U, truncated: false, cacheHit: false, promptTokens: 0, completionTokens: 0, costMicroUsd: 0 }) }, sessions: { open: async () => "admitted", close: async (_id, outcome) => { closed = outcome; } } }, context: { assembleWith: async () => ({ sections: [], provenance: [] }) } as any });
+  const flow = createLeadFlow({ db, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => ({ ok: true, flagged: true, value: { explanation: "bad foreign suggestion", suggestions: [{ id: "00000000-0000-4000-0000-000000000003", type: "REASSIGN_TASK", taskId: "00000000-0000-4000-0000-000000000004", assigneeId: U, rationale: "x" }] }, callId: U, truncated: false, cacheHit: false, promptTokens: 0, completionTokens: 0, costMicroUsd: 0 }) }, sessions: { open: async () => "admitted", close: async () => {} }, sessionCloser: { closeInTransaction: async () => { closed = "REJECTED"; } } }, context: { assembleWith: async () => ({ sections: [], provenance: [] }) } as any });
   const result = await flow.createDigest({ userId: U, role: "DEV_LEAD" }, P);
   assert.equal(result.degraded, true); assert.equal(persisted.flagged, true); assert.equal(persisted.sessionId, "admitted"); assert.equal(closed, "REJECTED");
 });
@@ -76,7 +77,7 @@ test("disabled AI persists null sessionId while admitted failures retain it", as
   const run = async (gatewayResult: any) => {
     let persisted: any; let closed = "";
     const db = { projectDigest: { findFirst: async () => null }, $transaction: async (fn: (tx: any) => Promise<unknown>) => fn({ projectDigest: { create: async ({ data }: any) => { persisted = data; return { id: "d", createdAt: new Date() }; } } }) };
-    const flow = createLeadFlow({ db, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => gatewayResult }, sessions: { open: async () => "opened", close: async (_id, outcome) => { closed = outcome; } } }, context: { assembleWith: async () => ({ sections: [], provenance: [] }) } as any });
+    const flow = createLeadFlow({ db, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => gatewayResult }, sessions: { open: async () => "opened", close: async () => {} }, sessionCloser: { closeInTransaction: async () => { closed = "REJECTED"; } } }, context: { assembleWith: async () => ({ sections: [], provenance: [] }) } as any });
     await flow.createDigest({ userId: U, role: "DEV_LEAD" }, P); return { persisted, closed };
   };
   assert.deepEqual(await run({ ok: false, code: "AI_DISABLED", flagged: true }), { persisted: { projectId: P, facts, factsAsOf: new Date(facts.asOf), factsHash: hashFacts(facts), explanation: null, degraded: true, flagged: true, sessionId: null }, closed: "REJECTED" });
@@ -113,7 +114,7 @@ test("gateway exception after session admission persists that session on the rej
   let persisted: any;
   let closed = "";
   const db = { projectDigest: { findFirst: async () => null }, $transaction: async (fn: (tx: any) => Promise<unknown>) => fn({ projectDigest: { create: async ({ data }: any) => { persisted = data; return { id: "d", createdAt: new Date() }; } } }) };
-  const flow = createLeadFlow({ db, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => { throw new Error("gateway failed"); } }, sessions: { open: async () => "admitted", close: async (_id, outcome) => { closed = outcome; } } }, context: { assembleWith: async () => ({ sections: [], provenance: [] }) } as any });
+  const flow = createLeadFlow({ db, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => { throw new Error("gateway failed"); } }, sessions: { open: async () => "admitted", close: async () => {} }, sessionCloser: { closeInTransaction: async () => { closed = "REJECTED"; } } }, context: { assembleWith: async () => ({ sections: [], provenance: [] }) } as any });
   const result = await flow.createDigest({ userId: U, role: "DEV_LEAD" }, P);
   assert.equal(result.degraded, true);
   assert.equal(persisted.sessionId, "admitted");
@@ -137,7 +138,7 @@ test("foreign and conflicting suggestion references degrade without inserting a 
     task: { findMany: async () => [] }, epic: { findMany: async () => [] }, projectMember: { findMany: async () => [] },
     $transaction: async (fn: (tx: any) => Promise<unknown>) => fn({ projectDigest: { create: async () => ({ id: "d", createdAt: new Date() }) }, aiProposal: { create: async () => { proposalCreates++; return { id: "p" }; } }, projectDigestUpdate: {} }),
   };
-  const flow = createLeadFlow({ db, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => ({ ok: true, value: { explanation: "x", suggestions: [{ id: "00000000-0000-4000-0000-000000000004", type: "REASSIGN_TASK", taskId: task, assigneeId: U, rationale: "x" }] as const }, callId: U, flagged: false, truncated: false, cacheHit: false, promptTokens: 0, completionTokens: 0, costMicroUsd: 0 }) }, sessions: { open: async () => "s", close: async () => {} } }, context: { assembleWith: async () => ({ sections: [], provenance: [] }) } as any });
+  const flow = createLeadFlow({ db, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => ({ ok: true, value: { explanation: "x", suggestions: [{ id: "00000000-0000-0000-0000-000000000004", type: "REASSIGN_TASK", taskId: task, assigneeId: U, rationale: "x" }] as const }, callId: U, flagged: false, truncated: false, cacheHit: false, promptTokens: 0, completionTokens: 0, costMicroUsd: 0 }) }, sessions: { open: async () => "s", close: async () => {} }, sessionCloser: { closeInTransaction: async () => {} } }, context: { assembleWith: async () => ({ sections: [], provenance: [] }) } as any });
   const result = await flow.createDigest({ userId: U, role: "DEV_LEAD" }, P);
   assert.equal(result.degraded, true); assert.equal(proposalCreates, 0);
 });
@@ -146,7 +147,7 @@ test("duplicate target suggestions are rejected as one degraded result", async (
   const task = "00000000-0000-4000-0000-000000000003"; let proposalCreates = 0;
   const db = { projectDigest: { findFirst: async () => null }, task: { findMany: async () => [{ id: task }] }, epic: { findMany: async () => [] }, projectMember: { findMany: async () => [{ userId: U }] }, $transaction: async (fn: (tx: any) => Promise<unknown>) => fn({ projectDigest: { create: async () => ({ id: "d", createdAt: new Date() }) }, aiProposal: { create: async () => { proposalCreates++; return { id: "p" }; } } }) };
   const suggestion = (id: string, rationale: string) => ({ id, type: "REASSIGN_TASK", taskId: task, assigneeId: U, rationale });
-  const flow = createLeadFlow({ db, facts: { target: async () => ({ ...facts, overload: [{ userId: U, displayName: "U", openPoints: 1, avgCompletedPerSprint: null, projects: [{ projectId: P, name: "P", openPoints: 1 }] }] }), caller: async () => facts }, binding: { gateway: { run: async () => ({ ok: true, value: { explanation: "x", suggestions: [suggestion("00000000-0000-4000-0000-000000000004", "a"), suggestion("00000000-0000-4000-0000-000000000005", "b")] }, callId: U, flagged: false, truncated: false, cacheHit: false, promptTokens: 0, completionTokens: 0, costMicroUsd: 0 }) }, sessions: { open: async () => "s", close: async () => {} } }, context: { assembleWith: async () => ({ sections: [], provenance: [] }) } as any });
+  const flow = createLeadFlow({ db, facts: { target: async () => ({ ...facts, overload: [{ userId: U, displayName: "U", openPoints: 1, avgCompletedPerSprint: null, projects: [{ projectId: P, name: "P", openPoints: 1 }] }] }), caller: async () => facts }, binding: { gateway: { run: async () => ({ ok: true, value: { explanation: "x", suggestions: [suggestion("00000000-0000-4000-0000-000000000004", "a"), suggestion("00000000-0000-4000-0000-000000000005", "b")] }, callId: U, flagged: false, truncated: false, cacheHit: false, promptTokens: 0, completionTokens: 0, costMicroUsd: 0 }) }, sessions: { open: async () => "s", close: async () => {} }, sessionCloser: { closeInTransaction: async () => {} } }, context: { assembleWith: async () => ({ sections: [], provenance: [] }) } as any });
   assert.equal((await flow.createDigest({ userId: U, role: "DEV_LEAD" }, P)).degraded, true); assert.equal(proposalCreates, 0);
 });
 
@@ -159,7 +160,7 @@ test("persistence failure still rejects the admitted session", async () => {
   let closed: string[] = [];
   const flow = createLeadFlow({ db: { projectDigest: { findFirst: async () => null }, $transaction: async () => { throw new Error("write failed"); } }, facts: { target: async () => facts, caller: async () => facts }, binding: { gateway: { run: async () => ({ ok: true, value: { explanation: "ok", suggestions: [] }, callId: U, flagged: false, truncated: false, cacheHit: false, promptTokens: 0, completionTokens: 0, costMicroUsd: 0 }) }, sessions: { open: async () => "s", close: async (_id, outcome) => { closed.push(outcome); } } }, context: { assembleWith: async () => ({ sections: [], provenance: [] }) } as any });
   await assert.rejects(flow.createDigest({ userId: U, role: "DEV_LEAD" }, P), /write failed/);
-  assert.deepEqual(closed, ["REJECTED"]);
+  assert.deepEqual(closed, []);
 });
 
 test("session-cap refusal is surfaced as AI_BUSY instead of a degraded success", async () => {

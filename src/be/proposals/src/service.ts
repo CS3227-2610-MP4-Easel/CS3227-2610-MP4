@@ -8,7 +8,7 @@ import { lockDomainRow, lockProposal, lockSession } from "./locks.js";
 
 export type TransactionSessionCloseInput = {
   sessionId: string;
-  proposalId: string;
+  proposalId: string | null;
   projectId: string;
   feature: "LEAD_DIGEST";
   ownerId: string;

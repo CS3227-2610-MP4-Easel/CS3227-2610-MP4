@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-13 by Codex — T4 review fixes dispatched for transaction-aware session closure, runtime injection and E27 coverage
+- **Last updated:** 2026-11-13 by Codex — T4 blocker fixes implemented; T5 remains handed over
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | T4 review fixes | Validate the T4 agent's transaction-aware closure, runtime injection, rollback fixtures and E27 race test; then rerun T4 review | 2026-11-13 |
+| S1 | 2026-11-12 | Codex | W14 | Active | T4 blocker fixes implemented and focused checks pass; T5 handover remains present | Commit T4 fixes, update its handover with the full code SHA, then accept T4 before resuming T5/T6 validation | 2026-11-13 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -54,7 +54,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W14 | Sprints, velocity and re-plan | Building | [spec](../../specs/2026-11-12-w14-sprints-velocity-replan-design.md) | [plan](../../plans/2026-11-12-w14-sprints-velocity-replan/plan.md) | T4 review fixes in progress: session atomicity, runtime wiring and E27 race | — |
+| W14 | Sprints, velocity and re-plan | Building | [spec](../../specs/2026-11-12-w14-sprints-velocity-replan-design.md) | [plan](../../plans/2026-11-12-w14-sprints-velocity-replan/plan.md) | T4 fixes implemented; final handover/acceptance update pending | — |
 
 ## 3. Changes
 
@@ -86,6 +86,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-13 | Started read-only attacker review of T4 for proposal-table access, transaction boundary leaks, session ownership and lock order | W14 | review |
 | 2026-11-13 | T4 attacker review found public session closes outside the transaction on degraded and rollback paths, cache-order risk for late ProposalService injection, and no real E27 race test; direct lead proposal-table access was removed | W14 | review; fix before acceptance |
 | 2026-11-13 | T4 tester review found E25 covered, but E27 race/rollback coverage is absent and session cleanup remains outside the transaction; no source, test or task files edited | W14 | review |
+| 2026-11-13 | T5 registered endpoints 27–33 and 46–48, composed SprintService/ProposalService with lead runtime, extended scoped resolvers, and added route/security/OpenAPI tests | W14 | commit `f2d52a8`; handover `T5.json` |
 
 ## 4. Decisions
 
