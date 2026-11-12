@@ -1,6 +1,6 @@
 # W14 Design — Sprints, Velocity and Re-plan
 
-- **Status:** Draft
+- **Status:** Approved (operator, 2026-11-12)
 - **Format:** v2
 - **Risk tier:** High — multi-user state transitions, role-gated mutations, and transactional task movement
 - **Workstream:** W14

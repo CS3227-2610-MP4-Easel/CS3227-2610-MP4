@@ -9,7 +9,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Owner:** operator / repository owner
 - **Status:** Draft
 - **Approved:** —
-- **Last updated:** 2026-11-12 by Codex — W14 spec is ready for Gate 1 approval
+- **Last updated:** 2026-11-12 by Codex — W14 plan reviewed and ready for Gate 2 approval
 
 **Untouched:** Architecture, Conventions, Known Gaps, Deviations
 
@@ -31,7 +31,7 @@ cd /Users/trevortan/.codex/worktrees/w14-sprints-velocity-replan/CS3227-2610-MP4
 
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
-| S1 | 2026-11-12 | Codex | W14 | Active | Reviewed W14 spec is ready for Gate 1 | Ask the operator to approve or request changes to the spec | 2026-11-12 |
+| S1 | 2026-11-12 | Codex | W14 | Active | W14 plan is linted and reviewed | Ask the operator to approve or request changes to the plan | 2026-11-12 |
 
 Session status: `Active` · `Paused` · `Blocked — needs human`.
 
@@ -54,7 +54,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W14 | Sprints, velocity and re-plan | Spec'd | [spec](../../specs/2026-11-12-w14-sprints-velocity-replan-design.md) | — | Drafting spec under approved core/lead split | — |
+| W14 | Sprints, velocity and re-plan | Planned | [spec](../../specs/2026-11-12-w14-sprints-velocity-replan-design.md) | [plan](../../plans/2026-11-12-w14-sprints-velocity-replan/plan.md) | Six-task plan ready for Gate 2 | — |
 
 ## 3. Changes
 
@@ -67,6 +67,7 @@ Session status: `Active` · `Paused` · `Blocked — needs human`.
 | 2026-11-12 | Amended W14 after review: endpoint-27 pagination, proposal service ownership, shared locks, session closure, exact errors and zero-velocity behavior | W14 | this commit |
 | 2026-11-12 | Final review found blockers: existing 0–100 progress behavior, proposal-table access in `Core.applyReplan`, and unresolved session/authorization atomicity | W14 | this commit |
 | 2026-11-12 | Second review pass required persisted approval replay, explicit proposal creation/supersession, exact session binding, bounded carry-over/page inputs, and conflict details; spec amended accordingly | W14 | this commit |
+| 2026-11-12 | Gate 1 approved by operator; six-task W14 plan created, linted with 0 errors/0 warnings, and revised after plan review | W14 | this commit |
 
 ## 4. Decisions
 
