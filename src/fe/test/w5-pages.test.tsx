@@ -11,6 +11,7 @@ const listMembers = vi.fn();
 const listCheckpoints = vi.fn();
 const getFacts = vi.fn();
 const listSprints = vi.fn();
+const readProgress = vi.fn();
 const createCheckpoint = vi.fn();
 const getTask = vi.fn();
 const updateTask = vi.fn();
@@ -36,6 +37,7 @@ vi.mock('../lib/api', async () => {
     listCheckpointsLive_12: (...args: unknown[]) => listCheckpoints(...args),
     getFacts_42: (...args: unknown[]) => getFacts(...args),
     listSprintsLive_27: (...args: unknown[]) => listSprints(...args),
+    readProgressLive_33: (...args: unknown[]) => readProgress(...args),
     createCheckpointLive_13: (...args: unknown[]) => createCheckpoint(...args),
     getTaskLive_22: (...args: unknown[]) => getTask(...args),
     updateTaskLive_23: (...args: unknown[]) => updateTask(...args),
@@ -56,6 +58,7 @@ import { AddEpicForm, AddTaskForm } from '../components/live/forms';
 import BacklogList from '../components/live/backlog-list';
 import TaskDrawer from '../components/live/task-drawer';
 import { AddCheckpointForm, CheckpointCards } from '../components/live/checkpoints';
+import SprintsPage from '../components/live/sprints-page';
 
 const PROJECT = '550e8400-e29b-41d4-a716-446655440000';
 const route = projectRoute(`/projects/${PROJECT}/board`);
@@ -78,6 +81,7 @@ beforeEach(() => {
   listCheckpoints.mockReset().mockResolvedValue([]);
   getFacts.mockReset().mockResolvedValue({ checkpoints: [] });
   listSprints.mockReset().mockResolvedValue({ items: [{ id: 'sprint-must-not-be-used', projectId: PROJECT, name: 'Sprint 1: Test', status: 'ACTIVE', startDate: '', endDate: '', completedPoints: 0, version: 1 }], page: 0, size: 100, total: 1 });
+  readProgress.mockReset().mockResolvedValue({ pointsTotal: 3, pointsDone: 0, percent: 0, unestimatedTasks: 0, velocity: [] });
   createCheckpoint.mockReset().mockResolvedValue({ id: 'checkpoint-1', projectId: PROJECT, name: 'Launch', targetDate: '2026-12-01', createdAt: '', updatedAt: '', version: 1 });
   getTask.mockReset().mockResolvedValue(task);
   updateTask.mockReset().mockResolvedValue({ ...task, title: 'Saved task', version: 5 });
@@ -163,6 +167,15 @@ describe('W5 live planning surfaces', () => {
     fireEvent.change(screen.getByLabelText('Sprint'), { target: { value: 'sprint-1' } });
     await act(async () => {});
     expect(updateTask).toHaveBeenCalledWith('task-1', { sprintId: 'sprint-1', version: 4 });
+  });
+
+  it('refreshes sprint task lists after a task assignment changes', async () => {
+    render(<ProjectRouteContext.Provider value={route}><RoleCtx.Provider value="lead"><SprintsPage /></RoleCtx.Provider></ProjectRouteContext.Provider>);
+    expect(await screen.findByText('Sprint 1: Test')).toBeTruthy();
+    expect(listSprints).toHaveBeenCalledTimes(1);
+    window.dispatchEvent(new Event('easel-board-refresh'));
+    await act(async () => {});
+    expect(listSprints).toHaveBeenCalledTimes(2);
   });
 
   it('F7 E10 E12 loads and reloads live members without a remove control', async () => {
