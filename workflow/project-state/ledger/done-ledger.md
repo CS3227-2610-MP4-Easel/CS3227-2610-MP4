@@ -4,6 +4,7 @@ The full chronological record of every change, newest first. One line each: what
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-13 | Developer guide checkpoint documented W19 (S20/S18 live screens): sections 3, 4 and 5 and the index | W19 | `docs/guide/` |
 | 2026-11-13 | Folded branch state `w9-self-membership` (PR #38): W9 SELF membership verified for 52; W16 note for 53/54; integration-test follow-ups closed | W9 | archive |
 | 2026-11-13 | Verified the Upcoming "W9 SELF membership check": endpoint 52's resolver already requires current membership (removed Developer → 404). Added a route test with a non-member Developer; it fails when the `requireMember` call is removed from the resolver. 53/54 are W16's (handover). Checks: `dev-routes.test.ts` 27/27 | W9 | `d68c62c` |
 | 2026-11-13 | W9 integration-test follow-ups (Upcoming row "W9 integration test follow-ups"): the E47 lock tests poll `pg_stat_activity` for a lock wait instead of sleeping 300 ms, and on failure wait for the write and the archive to settle before cleanup. Tests only. Checks: `dev-integration.test.ts` 19/19 on Postgres (0 skipped) on three runs; typecheck green | W9 | this commit |
