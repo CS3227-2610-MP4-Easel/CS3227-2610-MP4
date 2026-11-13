@@ -100,9 +100,50 @@ describe('W5 live planning surfaces', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     await act(async () => {});
     expect(listTasks).toHaveBeenLastCalledWith(PROJECT, 1, 20, {});
-    fireEvent.change(screen.getByLabelText('Status filter'), { target: { value: 'IN_PROGRESS' } });
+    fireEvent.click(screen.getByRole('combobox', { name: 'Status filter' }));
+    fireEvent.click(screen.getByRole('option', { name: /in progress/i }));
     await act(async () => {});
     expect(listTasks).toHaveBeenLastCalledWith(PROJECT, 0, 20, { status: 'IN_PROGRESS' });
+  });
+
+  it('filters the board by several people at once, with Unassigned pinned first, and searches the list', async () => {
+    const free = { ...task, id: 'task-2', title: 'Free task', assigneeId: null };
+    listTasks.mockResolvedValue({ items: [task, free], page: 0, size: 100, total: 2 });
+    render(liveView(<BoardView role="lead" />));
+    expect(await screen.findByText('Free task')).toBeTruthy();
+    fireEvent.click(screen.getByRole('combobox', { name: 'Assignee filter' }));
+    const options = screen.getAllByRole('option');
+    expect(options[0].textContent).toContain('Unassigned');
+    fireEvent.click(options[0]);
+    await act(async () => {});
+    expect(screen.getByText('Free task')).toBeTruthy();
+    expect(screen.queryByText('Live task')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Search people'), { target: { value: 'zzz' } });
+    expect(screen.getByText('No matches')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Search people'), { target: { value: 'ada' } });
+    fireEvent.click(screen.getAllByRole('option', { name: /Ada Lead/ })[0]);
+    await act(async () => {});
+    expect(screen.getByText('Live task')).toBeTruthy();
+    expect(screen.getByText('Free task')).toBeTruthy();
+  });
+
+  it('searches epics in a text bar and shows the picked epic as a removable chip', async () => {
+    const other = { ...task, id: 'task-3', title: 'Other task', epicId: 'epic-2' };
+    listTasks.mockResolvedValue({ items: [task, other], page: 0, size: 100, total: 2 });
+    render(liveView(<BoardView role="lead" />));
+    expect(await screen.findByText('Other task')).toBeTruthy();
+    const bar = screen.getByRole('combobox', { name: 'Epic filter' });
+    fireEvent.focus(bar);
+    fireEvent.change(bar, { target: { value: 'zzz' } });
+    expect(screen.getByText('No matches')).toBeTruthy();
+    fireEvent.change(bar, { target: { value: 'live' } });
+    fireEvent.click(screen.getByRole('option', { name: /Live epic/ }));
+    await act(async () => {});
+    expect(screen.getByText('Live task')).toBeTruthy();
+    expect(screen.queryByText('Other task')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Live epic' }));
+    await act(async () => {});
+    expect(screen.getByText('Other task')).toBeTruthy();
   });
 
   it('closes a task status menu when clicking outside the task card', async () => {
@@ -181,7 +222,7 @@ describe('W5 live planning surfaces', () => {
 
   it('F4 N1 E9 initializes live task creation from live epics and never sends sprintId', async () => {
     render(liveView(<AddTaskForm />));
-    expect(await screen.findByRole('option', { name: 'Live epic' })).toBeTruthy();
+    expect(await screen.findByText('Live epic')).toBeTruthy();
     fireEvent.change(document.getElementById('t1')!, { target: { value: 'Created task' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
     await act(async () => {});
@@ -204,7 +245,7 @@ describe('W5 live planning surfaces', () => {
   it('F4 E9 keeps failed live task creation open without a phantom row or retry', async () => {
     createTask.mockRejectedValue(new ApiError('VALIDATION_FAILED', 'Check the highlighted fields.', { status: 422 }));
     render(liveView(<AddTaskForm />));
-    expect(await screen.findByRole('option', { name: 'Live epic' })).toBeTruthy();
+    expect(await screen.findByText('Live epic')).toBeTruthy();
     fireEvent.change(document.getElementById('t1')!, { target: { value: 'Rejected task' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
     await act(async () => {});
@@ -244,7 +285,8 @@ describe('W5 live planning surfaces', () => {
     await act(async () => {});
     expect(updateTask).toHaveBeenCalledWith('task-1', expect.objectContaining({ version: 4 }));
     expect(updateTask.mock.calls[0][1]).not.toHaveProperty('sprintId');
-    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'prog' } });
+    fireEvent.click(screen.getByRole('combobox', { name: 'Status' }));
+    fireEvent.click(screen.getByRole('option', { name: 'In progress' }));
     await act(async () => {});
     expect(setStatus).toHaveBeenCalledWith('task-1', expect.objectContaining({ status: 'IN_PROGRESS', version: 5 }));
     expect(screen.getByRole('link', { name: 'Close' }).getAttribute('href')).toBe(`/projects/${PROJECT}/board`);
@@ -266,7 +308,8 @@ describe('W5 live planning surfaces', () => {
     setStatus.mockRejectedValue(new ApiError('CONFLICT_STATE', 'This changed elsewhere. Reload before trying again.', { status: 409 }));
     render(liveView(<TaskDrawer />));
     expect(await screen.findByRole('heading', { name: 'Live task' })).toBeTruthy();
-    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'prog' } });
+    fireEvent.click(screen.getByRole('combobox', { name: 'Status' }));
+    fireEvent.click(screen.getByRole('option', { name: 'In progress' }));
     await act(async () => {});
     expect(screen.getByRole('alert').textContent).toContain('This task is in a closed sprint and cannot be changed.');
     expect(screen.queryByRole('button', { name: 'Reload' })).toBeNull();

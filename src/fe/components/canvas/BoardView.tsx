@@ -7,6 +7,10 @@ import { ApiError, listEpicsLive_16, listMembersLive_9, listTasksLive_20, useDb,
 import { useProjectRoute } from '../../lib/api/project-mode';
 import { useSession } from '../../lib/auth/session';
 import TaskCard from './TaskCard';
+import Select from '../live/select';
+import MultiSelect from '../live/multi-select';
+
+const UNASSIGNED = '__unassigned__';
 
 class Logic {
 props: any;
@@ -69,17 +73,33 @@ function LiveBoard({ projectId, role = 'lead', archived = false }: { projectId: 
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
   const [filters, setFilters] = useState<LiveTaskListFilters>({});
+  // Epic and assignee are multi-select; the API takes one value each (and has no "unassigned"), so
+  // when either is used the board loads up to 100 tasks and filters and pages them here.
+  const [epicIds, setEpicIds] = useState<string[]>([]);
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const generation = useRef(0);
+  const multi = epicIds.length > 0 || assigneeIds.length > 0;
+  const epicKey = epicIds.join(',');
+  const assigneeKey = assigneeIds.join(',');
 
   const load = useCallback(() => {
     const request = ++generation.current;
     let current = true;
     setLoading(true);
     setError('');
+    const fetchTasks = async () => {
+      if (!multi) return listTasksLive_20(projectId, page, 20, filters);
+      const first = await listTasksLive_20(projectId, 0, 100, filters);
+      let items = first.items;
+      for (let p = 1; items.length < first.total && p <= 100; p += 1) items = items.concat((await listTasksLive_20(projectId, p, 100, filters)).items);
+      const kept = items.filter((task) => (epicIds.length === 0 || epicIds.includes(task.epicId))
+        && (assigneeIds.length === 0 || assigneeIds.includes(task.assigneeId ?? UNASSIGNED)));
+      return { items: kept.slice(page * 20, page * 20 + 20), page, size: 20, total: kept.length };
+    };
     Promise.all([
-      listTasksLive_20(projectId, page, 20, filters),
+      fetchTasks(),
       listEpicsLive_16(projectId, 0, 100),
       listMembersLive_9(projectId),
     ]).then(([taskPage, epicPage, memberRows]) => {
@@ -94,7 +114,7 @@ function LiveBoard({ projectId, role = 'lead', archived = false }: { projectId: 
       if (current && request === generation.current) setLoading(false);
     });
     return () => { current = false; };
-  }, [projectId, page, filters.status, filters.epicId, filters.assigneeId, filters.blocked]);
+  }, [projectId, page, filters.status, filters.blocked, epicKey, assigneeKey]);
 
   useEffect(() => {
     const cleanup = load();
@@ -119,26 +139,14 @@ function LiveBoard({ projectId, role = 'lead', archived = false }: { projectId: 
   const canMutate = (task: LiveTask) => role === 'lead' || (role === 'dev' && task.assigneeId === session?.user?.id);
 
   return (
-    <div className="stack" style={{ gap: '16px' }}>
+    <div className="stack board-fit" style={{ gap: '16px' }}>
       {archived && <div className="banner b-warn"><svg className="ic" aria-hidden="true"><use href="#i-lock" /></svg><span>This project is archived and read-only.</span></div>}
       <div className="row wrap between">
-        <div className="row wrap">
-          <label className="sel">Status
-            <select aria-label="Status filter" value={filters.status ?? ''} onChange={(e) => setFilter('status', e.target.value)}>
-              <option value="">All statuses</option>{STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-            </select>
-          </label>
-          <label className="sel">Epic
-            <select aria-label="Epic filter" value={filters.epicId ?? ''} onChange={(e) => setFilter('epicId', e.target.value)}>
-              <option value="">Any epic</option>{epics.map((epic) => <option key={epic.id} value={epic.id}>{epic.title}</option>)}
-            </select>
-          </label>
-          <label className="sel">Assignee
-            <select aria-label="Assignee filter" value={filters.assigneeId ?? ''} onChange={(e) => setFilter('assigneeId', e.target.value)}>
-              <option value="">Anyone</option>{members.map((member) => <option key={member.userId} value={member.userId}>{member.displayName}</option>)}
-            </select>
-          </label>
-          <label className="sel"><input aria-label="Blocked only" type="checkbox" checked={filters.blocked === true} onChange={(e) => setFilter('blocked', e.target.checked ? true : undefined)} /> Blocked only</label>
+        <div className="row" style={{ flex: '1 1 0', minWidth: 0, flexWrap: 'nowrap' }}>
+          <MultiSelect bar label="Epic filter" noun="epics" placeholder="Search epics…" values={epicIds} onChange={(v) => { setPage(0); setEpicIds(v); }} options={epics.map((epic) => ({ value: epic.id, label: epic.title }))} />
+          <Select compact label="Status filter" value={filters.status ?? ''} onChange={(v) => setFilter('status', v)} options={[{ value: '', label: 'All statuses' }, ...STATUS_OPTIONS.map(([value, label]) => ({ value, label }))]} />
+          <MultiSelect compact label="Assignee filter" noun="people" placeholder="Anyone" values={assigneeIds} onChange={(v) => { setPage(0); setAssigneeIds(v); }} options={[{ value: UNASSIGNED, label: 'Unassigned' }, ...members.map((member) => ({ value: member.userId, label: member.displayName }))]} />
+          <button type="button" className={`sel pill-toggle${filters.blocked === true ? ' on' : ''}`} aria-pressed={filters.blocked === true} onClick={() => setFilter('blocked', filters.blocked === true ? undefined : true)}>{filters.blocked === true && <svg className="ic" aria-hidden="true"><use href="#i-check" /></svg>}Blocked only</button>
         </div>
         {role === 'lead' && !archived && <A className="btn p" href={r('BacklogAddTask.dc.html')}><svg className="ic" aria-hidden="true"><use href="#i-plus" /></svg>Add task</A>}
       </div>
@@ -152,7 +160,6 @@ function LiveBoard({ projectId, role = 'lead', archived = false }: { projectId: 
         </div>
       )}
       <div className="row between"><span className="small muted">Page {page + 1} of {pageCount}</span><div className="row"><button className="btn sm" disabled={page === 0 || loading} onClick={() => setPage((current) => current - 1)}>Previous</button><button className="btn sm" disabled={page + 1 >= pageCount || loading} onClick={() => setPage((current) => current + 1)}>Next</button></div></div>
-      {role === 'pm' && <div className="banner b-info"><svg className="ic" aria-hidden="true"><use href="#i-info" /></svg><span>Project Manager view: status is read-only.</span></div>}
     </div>
   );
 }
