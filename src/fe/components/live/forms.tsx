@@ -16,6 +16,7 @@ const Close = ({ to }: { to: string }) => (
 function useSubmit(back: string, ok: string) {
   const router = useRouter();
   const route = useRoute();
+  const modal = useModal();
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const go = async (fn: () => Promise<unknown>) => {
@@ -24,7 +25,8 @@ function useSubmit(back: string, ok: string) {
     try {
       await fn();
       toast(ok);
-      router.push(route(back));
+      if (modal.modal) modal.close();
+      else router.push(route(back));
     } catch (e) {
       setErr(e instanceof ApiError ? e.message : 'Something went wrong.');
       setBusy(false);

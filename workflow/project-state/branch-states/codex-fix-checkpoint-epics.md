@@ -20,6 +20,8 @@
 - Added regression coverage for the task-refresh event.
 - Fixed the sprint edit modal to consume its modal sprint ID, preload the sprint name and dates, and show `Edit sprint` / `Save sprint` copy.
 - Added regression coverage for edit-mode modal data and action text.
+- Updated successful modal form submissions to close the active modal; sprint save now dismisses the edit modal after the update succeeds.
+- Extended the sprint edit regression test to verify the modal close callback.
 
 ## Verification
 
@@ -29,6 +31,9 @@
 - `npm --prefix src/fe run typecheck` — passed.
 - `npm --prefix src/fe run lint` — passed.
 - `npm --prefix src/fe run build` — passed.
+- `npm --prefix src/fe test -- --run test/w5-pages.test.tsx` — 1 file, 29 tests passed.
+- `npm --prefix src/fe run typecheck` — passed.
+- `npm --prefix src/fe run lint` — passed.
 - `npm --prefix src/fe test -- --run test/w5-pages.test.tsx` — 1 file, 28 tests passed.
 - `npm --prefix src/fe run typecheck` — passed.
 - `npm --prefix src/fe run lint` — passed.

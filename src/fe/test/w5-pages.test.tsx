@@ -184,12 +184,17 @@ describe('W5 live planning surfaces', () => {
 
   it('loads sprint data into the edit modal and uses Save sprint', async () => {
     listSprints.mockResolvedValue({ items: [{ id: 'sprint-1', projectId: PROJECT, name: 'Sprint 1: Planning', status: 'PLANNED', startDate: '2026-11-16', endDate: '2026-11-27', completedPoints: null, version: 4 }], page: 0, size: 100, total: 1 });
-    render(<ProjectRouteContext.Provider value={route}><RoleCtx.Provider value="lead"><ModalCtx.Provider value={{ modal: { file: 'SprintsNew', closeTo: `/projects/${PROJECT}/sprints`, params: { sprint: 'sprint-1' } }, open: vi.fn(), close: vi.fn() }}><NewSprintForm /></ModalCtx.Provider></RoleCtx.Provider></ProjectRouteContext.Provider>);
+    const close = vi.fn();
+    render(<ProjectRouteContext.Provider value={route}><RoleCtx.Provider value="lead"><ModalCtx.Provider value={{ modal: { file: 'SprintsNew', closeTo: `/projects/${PROJECT}/sprints`, params: { sprint: 'sprint-1' } }, open: vi.fn(), close }}><NewSprintForm /></ModalCtx.Provider></RoleCtx.Provider></ProjectRouteContext.Provider>);
     expect(await screen.findByRole('heading', { name: 'Edit sprint' })).toBeTruthy();
     expect(screen.getByLabelText('Name', { exact: false }).getAttribute('value')).toBe('Sprint 1: Planning');
     expect(screen.getByLabelText('Start date', { exact: false }).getAttribute('value')).toBe('2026-11-16');
     expect(screen.getByLabelText('End date (inclusive)', { exact: false }).getAttribute('value')).toBe('2026-11-27');
     expect(screen.getByRole('button', { name: 'Save sprint' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Save sprint' }));
+    await act(async () => {});
+    expect(patchSprint).toHaveBeenCalledWith('sprint-1', { name: 'Sprint 1: Planning', startDate: '2026-11-16', endDate: '2026-11-27', version: 4 });
+    expect(close).toHaveBeenCalledTimes(1);
   });
 
   it('F7 E10 E12 loads and reloads live members without a remove control', async () => {
