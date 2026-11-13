@@ -22,10 +22,16 @@
 - Added regression coverage for edit-mode modal data and action text.
 - Updated successful modal form submissions to close the active modal; sprint save now dismisses the edit modal after the update succeeds.
 - Extended the sprint edit regression test to verify the modal close callback.
+- Corrected task-drawer sprint validation to highlight the Sprint control and explain that story points are required before assignment, without highlighting the task title.
+- Removed misleading generic field highlights from Add Task, Add Epic, and Sprint forms; server errors now appear as form-level alerts unless a field is known.
+- Added regression coverage for the sprint-assignment validation field.
 
 ## Verification
 
 - `npm --prefix src/fe test` — 21 files, 287 tests passed.
+- `npm --prefix src/fe run lint` — passed.
+- `npm --prefix src/fe test -- --run test/w5-pages.test.tsx` — 1 file, 30 tests passed.
+- `npm --prefix src/fe run typecheck` — passed.
 - `npm --prefix src/fe run lint` — passed.
 - `npm --prefix src/fe test -- --run test/w5-pages.test.tsx` — 1 file, 29 tests passed.
 - `npm --prefix src/fe run typecheck` — passed.
