@@ -25,10 +25,15 @@
 - Corrected task-drawer sprint validation to highlight the Sprint control and explain that story points are required before assignment, without highlighting the task title.
 - Removed misleading generic field highlights from Add Task, Add Epic, and Sprint forms; server errors now appear as form-level alerts unless a field is known.
 - Added regression coverage for the sprint-assignment validation field.
+- Added save-time validation for clearing story points on a task already assigned to a sprint, highlighting the Story points field before the PATCH is sent.
+- Added regression coverage for the assigned-task save path.
 
 ## Verification
 
 - `npm --prefix src/fe test` — 21 files, 287 tests passed.
+- `npm --prefix src/fe run lint` — passed.
+- `npm --prefix src/fe test -- --run test/w5-pages.test.tsx` — 1 file, 31 tests passed.
+- `npm --prefix src/fe run typecheck` — passed.
 - `npm --prefix src/fe run lint` — passed.
 - `npm --prefix src/fe test -- --run test/w5-pages.test.tsx` — 1 file, 30 tests passed.
 - `npm --prefix src/fe run typecheck` — passed.

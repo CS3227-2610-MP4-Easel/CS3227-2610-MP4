@@ -69,6 +69,7 @@ function LiveDrawer({ taskId, projectId }: { taskId: string; projectId: string }
   if (missing || !task) return <aside className="drawer" role="dialog" aria-modal="true"><h2>Task not found</h2><p className="muted">This task is unavailable.</p><A className="btn" href={r('Board.dc.html')}>Back to the board</A></aside>;
   const canMutate = role === 'lead' || (role === 'dev' && task.assigneeId === session?.user?.id);
   const save = async () => {
+    if (task.sprintId && pts === '') { setErr('Add story points before saving a task assigned to a sprint.'); setErrorField('storyPoints'); return; }
     if (pts !== '' && !validPoints(pts)) { setErr('Whole number from 1 to 20.'); setErrorField('storyPoints'); return; }
     try { const updated = await updateTaskLive_23(task.id, { title, description: desc, storyPoints: pts ? Number(pts) as any : null, version: task.version }); setTask(updated); setEditing(false); setErr(''); setErrorField(null); window.dispatchEvent(new Event('easel-board-refresh')); toast('Task saved.'); }
     catch (e) { setErr(mutationMessage(e)); setErrorField('title'); setReloadable(e instanceof ApiError && e.code === 'CONFLICT_VERSION'); }

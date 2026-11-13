@@ -184,6 +184,18 @@ describe('W5 live planning surfaces', () => {
     expect(updateTask).not.toHaveBeenCalled();
   });
 
+  it('highlights Story points when saving an assigned task without an estimate', async () => {
+    getTask.mockResolvedValue({ ...task, sprintId: 'sprint-must-not-be-used', storyPoints: null });
+    render(liveView(<TaskDrawer projectId={PROJECT} />));
+    expect(await screen.findByRole('heading', { name: 'Live task' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await act(async () => {});
+    expect(screen.getByLabelText('Story points').className).toContain('err');
+    expect(screen.getByRole('alert').textContent).toContain('Add story points before saving a task assigned to a sprint.');
+    expect(updateTask).not.toHaveBeenCalled();
+  });
+
   it('refreshes sprint task lists after a task assignment changes', async () => {
     render(<ProjectRouteContext.Provider value={route}><RoleCtx.Provider value="lead"><SprintsPage /></RoleCtx.Provider></ProjectRouteContext.Provider>);
     expect(await screen.findByText('Sprint 1: Test')).toBeTruthy();
