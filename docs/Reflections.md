@@ -1,4 +1,4 @@
-Nathans Reflection:
+# Nathan's Reflection:
 
 To gather evidence, I used:
 
@@ -101,3 +101,116 @@ In MP3 I deliberately used a weaker, smaller-context model to push the limits, a
 
 This reflection is largely based on the final presentation i gave for MP4.
 
+---
+
+# Trevor's Reflection
+
+## 1. Multi-Agent Software Engineering
+
+### How should multiple agents be coordinated and verified?
+
+The most effective pattern was an orchestrator with narrow, role-specific agents. The orchestrator reads the project state and plan, dispatches one implementer per task, and passes a small task brief plus dependency handovers. Implementers do not read the whole repository or edit state files; they return a structured handover. Reviewers then inspect the result through a specific lens. This is captured in `workflow/agents/`, `writing-plans-lite-v2`, and `executing-plans-lite-v2`.
+
+The pattern is verifiable because each boundary has an artifact: task files define the contract, worktrees isolate independent tasks, handover JSON records results and checks, branch state records progress, and approval gates record human decisions. The W9 close-out records concrete failures—StrictMode double execution, requests after unmount, a stuck loading state and stale banners—and tests added for them. That is stronger evidence than merely counting successful agent calls.
+
+### Were the benefits worth the coordination cost, and when should it be used?
+
+Multi-agent coordination was worthwhile for Big, cross-cutting work such as W9, where backend contracts, context assembly, security rules and UI behavior could drift. It was less justified for a small documentation change. The repository's size-based ceremony is useful: Small changes need only a recorded change, Medium changes need one short spec and one reviewer, while Big changes receive task decomposition, independent tests and multiple review lenses.
+
+The pilot shows the trade-off. Plan-writing cost about $0.35 for superpowers, $1.74 for lite and $4.49 for full, with rubric scores of 28.5, 32.5 and 33.5 out of 40. The sample was too small to declare a winner, and the full arm hit a timeout and the account's five-hour limit. I would use multiple agents when parallel work or independent verification reduces meaningful correctness risk, not merely because the workflow makes it easy.
+
+## 2. Context Engineering
+
+### How should prompts, skills and handoff notes be designed?
+
+The system prompt should be a router, while detailed procedures belong in skills and role files. Each agent should receive only the task file, shared contract, relevant tests or stubs, and a short dependency handover. A useful handoff records changed files, checks run, assumptions, unresolved risks and the exact next action; it should not paste the whole conversation or repository history.
+
+This structure is implemented in the project. `AGENTS.md` is a short router; hot state is in `STATE.md` and `guardrails.md`; decisions, deviations and architecture areas are cold files loaded only when relevant. `ws pack <role>` produces a role-specific reading list, plan tasks are self-contained, and reviewers receive a 3–5 KB review bundle instead of opening all state files.
+
+### When does more context hurt, and what evidence shows it?
+
+More context hurts when it adds history or generic instructions that the agent cannot use for the current decision. Telemetry shows two signals: median first-call context increased from 22.7K tokens in MP3 to 41.7K in MP4 because skills, tools and agent definitions added fixed overhead, and one long session grew to about 650K tokens.
+
+The review-bundle redesign was the clearest win: median reviewer peak context fell from 76K to 28K tokens and median calls per reviewer fell from 30 to 4. However, total reviewer input stayed nearly flat—15.9M tokens in MP3 versus 16.4M in MP4—because the team ran many more reviewers. Context engineering therefore needs a total-use metric, not only a per-call metric.
+
+## 3. Resource-Aware Use
+
+### How should the model and workflow be configured under resource limits?
+
+Model choice should follow task risk and the cost of being wrong. A stronger model or more reasoning is justified for architecture and security-sensitive design; a cheaper or faster tier suits mechanical implementation and focused review. `workflow/models.json` and the role files define this separation, but the recorded configuration maps all Claude tiers to `claude-sonnet-5-5` and all Codex tiers to `gpt-6.1-sol`. The intended routing exists, but different-model routing was not yet validated.
+
+The product applies the same principle through explicit section budgets, priority-based trimming, input hashes and summary caches. It computes facts before asking a model to explain them, and the gateway records prompt/completion tokens, estimated tokens, truncation, retries, latency and cost. These controls make resource use observable and bound failure costs.
+
+### What did caching and monitoring reveal?
+
+The token log recorded 976.9M input-side Claude tokens, of which 945.9M were cache reads: a 96.8% cache-read share. Cache writes still represented 40% of list-price spend ($112.13), while cache reads were 34% ($94.59). There were 36 cold-cache rebuilds after more than an hour idle, rewriting 8.35M tokens and costing about $33.41. The practical lesson is to keep related work in a stable session, avoid needless forks, and keep repeated context identical enough to hit the cache.
+
+Reasoning output was 2.12M tokens, or 29% of Claude output, in the measured logs. The workflow did not persist hidden chain-of-thought; it persisted decisions, handovers, test results and next actions instead. That is the useful form of persisted reasoning: auditable conclusions another agent can act on without storing private internal deliberation. Process/tooling consumed 65% of spend and product code 28%, so the largest savings came from reducing repeated workflow analysis and unnecessary context.
+
+## Final Takeaway
+
+My biggest takeaway is that working with AI agents is still mostly about working well as a team. Multiple agents helped when everyone had a clear job, enough context to do it, and a useful handoff for the next person. Without those things, parallel work just created repeated analysis and extra review. I also learned that context is not free: giving an agent every document “just in case” can make it harder to find what matters. The best approach was to provide the important contracts and decisions early, retrieve less important details only when needed, and record short notes that another agent could actually use. Finally, saving tokens is only useful if we measure what happens to the saved capacity. My practical rule going forward is to use the simplest model and workflow that is safe for the task, add another agent only when it brings a genuinely different check, and use cost, token and quality data to see whether the extra effort was worthwhile.
+
+---
+
+# Congchen's Reflections
+
+My scope this time was the PM side. That meant the UI design (W10), the PM plan flow where the LLM turns an idea into an outline, epics and tasks (W7, W7b, W7c), and then wiring the UI to it live (W7-UI). I also spent a lot of effort on the skills and the experiment harness behind all of that. This time I read the session logs and put real numbers on what it all cost. The headline surprised me: **65% of my Claude spend went into process and measurement, and only 28% into product code.** The rest of this is me asking whether that was a good deal.
+
+### How the PM work actually ran
+
+It went in three rounds, and each one used the agents differently.
+
+**W10, the UI design.** This was nearly all me and one long thread. I designed 20 screens on a design canvas, then converted 73 canvas pages into a routed React prototype with a linkcheck that passes for all three roles. I kept the review light on purpose: only the Implementer lens looked at the spec (C6), because a UI spec is lower risk than a security spec. The prototype session was my most expensive uncontrolled one. It ran 371 calls and $18.59 at a peak of 562K context, with 5 compactions.
+
+**W7, the PM plan flow.** This one got the full pipeline. The spec was rated High tier, with 56 edge cases and 12 threats, and was reviewed by Implementer, Tester, Maintainer and Attacker lenses. The plan had 11 tasks in 6 waves. An orchestrator dispatched implementers, and each task got a reviewer. W7b (editing and regeneration) and W7c (story points 1–20 and one bulk-expand call for the whole plan) followed the same shape, but lighter. W7b and W7c were also built by a Codex orchestrator, not Claude.
+
+**W7-UI, live wiring.** This went back to a single thread with me giving lots of feedback. I reworked the plan page, the backlog, the project switcher, and the styled dropdowns. I audited every screen against a local database.
+
+### Multi-agent SE
+
+**Did the coordination pattern work?** Mostly yes, and the clearest proof was the bugs the reviewers caught. Full reviews found a Unicode separator injection in T4/T5, a race condition in the T7 PM flows, a missing bulk-failure UI state, and a stale-claim problem in W7c (D~6). Running against a real Postgres found a session-rule regression (C~3) that skipped tests had been hiding. None of that came from "the agents agreeing with each other". It came from each lens looking at the work differently.
+
+**How did I check the handoffs?** I don't trust a summary. I look at what each stage leaves behind: the plan's Status column, handover files and the Changes ledger with test counts. For example: "781 passed, 0 failed, 0 skipped". The "0 skipped" part matters, because the skipped tests are exactly what hid the C~3 bug.
+
+**Who was overloaded, idle or blocked?** The Claude orchestrator was overloaded. On the W7 build it made 126 calls at 400–650K context and cost $13.20 of the $19.63 build (67%). The 170 implementer calls cost $3.22, and all per-task reviewers together cost $1.00. The Codex orchestrators for W7b and W7c stayed at 149K and 204K peak. The blocked party was usually a limit: the W7c orchestration reached 100% of its 5-hour window. The idle party was usually me, waiting at an approval gate. One 9-hour wait cost a $2.35 cache rebuild. I never measured agent idleness directly, so that's as far as I can go.
+
+**Waste and retries.** A few honest examples. T10 needed a retry and a continue, about $1.20. The W7b final suite ended at 721/728 with five failures I couldn't explain (D~10). A transaction-marker test is still flaky on local Postgres 16 with an unproven cause. And the experiment runs cost $79.26 in total, but the comparison I reported was about $14 of that. One full replicate re-asked the same question 40 times before it hit turn_cap.
+
+**Conflicts.** The agents rarely disagreed with each other. The real conflicts were between a request and a recorded decision. Story points up to 20 collided with AD-12, so the agent stopped and held it for me (it became C~3). The Tier 2 removal reversed C19, C27 and C83. The collision rule forced both to be a conscious yes from me, with a recorded reason.
+
+**A coordination failure.** My branch states got messy because Codex created its own codex/w7* integration branches with their own records. In the end I had to consolidate w7-link-ui.md, a CI-investigation record and three Codex integration files into one. It's the multi-tool version of two people editing the same doc. A merge also silently left live-backlog.tsx unreachable, because W14's backlog-list.tsx took over. I only caught it by comparing the merged tree against the spec.
+
+**Was it worth it?**
+
+| Measure | Result |
+|---|---|
+| W7 spec + plan lifecycle (v2) | $3.89 + $2.65 |
+| W7 build | $19.63 for 11 tasks, about $2.19 per task |
+| Plan reviewer cost, W7 → W7b → W7c | $0.28 → $0.90 → $1.42 (context 68K → 133K → 183K) |
+| Subagents' share of interactive spend | 9% |
+| lite vs superpowers plan cost | 5× for +4 rubric points out of 40 |
+
+So it pays off for the high-risk backend work, where one injection or race bug would be expensive. It paid off less for the UI work, which is why W10 got a single lens. I also noticed the plan reviewer is the one agent my "read only your task file" design doesn't help, because it reads the whole folder.
+
+### Context engineering and resource-aware use
+
+**Upfront vs on demand.** A small hot set loads every session: AGENTS.md as a router, STATE.md and guardrails.md. Everything else is pulled by ID. Implementers get their task file plus a pasted Shared context block. The experiment taught me something there. In my lite skills, the builder skipped about 41 KB of spec files, but only because its prompt said the plan was the spec. Splitting files only saves tokens if nobody opens them. That's why v2 uses one spec file and splits the plan instead. The three v2 skill files also came out about 17% lighter to load.
+
+**What goes in a handoff.** The session table with a Next action per row worked better than I expected. A Claude session (s3) picked up cleanly after a Codex session (s2) on the same branch, because "Next action" said exactly what to verify. The decision rows with who asked and why also stopped re-proposals. But it fails when I don't prune. w7c-pm-ui.md now has a "Historical checklist (superseded)" and rows from 8 Nov still marked Paused. It literally warns that they need reconciling before a fold. STATE.md is about 30 KB, and some Upcoming cells run to a whole paragraph.
+
+**When more context hurt.** For the UI work, I could see it in the cost per call, not in confusion. A step above 600K context cost about $0.21, against $0.044 at 100–200K, for the same ~500 output tokens. 31% of main calls sat above 300K and used 46% of main spend. The "W7 spec" thread ran 33 hours across 46 log files and cost $38.72. UI iteration is the worst case for this: lots of small feedback turns, all riding on a huge conversation. A related defect also slipped through: the canvas screens were fixed-size, with .app { min-height: 1000px }, and I only noticed on an ultrawide monitor.
+
+**Cache.** Fresh input was only 11,934 tokens out of 976.9M, so 96.8% of input was cache reads. But cache writes are 40% of the bill ($112), reads only 34%. Idle returns are the avoidable part. 36 returns after more than an hour re-wrote 8.35M tokens for $33.41 (18% of interactive main spend). A 600K session left overnight costs about $2.4 before it does anything. My fixes are handoff notes instead of resuming giant sessions, threads under about 200K, and fresh orchestrator threads for builds. That last one shrank the peak from 650K to 149K and 204K, though I haven't priced it in dollars.
+
+**Model choice.** I have to be honest: I never tested model routing. All three tiers in models.json point at the same model, and my "cheap implementer" was the same model at low effort. The resource-aware choices I did make were about the product. For W7c's bulk call I measured the live model (llama3.1:8b, 10 epics) at 12.3–26.9 s and 977–2,086 output tokens, then set the limits to 2× that: 54 s and 4,200 tokens.
+
+**Reasoning tokens.** Thinking was 2.12M of 7.22M Claude output tokens (29%), about $21. On Codex it was roughly 57K of 457K output (about 12%). I didn't test persisted reasoning. What I do persist is the conclusion, as decision rows and Deviations, not the reasoning itself.
+
+**Monitoring and cutting usage.** I wrote analysis scripts in docs/telemetry/token-analysis/. They dedupe by message id (the raw log sum of $403.71 is really $278.98) and match the CLI's cost tally to the cent on sessions with no forks. The harness has cost ceilings of $25 per run and $100 per batch. At 15:39Z on the W7 build I also told the orchestrator to review only non-trivial work, and the logs show it. But reviewers were only 5% of that build, so I cut the smallest line and left the orchestrator alone.
+
+**Where the tokens went.** The order was the experiment framework and its runs, long uncontrolled sessions like the UI prototype, and the orchestrator's carried context. The one real structural saving was spec cost, which fell about 40% with v2.
+
+### Closing
+
+The PM work taught me that the pipeline earns its cost where mistakes are expensive and bounded tasks can be handed off, like W7's backend. It was less clearly worth it for UI iteration, which is better as a short, focused session than a giant thread. Next I'd want a real v1-vs-v2 arm in the harness and a cheaper model on the reviewers, so those two "unknown" lines become numbers. I'd also verify the live PM flow in a browser before calling it done. The authenticated flow, the D~8 live outline and the backlog conflict recovery are all still unverified.
