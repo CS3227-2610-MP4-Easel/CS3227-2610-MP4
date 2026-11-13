@@ -2,7 +2,7 @@
 
 **Branch:** `codex/github-pages-site`
 **Started:** 2026-11-13 from `development`
-**Status:** Draft
+**Status:** In review
 
 **Untouched:** Architecture, Conventions, Known Gaps, Decisions, Deviations
 
