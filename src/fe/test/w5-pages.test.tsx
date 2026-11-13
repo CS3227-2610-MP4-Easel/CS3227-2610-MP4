@@ -153,6 +153,18 @@ describe('W5 live planning surfaces', () => {
     expect(setStatus).toHaveBeenCalledWith('task-1', expect.objectContaining({ blocked: true, blockedReason: 'Blocked', version: 4 }));
   });
 
+  it('lets Dev Leads assign a task to a sprint or explicitly return it to No sprint', async () => {
+    listSprints.mockResolvedValue({ items: [{ id: 'sprint-1', projectId: PROJECT, name: 'Sprint 1', status: 'PLANNED', startDate: '', endDate: '', completedPoints: null, version: 1 }], page: 0, size: 100, total: 1 });
+    getTask.mockResolvedValue({ ...task, sprintId: null });
+    updateTask.mockResolvedValue({ ...task, sprintId: 'sprint-1', version: 5 });
+    render(liveView(<TaskDrawer projectId={PROJECT} />));
+    expect(await screen.findByRole('option', { name: 'No sprint' })).toBeTruthy();
+    expect(screen.getByRole('option', { name: 'Sprint 1' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Sprint'), { target: { value: 'sprint-1' } });
+    await act(async () => {});
+    expect(updateTask).toHaveBeenCalledWith('task-1', { sprintId: 'sprint-1', version: 4 });
+  });
+
   it('F7 E10 E12 loads and reloads live members without a remove control', async () => {
     render(liveView(<><MemberTable canRemove removeRole="DEVELOPER" /><AddMember role="DEVELOPER" label="Developer" /></>));
     expect(await screen.findByText('Ada Lead')).toBeTruthy();
