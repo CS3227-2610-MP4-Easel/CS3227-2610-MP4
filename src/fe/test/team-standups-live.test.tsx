@@ -73,9 +73,10 @@ describe('S18 live (F5)', () => {
     await userEvent.click(screen.getByRole('tab', { name: 'Earlier' }));
     const today = todaySgt(new Date());
     const back = (n: number) => new Date(Date.parse(`${today}T00:00:00Z`) - n * 86400_000).toISOString().slice(0, 10);
-    const earlier = screen.getByLabelText('Earlier day') as HTMLSelectElement;
-    expect(Array.from(earlier.options).map((o) => o.value)).toEqual([1, 2, 3, 4, 5, 6, 7].map(back));
-    await userEvent.selectOptions(earlier, back(3));
+    await userEvent.click(screen.getByRole('combobox', { name: 'Earlier day' }));
+    const days = within(screen.getByRole('listbox', { name: 'Earlier day' })).getAllByRole('option');
+    expect(days).toHaveLength(7);
+    await userEvent.click(days[2]);
     await screen.findByText('not generated');
     expect(s.dates).toEqual([today, nextStandupDate(new Date()), back(1), back(3)]);
   });
@@ -84,7 +85,8 @@ describe('S18 live (F5)', () => {
     const s = stub([member('a', 'Ann'), member('b', 'Ben')]);
     view();
     await screen.findAllByText('not generated');
-    await userEvent.selectOptions(screen.getByLabelText('Developer'), 'b');
+    await userEvent.click(screen.getByRole('combobox', { name: 'Developer' }));
+    await userEvent.click(screen.getByRole('option', { name: 'Ben' }));
     expect(cardNames()).toEqual(['Ben']);
     expect(s.dates).toHaveLength(1);
   });
@@ -120,8 +122,8 @@ describe('S18 live (F5)', () => {
     const evil = '<img src=x onerror=alert(1)>';
     stub([member('a', evil)], () => [standup('a', { content: { yesterday: [evil, evil], today: [], blockers: [evil] } })]);
     const { container } = view();
-    // The name on the card and in the developer filter, plus three standup lines.
-    expect(await screen.findAllByText(evil)).toHaveLength(5);
+    // The name on the card, plus three standup lines (the developer filter menu is closed).
+    expect(await screen.findAllByText(evil)).toHaveLength(4);
     expect(container.querySelector('img')).toBeNull();
   });
 
