@@ -15,9 +15,9 @@ describes `INT`; read it for context and write here instead of editing it.
 
 ---
 
-**Fold boundary.** This substantive record contains two workstreams: W7 backend plan flow (endpoints 34, 35, 37, 40, 41), merged into `development` by PR #31 (`487cafe`), and W7b editing (36, 38, 39, 58–60), merged into a feature branch by PR #32 and included in PR #44, which targets `development` and is open. Do not fold W7b until PR #44 merges and its owner approves the fold. Before folding W7 independently, separate its decisions, deviations, changes and handovers from W7b or use a reviewed split; do not attribute W7b entries to the W7 fold. The `codex/w7-pm-plan-flow` and `codex/w7b-plan-editing` files are integration records, not separate feature workstreams: reconcile and archive them without duplicating decisions or ledger entries. W7c/W7-UI is recorded in `w7-link-ui.md`; W14 and other branches have separate fold boundaries.
+**Fold boundary.** This substantive record contains two workstreams: W7 backend plan flow (endpoints 34, 35, 37, 40, 41), merged into `development` by PR #31 (`487cafe`), and W7b editing (36, 38, 39, 58–60), merged into a feature branch by PR #32 and included in PR #44, merged into `development` at `57708a8`. The owner requested a coordinated fold of W7, W7b and W7c after PR #44 merges: reconcile their cross-cutting decisions, deviations and handovers together, preserving provenance and avoiding duplicate entries; compare against the then-current development state. The coordinated fold still requires reconciliation of provisional IDs, stale project-state entries and branch approval. The `codex/w7-pm-plan-flow` and `codex/w7b-plan-editing` files are integration records, not separate feature workstreams: reconcile and archive them without duplicating decisions or ledger entries. W7c/W7-UI is recorded in `w7c-pm-ui.md` (which absorbed the former `w7-link-ui.md`); W14 and other branches have separate fold boundaries.
 
-**Historical sections below** include pre-merge plans and estimates; use the current status and Remaining above them when reconciling. W5 is merged and folded; W7b and W7c are not yet merged to `development`.
+**Historical sections below** include pre-merge plans and estimates; use the current status and Remaining above them when reconciling. W5 is merged and folded; W7b and W7c merged into `development` through PR #44.
 ---
 
 ## 1. How to Resume
@@ -38,7 +38,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - [ ] **Handover W2 owner (Developer):** spec SD3 changes `Sessions.assertUsable` (a `PM_PLAN_OUTLINE` session also admits `PM_PLAN_EXPAND`) and amends contracts §5.3; their agreement is recorded in T1 (AD-11, as C59); not yet obtained.
 - [x] **W5 (Dev Lead) integrated 2026-11-08:** `origin/w5-core-planning` (PR 23, not yet merged to `INT`) is merged into this branch; W5 supplies `requireMember`, `Core.assertWritable` and a `PM_PLAN_CREATE` project resolver that reads `id`; W7 registers the four proposal resolvers in `core-composition.ts`; both `applyPlan` implementations exist (see Known Gaps). PR #23 merged and W5 has been folded.
 - [x] W5's owner estimate: no longer needed, W5 is in PR 23.
-- [ ] **W7b integration:** PR #32 merged into its feature parent, not development; PR #44 targets development. Owner review and merge remain; see D~10 for historical failures.
+- [x] **W7b integration:** PR #32 merged into its feature parent; PR #44 merged into development at `57708a8`. D~10 preserves historical failures.
 - [ ] **Handover:** at fold, reconcile existing STATE.md Upcoming items addressed to W7 against merged code: W6 sources and `assembleWith` (`pm.similarItems`, titles only, at most 5, filtered by member projects); W3 section rules, blocked-input handling (`BLOCKED_INPUT` to 422 `VALIDATION_FAILED`, `REQUEST_REFUSED` to 422) and output schemas without URLs or angle brackets; W2 mock responses, static sections and `assertStaticSectionsFit`; W7 proposal resolvers.
 
 ---
@@ -47,8 +47,15 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W7 | PM plan flow (proposals, pm) | Done | [spec](../../specs/2026-11-07-w7-pm-plan-flow-design.md) | [plan](../../plans/2026-11-07-w7-pm-plan-flow/plan.md) | PR #31 merged; fold requires separating W7b entries | out of date: pm, core, proposals |
-| W7b | PM plan editing (endpoints 36, 38, 39, 58-60; carved from W16) | In review | [spec](../../specs/2026-11-09-w7b-pm-plan-editing-design.md) | [plan](../../plans/2026-11-09-w7b-pm-plan-editing/plan.md) | PR #44 open; review and merge pending; D~10 | out of date: pm, proposals, contracts |
+| W7 | PM plan flow (proposals, pm) | Done | [spec](../../specs/2026-11-07-w7-pm-plan-flow-design.md) | [plan](../../plans/2026-11-07-w7-pm-plan-flow/plan.md) | PR #31 merged; coordinated family fold pending | out of date: pm, core, proposals |
+| W7b | PM plan editing (endpoints 36, 38, 39, 58-60; carved from W16) | In review | [spec](../../specs/2026-11-09-w7b-pm-plan-editing-design.md) | [plan](../../plans/2026-11-09-w7b-pm-plan-editing/plan.md) | PR #44 merged; coordinated fold pending; D~10 | out of date: pm, proposals, contracts |
+
+---
+
+## Integration record reconciliation
+
+- `codex/w7-pm-plan-flow` (base `2c5dd9f`): PR #31 merged at `487cafe`; 2026-11-12 integration retained PM and Dev Lead composition and dependencies; typecheck, contract and six targeted tests passed. Owner reported approval. Its only remaining item was to reconcile this record with the W7 fold.
+- `codex/w7b-plan-editing` (base `2c5dd9f`): 2026-11-12 integration retained strict parsing and editing error mapping. PR #32 merged into the W7 feature branch; PR #44 subsequently merged the stack into development at `57708a8`. W7b decisions, changes and handovers are in this record; do not create a duplicate workstream or fold entry.
 
 ---
 
@@ -56,7 +63,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
-| 2026-11-13 | Reconciled PR #31 merge and stacked PR #32 target; PR #44 carries W7b/W7c to development. Scope separation required before fold. | W7/W7b | 487cafe, PR #44 |
+| 2026-11-13 | Reconciled PR #31 merge and stacked PR #32 target; PR #44 carries W7b/W7c to development. Coordinated family fold requires provenance and duplicate reconciliation. | W7/W7b | 487cafe, PR #44 |
 | 2026-11-09 | W7b T1 contracts, policy, OpenAPI and documentation implemented; focused and contract tests pass; review placement finding fixed | W7b | 1bdeca0, c304835 |
 | 2026-11-09 | W7b T2 editing store implemented; review fixed strict-parse storage and deterministic lock races; 11 edit integration tests pass | W7b | 9bc5ec2, 8a5ed46 |
 | 2026-11-09 | W7b T5 approval outcome and replay implemented; 21 database tests pass; review clean | W7b | f3c4564 |

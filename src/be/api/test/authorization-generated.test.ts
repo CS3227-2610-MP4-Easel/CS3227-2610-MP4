@@ -69,20 +69,20 @@ const expectCode = async (run: () => Promise<unknown>, code: string, status: num
   await assert.rejects(run, (error: { code?: string; status?: number }) => error.code === code && error.status === status);
 };
 
-test("W11 policy map has 61 unique policy keys and operation IDs", () => {
+test("W11 policy map has 59 unique policy keys and operation IDs", () => {
   const policies = getPolicyMap();
-  assert.equal(policies.length, 61);
-  assert.equal(new Set(policies.map((policy) => policy.policyKey)).size, 61);
-  assert.equal(new Set(policies.map((policy) => policy.operationId)).size, 61);
+  assert.equal(policies.length, 59);
+  assert.equal(new Set(policies.map((policy) => policy.policyKey)).size, 59);
+  assert.equal(new Set(policies.map((policy) => policy.operationId)).size, 59);
 });
 
 test("W11 derived row objects have exact authorization cardinalities", () => {
-  assert.equal(derivedRows.length, 274);
-  assert.equal(derivedRows.filter((row) => row.kind === "AUTH_REQUIRED").length, 61);
+  assert.equal(derivedRows.length, 270);
+  assert.equal(derivedRows.filter((row) => row.kind === "AUTH_REQUIRED").length, 59);
   assert.equal(derivedRows.filter((row) => row.kind === "ROLE_ALLOW").length, 58);
   assert.equal(derivedRows.filter((row) => row.kind === "ROLE_DENY").length, 45);
-  assert.equal(derivedRows.filter((row) => row.kind === "PREDICATE_ALLOW").length, 55);
-  assert.equal(derivedRows.filter((row) => row.kind === "PREDICATE_DENY").length, 55);
+  assert.equal(derivedRows.filter((row) => row.kind === "PREDICATE_ALLOW").length, 54);
+  assert.equal(derivedRows.filter((row) => row.kind === "PREDICATE_DENY").length, 54);
   assert.equal(new Set(derivedRows.map((row) => row.key)).size, derivedRows.length);
 });
 
@@ -189,7 +189,7 @@ test("W11 covers every non-NONE predicate with one allow and one hidden deny", a
     assert.ok(denyCounts.predicate <= 1, `${policy.operationId} evaluated predicate more than once after denial`);
     assert.deepEqual(thisState, { parsed: 0, handled: 0 });
   }
-  assert.equal(derivedRows.filter((row) => row.kind === "PREDICATE_DENY").length, 55);
+  assert.equal(derivedRows.filter((row) => row.kind === "PREDICATE_DENY").length, 54);
 });
 
 test("W11 ADDER resolves active membership before parsed authorization and accepts target role", async () => {

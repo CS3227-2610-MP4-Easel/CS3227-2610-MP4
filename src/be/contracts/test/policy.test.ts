@@ -4,11 +4,15 @@ import { test } from "node:test";
 import { getPolicyMap, translateRoleAlias, type PolicyEntry } from "../src/policy.js";
 import { validateRouteRegistration, type RouteDefinition } from "../src/routes.js";
 
-test("F3 policy map contains exactly 61 unique normative entries", () => {
+test("retired usage endpoints are absent from the policy map", () => {
+  assert.equal(getPolicyMap().some((entry) => entry.path.startsWith("/api/usage/")), false);
+});
+
+test("F3 policy map contains exactly 59 unique normative entries", () => {
   const policies = getPolicyMap();
-  assert.equal(policies.length, 61);
-  assert.equal(new Set(policies.map((policy) => policy.policyKey)).size, 61);
-  assert.equal(new Set(policies.map((policy) => `${policy.method} ${policy.path}`)).size, 61);
+  assert.equal(policies.length, 59);
+  assert.equal(new Set(policies.map((policy) => policy.policyKey)).size, 59);
+  assert.equal(new Set(policies.map((policy) => `${policy.method} ${policy.path}`)).size, 59);
 });
 
 test("W1 conventions keep operation identifiers stable and uppercase", () => {

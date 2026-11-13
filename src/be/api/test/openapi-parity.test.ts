@@ -6,8 +6,8 @@ test("N6/OpenAPI parity has exactly one generated operation per policy record", 
   const policies = getPolicyMap();
   const document = generateOpenApiDocument(policies);
   const operations = Object.values(document.paths).flatMap((path) => Object.values(path as Record<string, { operationId: string; [key: string]: any }>));
-  assert.equal(operations.length, 61);
-  assert.equal(new Set(operations.map((operation) => operation.operationId)).size, 61);
+  assert.equal(operations.length, 59);
+  assert.equal(new Set(operations.map((operation) => operation.operationId)).size, 59);
   const policyByOperation = new Map(policies.map((policy) => [policy.operationId, policy]));
   for (const operation of operations) {
     const policy = policyByOperation.get(operation.operationId);
@@ -35,7 +35,7 @@ test("N6/OpenAPI parity has exactly one generated operation per policy record", 
   assert.equal((components.DEV_UPLOAD_CREATERequest as any).properties.items.maxItems, 100);
   assert.equal((components.SPRINT_CREATERequest as any).properties.startDate.format, "date");
   assert.notEqual((components.TASK_CREATEResponse as any).additionalProperties, true);
-  for (const name of ["EPIC_LIST", "TASK_LIST", "TASK_EVENT_LIST", "PM_PROPOSAL_LIST", "LEAD_PROPOSAL_LIST", "USAGE_SESSION_LIST"]) {
+  for (const name of ["EPIC_LIST", "TASK_LIST", "TASK_EVENT_LIST", "PM_PROPOSAL_LIST", "LEAD_PROPOSAL_LIST"]) {
     const response = components[`${name}Response`] as any;
     assert.deepEqual(response.required, ["items", "page", "size", "total"]);
     assert.equal(response.properties.items.type, "array");

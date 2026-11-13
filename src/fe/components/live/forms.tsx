@@ -5,6 +5,7 @@ import { A, r, useModal, useRoute } from '../../lib/nav';
 import { ApiError, createEpic_17, createEpicLive_17, createSprint_28, createSprintLive_28, patchSprintLive_29, createTask_21, createTaskLive_21, listCheckpointsLive_12, listEpicsLive_16, listMembersLive_9, listSprintsLive_27, useDb, type LiveCheckpoint, type LiveEpic, type LiveMember, type LiveSprint, type Person } from '../../lib/api';
 import { useProjectRoute } from '../../lib/api/project-mode';
 import { toast } from './toast';
+import Select from './select';
 
 const Err = ({ text }: { text: string }) => (
   <span className="err-t"><svg className="ic" style={{ width: 14, height: 14 }} aria-hidden="true"><use href="#i-alert" /></svg>{text}</span>
@@ -106,7 +107,7 @@ export function AddEpicForm() {
       <div className="field"><label htmlFor="t2">Title <span style={{ color: 'var(--danger)' }}>*</span></label><input id="t2" className="in" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Notifications" /></div>
       <div className="field"><label htmlFor="d2">Description</label><textarea id="d2" className="in" rows={3} value={desc} onChange={(e) => setDesc(e.target.value)} /></div>
       <div className="field"><label htmlFor="cp">Checkpoint</label>
-        <select id="cp" className="in" value={cp} onChange={(e) => setCp(e.target.value)}><option value="">None</option>{(live ? liveCheckpoints : db.checkpoints).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
+        <Select id="cp" value={cp} onChange={setCp} options={[{ value: '', label: 'None' }, ...(live ? liveCheckpoints : db.checkpoints).map((c) => ({ value: c.id, label: c.name }))]} />
         {live && dependencyError && <div className="banner b-bad" role="alert"><span>{dependencyError}</span><button className="btn sm" type="button" onClick={() => setCheckpointAttempt((value) => value + 1)}>Retry loading checkpoints</button></div>}
         <span className="hint">Optional. An epic belongs to at most one checkpoint.</span></div>
       <div className="dfoot"><A className="btn" href={r('Backlog.dc.html')}>Cancel</A><button className="btn p" disabled={f.busy}>Add epic</button></div>
@@ -156,7 +157,7 @@ export function AddTaskForm() {
       <div className="row between"><h2 id="at1">Add task</h2><Close to="Backlog.dc.html" /></div>
       {f.err && <div className="banner b-bad" role="alert"><Err text={f.err} /></div>}
       <div className="field"><label htmlFor="e1">Epic <span style={{ color: 'var(--danger)' }}>*</span></label>
-        <select id="e1" className="in" value={epic} onChange={(e) => setEpic(e.target.value)}>{(live ? liveEpics : db.epics).map((e) => <option key={e.id} value={e.id}>{e.title}</option>)}</select>
+        <Select id="e1" value={epic} onChange={setEpic} options={(live ? liveEpics : db.epics).map((e) => ({ value: e.id, label: e.title }))} />
         {live && dependencyError && <div className="banner b-bad" role="alert"><span>{dependencyError}</span><button className="btn sm" type="button" onClick={() => setDependencyAttempt((value) => value + 1)}>Retry loading task options</button></div>}
       </div>
       <div className="field"><label htmlFor="t1">Title <span style={{ color: 'var(--danger)' }}>*</span></label><input id="t1" className="in" value={title} onChange={(e) => setTitle(e.target.value)} /></div>
@@ -177,7 +178,7 @@ export function AddTaskForm() {
           <input id="sp" className="in" type="number" min={1} max={20} step={1} value={pts} onChange={(e) => setPts(e.target.value)} />
           <span className="hint">Whole number from 1 to 20, or none</span></div>
         <div className="field"><label htmlFor="as">Assignee</label>
-          <select id="as" className="in" value={who} onChange={(e) => setWho(e.target.value)}><option value="">Unassigned</option>{live ? liveMembers.map((member) => <option key={member.userId} value={member.userId}>{member.displayName}</option>) : PEOPLE.map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select>
+          <Select id="as" value={who} onChange={setWho} options={[{ value: '', label: 'Unassigned' }, ...(live ? liveMembers.map((member) => ({ value: member.userId, label: member.displayName })) : PEOPLE.map(([k, n]) => ({ value: k, label: n })))]} />
           <span className="hint">Project members only</span></div>
       </div>
       <div className="dfoot"><A className="btn" href={r('Backlog.dc.html')}>Cancel</A><button className="btn p" disabled={f.busy}>Add task</button></div>

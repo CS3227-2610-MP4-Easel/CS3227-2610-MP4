@@ -24,7 +24,6 @@ import EmptyState from './canvas/EmptyState';
 import Health from './canvas/Health';
 import HealthPM from './canvas/HealthPM';
 import Icons from './canvas/Icons';
-import LeadOverview from './canvas/LeadOverview';
 import Main from './canvas/Main';
 import Members from './canvas/Members';
 import MembersDev from './canvas/MembersDev';
@@ -38,7 +37,6 @@ import OverviewLead from './canvas/OverviewLead';
 import Plan from './canvas/Plan';
 import PlanApprove from './canvas/PlanApprove';
 import PlanApproved from './canvas/PlanApproved';
-import PlanHistory from './canvas/PlanHistory';
 import PlanIdea from './canvas/PlanIdea';
 import PlanRejected from './canvas/PlanRejected';
 import PlanSuperseded from './canvas/PlanSuperseded';
@@ -56,11 +54,6 @@ import RiskBadge from './canvas/RiskBadge';
 import RoleBadge from './canvas/RoleBadge';
 import Settings from './canvas/Settings';
 import SignInError from './canvas/SignInError';
-import SprintClose from './canvas/SprintClose';
-import SprintCloseDone from './canvas/SprintCloseDone';
-import Sprints from './canvas/Sprints';
-import SprintsNew from './canvas/SprintsNew';
-import SprintsReadOnly from './canvas/SprintsReadOnly';
 import Standup from './canvas/Standup';
 import StandupDegraded from './canvas/StandupDegraded';
 import Standups from './canvas/Standups';
@@ -71,7 +64,6 @@ import Styleguide from './canvas/Styleguide';
 import TaskCard from './canvas/TaskCard';
 import TaskDetail from './canvas/TaskDetail';
 import Top from './canvas/Top';
-import Usage from './canvas/Usage';
 import ScreenIndex from './screen-index';
 
 export const SCREEN_COMPONENTS: Record<string, any> = {
@@ -100,7 +92,6 @@ export const SCREEN_COMPONENTS: Record<string, any> = {
   Health,
   HealthPM,
   Icons,
-  LeadOverview,
   Main,
   Members,
   MembersDev,
@@ -114,7 +105,6 @@ export const SCREEN_COMPONENTS: Record<string, any> = {
   Plan,
   PlanApprove,
   PlanApproved,
-  PlanHistory,
   PlanIdea,
   PlanRejected,
   PlanSuperseded,
@@ -132,11 +122,6 @@ export const SCREEN_COMPONENTS: Record<string, any> = {
   RoleBadge,
   Settings,
   SignInError,
-  SprintClose,
-  SprintCloseDone,
-  Sprints,
-  SprintsNew,
-  SprintsReadOnly,
   Standup,
   StandupDegraded,
   Standups,
@@ -147,6 +132,5 @@ export const SCREEN_COMPONENTS: Record<string, any> = {
   TaskCard,
   TaskDetail,
   Top,
-  Usage,
   ScreenIndex,
 };

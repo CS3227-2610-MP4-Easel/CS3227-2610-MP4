@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { A, useRoute } from '../../lib/nav';
+import { A, useRole, useRoute } from '../../lib/nav';
+import LiveBacklog from './live-backlog';
 import { ApiError, listCheckpointsLive_12, listEpicsLive_16, listMembersLive_9, listSprintsLive_27, listTasksLive_20, useDb, type LiveCheckpoint, type LiveEpic, type LiveMember, type LiveSprint, type LiveTask } from '../../lib/api';
 import { useProjectRoute } from '../../lib/api/project-mode';
 import StatusChip from '../canvas/StatusChip';
@@ -10,10 +11,13 @@ const sprintLabel = (name: string) => name.match(/^Sprint\s+\d+/i)?.[0] ?? name;
 
 export default function BacklogList({ actions }: { actions?: ReactNode } = {}) {
   const route = useProjectRoute();
+  const role = useRole();
   const db = useDb();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'unscheduled' | 'unassigned' | 'noEstimate' | null>(null);
-  const controls = <div className="row wrap between" style={{ marginBottom: 16 }}><div className="row wrap"><div style={{ position: 'relative' }}><svg className="ic muted" style={{ position: 'absolute', left: 10, top: 10 }} aria-hidden="true"><use href="#i-search" /></svg><input className="in" style={{ width: 240, paddingLeft: 32 }} placeholder="Search by title" aria-label="Search by title" value={search} onChange={(event) => setSearch(event.target.value)} /></div>{(['unscheduled', 'unassigned', 'noEstimate'] as const).map((key) => <button type="button" className={`sel${filter === key ? ' on' : ''}`} aria-pressed={filter === key} key={key} onClick={() => setFilter((current) => current === key ? null : key)}>{key === 'unscheduled' ? 'Unscheduled' : key === 'unassigned' ? 'Unassigned' : 'No estimate'}</button>)}</div>{actions && <div className="row">{actions}</div>}</div>;
+  const controls = <div className="row wrap between" style={{ marginBottom: 16 }}><div className="row wrap"><div style={{ position: 'relative', flex: '1 1 240px', maxWidth: 520, minWidth: 150 }}><svg className="ic muted" style={{ position: 'absolute', left: 14, top: 9 }} aria-hidden="true"><use href="#i-search" /></svg><input className="in pill-in" placeholder="Search by title" aria-label="Search by title" value={search} onChange={(event) => setSearch(event.target.value)} /></div>{(['unscheduled', 'unassigned', 'noEstimate'] as const).map((key) => <button type="button" className={`sel pill-toggle${filter === key ? ' on' : ''}`} aria-pressed={filter === key} key={key} onClick={() => setFilter((current) => current === key ? null : key)}>{key === 'unscheduled' ? 'Unscheduled' : key === 'unassigned' ? 'Unassigned' : 'No estimate'}</button>)}</div>{actions && <div className="row">{actions}</div>}</div>;
+  // The PM edits the live backlog (W7c); the Dev Lead and developer keep the W5 list.
+  if (route.mode === 'live' && route.projectId && role === 'pm') return <>{controls}<LiveBacklog search={search} filter={filter} /></>;
   if (route.mode === 'live' && route.projectId) return <>{controls}<LiveBacklogList projectId={route.projectId} search={search} filter={filter} /></>;
   const matches = (task: typeof db.tasks[number]) => (!search.trim() || task.title.toLowerCase().includes(search.trim().toLowerCase())) && (!filter || (filter === 'unscheduled' ? !task.sprintId : filter === 'unassigned' ? !task.assignee : !task.points));
   return <>{db.epics.map((e) => {

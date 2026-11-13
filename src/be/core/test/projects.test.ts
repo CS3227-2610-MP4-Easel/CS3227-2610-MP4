@@ -91,6 +91,43 @@ test("project services reject missing or mismatched actors", async () => {
   await assert.rejects(() => createProjects({} as any, access()).create({ userId, role: "DEV_LEAD" }, { name: "Roadmap" }), /FORBIDDEN_ROLE/);
 });
 
+const row = (over: Record<string, unknown> = {}) => ({ id: projectId, name: "Roadmap", brief: null, status: "ACTIVE", createdBy: userId, createdAt: now, updatedAt: now, version: 3, ...over });
+const updateDb = (current: Record<string, unknown>, writes: any[] = [], count = 1) => ({ $transaction: async (work: (tx: any) => Promise<unknown>) => work({ project: { update: async () => ({}), findFirst: async () => current, updateMany: async (args: any) => { writes.push(args); return { count }; } } }) });
+
+test("project update writes only changed fields, bumps the version, and archives one way", async () => {
+  const writes: any[] = [];
+  await createProjects(updateDb(row(), writes) as any, access()).update({ userId, role: "PM" }, projectId, { name: "Roadmap v2", brief: null, status: "ARCHIVED", version: 3 });
+  assert.deepEqual(writes, [{ where: { id: projectId, version: 3 }, data: { name: "Roadmap v2", status: "ARCHIVED", version: { increment: 1 } } }]);
+  const noop: any[] = [];
+  const same = await createProjects(updateDb(row(), noop) as any, access()).update({ userId, role: "PM" }, projectId, { name: "Roadmap", version: 3 });
+  assert.equal(same.version, 3);
+  assert.deepEqual(noop, []);
+});
+
+test("project update rejects non-PMs, blank names, stale versions, lost races and archived projects", async () => {
+  const pm = { userId, role: "PM" as const };
+  await assert.rejects(() => createProjects({} as any, access()).update({ userId, role: "DEV_LEAD" }, projectId, { version: 3 }), /FORBIDDEN_ROLE/);
+  await assert.rejects(() => createProjects({} as any, access()).update(pm, projectId, { name: "  ", version: 3 }), /VALIDATION_FAILED/);
+  await assert.rejects(() => createProjects(updateDb(row()) as any, access()).update(pm, projectId, { name: "X", version: 2 }), /CONFLICT_VERSION/);
+  await assert.rejects(() => createProjects(updateDb(row(), [], 0) as any, access()).update(pm, projectId, { name: "X", version: 3 }), /CONFLICT_VERSION/);
+  await assert.rejects(() => createProjects(updateDb(row()) as any, access(false, true)).update(pm, projectId, { name: "X", version: 3 }), /CONFLICT_STATE/);
+  await assert.rejects(() => createProjects(updateDb(row()) as any, access(false, false)).update(pm, projectId, { name: "X", version: 3 }), /NOT_FOUND/);
+});
+
+const removeDb = (targetRole: string, openTasks: number, deletes: any[] = []) => ({ $transaction: async (work: (tx: any) => Promise<unknown>) => work({ project: { update: async () => ({}) }, projectMember: { findFirst: async () => ({ userId: "u", user: { role: targetRole } }), deleteMany: async (args: any) => { deletes.push(args); return { count: 1 }; } }, task: { count: async () => openTasks } }) });
+
+test("remove member deletes the membership only for the allowed role pair with no open tasks", async () => {
+  const deletes: any[] = [];
+  await createProjects(removeDb("DEV_LEAD", 0, deletes) as any, access()).removeMember({ userId, role: "PM" }, projectId, "u");
+  assert.deepEqual(deletes, [{ where: { projectId, userId: "u" } }]);
+  await createProjects(removeDb("DEVELOPER", 0, deletes) as any, access()).removeMember({ userId, role: "DEV_LEAD" }, projectId, "u");
+  assert.equal(deletes.length, 2);
+  await assert.rejects(() => createProjects(removeDb("DEV_LEAD", 2) as any, access()).removeMember({ userId, role: "PM" }, projectId, "u"), /CONFLICT_STATE/);
+  await assert.rejects(() => createProjects(removeDb("DEVELOPER", 0) as any, access()).removeMember({ userId, role: "PM" }, projectId, "u"), /FORBIDDEN_ROLE/);
+  await assert.rejects(() => createProjects({} as any, access()).removeMember({ userId, role: "DEVELOPER" }, projectId, "u"), /FORBIDDEN_ROLE/);
+  await assert.rejects(() => createProjects(removeDb("DEV_LEAD", 0) as any, access(false, true)).removeMember({ userId, role: "PM" }, projectId, "u"), /CONFLICT_STATE/);
+});
+
 test("project list and detail compute progress from each project's live task rows", async () => {
   const project = { id: projectId, name: "Roadmap", brief: null, status: "ACTIVE", createdBy: userId, createdAt: now, updatedAt: now, version: 1, tasks: [{ storyPoints: 5, status: "DONE" }, { storyPoints: 3, status: "TODO" }, { storyPoints: null, status: "TODO" }] };
   const queries: any[] = [];

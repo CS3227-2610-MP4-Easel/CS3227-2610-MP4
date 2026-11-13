@@ -22,7 +22,7 @@ test('W7b E49 list query constraints', () => {
   assert.deepEqual(PlanListQuerySchema.parse({}), { page: 0, size: 20 });
 });
 test('W7b policy entries', () => {
-  const entries = getPolicyMap(); assert.equal(entries.length, 61);
-  for (const entry of entries.slice(57)) { assert.deepEqual(entry.roles, ['PM']); assert.equal(entry.predicate, 'MEMBER'); }
-  assert.equal(entries[58].successStatus, 201);
+  const entries = getPolicyMap(); assert.equal(entries.length, 59);
+  for (const entry of entries.filter((item) => Number(item.policyKey.slice(9)) >= 58)) { assert.deepEqual(entry.roles, ['PM']); assert.equal(entry.predicate, 'MEMBER'); }
+  assert.equal(entries.find((item) => item.policyKey === 'endpoint-59')?.successStatus, 201);
 });

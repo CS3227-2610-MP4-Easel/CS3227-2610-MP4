@@ -1,8 +1,9 @@
 'use client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { A, r } from '../../lib/nav';
+import { A, r, routeFor } from '../../lib/nav';
 import { currentProject } from '../../lib/screens';
+import Select from './select';
 import { advancePlanSelection } from '../../lib/plan-selection';
 import {
   ApiError, addEpic_59, approvePlan_40, createPlan_34, deleteEpic_60, editEpic_38, expandAll_61, expandEpic_37, getProposal_35,
@@ -67,10 +68,7 @@ function EpicEditor({ epic, checkpoints, busy, withTasks = true, onSave, onCance
       )}
       <div className="field">
         <label htmlFor={`c-${epic.index}`}>Checkpoint</label>
-        <select id={`c-${epic.index}`} className="in" value={checkpoint ?? ''} onChange={(e) => setCheckpoint(e.target.value || null)}>
-          <option value="">No checkpoint</option>
-          {checkpoints.map((c) => <option key={c} value={c}>{c}</option>)}
-        </select>
+        <Select id={`c-${epic.index}`} value={checkpoint ?? ''} onChange={(v) => setCheckpoint(v || null)} options={[{ value: '', label: 'No checkpoint' }, ...checkpoints.map((c) => ({ value: c, label: c }))]} />
       </div>
       {withTasks && <h4 style={{ margin: 0 }}>Tasks {epic.expansion.status !== 'DONE' && <span className="muted small">(write them here to skip the model; they mark this epic ready)</span>}</h4>}
       {withTasks && tasks.map((t, i) => (
@@ -131,10 +129,7 @@ function NewEpic({ checkpoints, busy, onSave, onCancel }: { checkpoints: string[
       <div className="field"><label htmlFor="ne-d">Description</label><textarea id="ne-d" className="in" rows={3} value={description} maxLength={4000} onChange={(e) => setDescription(e.target.value)} /></div>
       <div className="field">
         <label htmlFor="ne-c">Checkpoint</label>
-        <select id="ne-c" className="in" value={checkpoint ?? ''} onChange={(e) => setCheckpoint(e.target.value || null)}>
-          <option value="">No checkpoint</option>
-          {checkpoints.map((c) => <option key={c} value={c}>{c}</option>)}
-        </select>
+        <Select id="ne-c" value={checkpoint ?? ''} onChange={(v) => setCheckpoint(v || null)} options={[{ value: '', label: 'No checkpoint' }, ...checkpoints.map((c) => ({ value: c, label: c }))]} />
       </div>
       <div className="row">
         <button className="btn p" disabled={busy || !title.trim()} onClick={() => onSave({ title: title.trim(), description, checkpointName: checkpoint })}>{busy ? 'Adding…' : 'Add epic'}</button>
@@ -219,7 +214,7 @@ export default function LivePlan() {
     setProposalKey(selectionKey);
     setProposalEpoch(selectionEpoch);
     setProposal(p);
-    if (new URLSearchParams(search).has('new')) router.replace(`${r('PlanIdea.dc.html')}?proposal=${encodeURIComponent(p.id)}`);
+    if (new URLSearchParams(search).has('new')) router.replace(`${routeFor('PlanIdea.dc.html', projectId)}?proposal=${encodeURIComponent(p.id)}`);
   });
 
   const expand = (index: number) => run(`expand-${index}`, async () => {
@@ -248,7 +243,8 @@ export default function LivePlan() {
     remember(null);
     const { checkpoints, epics, tasks } = res.created;
     toast(`Plan approved: ${checkpoints} checkpoints, ${epics} epics and ${tasks} tasks created.`);
-    router.push(r('Backlog.dc.html'));
+    // `r` alone gives the prototype project (p1); a push must carry the open project's id.
+    router.push(routeFor('Backlog.dc.html', projectId));
   });
 
   const reject = () => run('reject', async () => {
@@ -278,13 +274,12 @@ export default function LivePlan() {
         <div className="field">
           <label htmlFor="idea">Describe the idea</label>
           <textarea id="idea" className="in" rows={7} value={idea} onChange={(e) => setIdea(e.target.value)} />
-          <div className="row between"><span className="hint">20 to 6000 characters.</span><span className="hint num">{len} / 6000</span></div>
+          <div className="row between"><span className="hint">20 to 2000 characters.</span><span className="hint num">{len} / 2000</span></div>
         </div>
         {banner}
         <div className="row wrap between">
           <A href={r('Backlog.dc.html')} className="b muted" style={{ textDecoration: 'underline' }}>Create manually</A>
-          <A href={r('PlanHistory.dc.html')} className="b muted" style={{ textDecoration: 'underline' }}>Plan history</A>
-          <button className="btn p" disabled={busy !== '' || len < 20 || len > 6000} onClick={generate}>{busy === 'generate' ? 'Generating…' : 'Generate plan'}</button>
+          <button className="btn p" disabled={busy !== '' || len < 20 || len > 2000} onClick={generate}><svg className="ic" aria-hidden="true"><use href="#i-spark" /></svg>{busy === 'generate' ? 'Generating…' : 'Generate plan'}</button>
         </div>
       </section>
     );
@@ -305,7 +300,6 @@ export default function LivePlan() {
     <fieldset className="stack" disabled={busy === 'expand-all'} style={{ gap: 16, border: 0, padding: 0, margin: 0, minWidth: 0 }}>
       <div className="row wrap">
         <h2>Plan draft</h2>
-        <A href={r('PlanHistory.dc.html')}>Plan history</A>
         <span className="chip c-warn">{pending ? 'Draft' : proposal.status}</span>
         <span className="b num">{ready} of {proposal.epics.length} epics ready</span>
         {proposal.flagged && <span className="flagm">Flagged for review</span>}

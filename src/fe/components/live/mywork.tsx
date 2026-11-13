@@ -4,6 +4,7 @@ import { A, r } from '../../lib/nav';
 import { ApiError, listProjectsLive_6, listTasksLive_20, setTaskStatusLive_24, setTaskStatus_24, useDb, type LiveProjectDetail, type LiveTask, type LiveTaskStatus, type TaskStatus } from '../../lib/api';
 import { useSession } from '../../lib/auth/session';
 import { toast } from './toast';
+import Select from './select';
 
 const LABEL: Record<TaskStatus, string> = { todo: 'To do', prog: 'In progress', rev: 'In review', done: 'Done' };
 const ME = 'pn';
@@ -54,7 +55,7 @@ export function LiveMyWork() {
       {tasks.map((task) => <div className="trow" key={task.id} style={task.blocked ? { background: 'var(--danger-s)' } : undefined}>
         <A href={`/projects/${project.id}/board?task=${task.id}`} className="t" style={{ color: 'var(--ink)' }}><div>{task.title}{task.blocked && <span className="chip c-bad" style={{ marginLeft: 6 }}><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg>Blocked</span>}</div><div className="small muted">{task.sprintId ? 'Sprint assigned' : 'Backlog'}</div></A>
         <span className={`pts${task.storyPoints ? '' : ' none'}`}>{task.storyPoints ?? 'Unestimated'}</span>
-        <select className="sel" aria-label={`Status for ${task.title}`} value={task.status} onChange={(event) => updateTask(task, event.target.value as LiveTaskStatus)}>{(Object.keys(LIVE_LABEL) as LiveTaskStatus[]).map((status) => <option key={status} value={status}>{LIVE_LABEL[status]}</option>)}</select>
+        <Select compact label={`Status for ${task.title}`} value={task.status} onChange={(v) => updateTask(task, v as LiveTaskStatus)} options={(Object.keys(LIVE_LABEL) as LiveTaskStatus[]).map((status) => ({ value: status, label: LIVE_LABEL[status] }))} />
         <button className="btn sm" type="button" onClick={() => updateTask(task, task.status, !task.blocked, task.blocked ? null : 'Blocked from My Work')}>{task.blocked ? 'Unblock' : 'Mark blocked'}</button>
       </div>)}
     </section>)}
@@ -86,9 +87,7 @@ export function MyWorkCampus() {
               <div className="small muted">{t.epic} · {sp ? sp.name : 'No sprint'}</div>
             </A>
             <span className={`pts${t.points ? '' : ' none'}`}>{t.points ?? 'Unestimated'}</span>
-            <select className="sel" aria-label="Status" value={t.status} onChange={async (e) => { await setTaskStatus_24(t.id, e.target.value as TaskStatus); toast(`Moved to ${LABEL[e.target.value as TaskStatus]}.`); }}>
-              {(Object.keys(LABEL) as TaskStatus[]).map((k) => <option key={k} value={k}>{LABEL[k]}</option>)}
-            </select>
+            <Select compact label="Status" value={t.status} onChange={async (v) => { await setTaskStatus_24(t.id, v as TaskStatus); toast(`Moved to ${LABEL[v as TaskStatus]}.`); }} options={(Object.keys(LABEL) as TaskStatus[]).map((k) => ({ value: k, label: LABEL[k] }))} />
             {t.blockedReason ? (
               <button className="btn sm" onClick={async () => { await setTaskStatus_24(t.id, t.status, ''); toast('Task unblocked.'); }}>Unblock</button>
             ) : (

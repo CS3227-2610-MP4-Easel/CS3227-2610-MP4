@@ -10,6 +10,7 @@ const MODAL_BASE: Record<string, string> = {
   BacklogAddEpic: 'Backlog',
   BacklogAddTask: 'Backlog',
   CheckpointAdd: 'Checkpoints',
+  NewProject: 'Projects',
   TaskDetail: 'Board',
 };
 

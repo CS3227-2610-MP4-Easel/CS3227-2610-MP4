@@ -61,11 +61,42 @@ export function createProjects(db: ProjectDb, access: ProjectAccess) {
       if (!row) throw new Error("NOT_FOUND");
       return detail(row);
     },
+    /** Endpoint 8: rename, edit the brief, or archive (one way) under an optimistic version guard. */
+    async update(actor: Actor, projectId: string, input: { name?: string; brief?: string | null; status?: "ARCHIVED"; version: number }) {
+      if (!actor.userId || actor.role !== "PM") forbidden();
+      if (input.name !== undefined && !input.name.trim()) invalid();
+      await requireProjectAccess(access, actor, projectId, true);
+      return inMutationTransaction(db, (tx) => lockProjectForMutation(tx as any, projectId), async (tx) => requireProjectAccess(access, actor, projectId, true, tx), async (tx: any) => {
+        const current = await tx.project.findFirst({ where: { id: projectId } });
+        if (!current) throw new Error("NOT_FOUND");
+        if (current.version !== input.version) throw new Error("CONFLICT_VERSION");
+        const data: Row = {};
+        if (input.name !== undefined && input.name !== current.name) data.name = input.name;
+        if (input.brief !== undefined && input.brief !== current.brief) data.brief = input.brief;
+        if (input.status === "ARCHIVED" && current.status !== "ARCHIVED") data.status = "ARCHIVED";
+        if (!Object.keys(data).length) return project(current);
+        data.version = { increment: 1 };
+        if (!(await tx.project.updateMany({ where: { id: projectId, version: input.version }, data })).count) throw new Error("CONFLICT_VERSION");
+        return project(await tx.project.findFirst({ where: { id: projectId } }));
+      });
+    },
     async members(actor: Actor, projectId: string) {
       if (!actor.userId) forbidden();
       await requireProjectAccess(access, actor, projectId);
       const rows = await db.projectMember!.findMany({ where: { projectId }, orderBy: [{ addedAt: "asc" }, { userId: "asc" }], include: { user: { select: { email: true, displayName: true, role: true } } } });
       return rows.map(member);
+    },
+    /** Endpoint 11: the same pairs that may add may remove (PM -> Dev Lead, Dev Lead -> Developer); refused while the member holds open tasks. */
+    async removeMember(actor: Actor, projectId: string, targetUserId: string) {
+      if (!actor.userId || (actor.role !== "PM" && actor.role !== "DEV_LEAD")) forbidden();
+      await requireProjectAccess(access, actor, projectId, true);
+      await inMutationTransaction(db, (tx) => lockProjectForMutation(tx as any, projectId), async (tx) => requireProjectAccess(access, actor, projectId, true, tx), async (tx: any) => {
+        const target = await tx.projectMember.findFirst({ where: { projectId, userId: targetUserId }, include: { user: { select: { role: true } } } });
+        if (!target) throw new Error("NOT_FOUND");
+        if (target.user?.role !== (actor.role === "PM" ? "DEV_LEAD" : "DEVELOPER")) forbidden();
+        if (await tx.task.count({ where: { projectId, assigneeId: targetUserId, deletedAt: null, status: { not: "DONE" } } })) throw new Error("CONFLICT_STATE");
+        await tx.projectMember.deleteMany({ where: { projectId, userId: targetUserId } });
+      });
     },
     async addMember(actor: Actor, projectId: string, input: { email: string }) {
       if (!actor.userId || (actor.role !== "PM" && actor.role !== "DEV_LEAD")) forbidden();

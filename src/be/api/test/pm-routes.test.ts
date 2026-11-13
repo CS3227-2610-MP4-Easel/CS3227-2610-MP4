@@ -98,18 +98,18 @@ test("routes return 201 for create and 200 for the others and pass the caller, i
   assert.deepEqual(calls[3]!.args, { caller: { userId: "u-pm", role: "PM" }, proposalId: OWN, version: 1 });
 });
 
-test("E3 idea length bounds: 19 -> 422, 20 and 6000 accepted, 6001 -> 422, 6000 four-byte characters accepted", async () => {
+test("E3 idea length bounds: 19 -> 422, 20 and 2000 accepted, 2001 -> 422, 2000 four-byte characters accepted", async () => {
   const { flow, calls } = fakeFlow();
   const app = appFor(flow);
   assert.equal((await create(app, json({ idea: idea(19) }))).status, 422);
   assert.equal(calls.length, 0);
   assert.equal((await create(app, json({ idea: idea(20) }))).status, 201);
-  assert.equal((await create(app, json({ idea: idea(6000) }))).status, 201);
-  const tooLong = await create(app, json({ idea: idea(6001) }));
+  assert.equal((await create(app, json({ idea: idea(2000) }))).status, 201);
+  const tooLong = await create(app, json({ idea: idea(2001) }));
   assert.equal(tooLong.status, 422);
   assert.equal(await code(tooLong), "VALIDATION_FAILED");
-  const emoji = json({ idea: idea(6000, "\u{1F600}") });
-  assert.ok(Buffer.byteLength(emoji) > 24000 && Buffer.byteLength(emoji) < 32768);
+  const emoji = json({ idea: idea(2000, "\u{1F600}") });
+  assert.ok(Buffer.byteLength(emoji) > 8000 && Buffer.byteLength(emoji) < 32768);
   assert.equal((await create(app, emoji)).status, 201);
   assert.equal(calls.length, 3);
   const unknown = await create(app, json({ idea: idea(30), extra: 1 }));
