@@ -213,6 +213,7 @@ export type LiveTaskUpdateInput = {
   acceptanceCriteria?: string[];
   storyPoints?: LiveStoryPoints | null;
   assigneeId?: string | null;
+  sprintId?: string | null;
   version: number;
 };
 export type LiveTaskStatusInput = { status: LiveTaskStatus; blocked?: boolean; blockedReason?: string | null; version: number };

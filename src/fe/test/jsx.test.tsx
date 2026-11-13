@@ -14,6 +14,7 @@ vi.mock('../lib/api', async () => {
 });
 
 import OverviewLead from '../components/canvas/OverviewLead';
+import LiveProjectOverview from '../components/canvas/LiveProjectOverview';
 import { ProgressCard } from '../components/live/overview';
 import { ApiError } from '../lib/api';
 
@@ -77,6 +78,16 @@ describe('jsx', () => {
     expect(screen.getByRole('link', { name: 'Checkpoints' }).getAttribute('href')).toBe(`/projects/${A}/checkpoints`);
     expect(screen.getByRole('link', { name: 'Check project health' }).getAttribute('href')).toBe(`/projects/${A}/health`);
     expect(screen.getByRole('link', { name: 'Manage' }).getAttribute('href')).toBe(`/projects/${A}/members`);
+  });
+
+  it('uses the standup action as the only developer overview CTA', async () => {
+    getProject.mockResolvedValue(liveProject());
+    getProgress.mockResolvedValue({ pointsTotal: 10, pointsDone: 4, percent: 40, unestimatedTasks: 0, velocity: [] });
+    render(<ProjectRouteContext.Provider value={projectRoute(`/projects/${A}`)}><LiveProjectOverview role="dev" /></ProjectRouteContext.Provider>);
+
+    expect((await screen.findByRole('link', { name: 'Upload activity and standup' })).getAttribute('href')).toBe(`/projects/${A}/standup`);
+    expect(screen.queryByRole('link', { name: 'Check project health' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Manage members' })).toBeNull();
   });
 
   it('E3 keeps live detail/progress 401s out of the local error state', async () => {

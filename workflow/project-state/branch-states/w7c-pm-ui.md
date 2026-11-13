@@ -5,7 +5,7 @@ describes `INT`; read it for context and write here instead of editing it.
 `sync-project-state` folds this file in after the branch merges.
 
 - **Branch:** w7c-pm-ui (continues the earlier `w7-link-ui` branch, whose record is merged into this file on 2026-11-13; `w7-link-ui` itself was stacked on `w7-implement-pm-plan-flow` at `1bc7384`)
-- **Base:** 57708a8 (`development` after PR #44 merged; PR #42 included)
+- **Base:** 498c73f (`development` after PR #50 merged)
 - **Owner:** Xiao-Congchen (PM)
 - **Status:** Draft
 - **Last updated:** 2026-11-13 by Claude — merged the `w7-link-ui` record and the local CI-investigation record into this file
@@ -79,6 +79,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-13 | Merged development through 498c73f; kept checkpoint editing and complete epic summaries, and omitted the incoming sprint assignment control under the Tier 2 removal decision. | — | merge |
 | 2026-11-13 | Removed unimplemented usage endpoints 56 and 57 from the policy map and OpenAPI; 37 focused contract and authorization tests pass. Remaining Tier 2 API routes are still present. | W~1 | working tree |
 | 2026-11-13 | Reduced settings page minimum height from 1000px to the viewport height to remove unnecessary bottom scroll. | — | working tree |
 | 2026-11-13 | Operator waived spec and plan and requested direct implementation; draft deleted. Removed usage screen, query functions and main navigation, plus sprint, lead overview and plan history screen routes. Remaining routes, contracts and connected controls still require removal. | W~1 | working tree |
