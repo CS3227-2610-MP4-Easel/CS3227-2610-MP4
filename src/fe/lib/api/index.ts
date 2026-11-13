@@ -353,6 +353,11 @@ export function getProjectLive_7(projectId: string): Promise<LiveProjectDetail> 
   });
 }
 
+// 8: rename, edit the brief or archive (one way). Archived projects drop out of reads, so callers leave the page afterwards.
+export function updateProjectLive_8(projectId: string, patch: { name?: string; brief?: string | null; status?: 'ARCHIVED'; version: number }): Promise<Omit<LiveProjectDetail, 'progress'>> {
+  return apiFetch<Omit<LiveProjectDetail, 'progress'>>(`/api/pm/projects/${encodeURIComponent(projectId)}`, { method: 'PATCH', body: patch });
+}
+
 export function readProgressLive_33(projectId: string): Promise<LiveProgress> {
   return apiFetch<LiveProgress>(`/api/projects/${encodeURIComponent(projectId)}/progress`);
 }
@@ -360,6 +365,11 @@ export function readProgressLive_33(projectId: string): Promise<LiveProgress> {
 export async function listMembersLive_9(projectId: string): Promise<LiveMember[]> {
   const members = await apiFetch<LiveMember[]>(`/api/projects/${encodeURIComponent(projectId)}/members`);
   return [...members.reduce((unique, member) => unique.has(member.userId) ? unique : unique.set(member.userId, member), new Map<string, LiveMember>()).values()];
+}
+
+// 11: the backend refuses (409) while the member holds open tasks
+export function removeMemberLive_11(projectId: string, userId: string): Promise<void> {
+  return apiFetch<void>(`/api/projects/${encodeURIComponent(projectId)}/members/${encodeURIComponent(userId)}`, { method: 'DELETE' });
 }
 
 export async function addMemberLive_10(projectId: string, email: string): Promise<LiveMember> {
