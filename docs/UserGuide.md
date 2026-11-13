@@ -4,8 +4,7 @@ Easel is a web app for running a small Scrum project. A **Project Manager** turn
 
 This guide describes the deployed app as it is now: what each role can do, how to reach it, and how to test it. Where a feature is not available yet, it says so under [Known limitations](#9-known-limitations).
 
-<!-- TEAM: fill in the two values marked [FILL IN] before submission.
-     Retake after development is released to production (they show the older main build):
+<!-- TEAM: retake after development is released to production (they show the older main build):
      screenshots/new-project.png, screenshots/plan-epics.png, screenshots/add-task.png -->
 
 
