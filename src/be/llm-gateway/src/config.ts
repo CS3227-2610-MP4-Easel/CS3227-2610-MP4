@@ -1,12 +1,13 @@
 import type { Feature, UserRole } from "@agile/contracts";
 
 /** Every gateway number lives here (spec SD4); changing one is a code change with a test. Values from spec conventions.md. */
-export type FeatureConfig = { role: UserRole; model: string; maxTokens: number; maxPromptTokens: number; temperature: number; reasoningEffort: string };
+export type FeatureConfig = { role: UserRole; model: string; maxTokens: number; maxPromptTokens: number; temperature: number; reasoningEffort: string; attemptTimeoutMs?: number; deadlineMs?: number; leaseMs?: number };
 export type ModelRecord = { contextTokens: number; reasoningEfforts: readonly string[]; tokenRatio: number; priceIn: number; priceOut: number };
 
 export const FEATURES: Record<Feature, FeatureConfig> = {
   PM_PLAN_OUTLINE: { role: "PM", model: "qwen3.5:9b", maxTokens: 2000, maxPromptTokens: 6000, temperature: 0.2, reasoningEffort: "none" },
-  PM_PLAN_EXPAND: { role: "PM", model: "llama3.1:8b", maxTokens: 1500, maxPromptTokens: 4000, temperature: 0.2, reasoningEffort: "none" },
+  // Worst measured bulk call: 26,850 ms and 2,086 output tokens; limits are 2x.
+  PM_PLAN_EXPAND: { role: "PM", model: "llama3.1:8b", maxTokens: 4_200, maxPromptTokens: 7_000, temperature: 0.2, reasoningEffort: "none", attemptTimeoutMs: 54_000, deadlineMs: 54_000, leaseMs: 75_000 },
   LEAD_DIGEST: { role: "DEV_LEAD", model: "llama3.1:8b", maxTokens: 1200, maxPromptTokens: 6000, temperature: 0.2, reasoningEffort: "none" },
   DEV_SUMMARY: { role: "DEVELOPER", model: "llama3.1:8b", maxTokens: 600, maxPromptTokens: 4000, temperature: 0.2, reasoningEffort: "none" },
   DEV_STANDUP: { role: "DEVELOPER", model: "llama3.1:8b", maxTokens: 800, maxPromptTokens: 4000, temperature: 0.2, reasoningEffort: "none" },

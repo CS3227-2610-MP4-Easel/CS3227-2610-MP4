@@ -147,7 +147,7 @@ erDiagram
 | `checkpoints` | id; project_id; name text(200); target_date date not null; created_at; updated_at; version; deleted_at null | PK id; **unique (project_id, id)**; index (project_id, target_date) where deleted_at is null | Soft delete (AD-36). |
 | `epics` | id; project_id; checkpoint_id null; title text(200); description text(4000) null; position int; created_at; updated_at; version; deleted_at null | PK id; **unique (project_id, id)**; **FK (project_id, checkpoint_id) → checkpoints (project_id, id)**; indexes (project_id), (checkpoint_id) | At most one checkpoint (AD-14). Deleting soft-deletes its tasks and clears checkpoint_id. |
 | `sprints` | id; project_id; name text(200); start_date date; end_date date; status enum `PLANNED`/`ACTIVE`/`CLOSED`; completed_points int null; created_at; updated_at; version; deleted_at null | PK id; **unique (project_id, id)**; index (project_id, start_date) | `completed_points` is stored when a sprint closes, from its DONE tasks (AD-12). Dates inclusive, no overlap, one ACTIVE sprint per project (AD-45). Only a PLANNED sprint may be deleted (AD-49). |
-| `tasks` | id; project_id not null; epic_id not null; sprint_id null; assignee_id null; title text(200); description text(4000) null; acceptance_criteria jsonb (list) default []; status enum `TODO`/`IN_PROGRESS`/`IN_REVIEW`/`DONE`; blocked boolean default false; blocked_reason text(500) null; story_points smallint null; done_at null; created_by; created_at; updated_at; version; deleted_at null | PK id; **FKs (project_id, epic_id) → epics; (project_id, sprint_id) → sprints; (project_id, assignee_id) → project_members**; indexes (project_id, status), (assignee_id), (epic_id), (sprint_id) | The composite keys make a cross-project reference impossible and an assignee a member (A-02). `story_points` ∈ {1,2,3,5,8,13}, required when sprint_id is set (AD-12). `blocked_reason` required when blocked (AD-13). `done_at` set on entering DONE, cleared on leaving it. A DONE task cannot be deleted (AD-36). A task in a CLOSED sprint cannot change points, sprint or status (A-14). |
+| `tasks` | id; project_id not null; epic_id not null; sprint_id null; assignee_id null; title text(200); description text(4000) null; acceptance_criteria jsonb (list) default []; status enum `TODO`/`IN_PROGRESS`/`IN_REVIEW`/`DONE`; blocked boolean default false; blocked_reason text(500) null; story_points smallint null; done_at null; created_by; created_at; updated_at; version; deleted_at null | PK id; **FKs (project_id, epic_id) → epics; (project_id, sprint_id) → sprints; (project_id, assignee_id) → project_members**; indexes (project_id, status), (assignee_id), (epic_id), (sprint_id) | The composite keys make a cross-project reference impossible and an assignee a member (A-02). `story_points` is a whole number from 1 to 20, required when sprint_id is set (AD-12, superseded by AD-73). `blocked_reason` required when blocked (AD-13). `done_at` set on entering DONE, cleared on leaving it. A DONE task cannot be deleted (AD-36). A task in a CLOSED sprint cannot change points, sprint or status (A-14). |
 | `task_events` | id bigserial; task_id; project_id; actor_id → users; type enum (see contracts.md); from_value null; to_value null; at | PK id; indexes (project_id, at), (task_id, at) | Append-only, written in the same transaction as the change. Feeds standups and velocity. |
 
 ### AI and platform tables
@@ -235,7 +235,7 @@ The field-level contracts are in [contracts.md](contracts.md): conventions, shar
   "error": {
     "code": "VALIDATION_FAILED",
     "message": "The request body is not valid.",
-    "details": [{ "field": "storyPoints", "message": "Must be one of 1, 2, 3, 5, 8, 13." }],
+    "details": [{ "field": "storyPoints", "message": "Must be a whole number from 1 to 20." }],
     "requestId": "7d1c2f0e-4b7a-4f6b-9d36-0f2f8a2d5c11"
   }
 }
@@ -246,7 +246,7 @@ The field-level contracts are in [contracts.md](contracts.md): conventions, shar
 | Condition | Operation(s) | Status and code | Basis |
 |---|---|---|---|
 | Malformed JSON or wrong content type | any with a body | 400 `BAD_REQUEST` | AD-33 |
-| Schema failure: unknown or server-managed field; points outside the set; `blocked` without a reason; sprint end before start or overlapping; `sprintId` set without points; assignee not a member; empty input after sanitising; more than 100 items in an upload; an item `url` that is not `https:` | any | 422 `VALIDATION_FAILED` with `details` | AD-33, AD-12, AD-13, AD-38, A-05 |
+| Schema failure: unknown or server-managed field; points outside 1 to 20; `blocked` without a reason; sprint end before start or overlapping; `sprintId` set without points; assignee not a member; empty input after sanitising; more than 100 items in an upload; an item `url` that is not `https:` | any | 422 `VALIDATION_FAILED` with `details` | AD-33, AD-12, AD-13, AD-38, A-05 |
 | The model declined the request as out of scope (`{"refusal":true}`) | PM endpoints | 422 `REQUEST_REFUSED` | A-12 |
 | No Authorization header, expired or invalid token | all except health and `check-code` | 401 `UNAUTHENTICATED` | AD-33 |
 | Valid token, no `users` row | all except `register` | 403 `USER_NOT_REGISTERED` | AD-50 |
@@ -470,7 +470,7 @@ Final decisions only. Options, recommendations and the reasoning are in [decisio
 | AD-09 | Entities: Project, Epic, Task, Sprint, Checkpoint, ProjectMember, TaskEvent | accepted AI recommendation |
 | AD-10 | One `ai_proposals` table (PLAN, REPLAN); approval applies the payload in one transaction | accepted AI recommendation |
 | AD-11 | Role-owner vertical slices, with contracts and the gateway interface frozen first | accepted AI recommendation |
-| AD-12 | Story points 1, 2, 3, 5, 8, 13; velocity, progress and forecast computed in code | accepted AI recommendation |
+| AD-12 | Story points whole numbers 1 to 20 (AD-12, superseded by AD-73); velocity, progress and forecast computed in code | accepted AI recommendation |
 | AD-13 | Statuses TODO, IN_PROGRESS, IN_REVIEW, DONE plus a `blocked` flag and reason | accepted AI recommendation |
 | AD-14 | A checkpoint has a target date; an epic belongs to at most one checkpoint; tasks inherit it | accepted AI recommendation |
 | AD-15 | One `llm_calls` row per gateway call, with a `session_id` for per-task spend | accepted AI recommendation, amended by the team |

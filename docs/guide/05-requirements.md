@@ -25,6 +25,8 @@ Rules the flows follow (W10). Screen-level detail is in the spec: `workflow/spec
 - A standup is one Developer, one project, one day. It covers the Developer's item summaries and task events in the window for that date (from 00:00 Singapore time of the working day before it) plus every task blocked now, whenever it was created (C74, C75).
 - Generating again with unchanged input returns the stored standup marked `cached`. When the model call fails, the standup is built from task activity only and marked `degraded`.
 - The Dev Lead reads every developer member's standups for a day (55); a Developer reads only their own (52).
+- S20 (My standup) checks a file in the browser before sending it (at most 1 MB, valid JSON, at most 100 items), summarises in batches of 10 with "Retry failed", and generates the standup for the next standup or for today.
+- S18 (Team standups) shows one card per developer member for today, the next standup or an earlier day; a developer without a standup reads "not generated".
 
 ## Flow rules
 

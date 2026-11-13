@@ -34,6 +34,11 @@ export default function SprintsPage({ readOnly = false }: { readOnly?: boolean }
   }, [route.mode, route.projectId]);
 
   useEffect(() => load(), [load]);
+  useEffect(() => {
+    const onTaskChange = () => { void load(); };
+    window.addEventListener('easel-board-refresh', onTaskChange);
+    return () => window.removeEventListener('easel-board-refresh', onTaskChange);
+  }, [load]);
 
   if (route.mode !== 'live' || !route.projectId) return <><VelocityCard /><SprintList readOnly={readOnly} /> </>;
   return <><VelocityCard live progress={progress} loading={loading} error={error} onRetry={load} /><SprintList live projectId={route.projectId} sprints={sprints ?? []} members={members} readOnly={readOnly} loading={loading} error={error} onRetry={load} onChanged={() => { void load(); }} /></>;

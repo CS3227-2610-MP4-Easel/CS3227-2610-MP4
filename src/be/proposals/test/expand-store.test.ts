@@ -26,6 +26,20 @@ const epicRow = (base: PrismaClient, proposalId: string, index = 0) => base.prop
 const proposalRow = (base: PrismaClient, id: string) => base.aiProposal.findUniqueOrThrow({ where: { id } });
 const code = (promise: Promise<unknown>) => promise.then(() => "OK", (e: unknown) => (e instanceof ProposalError ? e.code : `OTHER:${String(e)}`));
 
+test("W7c E23 single claim includes every other epic by index, including duplicate titles", opts, async () => {
+  await withIntegrationDb(async (base, f) => {
+    const { db, proposalId, pm } = await seed(base, f, 4);
+    await base.proposalEpic.update({ where: { proposalId_index: { proposalId, index: 0 } }, data: { title: "Epic 2", tasks } });
+    const claim = await claimEpic(db, { proposalId, actorId: pm, index: 2 });
+    assert.equal(claim.kind, "CLAIMED");
+    if (claim.kind === "CLAIMED") {
+      assert.deepEqual(claim.others.map(e => e.index), [0, 1, 3]);
+      assert.deepEqual(claim.others[0].tasks, tasks);
+      assert.equal(claim.others[1].tasks, null);
+    }
+  });
+});
+
 /** Holds a row lock on the proposal until `release` is called; resolves `locked` once the lock is taken. */
 function holdProposalLock(base: PrismaClient, proposalId: string, inside?: (tx: Parameters<Parameters<PrismaClient["$transaction"]>[0]>[0]) => Promise<void>) {
   let release!: () => void;
@@ -159,7 +173,7 @@ test("E24b the second expand arrives after the first stored its result: DONE wit
   });
 });
 
-test("E25 the first function died: after the lease passes the epic is claimed again, stored, and version rises by 2 per claim-and-store", opts, async () => {
+test("E25 the first function died: after the lease passes the epic is claimed again, stored, and versions increase across claims and stores", opts, async () => {
   await withIntegrationDb(async (base, f) => {
     const { db, proposalId, pm } = await seed(base, f);
     const t0 = new Date("2026-11-07T10:00:00.000Z");
@@ -192,12 +206,12 @@ test("E25 the first function died: after the lease passes the epic is claimed ag
     if (second.kind !== "CLAIMED") return;
     await failEpic(db, { proposalId, index: 1, claimedVersion: second.claimedVersion, error: "GATEWAY_TIMEOUT" });
     const failed = await epicRow(base, proposalId, 1);
-    assert.deepEqual([failed.expansionStatus, failed.error, failed.leaseExpiresAt, failed.version], ["FAILED", "GATEWAY_TIMEOUT", null, 3]);
+    assert.deepEqual([failed.expansionStatus, failed.error, failed.leaseExpiresAt, failed.version], ["FAILED", "GATEWAY_TIMEOUT", null, second.claimedVersion + 1]);
     const retry = await claimEpic(db, { proposalId, index: 1, actorId: pm });
     assert.equal(retry.kind, "CLAIMED");
     const retried = await epicRow(base, proposalId, 1);
     assert.equal(retried.error, null);
-    assert.equal(retried.version, 4);
+    assert.equal(retried.version, failed.version + 1);
   });
 });
 

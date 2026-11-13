@@ -39,7 +39,7 @@ export function createCoreResourceResolvers(db: ResolverDb): CoreResourceResolve
   const child = (operation: string, kind: "PROJECT" | "TASK", delegate: { findFirst: FindFirst } | undefined, extra?: (row: Row) => Partial<ResolvedResource>) => async (request: Request): Promise<ResolvedResource | null> => {
     const childId = id(request, "id");
     if (!childId) return null;
-    const row = await delegate?.findFirst({ where: { id: childId }, select: { projectId: true, assigneeId: true, project: { select: { status: true } } } });
+    const row = await delegate?.findFirst({ where: { id: childId }, select: { projectId: true, ...(kind === "TASK" ? { assigneeId: true } : {}), project: { select: { status: true } } } });
     const projectId = row?.projectId;
     if (!row || typeof projectId !== "string" || (id(request, "projectId") && id(request, "projectId") !== projectId)) return null;
     return resolve(operation, resource(kind, row, projectId, extra?.(row)));

@@ -1,0 +1,12 @@
+{
+  "task": "T6",
+  "status": "done",
+  "summary": "Added paginated proposal listing with viewer-filtered retrieved titles; a full page takes 8 queries.",
+  "commit": "pending",
+  "produces": [{ "kind": "symbol", "name": "listProposals", "where": "src/be/proposals/src/view.ts", "note": "Returns a page or null for a non-member." }],
+  "next": "T7 maps null to NOT_FOUND and returns the page unchanged.",
+  "deviations": [],
+  "edge_cases": ["E48", "E50", "E51", "E52"],
+  "checks": { "build": "pass", "tests": "list and view tests: 7 passed, 0 failed, 0 skipped; full page: 8 queries", "lint": "not run" }
+}
+

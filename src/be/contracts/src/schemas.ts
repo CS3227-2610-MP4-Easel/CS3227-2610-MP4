@@ -1,6 +1,6 @@
 import { z } from "zod/v3";
+import { PageQuerySchema, pageSchema } from "./pagination.js";
 import { ExpansionStatusSchema, FeatureSchema, ProjectStatusSchema, ProposalStatusSchema, SprintStatusSchema, TaskEventTypeSchema, TaskStatusSchema, UsageOutcomeSchema, UserRoleSchema } from "./enums.js";
-import { pageSchema } from "./pagination.js";
 
 const uuid = z.string().uuid();
 const instant = z.string().datetime({ offset: true });
@@ -16,9 +16,11 @@ export const PageProjectDetailSchema = pageSchema(ProjectDetailSchema);
 export const MemberSchema = z.object({ userId: uuid, email: z.string().email(), displayName: z.string().min(1).max(100), role: UserRoleSchema, addedAt: instant }).strict();
 export const CheckpointSchema = z.object({ id: uuid, projectId: uuid, name: z.string().min(1).max(200), targetDate: date, createdAt: instant, updatedAt: instant, version: z.number().int().positive() }).strict();
 export const EpicSchema = z.object({ id: uuid, projectId: uuid, checkpointId: uuid.nullable(), title: z.string().min(1).max(200), description: optionalText(4000), position: z.number().int().nonnegative(), taskCount: z.number().int().nonnegative(), pointsTotal: z.number().nonnegative(), createdAt: instant, updatedAt: instant, version: z.number().int().positive() }).strict();
+const M = "Must be a whole number from 1 to 20.";
+export const StoryPointsSchema = z.number({ invalid_type_error: M, required_error: M }).int(M).min(1, M).max(20, M);
 export const TaskSchema = z.object({
   id: uuid, projectId: uuid, epicId: uuid, sprintId: uuid.nullable(), assigneeId: uuid.nullable(), title: z.string().min(1).max(200), description: optionalText(4000),
-  acceptanceCriteria: z.array(z.string().max(300)).max(12), status: TaskStatusSchema, blocked: z.boolean(), blockedReason: optionalText(500), storyPoints: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(5), z.literal(8), z.literal(13)]).nullable(), doneAt: instant.nullable(), createdAt: instant, updatedAt: instant, version: z.number().int().positive(),
+  acceptanceCriteria: z.array(z.string().max(300)).max(12), status: TaskStatusSchema, blocked: z.boolean(), blockedReason: optionalText(500), storyPoints: StoryPointsSchema.nullable(), doneAt: instant.nullable(), createdAt: instant, updatedAt: instant, version: z.number().int().positive(),
 }).strict();
 export const SprintSchema = z.object({ id: uuid, projectId: uuid, name: z.string().min(1).max(200), startDate: date, endDate: date, status: SprintStatusSchema, completedPoints: z.number().nonnegative().nullable(), version: z.number().int().positive() }).strict();
 export const TaskEventSchema = z.object({ id: uuid, taskId: uuid, actorId: uuid, type: TaskEventTypeSchema, from: z.string().nullable(), to: z.string().nullable(), at: instant }).strict();
@@ -27,7 +29,7 @@ export const ActivityItemInputSchema = z.object({ type: z.enum(["COMMIT", "PR"])
 export const StandupContentSchema = z.object({ yesterday: z.array(z.string().max(300)).max(12), today: z.array(z.string().max(300)).max(12), blockers: z.array(z.string().max(300)).max(12) }).strict();
 export const FeatureSchemaRef = FeatureSchema;
 
-const storyPoints = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(5), z.literal(8), z.literal(13)]).nullable();
+const storyPoints = StoryPointsSchema.nullable();
 const planTask = z.object({ title: z.string().min(1).max(200), description: z.string().max(4000), acceptanceCriteria: z.array(z.string().max(300)).max(12), storyPoints }).strict();
 export const PlanEpicSchema = z.object({
   index: z.number().int().nonnegative(), title: z.string().min(1).max(200), description: z.string().max(4000), checkpointName: z.string().max(200).nullable(),
@@ -66,6 +68,13 @@ export const UploadResponseSchema = z.object({ received: z.number().int().nonneg
 export const SummaryResponseSchema = z.object({ summaries: z.array(z.object({ itemId: uuid, oneLiner: z.string().min(1), cached: z.boolean() }).strict()), failed: z.array(uuid) }).strict();
 export const PlanCreateBodySchema = z.object({ idea: z.string().max(24000, "Must be 20 to 6000 characters.").refine((s) => [...s].length >= 20 && [...s].length <= 6000, "Must be 20 to 6000 characters.") }).strict();
 export const ProposalVersionBodySchema = z.object({ version: z.number().int().min(1).max(2147483647) }).strict();
+export const PlanTaskInputSchema = z.object({ title: z.string().min(1).max(200), description: z.string().max(4000), acceptanceCriteria: z.array(z.string().min(1).max(300)).max(12), storyPoints: StoryPointsSchema }).strict();
+export const PlanEpicEditBodySchema = z.object({ title: z.string().min(1).max(200).optional(), description: z.string().max(4000).optional(), checkpointName: z.string().max(200).nullable().optional(), tasks: z.array(PlanTaskInputSchema).min(1).max(8).optional(), version: ProposalVersionBodySchema.shape.version }).strict().refine((b) => b.title !== undefined || b.description !== undefined || b.checkpointName !== undefined || b.tasks !== undefined, { message: "Send at least one field." });
+export const PlanCheckpointsBodySchema = z.object({ checkpoints: z.array(z.object({ name: z.string().min(1).max(200), targetDate: date, previousName: z.string().min(1).max(200).optional() }).strict()).max(8), version: ProposalVersionBodySchema.shape.version }).strict();
+export const PlanEpicAddBodySchema = z.object({ title: z.string().min(1).max(200), description: z.string().max(4000), checkpointName: z.string().max(200).nullable(), version: ProposalVersionBodySchema.shape.version }).strict();
+export const ProposalVersionQuerySchema = z.object({ version: z.coerce.number().int().min(1).max(2147483647) }).strict();
+export const PlanListQuerySchema = PageQuerySchema.extend({ status: ProposalStatusSchema.optional(), size: z.coerce.number().int().min(1).max(20).default(20) });
+export const PlanProposalPageSchema = pageSchema(PlanProposalSchema);
 export const EmptyBodySchema = z.object({}).strict();
 const sprintCarryOverTarget = z.union([z.literal("BACKLOG"), uuid]);
 export const SprintCarryOverSchema = z.object({ taskId: uuid, to: sprintCarryOverTarget }).strict();

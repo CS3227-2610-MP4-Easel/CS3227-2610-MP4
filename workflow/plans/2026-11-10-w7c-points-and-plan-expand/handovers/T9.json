@@ -1,0 +1,15 @@
+{
+  "task": "T9",
+  "status": "done",
+  "summary": "Recorded AD-73 and endpoint 61, updated points documentation and added the old-scale scan.",
+  "commit": "pending",
+  "produces": [
+    { "kind": "other", "name": "AD-73", "where": "docs/architecture/decision-log.md", "note": "Whole-number story points 1 to 20 supersede AD-12." },
+    { "kind": "file", "name": "points-docs-scan.test.ts", "where": "src/be/contracts/test/points-docs-scan.test.ts", "note": "Scans src and docs for old scale outside the AD-12 section." }
+  ],
+  "next": "Close-out: run the manual E36 checklist and complete the documented branch review and handover items.",
+  "deviations": [],
+  "edge_cases": ["E7"],
+  "checks": { "build": "pass", "tests": "E7: 1 passed, 0 failed, 0 skipped; contract: 7 passed, 0 failed, 0 skipped", "lint": "handover lint passed" },
+  "note": "No files beyond the three specified docs and scan test required changes. The scan red run reported only contracts.md and agile-platform-architecture.md."
+}

@@ -7,6 +7,7 @@ export const integrationUrl = process.env.W1_INTEGRATION_DATABASE_URL;
 type Role = "PM" | "DEV_LEAD" | "DEVELOPER";
 
 export type Fixtures = {
+  applicationName: string;
   user: (role?: Role) => Promise<string>;
   project: (createdBy: string) => Promise<string>;
   member: (projectId: string, userId: string) => Promise<void>;
@@ -15,12 +16,16 @@ export type Fixtures = {
 };
 
 /** Runs `run` against the real database with fixtures that are deleted afterwards (proposals first). */
-export async function withIntegrationDb(run: (base: PrismaClient, fixtures: Fixtures) => Promise<void>): Promise<void> {
-  const base = new PrismaClient({ adapter: new PrismaPg({ connectionString: integrationUrl }) });
+export async function withIntegrationDb(run: (base: PrismaClient, fixtures: Fixtures) => Promise<void>, transactionTimeout?: number): Promise<void> {
   const tag = randomUUID();
+  const applicationName = `proposals-test-${tag}`;
+  const url = new URL(integrationUrl!);
+  url.searchParams.set("application_name", applicationName);
+  const base = new PrismaClient({ adapter: new PrismaPg({ connectionString: url.toString() }), ...(transactionTimeout ? { transactionOptions: { timeout: transactionTimeout } } : {}) });
   const userIds: string[] = [];
   const projectIds: string[] = [];
   const fixtures: Fixtures = {
+    applicationName,
     user: async (role = "PM") => {
       const created = await base.user.create({ data: { firebaseUid: `${tag}-${randomUUID()}`, email: `${randomUUID()}@${tag}.test`, displayName: "Proposals test", role } });
       userIds.push(created.id);

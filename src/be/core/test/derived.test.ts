@@ -32,6 +32,16 @@ test("velocity uses ascending sprint ids to break equal end-date ties", async ()
   assert.deepEqual(query.orderBy, [{ endDate: "desc" }, { id: "asc" }]);
 });
 
+
+test("W7c E5 progress sums the old and new points", async () => {
+  const points = [1, 2, 3, 5, 8, 13, 4, 6, 7, 9, 10, 15, 20];
+  const rows = points.map((storyPoints, i) => ({ storyPoints, status: i % 2 ? "DONE" : "TODO" })).concat([{ storyPoints: null as any, status: "TODO" }]);
+  const progress = await createDerived({ task: { findMany: async () => rows } }).progress("p");
+  assert.equal(progress.pointsTotal, points.reduce((a, b) => a + b, 0));
+  assert.equal(progress.pointsDone, points.filter((_, i) => i % 2).reduce((a, b) => a + b, 0));
+  assert.equal(progress.unestimatedTasks, 1);
+});
+
 test("E11 velocity returns the real newest three and excludes deleted sprints", async () => {
   const rows = [
     { id: "newest", name: "Newest", endDate: new Date("2026-04-14"), status: "CLOSED", deletedAt: null, completedPoints: 8 },

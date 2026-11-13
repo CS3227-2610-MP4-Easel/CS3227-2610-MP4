@@ -1,16 +1,18 @@
 import { NotMember, type LlmGateway, type LlmResult, type PlanApproval, type PlanProposal } from "@agile/contracts";
 import { sanitiseInput, SessionCapReached, type GatewaySessions } from "@agile/llm-gateway";
 import type { AiContextWith } from "@agile/ai-context";
-import { expandOutputSchema, outlineOutputSchema } from "./schemas.js";
-import { buildExpandSections, buildOutlineSections, inputHash } from "./sections.js";
+import { bulkOutputSchema, expandOutputSchema, outlineOutputSchema } from "./schemas.js";
+import { buildBulkSections, buildExpandSections, buildOutlineSections, bulkQuery, inputHash, type PlanContextEpic } from "./sections.js";
 
 type PlanEpic = PlanProposal["epics"][number];
 
 // Mirrors of the `@agile/proposals` types: the W6 source scan forbids any workspace import except contracts, ai-context and the gateway in a file that calls `gateway.run`.
-export type EpicTask = { title: string; description: string; acceptanceCriteria: string[]; storyPoints: 1 | 2 | 3 | 5 | 8 | 13 };
+export type EpicTask = { title: string; description: string; acceptanceCriteria: string[]; storyPoints: number };
 export type ClaimResult =
   | { kind: "DONE"; epic: PlanEpic }
-  | { kind: "CLAIMED"; projectId: string; sessionId: string; approach: string; epic: { title: string; description: string; checkpointName: string | null }; claimedVersion: number };
+  | { kind: "CLAIMED"; projectId: string; sessionId: string; approach: string; epic: { title: string; description: string; checkpointName: string | null }; claimedVersion: number; others: PlanContextEpic[] };
+export type PlanClaim = { index: number; title: string; description: string; checkpointName: string | null; checkpointTargetDate: string | null; claimedVersion: number };
+export type PlanClaimResult = { kind: "NONE"; proposal: PlanProposal } | { kind: "CLAIMED"; projectId: string; sessionId: string; approach: string; checkpoints: { name: string; targetDate: string }[]; targets: PlanClaim[]; done: PlanContextEpic[] };
 export type CreateProposalInput = {
   projectId: string; creatorId: string; sessionId: string; flagged: boolean; approach: string;
   checkpoints: { name: string; targetDate: string }[];
@@ -18,7 +20,7 @@ export type CreateProposalInput = {
   epics: { title: string; description: string; checkpointName: string | null }[];
 };
 /** `ProposalError` from `@agile/proposals`, recognised by name so this file imports nothing from it. */
-type ProposalErrorLike = Error & { code: "NOT_FOUND" | "CONFLICT_STATE" | "CONFLICT_VERSION" | "FORBIDDEN_ROLE" | "INVALID_PLAN" };
+type ProposalErrorLike = Error & { code: "NOT_FOUND" | "CONFLICT_STATE" | "CONFLICT_VERSION" | "FORBIDDEN_ROLE" | "INVALID_PLAN" | "VALIDATION_FAILED"; field?: string };
 const isProposalError = (e: unknown): e is ProposalErrorLike => e instanceof Error && e.name === "ProposalError" && typeof (e as { code?: unknown }).code === "string";
 
 export class PlanFlowError extends Error {
@@ -30,15 +32,24 @@ export class PlanFlowError extends Error {
 
 /** The proposals functions already bound to a database client, core and sessions, so this file never sees a database client. */
 export type ProposalsApi = {
+  claimPlanEpics(i: { proposalId: string; actorId: string; version: number; now?: Date }): Promise<PlanClaimResult>;
+  storePlanEpics(i: { proposalId: string; results: { index: number; claimedVersion: number; tasks: EpicTask[] }[]; flagged: boolean }): Promise<{ stored: number; skipped: number }>;
+  failPlanEpics(i: { proposalId: string; claims: { index: number; claimedVersion: number }[]; error: string }): Promise<number>;
   createProposal(i: CreateProposalInput): Promise<string>;
   getProposalView(proposalId: string, viewerId: string): Promise<PlanProposal | null>;
-  claimEpic(i: { proposalId: string; index: number; actorId: string; now?: Date }): Promise<ClaimResult>;
-  storeEpic(i: { proposalId: string; index: number; claimedVersion: number; tasks: EpicTask[]; flagged: boolean }): Promise<PlanEpic>;
-  failEpic(i: { proposalId: string; index: number; claimedVersion: number; error: string }): Promise<void>;
+  claimEpic(i: { proposalId: string; index: number; actorId: string; now?: Date; mode?: "EXPAND" | "REGENERATE"; expectedProposalVersion?: number }): Promise<ClaimResult>;
+  storeEpic(i: { proposalId: string; index: number; claimedVersion: number; tasks: EpicTask[]; flagged: boolean; bumpProposalVersion?: boolean }): Promise<PlanEpic>;
+  failEpic(i: { proposalId: string; index: number; claimedVersion: number; error: string }): Promise<boolean>;
+  editEpic(i: { proposalId: string; index: number; actorId: string; version: number; now?: Date; title?: string; description?: string; checkpointName?: string | null; tasks?: EpicTask[] }): Promise<PlanProposal>;
+  replaceCheckpoints(i: { proposalId: string; actorId: string; version: number; checkpoints: { name: string; targetDate: string; previousName?: string }[] }): Promise<PlanProposal>;
+  addEpic(i: { proposalId: string; actorId: string; version: number; title: string; description: string; checkpointName: string | null }): Promise<PlanProposal>;
+  deleteEpic(i: { proposalId: string; actorId: string; version: number; index: number; now?: Date }): Promise<PlanProposal>;
+  precheckRegenerate(i: { proposalId: string; index: number; actorId: string; version: number; now?: Date }): Promise<{ sessionId: string; status: "PENDING" | "DONE" | "FAILED" }>;
+  listProposals(i: { projectId: string; viewerId: string; status?: "PENDING" | "APPROVED" | "REJECTED" | "SUPERSEDED"; page: number; size: number }): Promise<{ items: PlanProposal[]; page: number; size: number; total: number } | null>;
   approveProposal(i: { proposalId: string; version: number; actorId: string }): Promise<PlanApproval>;
   rejectProposal(i: { proposalId: string; version: number; actorId: string }): Promise<PlanProposal>;
 };
-export type PlanFlowDeps = { proposals: ProposalsApi; gateway: LlmGateway; sessions: GatewaySessions; aiContext: AiContextWith; clock?: { now(): Date } };
+export type PlanFlowDeps = { proposals: ProposalsApi; gateway: LlmGateway; sessions: GatewaySessions; aiContext: AiContextWith; clock?: { now(): Date }; onExpandAll?: (e: { targets: number; written: number; skipped: number }) => void };
 export type PlanFlow = ReturnType<typeof createPlanFlow>;
 export type Caller = { userId: string; role: "PM" };
 
@@ -78,6 +89,7 @@ function mapProposalError(e: unknown): never {
       case "NOT_FOUND": throw notFound();
       case "FORBIDDEN_ROLE": throw new PlanFlowError("FORBIDDEN_ROLE", 403, "Not allowed.");
       case "CONFLICT_VERSION": throw new PlanFlowError("CONFLICT_VERSION", 409, "The proposal changed; reload it.");
+      case "VALIDATION_FAILED": throw new PlanFlowError("VALIDATION_FAILED", 422, "The request could not be used.", undefined, { reason: e.field ?? "invalid" });
       default: throw new PlanFlowError("CONFLICT_STATE", 409, "The proposal or project is no longer in a state that allows this.");
     }
   }
@@ -158,6 +170,41 @@ export function createPlanFlow(deps: PlanFlowDeps) {
     }
   }
 
+  async function expandAll({ caller, proposalId, version }: { caller: Caller; proposalId: string; version: number }): Promise<PlanProposal> {
+    let claim: PlanClaimResult;
+    try { claim = await proposals.claimPlanEpics({ proposalId, actorId: caller.userId, version, now: clock.now() }); } catch (e) { return mapProposalError(e); }
+    if (claim.kind === "NONE") return claim.proposal;
+    const claims = claim.targets.map(({ index, claimedVersion }) => ({ index, claimedVersion }));
+    let result: Extract<LlmResult, { ok: true }>;
+    try {
+      const assembled = await aiContext.assembleWith(caller, "PM_PLAN_EXPAND", claim.projectId, { query: bulkQuery(claim.targets) });
+      const sections = buildBulkSections({ approach: claim.approach, checkpoints: claim.checkpoints, targets: claim.targets, done: claim.done, assembled: assembled.sections });
+      result = await runModel(gateway, {
+        feature: "PM_PLAN_EXPAND", caller, sessionId: claim.sessionId, projectId: claim.projectId, sections,
+        output: { kind: "json", schema: bulkOutputSchema(claim.targets.map((t) => t.index)) }, inputHash: inputHash("PM_PLAN_EXPAND", sections),
+      });
+    } catch (e) {
+      const { error, code } = classify(e);
+      let marked = 1;
+      try { marked = await proposals.failPlanEpics({ proposalId, claims, error: code }); } catch { /* the mapped error matters more */ }
+      if (!marked) throw new PlanFlowError("CONFLICT_STATE", 409, "The proposal or project is no longer in a state that allows this.");
+      throw error;
+    }
+    let stored: { stored: number; skipped: number };
+    try {
+      const epics = (result.value as { epics: { index: number; tasks: EpicTask[] }[] }).epics;
+      const results = epics.map((epic) => ({ ...epic, claimedVersion: claim.targets.find((target) => target.index === epic.index)!.claimedVersion }));
+      stored = await proposals.storePlanEpics({ proposalId, results, flagged: result.flagged });
+    } catch (e) {
+      if (!(isProposalError(e) && e.code === "CONFLICT_STATE")) {
+        try { await proposals.failPlanEpics({ proposalId, claims, error: "INTERNAL" }); } catch { /* best effort */ }
+      }
+      return mapProposalError(e);
+    }
+    deps.onExpandAll?.({ targets: claim.targets.length, written: stored.stored, skipped: stored.skipped });
+    return getProposal({ caller, proposalId });
+  }
+
   async function expandEpic(i: { caller: Caller; proposalId: string; index: number }): Promise<PlanEpic> {
     const { caller, proposalId, index } = i;
     let claim: ClaimResult;
@@ -167,22 +214,29 @@ export function createPlanFlow(deps: PlanFlowDeps) {
       return mapProposalError(e);
     }
     if (claim.kind === "DONE") return claim.epic;
+    return expandClaim(i, claim, false);
+  }
+
+  async function expandClaim(i: { caller: Caller; proposalId: string; index: number }, claim: Extract<ClaimResult, { kind: "CLAIMED" }>, bumpProposalVersion: boolean): Promise<PlanEpic> {
+    const { caller, proposalId, index } = i;
     let result: Extract<LlmResult, { ok: true }>;
     try {
       const assembled = await aiContext.assembleWith(caller, "PM_PLAN_EXPAND", claim.projectId, { query: `${claim.epic.title} ${claim.epic.description}` });
-      const sections = buildExpandSections({ approach: claim.approach, epic: claim.epic, assembled: assembled.sections });
+      const sections = buildExpandSections({ approach: claim.approach, epic: claim.epic, others: claim.others, assembled: assembled.sections });
       result = await runModel(gateway, {
         feature: "PM_PLAN_EXPAND", caller, sessionId: claim.sessionId, projectId: claim.projectId, sections,
         output: { kind: "json", schema: expandOutputSchema }, inputHash: inputHash("PM_PLAN_EXPAND", sections),
       });
     } catch (e) {
       const { error, code } = classify(e);
-      try { await proposals.failEpic({ proposalId, index, claimedVersion: claim.claimedVersion, error: code }); } catch { /* the mapped error matters more */ }
+      let failed = true;
+      try { failed = await proposals.failEpic({ proposalId, index, claimedVersion: claim.claimedVersion, error: code }); } catch { /* the mapped error matters more */ }
+      if (!failed) throw new PlanFlowError("CONFLICT_STATE", 409, "The proposal or project is no longer in a state that allows this.");
       throw error;
     }
     try {
       const tasks = (result.value as { tasks: EpicTask[] }).tasks;
-      return await proposals.storeEpic({ proposalId, index, claimedVersion: claim.claimedVersion, tasks, flagged: result.flagged });
+      return await proposals.storeEpic({ proposalId, index, claimedVersion: claim.claimedVersion, tasks, flagged: result.flagged, bumpProposalVersion });
     } catch (e) {
       // CONFLICT_STATE: the result was discarded because the proposal is no longer PENDING; leave the row as it is.
       if (!(isProposalError(e) && e.code === "CONFLICT_STATE")) {
@@ -190,6 +244,42 @@ export function createPlanFlow(deps: PlanFlowDeps) {
       }
       return mapProposalError(e);
     }
+  }
+
+  async function editEpic({ caller, ...i }: { caller: Caller; proposalId: string; index: number; version: number; title?: string; description?: string; checkpointName?: string | null; tasks?: EpicTask[] }): Promise<PlanProposal> {
+    try { return await proposals.editEpic({ ...i, actorId: caller.userId, now: clock.now() }); } catch (e) { return mapProposalError(e); }
+  }
+  async function replaceCheckpoints({ caller, ...i }: { caller: Caller; proposalId: string; version: number; checkpoints: { name: string; targetDate: string; previousName?: string }[] }): Promise<PlanProposal> {
+    try { return await proposals.replaceCheckpoints({ ...i, actorId: caller.userId }); } catch (e) { return mapProposalError(e); }
+  }
+  async function addEpic({ caller, ...i }: { caller: Caller; proposalId: string; version: number; title: string; description: string; checkpointName: string | null }): Promise<PlanProposal> {
+    try { return await proposals.addEpic({ ...i, actorId: caller.userId }); } catch (e) { return mapProposalError(e); }
+  }
+  async function deleteEpic({ caller, ...i }: { caller: Caller; proposalId: string; index: number; version: number }): Promise<PlanProposal> {
+    try { return await proposals.deleteEpic({ ...i, actorId: caller.userId, now: clock.now() }); } catch (e) { return mapProposalError(e); }
+  }
+  async function listProposals({ caller, ...i }: { caller: Caller; projectId: string; status?: "PENDING" | "APPROVED" | "REJECTED" | "SUPERSEDED"; page: number; size: number }) {
+    try {
+      const page = await proposals.listProposals({ ...i, viewerId: caller.userId });
+      if (!page) throw notFound();
+      return page;
+    } catch (e) { return mapProposalError(e); }
+  }
+  async function regenerateEpic(i: { caller: Caller; proposalId: string; index: number; version: number }): Promise<PlanProposal> {
+    const { caller, proposalId, index, version } = i;
+    let precheck: Awaited<ReturnType<ProposalsApi["precheckRegenerate"]>>;
+    try { precheck = await proposals.precheckRegenerate({ proposalId, index, actorId: caller.userId, version, now: clock.now() }); } catch (e) { return mapProposalError(e); }
+    if (precheck.status === "DONE") {
+      try { await sessions.assertUsable(precheck.sessionId, caller.userId, "PM_PLAN_EXPAND"); } catch (e) { throw mapThrown(e).error; }
+      try { await sessions.regenerate(precheck.sessionId, caller.userId); } catch (e) {
+        if (e instanceof SessionCapReached) throw new PlanFlowError("RATE_LIMITED", 429, "Regeneration limit reached.", e.retryAfterSeconds);
+        throw mapThrown(e).error;
+      }
+    }
+    let claim: ClaimResult;
+    try { claim = await proposals.claimEpic({ proposalId, index, actorId: caller.userId, now: clock.now(), mode: precheck.status === "DONE" ? "REGENERATE" : "EXPAND", expectedProposalVersion: version }); } catch (e) { return mapProposalError(e); }
+    if (claim.kind === "CLAIMED") await expandClaim(i, claim, precheck.status === "DONE");
+    return getProposal({ caller, proposalId });
   }
 
   async function approve(i: { caller: Caller; proposalId: string; version: number }): Promise<PlanApproval> {
@@ -208,5 +298,5 @@ export function createPlanFlow(deps: PlanFlowDeps) {
     }
   }
 
-  return { createPlan, getProposal, expandEpic, approve, reject };
+  return { createPlan, getProposal, expandAll, expandEpic, editEpic, replaceCheckpoints, addEpic, deleteEpic, regenerateEpic, listProposals, approve, reject };
 }

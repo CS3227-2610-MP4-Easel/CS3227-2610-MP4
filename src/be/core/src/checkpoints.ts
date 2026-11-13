@@ -34,6 +34,24 @@ export function createCheckpoints(db: CheckpointDb, access: CheckpointAccess) {
       if (!validDate(input.targetDate)) throw new Error("VALIDATION_FAILED");
       return inMutationTransaction(db, (tx) => lockProjectForMutation(tx as any, projectId), async (tx) => requireProjectAccess(access, actor, projectId, true, tx), async (tx: any) => checkpoint(await tx.checkpoint.create({ data: { projectId, name: input.name, targetDate: new Date(`${input.targetDate}T00:00:00.000Z`) } })));
     },
+    async patch(actor: Actor, id: string, input: { name?: string; targetDate?: string; version: number }) {
+      if (!actor.userId || (actor.role !== "PM" && actor.role !== "DEV_LEAD")) throw new Error("FORBIDDEN_ROLE");
+      if (input.targetDate !== undefined && !validDate(input.targetDate)) throw new Error("VALIDATION_FAILED");
+      return inMutationTransaction(db, async () => {}, async () => {}, async (tx: any) => {
+        const current = await tx.checkpoint.findFirst({ where: { id } });
+        if (!current) throw new Error("NOT_FOUND");
+        await lockProjectForMutation(tx, current.projectId);
+        await requireProjectAccess(access, actor, current.projectId, true, tx);
+        if (current.version !== input.version) throw new Error("CONFLICT_VERSION");
+        const data: Row = {};
+        if (input.name !== undefined && input.name !== current.name) data.name = input.name;
+        if (input.targetDate !== undefined && input.targetDate !== checkpoint(current).targetDate) data.targetDate = new Date(`${input.targetDate}T00:00:00.000Z`);
+        if (!Object.keys(data).length) return checkpoint(current);
+        data.version = { increment: 1 };
+        if (!(await tx.checkpoint.updateMany({ where: { id, version: input.version }, data })).count) throw new Error("CONFLICT_VERSION");
+        return checkpoint(await tx.checkpoint.findFirst({ where: { id } }));
+      });
+    },
   };
 }
 

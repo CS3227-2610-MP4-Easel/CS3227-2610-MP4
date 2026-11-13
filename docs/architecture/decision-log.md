@@ -27,7 +27,7 @@ Companion to [agile-platform-architecture.md](agile-platform-architecture.md). T
 | G-18 AI threat model | AD-25, AD-26 |
 | G-19 dev-process architecture | AD-30, AD-31, AD-32 |
 | G-20 DB-backed limiter | AD-16 |
-| G-21 estimation unit | AD-12 |
+| G-21 estimation unit | AD-12, AD-73 |
 | G-24 standup visibility | AD-27 |
 | G-25 similar-item retrieval | AD-28 |
 
@@ -263,7 +263,8 @@ Work packages (sizes are AI estimates: M = 2, L = 3; to be refined with the team
 Recommendation: A, because it is the only option that satisfies both "each in charge of a role" and parallel development, provided E and the gateway interface (with mock mode) are frozen in the first days. Confidence: medium. What would change it: a long deadline (then B), or a person who cannot take the work package assigned in the illustration.
 Evidence: sizes are estimates, not measured.
 
-### AD-12 Estimation unit and progress — Decided (policy)
+### AD-12 Estimation unit and progress — Superseded by AD-73
+**Superseded 2026-11-10 by AD-73.**
 **Decision:** story points, integers from 1, 2, 3, 5, 8, 13. Points are required before a task joins a sprint and optional before that. Velocity = points done per sprint. Progress = points done / total points. Forecast = remaining points / average velocity of the last N sprints (N is a spec value). All computed in code, not by the LLM.
 **Reason:** accepted AI recommendation (2026-10-28).
 **Consequences:** the PM plan must propose points; the forecast needs history (behaviour with fewer than N sprints is G-22); the Dev Lead digest receives computed numbers only.
@@ -280,6 +281,12 @@ Why now: Dev Lead forecasts and the PM plan depend on it; computed in code befor
 
 Recommendation: A, with points required before a task joins a sprint and optional before that. Policy choice, the team's. Confidence: medium-high. What would change it: a wish to skip estimation (then B).
 Evidence: the resource-aware notes list remaining story points and velocity from past sprints as code-computed inputs.
+
+### AD-73 Story points are whole numbers 1 to 20 — Decided (policy)
+**Decision:** story points are whole numbers from 1 to 20, required before a task joins a sprint and optional before that. Velocity, progress and forecast retain their existing formulas, computed in code using points sums.
+**Reason:** the operator chose free numeric estimates after seeing the plan editor (2026-11-10).
+**Consequences:** every entry point validates one shared schema; existing rows stay valid. Rolling back the code after storing a value outside the earlier Fibonacci-style scale fails old readers on that row; edit the value first.
+**Decided by:** Xiao-Congchen (operator), 2026-11-10; supersedes AD-12.
 
 ### AD-13 Task states and blockers — Decided
 **Decision:** task status is TODO, IN_PROGRESS, IN_REVIEW or DONE, plus a separate `blocked` flag and a `blocked_reason` text.
@@ -1016,3 +1023,4 @@ The team added that one person makes all the front-end mockups and asked the AI 
 | ID | Decision | Decided by |
 |---|---|---|
 | AD-72 | The work split of delivery-plan.md section 3 | team, 2026-10-29 (confirmed the AI split) |
+| AD-73 | Story points are whole numbers 1 to 20 (supersedes AD-12) | operator, 2026-11-10 |

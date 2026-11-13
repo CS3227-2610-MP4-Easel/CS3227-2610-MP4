@@ -1,0 +1,17 @@
+title: Easel
+description: AI-powered Scrum project management for modern development teams
+theme: jekyll-theme-cayman
+markdown: kramdown
+
+plugins:
+  - jekyll-seo-tag
+
+# Keep internal planning, telemetry, and handover material out of the public site.
+exclude:
+  - architecture
+  - guide
+  - operations
+  - telemetry
+  - skill-ecosystem-design.md
+  - skill-ecosystem-implementation-status.md
+  - skill-ecosystem-phase1-test.md

@@ -1,7 +1,7 @@
 import { applyPlan } from "@agile/core";
 import { createDbClient, type FilteredDbClient } from "@agile/db";
 import { getAiContext } from "@agile/ai-context";
-import { approveProposal, claimEpic, createProposal, failEpic, getProposalView, rejectProposal, storeEpic } from "@agile/proposals";
+import { addEpic, approveProposal, claimEpic, claimPlanEpics, createProposal, deleteEpic, editEpic, failEpic, failPlanEpics, getProposalView, listProposals, precheckRegenerate, rejectProposal, replaceCheckpoints, storeEpic, storePlanEpics } from "@agile/proposals";
 import { gatewayParts } from "./gateway-binding.js";
 import { createPlanFlow, type PlanFlow } from "./plan-flow.js";
 import { loadPmSettings } from "./settings.js";
@@ -33,12 +33,22 @@ export function getPmRuntime(deps: { createDbClient: () => FilteredDbClient; gat
   const settings = loadPmSettings(process.env);
   const flow = createPlanFlow({
     gateway, sessions, aiContext: getAiContext(),
+    onExpandAll: ({ targets, written, skipped }) => console.info("PM_PROPOSAL_EXPAND_ALL", { targets, written, skipped }),
     proposals: {
-      createProposal: (i) => createProposal(client, i),
+      claimPlanEpics: (i) => claimPlanEpics(client, i),
+    storePlanEpics: (i) => storePlanEpics(client, i),
+    failPlanEpics: (i) => failPlanEpics(client, i),
+    createProposal: (i) => createProposal(client, i),
       getProposalView: (proposalId, viewerId) => getProposalView(client, proposalId, viewerId),
       claimEpic: (i) => claimEpic(client, i),
       storeEpic: (i) => storeEpic(client, i),
       failEpic: (i) => failEpic(client, i),
+      editEpic: (i) => editEpic(client, i),
+      replaceCheckpoints: (i) => replaceCheckpoints(client, i),
+      addEpic: (i) => addEpic(client, i),
+      deleteEpic: (i) => deleteEpic(client, i),
+      precheckRegenerate: (i) => precheckRegenerate(client, i),
+      listProposals: (i) => listProposals(client, i),
       approveProposal: (i) => approveProposal({ db: client, core, sessions }, i),
       rejectProposal: (i) => rejectProposal({ db: client, sessions }, i),
     },
