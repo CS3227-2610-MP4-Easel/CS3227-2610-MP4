@@ -21,9 +21,12 @@ This guide describes the deployed app as it is now: what each role can do, how t
 
 ## 1. Accessing Easel
 
-- **URL:** [FILL IN: deployed URL]
+- **URL:** https://agile-platform.vercel.app/
 - **Browser:** a current desktop browser (Chrome, Edge, Firefox or Safari). The layout is designed for a laptop screen or wider.
-- **Registration codes:** every role needs its own registration code to sign up. [FILL IN: how testers receive the PM, Dev Lead and Developer codes]
+- **Registration codes:** every role needs its own registration code to sign up. 
+- REGISTRATION_CODE_PM=EASEL_PM_CODE
+- REGISTRATION_CODE_DEV_LEAD=EASEL_LEAD_CODE
+- REGISTRATION_CODE_DEVELOPER=EASEL_DEV_CODE
 - **Accounts:** sign up with any email address and a password; the email is not verified. Use a different email for each role you want to test. A private or incognito window per account keeps sign-ins apart.
 
 The AI features run on the course's language-model service. If the service is busy or switched off, the app says so and the rest keeps working (see [section 8](#8-ai-features-limits-and-messages)).
