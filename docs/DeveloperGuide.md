@@ -1,8 +1,13 @@
+---
+layout: default
+title: Easel Developer Guide
+---
+
 # Easel Developer Guide
 
 This guide is for developers who maintain or extend Easel. It describes the system as released from the `development` branch, how it was built, and in depth the two additional requirements this project focuses on: **Context Engineering and Resource-aware Use** ([section 6](#6-context-engineering-and-resource-aware-use)) and **Multi-Agent Software Engineering** ([section 7](#7-multi-agent-software-engineering)).
 
-For how to use the app, see the [User Guide](UserGuide.md). The living, per-workstream handover notes are in [`docs/guide/`](guide/index.md); the project's state, decisions (`C`-numbers) and deviations (`D`-numbers) are in [`workflow/project-state/`](../workflow/project-state/STATE.md); architecture decisions (`AD`-numbers) are in [`docs/architecture/decision-log.md`](architecture/decision-log.md).
+For how to use the app, see the [User Guide](UserGuide.html). The living, per-workstream handover notes are in [`docs/guide/`](https://github.com/CS3227-2610-MP4-Easel/CS3227-2610-MP4/tree/main/docs/guide); the project's state, decisions (`C`-numbers) and deviations (`D`-numbers) are in [`workflow/project-state/`](https://github.com/CS3227-2610-MP4-Easel/CS3227-2610-MP4/tree/main/workflow/project-state); architecture decisions (`AD`-numbers) are in [`docs/architecture/decision-log.md`](https://github.com/CS3227-2610-MP4-Easel/CS3227-2610-MP4/blob/main/docs/architecture/decision-log.md).
 
 - [1. Overview](#1-overview)
 - [2. Setting up](#2-setting-up)

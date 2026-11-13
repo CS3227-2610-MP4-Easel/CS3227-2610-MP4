@@ -1,3 +1,8 @@
+---
+layout: default
+title: Easel User Guide
+---
+
 # Easel User Guide
 
 Easel is a web app for running a small Scrum project. A **Project Manager** turns an idea into a plan with an AI assistant, a **Dev Lead** runs the backlog, board and sprints and reads an AI digest of project health, and a **Developer** works on assigned tasks and prepares a daily standup with AI help from their own commits and pull requests.
