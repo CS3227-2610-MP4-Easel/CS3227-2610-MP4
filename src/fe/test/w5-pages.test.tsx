@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProjectRouteContext, projectRoute } from '../lib/api/project-mode';
-import { RoleCtx } from '../lib/nav';
+import { ModalCtx, RoleCtx } from '../lib/nav';
 import { ApiError } from '../lib/api';
 
 const listTasks = vi.fn();
@@ -13,6 +13,7 @@ const getFacts = vi.fn();
 const listSprints = vi.fn();
 const readProgress = vi.fn();
 const createCheckpoint = vi.fn();
+const patchSprint = vi.fn();
 const getTask = vi.fn();
 const updateTask = vi.fn();
 const setStatus = vi.fn();
@@ -39,6 +40,7 @@ vi.mock('../lib/api', async () => {
     listSprintsLive_27: (...args: unknown[]) => listSprints(...args),
     readProgressLive_33: (...args: unknown[]) => readProgress(...args),
     createCheckpointLive_13: (...args: unknown[]) => createCheckpoint(...args),
+    patchSprintLive_29: (...args: unknown[]) => patchSprint(...args),
     getTaskLive_22: (...args: unknown[]) => getTask(...args),
     updateTaskLive_23: (...args: unknown[]) => updateTask(...args),
     setTaskStatusLive_24: (...args: unknown[]) => setStatus(...args),
@@ -55,6 +57,7 @@ vi.mock('../lib/auth/session', async () => {
 import BoardView from '../components/canvas/BoardView';
 import { MemberTable, AddMember } from '../components/live/members';
 import { AddEpicForm, AddTaskForm } from '../components/live/forms';
+import { NewSprintForm } from '../components/live/forms';
 import BacklogList from '../components/live/backlog-list';
 import TaskDrawer from '../components/live/task-drawer';
 import { AddCheckpointForm, CheckpointCards } from '../components/live/checkpoints';
@@ -83,6 +86,7 @@ beforeEach(() => {
   listSprints.mockReset().mockResolvedValue({ items: [{ id: 'sprint-must-not-be-used', projectId: PROJECT, name: 'Sprint 1: Test', status: 'ACTIVE', startDate: '', endDate: '', completedPoints: 0, version: 1 }], page: 0, size: 100, total: 1 });
   readProgress.mockReset().mockResolvedValue({ pointsTotal: 3, pointsDone: 0, percent: 0, unestimatedTasks: 0, velocity: [] });
   createCheckpoint.mockReset().mockResolvedValue({ id: 'checkpoint-1', projectId: PROJECT, name: 'Launch', targetDate: '2026-12-01', createdAt: '', updatedAt: '', version: 1 });
+  patchSprint.mockReset().mockResolvedValue({ id: 'sprint-1', projectId: PROJECT, name: 'Sprint 1: Updated', status: 'PLANNED', startDate: '2026-11-16', endDate: '2026-11-27', completedPoints: null, version: 2 });
   getTask.mockReset().mockResolvedValue(task);
   updateTask.mockReset().mockResolvedValue({ ...task, title: 'Saved task', version: 5 });
   setStatus.mockReset().mockResolvedValue({ ...task, status: 'IN_PROGRESS', version: 5 });
@@ -176,6 +180,16 @@ describe('W5 live planning surfaces', () => {
     window.dispatchEvent(new Event('easel-board-refresh'));
     await act(async () => {});
     expect(listSprints).toHaveBeenCalledTimes(2);
+  });
+
+  it('loads sprint data into the edit modal and uses Save sprint', async () => {
+    listSprints.mockResolvedValue({ items: [{ id: 'sprint-1', projectId: PROJECT, name: 'Sprint 1: Planning', status: 'PLANNED', startDate: '2026-11-16', endDate: '2026-11-27', completedPoints: null, version: 4 }], page: 0, size: 100, total: 1 });
+    render(<ProjectRouteContext.Provider value={route}><RoleCtx.Provider value="lead"><ModalCtx.Provider value={{ modal: { file: 'SprintsNew', closeTo: `/projects/${PROJECT}/sprints`, params: { sprint: 'sprint-1' } }, open: vi.fn(), close: vi.fn() }}><NewSprintForm /></ModalCtx.Provider></RoleCtx.Provider></ProjectRouteContext.Provider>);
+    expect(await screen.findByRole('heading', { name: 'Edit sprint' })).toBeTruthy();
+    expect(screen.getByLabelText('Name', { exact: false }).getAttribute('value')).toBe('Sprint 1: Planning');
+    expect(screen.getByLabelText('Start date', { exact: false }).getAttribute('value')).toBe('2026-11-16');
+    expect(screen.getByLabelText('End date (inclusive)', { exact: false }).getAttribute('value')).toBe('2026-11-27');
+    expect(screen.getByRole('button', { name: 'Save sprint' })).toBeTruthy();
   });
 
   it('F7 E10 E12 loads and reloads live members without a remove control', async () => {

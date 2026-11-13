@@ -18,11 +18,17 @@
 - Extended the live task PATCH client to send `sprintId` and added regression coverage for sprint selection.
 - Fixed the live Sprints page to reload sprint task lists when a task assignment changes through the task drawer.
 - Added regression coverage for the task-refresh event.
+- Fixed the sprint edit modal to consume its modal sprint ID, preload the sprint name and dates, and show `Edit sprint` / `Save sprint` copy.
+- Added regression coverage for edit-mode modal data and action text.
 
 ## Verification
 
 - `npm --prefix src/fe test` — 21 files, 287 tests passed.
 - `npm --prefix src/fe run lint` — passed.
+- `npm --prefix src/fe test -- --run test/w5-pages.test.tsx` — 1 file, 29 tests passed.
+- `npm --prefix src/fe run typecheck` — passed.
+- `npm --prefix src/fe run lint` — passed.
+- `npm --prefix src/fe run build` — passed.
 - `npm --prefix src/fe test -- --run test/w5-pages.test.tsx` — 1 file, 28 tests passed.
 - `npm --prefix src/fe run typecheck` — passed.
 - `npm --prefix src/fe run lint` — passed.

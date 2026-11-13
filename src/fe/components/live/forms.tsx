@@ -1,7 +1,7 @@
 'use client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
-import { A, r, useRoute } from '../../lib/nav';
+import { A, r, useModal, useRoute } from '../../lib/nav';
 import { ApiError, createEpic_17, createEpicLive_17, createSprint_28, createSprintLive_28, patchSprintLive_29, createTask_21, createTaskLive_21, listCheckpointsLive_12, listEpicsLive_16, listMembersLive_9, listSprintsLive_27, useDb, type LiveCheckpoint, type LiveEpic, type LiveMember, type LiveSprint, type Person } from '../../lib/api';
 import { useProjectRoute } from '../../lib/api/project-mode';
 import { toast } from './toast';
@@ -36,8 +36,9 @@ function useSubmit(back: string, ok: string) {
 export function NewSprintForm() {
   const route = useProjectRoute();
   const params = useSearchParams();
+  const modal = useModal();
   const live = route.mode === 'live' && Boolean(route.projectId);
-  const editId = live ? params.get('sprint') : null;
+  const editId = params.get('sprint') ?? modal.modal?.params?.sprint ?? null;
   const editing = Boolean(editId);
   const [name, setName] = useState('');
   const [start, setStart] = useState('');
@@ -75,7 +76,7 @@ export function NewSprintForm() {
         <div className="field"><label htmlFor="e4">End date (inclusive) <span style={{ color: 'var(--danger)' }}>*</span></label><input id="e4" className="in" value={end} onChange={(e) => setEnd(e.target.value)} placeholder="2026-12-11" pattern="\d{4}-\d{2}-\d{2}" required /><span className="hint">YYYY-MM-DD</span></div>
       </div>
       {f.err && <Err text={f.err} />}
-      <div className="dfoot"><A className="btn" href={r('Sprints.dc.html')}>Cancel</A><button className="btn p" disabled={f.busy}>{editing ? 'Save changes' : 'Create sprint'}</button></div>
+      <div className="dfoot"><A className="btn" href={r('Sprints.dc.html')}>Cancel</A><button className="btn p" disabled={f.busy}>{editing ? 'Save sprint' : 'Create sprint'}</button></div>
     </form>
   );
 }
