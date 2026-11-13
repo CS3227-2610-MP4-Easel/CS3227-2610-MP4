@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { Hono } from "hono";
 import { z } from "zod/v3";
 import { policyForRoute, type ApiContext, type RouteDefinition } from "@agile/contracts";
-import { apiApp, createApiApp, errorResponse, registerRoute, registeredRoutes, type ApiEnv, type AuthDependencies } from "../src/index.js";
+import { createApiApp, errorResponse, getApiApp, registerRoute, registeredRoutes, type ApiEnv, type AuthDependencies } from "../src/index.js";
 
 const policy = policyForRoute("endpoint-23");
 const events: string[] = [];
@@ -58,6 +58,7 @@ test("invalid body is 422 and rolls back; thrown handler errors and 4xx response
 });
 
 test("the shipped app contains only routes registered through the policy gate", () => {
+  const apiApp = getApiApp();
   const registered = new Set(registeredRoutes(apiApp).map((r) => `${r.method} ${r.path.replace(/\{(\w+)\}/g, ":$1")}`));
   const mounted = apiApp.routes.filter((r) => r.method !== "ALL").map((r) => `${r.method} ${r.path}`);
   assert.ok(mounted.length > 0);
