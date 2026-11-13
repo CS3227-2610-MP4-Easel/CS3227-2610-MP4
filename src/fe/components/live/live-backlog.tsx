@@ -1,9 +1,10 @@
 'use client';
 import { useEffect, useRef, useState, type DragEvent, type FormEvent } from 'react';
 import { currentProject } from '../../lib/screens';
+import { A, useRoute } from '../../lib/nav';
 import {
   ApiError, getLiveProject_7, listLiveCheckpoints_12, listLiveEpics_16, listLiveTasks_20,
-  listLiveMembers_9, listLiveSprints_27, updateLiveCheckpoint_14, updateLiveEpic_18,
+  listLiveMembers_9, listSprintsLive_27, updateLiveCheckpoint_14, updateLiveEpic_18,
   updateLiveTask_23, validPoints, type LiveCheckpoint, type LiveEpic, type LiveTask,
   type LiveMember, type LiveSprint,
 } from '../../lib/api';
@@ -20,7 +21,7 @@ const STATUS: Record<LiveTask['status'], { label: string; cls: string }> = {
 async function load(projectId: string): Promise<Data> {
   const [project, checkpoints, epics, tasks, members, sprints] = await Promise.all([
     getLiveProject_7(projectId), listLiveCheckpoints_12(projectId), listLiveEpics_16(projectId),
-    listLiveTasks_20(projectId), listLiveMembers_9(projectId), listLiveSprints_27(projectId),
+    listLiveTasks_20(projectId), listLiveMembers_9(projectId), listSprintsLive_27(projectId, 0, 100).then((page) => page.items),
   ]);
   return { projectId, project: project.name, checkpoints, epics, tasks, members, sprints };
 }
@@ -65,8 +66,11 @@ function TaskForm({ item, data, busy, blocked, onSave, onCancel }: { item: LiveT
   </form>;
 }
 
-export default function LiveBacklog() {
+export type BacklogFilter = 'unscheduled' | 'unassigned' | 'noEstimate' | null;
+
+export default function LiveBacklog({ search = '', filter = null }: { search?: string; filter?: BacklogFilter } = {}) {
   const projectId = currentProject();
+  const routeFor = useRoute();
   const [data, setData] = useState<Data | null>(null), [error, setError] = useState(''), [editing, setEditing] = useState<Editor>(null);
   const [busy, setBusy] = useState(false), [unavailable, setUnavailable] = useState(false), [collapsed, setCollapsed] = useState<string[]>([]);
   const [expandedTasks, setExpandedTasks] = useState<string[]>([]), [announcement, setAnnouncement] = useState('');
@@ -156,9 +160,11 @@ export default function LiveBacklog() {
   const groups = [...data.checkpoints].sort((a, b) => a.targetDate.localeCompare(b.targetDate) || a.name.localeCompare(b.name));
   const noCheckpoint = data.epics.filter((epic) => !epic.checkpointId || !data.checkpoints.some((c) => c.id === epic.checkpointId));
   const orderedEpics = [...groups.flatMap((cp) => data.epics.filter((epic) => epic.checkpointId === cp.id)), ...noCheckpoint];
+  const needle = search.trim().toLowerCase();
+  const shown = (task: LiveTask) => (!needle || task.title.toLowerCase().includes(needle)) && (!filter || (filter === 'unscheduled' ? !task.sprintId : filter === 'unassigned' ? !task.assigneeId : !task.storyPoints));
   const renderEpic = (epic: LiveEpic) => <section key={epic.id} onDragOver={(e) => { if (dragged) e.preventDefault(); }} onDrop={(e) => onDropEpic(e, epic.id)}>
     {editing?.kind === 'epic' && editing.id === epic.id ? <div className="ch"><EpicForm item={epic} data={data} busy={busy} blocked={unavailable} onCancel={() => { setEditing(null); setUnavailable(false); }} onSave={(patch) => void mutate('epic', epic.id, () => updateLiveEpic_18(epic.id, { ...patch, version: epic.version }))} /></div> : <div className="ch" style={{ background: 'var(--head)' }}><div><h3 style={{ margin: 0 }}>{epic.title}</h3>{epic.description && <span className="small muted">{epic.description}</span>}</div><button className="btn sm" disabled={busy || editing !== null} onClick={() => { setError(''); setUnavailable(false); setEditing({ kind: 'epic', id: epic.id }); }}>Edit epic</button></div>}
-    {data.tasks.filter((t) => t.epicId === epic.id).map((task) => {
+    {data.tasks.filter((t) => t.epicId === epic.id && shown(t)).map((task) => {
       const expanded = expandedTasks.includes(task.id);
       const epicIndex = orderedEpics.findIndex((item) => item.id === epic.id);
       return <div key={task.id} draggable={!busy && !editing} onDragStart={(e) => { e.dataTransfer.setData('text/plain', task.id); e.dataTransfer.effectAllowed = 'move'; setDragged(task.id); }} onDragEnd={() => setDragged(null)}>
@@ -169,7 +175,7 @@ export default function LiveBacklog() {
           <span className={`pts${task.storyPoints == null ? ' none' : ''}`}>{task.storyPoints ?? 'Unestimated'}</span>
           <span className={`chip ${STATUS[task.status].cls}`}>{STATUS[task.status].label}</span>
           {task.blocked && <span className="chip c-bad" title={task.blockedReason ?? ''}>Blocked</span>}
-          <span className="t">{task.title}</span>
+          <A className="t" href={routeFor(`/projects/${projectId}/board?task=${task.id}`)}>{task.title}</A>
           <span className="chip c-line">{data.members.find((m) => m.userId === task.assigneeId)?.displayName ?? 'Unassigned'}</span>
         </div>
         {expanded && <div style={{ padding: '4px 20px 16px 70px' }}>
@@ -180,7 +186,7 @@ export default function LiveBacklog() {
         </div>}
       </div>;
     })}
-    {!data.tasks.some((task) => task.epicId === epic.id) && <div className="trow small muted">No tasks in this epic yet.</div>}
+    {!data.tasks.some((task) => task.epicId === epic.id && shown(task)) && <div className="trow small muted">{data.tasks.some((task) => task.epicId === epic.id) ? 'No tasks match these filters.' : 'No tasks in this epic yet.'}</div>}
   </section>;
   return <div className="stack">
     <div className="banner b-info">Backlog for <b>{data.project}</b>. Drag a task onto an epic to move it.</div>
