@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ApiError } from '../../lib/api';
 import { members_9, nextStandupDate, teamStandups_55, todaySgt, useProjectId, type LiveMember, type LiveStandup } from '../../lib/api/dev';
 import { initialsOf } from '../../lib/auth/session';
+import Select from './select';
 
 // S18 in `firebase` mode (spec 2026-11-12-w9-screen-wiring-design.md): one card per developer member
 // (endpoint 9) with that developer's standup for the chosen day (endpoint 55). Read only; text nodes only.
@@ -101,15 +102,10 @@ export function LiveTeamStandups() {
           {tab('next', `For the next standup · ${dayLabel(days.next)}`)}
           {tab('earlier', 'Earlier')}
         </div>
-        <select className="sel" aria-label="Developer" value={developer} onChange={(e) => setDeveloper(e.target.value)}>
-          <option value="">All developers</option>
-          {developers.map((m) => <option key={m.userId} value={m.userId}>{m.displayName}</option>)}
-        </select>
+        <Select compact label="Developer" value={developer} onChange={setDeveloper} options={[{ value: '', label: 'All developers' }, ...developers.map((m) => ({ value: m.userId, label: m.displayName }))]} />
       </div>
       {choice === 'earlier' && (
-        <select className="sel" aria-label="Earlier day" value={earlier} onChange={(e) => setEarlier(e.target.value)}>
-          {Array.from({ length: 7 }, (_, i) => minusDays(days.today, i + 1)).map((d) => <option key={d} value={d}>{dayLabel(d)}</option>)}
-        </select>
+        <Select compact label="Earlier day" value={earlier} onChange={setEarlier} options={Array.from({ length: 7 }, (_, i) => minusDays(days.today, i + 1)).map((d) => ({ value: d, label: dayLabel(d) }))} />
       )}
       {loadError ? (
         <div className="row between"><span className="muted">{loadError}</span><button className="btn sm" onClick={() => setReload((n) => n + 1)}>Try again</button></div>

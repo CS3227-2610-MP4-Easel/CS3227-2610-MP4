@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readFile, readdir } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
 import { execFile } from "node:child_process";
+import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import { validateDirectMigrationTarget } from "../../src/be/db/src/tier-targets.ts";
 
@@ -87,6 +88,6 @@ export async function runProductionMigrationCli({ env = process.env, root = proc
   }
 }
 
-if (process.argv[1] && import.meta.url === new URL(process.argv[1], "file:").href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   runProductionMigrationCli().then((exitCode) => { process.exitCode = exitCode; });
 }

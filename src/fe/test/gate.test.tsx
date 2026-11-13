@@ -168,14 +168,14 @@ describe('gate', () => {
     release();
   });
 
-  it('E66 ready as DEV_LEAD on /lead/overview renders the lead overview whatever the role cookie says', async () => {
+  it('E66 ready as DEV_LEAD on /projects renders projects whatever the role cookie says', async () => {
     document.cookie = 'role=pm';
     fetchMock.mockResolvedValue(me('DEV_LEAD'));
-    mount('/lead/overview');
+    mount('/projects');
     await act(async () => fbCb!(fb));
     expect(screen.queryByText('Loading…')).toBeNull();
     expect(screen.getByText('Dev Lead')).toBeTruthy();
-    expect(screen.getByRole('heading', { level: 1, name: 'Overview' })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 1, name: 'Projects' })).toBeTruthy();
     expect(screen.queryByText('Page not found')).toBeNull();
     expect(screen.queryByText('You cannot open this page')).toBeNull();
     expect(replace).not.toHaveBeenCalled();

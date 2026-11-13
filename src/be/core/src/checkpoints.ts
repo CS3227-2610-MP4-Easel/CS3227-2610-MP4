@@ -34,6 +34,19 @@ export function createCheckpoints(db: CheckpointDb, access: CheckpointAccess) {
       if (!validDate(input.targetDate)) throw new Error("VALIDATION_FAILED");
       return inMutationTransaction(db, (tx) => lockProjectForMutation(tx as any, projectId), async (tx) => requireProjectAccess(access, actor, projectId, true, tx), async (tx: any) => checkpoint(await tx.checkpoint.create({ data: { projectId, name: input.name, targetDate: new Date(`${input.targetDate}T00:00:00.000Z`) } })));
     },
+    /** Endpoint 15: soft delete under the version guard; epics that pointed at it are unlinked (and their versions bumped). */
+    async remove(actor: Actor, id: string, input: { version: number }) {
+      if (!actor.userId || (actor.role !== "PM" && actor.role !== "DEV_LEAD")) throw new Error("FORBIDDEN_ROLE");
+      await inMutationTransaction(db, async () => {}, async () => {}, async (tx: any) => {
+        const current = await tx.checkpoint.findFirst({ where: { id } });
+        if (!current) throw new Error("NOT_FOUND");
+        await lockProjectForMutation(tx, current.projectId);
+        await requireProjectAccess(access, actor, current.projectId, true, tx);
+        if (current.version !== input.version) throw new Error("CONFLICT_VERSION");
+        if (!(await tx.checkpoint.updateMany({ where: { id, version: input.version }, data: { deletedAt: new Date(), version: { increment: 1 } } })).count) throw new Error("CONFLICT_VERSION");
+        await tx.epic.updateMany({ where: { projectId: current.projectId, checkpointId: id, deletedAt: null }, data: { checkpointId: null, version: { increment: 1 } } });
+      });
+    },
     async patch(actor: Actor, id: string, input: { name?: string; targetDate?: string; version: number }) {
       if (!actor.userId || (actor.role !== "PM" && actor.role !== "DEV_LEAD")) throw new Error("FORBIDDEN_ROLE");
       if (input.targetDate !== undefined && !validDate(input.targetDate)) throw new Error("VALIDATION_FAILED");

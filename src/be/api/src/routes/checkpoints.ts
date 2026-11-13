@@ -3,8 +3,9 @@ import { policyForRoute, type RouteDefinition } from "@agile/contracts";
 import { HttpError } from "../errors.js";
 
 type Actor = { userId: string; role: "PM" | "DEV_LEAD" | "DEVELOPER" };
-export type CheckpointsRouteServices = { list(actor: Actor, projectId: string): Promise<unknown>; create(actor: Actor, projectId: string, input: { name: string; targetDate: string }): Promise<unknown>; patch(actor: Actor, id: string, input: { name?: string; targetDate?: string; version: number }): Promise<unknown> };
+export type CheckpointsRouteServices = { list(actor: Actor, projectId: string): Promise<unknown>; create(actor: Actor, projectId: string, input: { name: string; targetDate: string }): Promise<unknown>; patch(actor: Actor, id: string, input: { name?: string; targetDate?: string; version: number }): Promise<unknown>; remove(actor: Actor, id: string, input: { version: number }): Promise<void> };
 const Id = z.object({ id: z.string().uuid() }).strict();
+const DeleteQuery = z.object({ version: z.coerce.number().int().positive() }).strict();
 const CalendarDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => {
   const date = new Date(`${value}T00:00:00.000Z`);
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
@@ -21,6 +22,10 @@ export function createCheckpointsRoutes(services: CheckpointsRouteServices): Rou
     { ...route("endpoint-13"), paramsSchema: Id, bodySchema: CheckpointCreateBodySchema, responseSchema: {}, handler: async ({ principal, input }) => Response.json(await services.create(actor(principal), (input.params as { id: string }).id, input.body as { name: string; targetDate: string }), { status: 201 }) },
     { ...route("endpoint-14"), paramsSchema: Id, bodySchema: CheckpointPatchBodySchema, responseSchema: {}, handler: async ({ principal, input }) => {
       try { return Response.json(await services.patch(actor(principal), (input.params as { id: string }).id, input.body as { name?: string; targetDate?: string; version: number })); }
+      catch (error) { if (error instanceof Error && error.message === "CONFLICT_VERSION") throw new HttpError("CONFLICT_VERSION", 409, "The resource was modified by another request."); throw error; }
+    } },
+    { ...route("endpoint-15"), paramsSchema: Id, querySchema: DeleteQuery, responseSchema: {}, handler: async ({ principal, input }) => {
+      try { await services.remove(actor(principal), (input.params as { id: string }).id, { version: (input.query as { version: number }).version }); return new Response(null, { status: 204 }); }
       catch (error) { if (error instanceof Error && error.message === "CONFLICT_VERSION") throw new HttpError("CONFLICT_VERSION", 409, "The resource was modified by another request."); throw error; }
     } },
   ];

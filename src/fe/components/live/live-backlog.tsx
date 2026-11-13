@@ -1,10 +1,12 @@
 'use client';
 import { useEffect, useRef, useState, type DragEvent, type FormEvent } from 'react';
 import { currentProject } from '../../lib/screens';
+import { A, useRoute } from '../../lib/nav';
+import Select from './select';
 import {
   ApiError, getLiveProject_7, listLiveCheckpoints_12, listLiveEpics_16, listLiveTasks_20,
-  listLiveMembers_9, listLiveSprints_27, updateLiveCheckpoint_14, updateLiveEpic_18,
-  updateLiveTask_23, validPoints, type LiveCheckpoint, type LiveEpic, type LiveTask,
+  listLiveMembers_9, listSprintsLive_27, updateLiveCheckpoint_14, updateLiveEpic_18,
+  updateLiveTask_23, deleteCheckpointLive_15, deleteEpicLive_19, deleteTaskLive_25, validPoints, type LiveCheckpoint, type LiveEpic, type LiveTask,
   type LiveMember, type LiveSprint,
 } from '../../lib/api';
 
@@ -20,7 +22,7 @@ const STATUS: Record<LiveTask['status'], { label: string; cls: string }> = {
 async function load(projectId: string): Promise<Data> {
   const [project, checkpoints, epics, tasks, members, sprints] = await Promise.all([
     getLiveProject_7(projectId), listLiveCheckpoints_12(projectId), listLiveEpics_16(projectId),
-    listLiveTasks_20(projectId), listLiveMembers_9(projectId), listLiveSprints_27(projectId),
+    listLiveTasks_20(projectId), listLiveMembers_9(projectId), listSprintsLive_27(projectId, 0, 100).then((page) => page.items),
   ]);
   return { projectId, project: project.name, checkpoints, epics, tasks, members, sprints };
 }
@@ -40,7 +42,7 @@ function EpicForm({ item, data, busy, blocked, onSave, onCancel }: { item: LiveE
   return <form className="stack8" onSubmit={(e) => { e.preventDefault(); onSave({ ...(title !== original.title ? { title } : {}), ...(description !== (original.description ?? '') ? { description } : {}), ...((checkpoint || null) !== original.checkpointId ? { checkpointId: checkpoint || null } : {}) }); }}>
     <label>Epic title<input className="in" required maxLength={200} value={title} onChange={(e) => setTitle(e.target.value)} /></label>
     <label>Description<textarea className="in" maxLength={4000} value={description} onChange={(e) => setDescription(e.target.value)} /></label>
-    <label>Checkpoint<select className="in" value={checkpoint} onChange={(e) => setCheckpoint(e.target.value)}><option value="">No checkpoint</option>{data.checkpoints.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+    <label>Checkpoint<Select value={checkpoint} onChange={setCheckpoint} options={[{ value: '', label: 'No checkpoint' }, ...data.checkpoints.map((c) => ({ value: c.id, label: c.name }))]} /></label>
     <div className="row"><button className="btn p" disabled={busy || blocked || !title.trim()}>Save epic</button><button className="btn" type="button" disabled={busy} onClick={onCancel}>Cancel</button></div>
   </form>;
 }
@@ -58,18 +60,21 @@ function TaskForm({ item, data, busy, blocked, onSave, onCancel }: { item: LiveT
     {(lines.length > 12 || lines.some((v) => v.length > 300)) && <div className="err-t">At most 12 criteria, each at most 300 characters.</div>}
     <label>Story points<input className="in" type="number" min={1} max={20} step={1} value={points} onChange={(e) => setPoints(e.currentTarget.validity.badInput ? 'invalid' : e.currentTarget.value)} /></label>
     {invalidPoints && <div className="err-t">Whole number from 1 to 20.</div>}
-    <label>Epic<select className="in" value={epic} onChange={(e) => setEpic(e.target.value)}>{data.epics.map((v) => <option key={v.id} value={v.id}>{v.title}</option>)}</select></label>
-    <label>Assignee<select className="in" value={assignee} onChange={(e) => setAssignee(e.target.value)}><option value="">Unassigned</option>{data.members.map((v) => <option key={v.userId} value={v.userId}>{v.displayName}</option>)}</select></label>
-    <label>Sprint<select className="in" value={sprint} onChange={(e) => setSprint(e.target.value)}><option value="">No sprint</option>{data.sprints.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}</select></label>
+    <label>Epic<Select value={epic} onChange={setEpic} options={data.epics.map((v) => ({ value: v.id, label: v.title }))} /></label>
+    <label>Assignee<Select value={assignee} onChange={setAssignee} options={[{ value: '', label: 'Unassigned' }, ...data.members.map((v) => ({ value: v.userId, label: v.displayName }))]} /></label>
+    <label>Sprint<Select value={sprint} onChange={setSprint} options={[{ value: '', label: 'No sprint' }, ...data.sprints.map((v) => ({ value: v.id, label: v.name }))]} /></label>
     <div className="row"><button className="btn p" disabled={busy || blocked || !title.trim() || invalidPoints || lines.length > 12 || lines.some((v) => v.length > 300)}>Save task</button><button className="btn" type="button" disabled={busy} onClick={onCancel}>Cancel</button></div>
   </form>;
 }
 
-export default function LiveBacklog() {
+export type BacklogFilter = 'unscheduled' | 'unassigned' | 'noEstimate' | null;
+
+export default function LiveBacklog({ search = '', filter = null }: { search?: string; filter?: BacklogFilter } = {}) {
   const projectId = currentProject();
+  const routeFor = useRoute();
   const [data, setData] = useState<Data | null>(null), [error, setError] = useState(''), [editing, setEditing] = useState<Editor>(null);
   const [busy, setBusy] = useState(false), [unavailable, setUnavailable] = useState(false), [collapsed, setCollapsed] = useState<string[]>([]);
-  const [expandedTasks, setExpandedTasks] = useState<string[]>([]), [announcement, setAnnouncement] = useState('');
+  const [expandedTasks, setExpandedTasks] = useState<string[]>([]), [collapsedEpics, setCollapsedEpics] = useState<string[]>([]), [announcement, setAnnouncement] = useState('');
   const [focusAfterMove, setFocusAfterMove] = useState<string | null>(null);
   const [dragged, setDragged] = useState<string | null>(null), [picker, setPicker] = useState<{ taskId: string; checkpointId: string } | null>(null), [destination, setDestination] = useState('');
   const epoch = useRef(0);
@@ -78,7 +83,7 @@ export default function LiveBacklog() {
   useEffect(() => {
     let active = true;
     epoch.current++;
-    setData(null); setError(''); setEditing(null); setUnavailable(false); setPicker(null); setBusy(false); setCollapsed([]); setExpandedTasks([]); setAnnouncement(''); setFocusAfterMove(null);
+    setData(null); setError(''); setEditing(null); setUnavailable(false); setPicker(null); setBusy(false); setCollapsed([]); setExpandedTasks([]); setCollapsedEpics([]); setAnnouncement(''); setFocusAfterMove(null);
     load(projectId).then((value) => { if (active && stillCurrent(projectId)) setData(value); }).catch((e) => { if (active && stillCurrent(projectId)) setError(e instanceof Error ? e.message : 'Something went wrong.'); });
     return () => { active = false; };
   }, [projectId]);
@@ -155,12 +160,12 @@ export default function LiveBacklog() {
   const onDropCheckpoint = (event: DragEvent, checkpointId: string) => { event.preventDefault(); event.stopPropagation(); const id = event.dataTransfer.getData('text/plain'); setDragged(null); if (!data.tasks.some((task) => task.id === id)) return; focusBeforePicker.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setDestination(''); setPicker({ taskId: id, checkpointId }); };
   const groups = [...data.checkpoints].sort((a, b) => a.targetDate.localeCompare(b.targetDate) || a.name.localeCompare(b.name));
   const noCheckpoint = data.epics.filter((epic) => !epic.checkpointId || !data.checkpoints.some((c) => c.id === epic.checkpointId));
-  const orderedEpics = [...groups.flatMap((cp) => data.epics.filter((epic) => epic.checkpointId === cp.id)), ...noCheckpoint];
-  const renderEpic = (epic: LiveEpic) => <section key={epic.id} onDragOver={(e) => { if (dragged) e.preventDefault(); }} onDrop={(e) => onDropEpic(e, epic.id)}>
-    {editing?.kind === 'epic' && editing.id === epic.id ? <div className="ch"><EpicForm item={epic} data={data} busy={busy} blocked={unavailable} onCancel={() => { setEditing(null); setUnavailable(false); }} onSave={(patch) => void mutate('epic', epic.id, () => updateLiveEpic_18(epic.id, { ...patch, version: epic.version }))} /></div> : <div className="ch" style={{ background: 'var(--head)' }}><div><h3 style={{ margin: 0 }}>{epic.title}</h3>{epic.description && <span className="small muted">{epic.description}</span>}</div><button className="btn sm" disabled={busy || editing !== null} onClick={() => { setError(''); setUnavailable(false); setEditing({ kind: 'epic', id: epic.id }); }}>Edit epic</button></div>}
-    {data.tasks.filter((t) => t.epicId === epic.id).map((task) => {
+  const needle = search.trim().toLowerCase();
+  const shown = (task: LiveTask) => (!needle || task.title.toLowerCase().includes(needle)) && (!filter || (filter === 'unscheduled' ? !task.sprintId : filter === 'unassigned' ? !task.assigneeId : !task.storyPoints));
+  const renderEpic = (epic: LiveEpic) => { const epicOpen = !collapsedEpics.includes(epic.id); return <section key={epic.id} onDragOver={(e) => { if (dragged) e.preventDefault(); }} onDrop={(e) => onDropEpic(e, epic.id)}>
+    {editing?.kind === 'epic' && editing.id === epic.id ? <div className="ch"><EpicForm item={epic} data={data} busy={busy} blocked={unavailable} onCancel={() => { setEditing(null); setUnavailable(false); }} onSave={(patch) => void mutate('epic', epic.id, () => updateLiveEpic_18(epic.id, { ...patch, version: epic.version }))} /></div> : <div className="bl-ep"><div style={{ minWidth: 0 }}><div className="row"><button className="btn g sm ib" type="button" aria-label={`${epicOpen ? 'Collapse' : 'Expand'} ${epic.title}`} aria-expanded={epicOpen} disabled={editing !== null} onClick={() => setCollapsedEpics((ids) => epicOpen ? [...ids, epic.id] : ids.filter((id) => id !== epic.id))}><svg className="ic" aria-hidden="true"><use href={epicOpen ? '#i-down' : '#i-right'} /></svg></button><h3>{epic.title}</h3></div>{epicOpen && epic.description && <span className="small muted desc">{epic.description}</span>}</div><div className="row"><button className="ia" type="button" aria-label="Edit epic" data-tip="Edit epic" disabled={busy || editing !== null} onClick={() => { setError(''); setUnavailable(false); setEditing({ kind: 'epic', id: epic.id }); }}><svg className="ic" aria-hidden="true"><use href="#i-edit" /></svg></button><button className="ia d" type="button" aria-label="Delete epic" data-tip="Delete epic" disabled={busy || editing !== null} onClick={() => { const n = data.tasks.filter((t) => t.epicId === epic.id).length; if (window.confirm(`Delete epic "${epic.title}"${n ? ` and its ${n} task${n === 1 ? '' : 's'}` : ''}?`)) void mutate('epic', epic.id, () => deleteEpicLive_19(epic.id, epic.version)); }}><svg className="ic" aria-hidden="true"><use href="#i-trash" /></svg></button></div></div>}
+    {epicOpen && data.tasks.filter((t) => t.epicId === epic.id && shown(t)).map((task) => {
       const expanded = expandedTasks.includes(task.id);
-      const epicIndex = orderedEpics.findIndex((item) => item.id === epic.id);
       return <div key={task.id} draggable={!busy && !editing} onDragStart={(e) => { e.dataTransfer.setData('text/plain', task.id); e.dataTransfer.effectAllowed = 'move'; setDragged(task.id); }} onDragEnd={() => setDragged(null)}>
         <div className="trow">
           <svg className="ic muted" aria-hidden="true"><use href="#i-grip" /></svg>
@@ -169,31 +174,30 @@ export default function LiveBacklog() {
           <span className={`pts${task.storyPoints == null ? ' none' : ''}`}>{task.storyPoints ?? 'Unestimated'}</span>
           <span className={`chip ${STATUS[task.status].cls}`}>{STATUS[task.status].label}</span>
           {task.blocked && <span className="chip c-bad" title={task.blockedReason ?? ''}>Blocked</span>}
-          <span className="t">{task.title}</span>
+          <A className="t" href={routeFor(`/projects/${projectId}/board?task=${task.id}`)}>{task.title}</A>
           <span className="chip c-line">{data.members.find((m) => m.userId === task.assigneeId)?.displayName ?? 'Unassigned'}</span>
+          {expanded && !(editing?.kind === 'task' && editing.id === task.id) && <><button className="ia" type="button" aria-label="Edit task" data-tip="Edit task" disabled={busy || editing !== null} onClick={() => { setError(''); setUnavailable(false); setEditing({ kind: 'task', id: task.id }); }}><svg className="ic" aria-hidden="true"><use href="#i-edit" /></svg></button><button className="ia d" type="button" aria-label="Delete task" data-tip="Delete task" disabled={busy || editing !== null} onClick={() => { if (window.confirm(`Delete task "${task.title}"?`)) void mutate('task', task.id, () => deleteTaskLive_25(task.id, task.version)); }}><svg className="ic" aria-hidden="true"><use href="#i-trash" /></svg></button></>}
         </div>
-        {expanded && <div style={{ padding: '4px 20px 16px 70px' }}>
+        {expanded && <div className="t-body">
           {editing?.kind === 'task' && editing.id === task.id ? <TaskForm item={task} data={data} busy={busy} blocked={unavailable} onCancel={() => { setEditing(null); setUnavailable(false); }} onSave={(patch) => void mutate('task', task.id, () => updateLiveTask_23(task.id, { ...patch, version: task.version }))} /> : <>
             {task.description && <p>{task.description}</p>}{task.acceptanceCriteria.length > 0 && <ul>{task.acceptanceCriteria.map((line, i) => <li key={i}>{line}</li>)}</ul>}
-            <div className="row wrap"><button className="btn sm" disabled={busy || editing !== null} onClick={() => { setError(''); setUnavailable(false); setEditing({ kind: 'task', id: task.id }); }}>Edit task</button><button className="btn sm" disabled={busy || editing !== null || epicIndex <= 0} onClick={() => void move(task.id, orderedEpics[epicIndex - 1].id, true)}>Move to previous epic</button><button className="btn sm" disabled={busy || editing !== null || epicIndex < 0 || epicIndex >= orderedEpics.length - 1} onClick={() => void move(task.id, orderedEpics[epicIndex + 1].id, true)}>Move to next epic</button></div>
           </>}
         </div>}
       </div>;
     })}
-    {!data.tasks.some((task) => task.epicId === epic.id) && <div className="trow small muted">No tasks in this epic yet.</div>}
-  </section>;
+    {epicOpen && !data.tasks.some((task) => task.epicId === epic.id && shown(task)) && <div className="trow small muted">{data.tasks.some((task) => task.epicId === epic.id) ? 'No tasks match these filters.' : 'No tasks in this epic yet.'}</div>}
+  </section>; };
   return <div className="stack">
-    <div className="banner b-info">Backlog for <b>{data.project}</b>. Drag a task onto an epic to move it.</div>
     {error && <div className="banner b-bad" role="alert">{error}</div>}
-    <div className="small muted" role="status" aria-live="polite">{announcement}</div>
+    <div className="sr-only" role="status" aria-live="polite">{announcement}</div>
     <div className="card pad0">
       {groups.map((cp) => <section key={cp.id} onDragOver={(e) => { if (dragged) e.preventDefault(); }} onDrop={(e) => onDropCheckpoint(e, cp.id)}>
-        {editing?.kind === 'checkpoint' && editing.id === cp.id ? <div className="ch"><CheckpointForm item={cp} busy={busy} blocked={unavailable} onCancel={() => { setEditing(null); setUnavailable(false); }} onSave={(patch) => void mutate('checkpoint', cp.id, () => updateLiveCheckpoint_14(cp.id, { ...patch, version: cp.version }))} /></div> : <div className="ch"><div className="row"><button className="btn g sm ib" type="button" disabled={editing !== null} aria-label={`${collapsed.includes(cp.id) ? 'Expand' : 'Collapse'} ${cp.name}`} aria-expanded={!collapsed.includes(cp.id)} onClick={() => setCollapsed((ids) => ids.includes(cp.id) ? ids.filter((id) => id !== cp.id) : [...ids, cp.id])}><svg className="ic" aria-hidden="true"><use href={collapsed.includes(cp.id) ? '#i-right' : '#i-down'} /></svg></button><b>{cp.name}</b><span className="muted num">{cp.targetDate}</span></div><button className="btn sm" disabled={busy || editing !== null} onClick={() => { setError(''); setUnavailable(false); setEditing({ kind: 'checkpoint', id: cp.id }); }}>Edit checkpoint</button></div>}
+        {editing?.kind === 'checkpoint' && editing.id === cp.id ? <div className="ch"><CheckpointForm item={cp} busy={busy} blocked={unavailable} onCancel={() => { setEditing(null); setUnavailable(false); }} onSave={(patch) => void mutate('checkpoint', cp.id, () => updateLiveCheckpoint_14(cp.id, { ...patch, version: cp.version }))} /></div> : <div className="ch bl-cp"><div className="row"><button className="btn g sm ib" type="button" disabled={editing !== null} aria-label={`${collapsed.includes(cp.id) ? 'Expand' : 'Collapse'} ${cp.name}`} aria-expanded={!collapsed.includes(cp.id)} onClick={() => setCollapsed((ids) => ids.includes(cp.id) ? ids.filter((id) => id !== cp.id) : [...ids, cp.id])}><svg className="ic" aria-hidden="true"><use href={collapsed.includes(cp.id) ? '#i-right' : '#i-down'} /></svg></button><span className="chip c-acc bl-date"><svg className="ic" aria-hidden="true"><use href="#i-flag" /></svg>{cp.targetDate}</span><b>{cp.name}</b></div><div className="row"><button className="ia" type="button" aria-label="Edit checkpoint" data-tip="Edit checkpoint" disabled={busy || editing !== null} onClick={() => { setError(''); setUnavailable(false); setEditing({ kind: 'checkpoint', id: cp.id }); }}><svg className="ic" aria-hidden="true"><use href="#i-edit" /></svg></button><button className="ia d" type="button" aria-label="Delete checkpoint" data-tip="Delete checkpoint" disabled={busy || editing !== null} onClick={() => { if (window.confirm(`Delete checkpoint "${cp.name}"? Its epics stay, unlinked.`)) void mutate('checkpoint', cp.id, () => deleteCheckpointLive_15(cp.id, cp.version)); }}><svg className="ic" aria-hidden="true"><use href="#i-trash" /></svg></button></div></div>}
         {!collapsed.includes(cp.id) && data.epics.filter((epic) => epic.checkpointId === cp.id).map(renderEpic)}
       </section>)}
       {noCheckpoint.length > 0 && <section><div className="ch"><h2>No checkpoint</h2></div>{noCheckpoint.map(renderEpic)}</section>}
     </div>
-    {picker && <div className="card stack8" role="dialog" aria-labelledby="move-task-heading"><h3 id="move-task-heading">Choose an epic</h3>{data.epics.some((epic) => epic.checkpointId === picker.checkpointId) ? <><label>Destination epic<select className="in" ref={pickerRef as React.RefObject<HTMLSelectElement>} value={destination} onChange={(e) => setDestination(e.target.value)}><option value="">Choose an epic</option>{data.epics.filter((epic) => epic.checkpointId === picker.checkpointId).map((epic) => <option key={epic.id} value={epic.id}>{epic.title}</option>)}</select></label><button className="btn p" disabled={!destination || busy} onClick={async () => { if (await move(picker.taskId, destination)) closePicker(); }}>Move task</button></> : <p>This checkpoint needs an epic before a task can be moved here.</p>}<button className="btn" ref={!data.epics.some((epic) => epic.checkpointId === picker.checkpointId) ? pickerRef as React.RefObject<HTMLButtonElement> : undefined} disabled={busy} onClick={closePicker}>Cancel</button></div>}
+    {picker && <div className="card stack8" role="dialog" aria-labelledby="move-task-heading"><h3 id="move-task-heading">Choose an epic</h3>{data.epics.some((epic) => epic.checkpointId === picker.checkpointId) ? <><label>Destination epic<Select buttonRef={pickerRef as React.RefObject<HTMLButtonElement>} value={destination} onChange={setDestination} options={[{ value: '', label: 'Choose an epic' }, ...data.epics.filter((epic) => epic.checkpointId === picker.checkpointId).map((epic) => ({ value: epic.id, label: epic.title }))]} /></label><button className="btn p" disabled={!destination || busy} onClick={async () => { if (await move(picker.taskId, destination)) closePicker(); }}>Move task</button></> : <p>This checkpoint needs an epic before a task can be moved here.</p>}<button className="btn" ref={!data.epics.some((epic) => epic.checkpointId === picker.checkpointId) ? pickerRef as React.RefObject<HTMLButtonElement> : undefined} disabled={busy} onClick={closePicker}>Cancel</button></div>}
   </div>;
 }
 

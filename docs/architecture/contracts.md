@@ -92,7 +92,7 @@ Mutations on an archived project return 409 `CONFLICT_STATE` (one check in `core
 ### 3.4 PM: plans
 | # | Endpoint | Policy | Request | Response | Errors | Side effects |
 |---|---|---|---|---|---|---|
-| 34 | `POST /api/pm/projects/{id}/plans` | PM; member | `{ idea }` (20 to 6000 characters) | 201 `PlanProposal`, status PENDING, every epic expansion PENDING | 422 `VALIDATION_FAILED` (empty after sanitising) or `REQUEST_REFUSED`; 429 `AI_BUSY`, `RATE_LIMITED`; 503 `AI_UNAVAILABLE`, `AI_DISABLED` | opens an `ai_sessions` row; one stage-1 gateway call; inserts `ai_proposals` and `proposal_epics` |
+| 34 | `POST /api/pm/projects/{id}/plans` | PM; member | `{ idea }` (20 to 2000 characters) | 201 `PlanProposal`, status PENDING, every epic expansion PENDING | 422 `VALIDATION_FAILED` (empty after sanitising) or `REQUEST_REFUSED`; 429 `AI_BUSY`, `RATE_LIMITED`; 503 `AI_UNAVAILABLE`, `AI_DISABLED` | opens an `ai_sessions` row; one stage-1 gateway call; inserts `ai_proposals` and `proposal_epics` |
 | 35 | `GET /api/pm/proposals/{proposalId}` | PM; member | none | 200 `PlanProposal` | | none |
 | 36 | `GET /api/pm/projects/{id}/proposals` | PM; member | `status?`, `page`, `size` (at most 20) | 200 page of `PlanProposal`, newest first | | none |
 | 37 | `POST /api/pm/proposals/{proposalId}/epics/{index}/expand` | PM; member | `{}` (the server uses the stored epic; it takes no text) | 200 `PlanEpic` with expansion DONE | 409 `CONFLICT_STATE` unless the proposal is PENDING; 429 `AI_BUSY`; 503 `AI_UNAVAILABLE` | claims the epic (`IN_PROGRESS`, leased); one gateway call; stores tasks or `FAILED` |

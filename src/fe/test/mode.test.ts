@@ -77,6 +77,6 @@ describe('project route mode', () => {
     expect(resolve('/projects', undefined, 'lead')).toEqual({ file: 'Projects' });
     expect(resolve('/projects/p1/settings', undefined, 'dev')).toEqual({ forbidden: true });
     expect(resolve('/projects/p1/backlog', 'add-task', 'dev')).toEqual({ forbidden: true });
-    expect(resolve('/projects/p1/sprints', 'new', 'pm')).toEqual({ forbidden: true });
+    expect(resolve('/projects/p1/sprints', 'new', 'pm')).toEqual({ notFound: true });
   });
 });

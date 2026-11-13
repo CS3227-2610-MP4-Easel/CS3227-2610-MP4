@@ -34,7 +34,7 @@ describes `INT`; read it for context and write here instead of editing it.
 - [x] Gate 3: approved by ludannnn on 2026-11-13 ("yes").
 - [x] Pushed the CI assertion repair to the PR branch; GitHub should rerun workspace CI.
 - [ ] **Handover:** S20/S18 a11y follow-up: the day tabs (`role="tab"`) have no `tabpanel` or arrow-key navigation.
-- [ ] **Handover:** when the W7 PM-UI branch (`codex/w7c-pm-ui`) merges, it brings its own mock/live switch (`isLive()`, `openProjectId()`); S20/S18 use `useAuthMode()` and `useProjectId()` (SD1). Pick one mechanism for the web app then.
+- [ ] **Handover:** the W7 PM-UI branch (`w7c-pm-ui`, merged to `development` by PR #44) brought its own mock/live switch (`isLive()`, `openProjectId()`); S20/S18 use `useAuthMode()` and `useProjectId()` (SD1). Pick one mechanism for the web app then.
 
 ---
 

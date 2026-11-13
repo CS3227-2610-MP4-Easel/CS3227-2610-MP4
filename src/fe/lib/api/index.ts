@@ -353,6 +353,11 @@ export function getProjectLive_7(projectId: string): Promise<LiveProjectDetail> 
   });
 }
 
+// 8: rename, edit the brief or archive (one way). Archived projects drop out of reads, so callers leave the page afterwards.
+export function updateProjectLive_8(projectId: string, patch: { name?: string; brief?: string | null; status?: 'ARCHIVED'; version: number }): Promise<Omit<LiveProjectDetail, 'progress'>> {
+  return apiFetch<Omit<LiveProjectDetail, 'progress'>>(`/api/pm/projects/${encodeURIComponent(projectId)}`, { method: 'PATCH', body: patch });
+}
+
 export function readProgressLive_33(projectId: string): Promise<LiveProgress> {
   return apiFetch<LiveProgress>(`/api/projects/${encodeURIComponent(projectId)}/progress`);
 }
@@ -361,6 +366,17 @@ export async function listMembersLive_9(projectId: string): Promise<LiveMember[]
   const members = await apiFetch<LiveMember[]>(`/api/projects/${encodeURIComponent(projectId)}/members`);
   return [...members.reduce((unique, member) => unique.has(member.userId) ? unique : unique.set(member.userId, member), new Map<string, LiveMember>()).values()];
 }
+
+// 11: the backend refuses (409) while the member holds open tasks
+export function removeMemberLive_11(projectId: string, userId: string): Promise<void> {
+  return apiFetch<void>(`/api/projects/${encodeURIComponent(projectId)}/members/${encodeURIComponent(userId)}`, { method: 'DELETE' });
+}
+
+// 15, 19, 25: soft deletes under the version guard. An epic delete also deletes its tasks; a DONE task (or an epic holding one) answers 409.
+const deleteLive = (path: string, id: string, version: number): Promise<void> => apiFetch<void>(`/api/${path}/${encodeURIComponent(id)}?version=${version}`, { method: 'DELETE' });
+export const deleteCheckpointLive_15 = (id: string, version: number) => deleteLive('checkpoints', id, version);
+export const deleteEpicLive_19 = (id: string, version: number) => deleteLive('epics', id, version);
+export const deleteTaskLive_25 = (id: string, version: number) => deleteLive('tasks', id, version);
 
 export async function addMemberLive_10(projectId: string, email: string): Promise<LiveMember> {
   const added = await apiFetch<LiveMember>(`/api/projects/${encodeURIComponent(projectId)}/members`, { method: 'POST', body: { email } });
@@ -608,11 +624,6 @@ export function healthOf(d: import('./types').Db, today = '2026-11-02') {
 // 55: standups of the whole team for one day, newest first (Dev Lead; read only).
 export async function listTeamStandups_55(date: string, person?: import('./types').Person): Promise<import('./types').TeamStandup[]> {
   return read().teamStandups.filter((s) => s.date === date && (!person || s.person === person));
-}
-
-// 56: the signed-in user's AI sessions with token and cost totals.
-export async function listAiSessions_56(): Promise<import('./types').AiSession[]> {
-  return read().aiSessions;
 }
 
 export type ApiRole = 'PM' | 'DEV_LEAD' | 'DEVELOPER';

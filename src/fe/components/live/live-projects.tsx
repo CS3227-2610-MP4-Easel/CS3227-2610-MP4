@@ -5,6 +5,7 @@ import { A, r, useRole } from '../../lib/nav';
 import { ApiError, createProject_5, listLiveProjects_6, type LiveProject } from '../../lib/api';
 import Top from '../canvas/Top';
 import { toast } from './toast';
+import ModalRoute from '../modal-route';
 
 type Filter = 'ACTIVE' | 'ARCHIVED' | undefined;
 
@@ -107,33 +108,29 @@ export function LiveNewProject() {
   };
 
   return (
-    <div className="app">
-      <Top role="pm" />
-      <div className="body">
-        <main className="main">
-          <div className="wide stack" style={{ gap: 20 }}>
-            <h1>New project</h1>
-            <section className="card stack" style={{ maxWidth: 640 }}>
-              <div className="field">
-                <label htmlFor="pn">Name <span style={{ color: 'var(--danger)' }}>*</span></label>
-                <input id="pn" className="in" value={name} maxLength={200} onChange={(e) => setName(e.target.value)} />
-                <span className="hint">1 to 200 characters</span>
-              </div>
-              <div className="field">
-                <label htmlFor="pb">Brief <span className="muted" style={{ fontWeight: 400 }}>(optional)</span></label>
-                <textarea id="pb" className="in" rows={5} value={brief} maxLength={4000} onChange={(e) => setBrief(e.target.value)} />
-                <div className="row between"><span className="hint">The assistant reads the brief when you plan with AI.</span><span className="hint num">{brief.length} / 4000</span></div>
-              </div>
-              <div className="banner b-info"><div>You become a member automatically. Next you plan the work with AI.</div></div>
-              {error && <div className="banner b-bad" role="alert"><div>{error}</div></div>}
-              <div className="row">
-                <A className="btn" href={r('Projects.dc.html')}>Cancel</A>
-                <button className="btn p" disabled={busy || !name.trim()} onClick={create}>{busy ? 'Creating…' : 'Create project'}</button>
-              </div>
-            </section>
-          </div>
-        </main>
-      </div>
-    </div>
+    <ModalRoute closeTo="Projects.dc.html">
+      <form className="dialog" role="dialog" aria-modal="true" aria-labelledby="dt" style={{ width: 'min(560px, 100%)' }} onSubmit={(e) => { e.preventDefault(); if (!busy && name.trim()) void create(); }}>
+        <div className="row between">
+          <h2 id="dt">New project</h2>
+          <A className="btn g sm ib" href={r('Projects.dc.html')} aria-label="Close"><svg className="ic" aria-hidden="true"><use href="#i-x" /></svg></A>
+        </div>
+        <div className="field">
+          <label htmlFor="pn">Name <span style={{ color: 'var(--danger)' }}>*</span></label>
+          <input id="pn" className="in" value={name} maxLength={200} autoFocus onChange={(e) => setName(e.target.value)} />
+          <span className="hint">1 to 200 characters</span>
+        </div>
+        <div className="field">
+          <label htmlFor="pb">Brief <span className="muted" style={{ fontWeight: 400 }}>(optional)</span></label>
+          <textarea id="pb" className="in" rows={5} value={brief} maxLength={4000} onChange={(e) => setBrief(e.target.value)} />
+          <div className="row between"><span className="hint">The assistant reads the brief when you plan with AI.</span><span className="hint num">{brief.length} / 4000</span></div>
+        </div>
+        <div className="banner b-info"><div>You become a member automatically. Next you plan the work with AI.</div></div>
+        {error && <div className="banner b-bad" role="alert"><div>{error}</div></div>}
+        <div className="dfoot">
+          <A className="btn" href={r('Projects.dc.html')}>Cancel</A>
+          <button type="submit" className="btn p" disabled={busy || !name.trim()}>{busy ? 'Creating…' : 'Create project'}</button>
+        </div>
+      </form>
+    </ModalRoute>
   );
 }
