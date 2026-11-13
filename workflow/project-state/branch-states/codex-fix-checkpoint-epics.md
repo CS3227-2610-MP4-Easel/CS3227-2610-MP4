@@ -27,6 +27,7 @@
 - Added regression coverage for the sprint-assignment validation field.
 - Added save-time validation for clearing story points on a task already assigned to a sprint, highlighting the Story points field before the PATCH is sent.
 - Added regression coverage for the assigned-task save path.
+- Updated the W5 closeout guard to allow the new Dev Lead sprint-assignment update while continuing to forbid sprint IDs during task creation.
 
 ## Verification
 
@@ -42,6 +43,9 @@
 - `npm --prefix src/fe run typecheck` — passed.
 - `npm --prefix src/fe run lint` — passed.
 - `npm --prefix src/fe run build` — passed.
+- `npm test` — 2 integration tests require the unavailable local integration database; all other tests passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
 - `npm --prefix src/fe test -- --run test/w5-pages.test.tsx` — 1 file, 29 tests passed.
 - `npm --prefix src/fe run typecheck` — passed.
 - `npm --prefix src/fe run lint` — passed.
