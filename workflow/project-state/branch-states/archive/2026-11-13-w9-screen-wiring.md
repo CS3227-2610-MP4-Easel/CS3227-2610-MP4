@@ -7,11 +7,11 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Branch:** w9-screen-wiring (from `INT` at `2c5dd9f`)
 - **Base:** d452926
 - **Owner:** ludannnn (Developer member)
-- **Status:** Approved
+- **Status:** Folded
 - **Approved:** ludannnn 2026-11-13
 - **Last updated:** 2026-11-13 by Codex — repaired the PR workspace-test and frontend AI error mapping
 
-**Untouched:** Architecture, Conventions
+**Untouched:** Conventions
 
 ---
 
@@ -42,7 +42,7 @@ describes `INT`; read it for context and write here instead of editing it.
 
 | ID | Workstream | Status | Spec | Plan | Progress | Guide |
 |---|---|---|---|---|---|---|
-| W~1 | W9 screen wiring (S20, S18) | Spec'd | [spec](../../specs/2026-11-12-w9-screen-wiring-design.md) (approved 2026-11-12) | in the spec (Medium) | T0-T5 done; Gate 3 approved 2026-11-13; PR next | — |
+| W~1 | W9 screen wiring (S20, S18) | Done | [spec](../../specs/2026-11-12-w9-screen-wiring-design.md) (approved 2026-11-12) | in the spec (Medium) | PR #36 merged 2026-11-13 | — |
 
 ---
 
@@ -52,7 +52,7 @@ describes `INT`; read it for context and write here instead of editing it.
 |---|---|---|---|
 | 2026-11-12 | Branch created from `development`; S20/S18 wiring spec drafted (Medium, 18 edge cases, 6 tasks); Implementer review round 1: 3 blocking, 10 should-fix, 4 nits, all applied. Spec is 12 KB against the ~4 KB Medium target (logged with `ws feedback`); approved at Gate 1 by ludannnn | W~1 | `4fdb179` |
 | 2026-11-13 | T4 done: `LiveTeamStandups` (`src/fe/components/live/team-standups-live.tsx`): members from 9 (once) and standups from 55 per day; For today (default), For the next standup and Earlier (a dropdown of the 7 calendar days before today, dates only); developer filter in the browser; one card per DEVELOPER member by name, matched on `developerId`, "not generated" otherwise; badges Edited, degraded, flagged (none for ACCEPTED); no-developers line; 404 shows the not-found text, other errors a toast. `canvas/Standups.tsx` renders it in `firebase` mode; `StandupsEarlier` stays mock-only. Tests: `team-standups-live.test.tsx` (E1, E12-E15, day options, filter, badges, 404). Checks: typecheck green; fe 187/187 | W~1 | `5c173bc` |
-| 2026-11-13 | T5 review (Implementer lens, one round): nothing blocking; 5 should-fix, 7 nits. Fixed: a summaries run is tied to its own mount token, so a StrictMode remount cannot duplicate later batches or lines; an unmount during the AI_BUSY countdown sends nothing more; a failed first load on S20 (52) or S18 (9, 55) shows its message with Try again instead of "Loading…" forever; Retry failed clears the rate-limit note and the 429 banner clears when the hold ends. Recorded D~2 (dates shown as "Fri 13 Nov"). Tests added for each fix (all 6 fail against the pre-fix components), the ACCEPTED banner, and a duplicate-key check. Rejected nits: `.json`-only drop filter (the server validates), tabpanel and arrow keys on the day tabs (accessibility follow-up), a mounted guard for setState after unmount in `generate`/`send` (harmless in React 18). Checks: typecheck green; fe 192/192 | W~1 | this commit |
+| 2026-11-13 | T5 review (Implementer lens, one round): nothing blocking; 5 should-fix, 7 nits. Fixed: a summaries run is tied to its own mount token, so a StrictMode remount cannot duplicate later batches or lines; an unmount during the AI_BUSY countdown sends nothing more; a failed first load on S20 (52) or S18 (9, 55) shows its message with Try again instead of "Loading…" forever; Retry failed clears the rate-limit note and the 429 banner clears when the hold ends. Recorded D~2 (dates shown as "Fri 13 Nov"). Tests added for each fix (all 6 fail against the pre-fix components), the ACCEPTED banner, and a duplicate-key check. Rejected nits: `.json`-only drop filter (the server validates), tabpanel and arrow keys on the day tabs (accessibility follow-up), a mounted guard for setState after unmount in `generate`/`send` (harmless in React 18). Checks: typecheck green; fe 192/192 | W~1 | `97db8eb` |
 | 2026-11-13 | T5: merged `development` at `d452926` (W11 PR #27, W13 PR #26, the W4 and W9 folds); only `skill-feedback.md` conflicted (kept all rows). Checks: typecheck, lint green; `npm test` 1012/1012 (0 skipped, Postgres ran) + security 9/9 + fe 187/187 | W~1 | merge commit |
 | 2026-11-13 | T3 done: the standup panel in `LiveStandupScreen`: next-standup and today tabs (computed once on mount), 52 on load and switch with stale responses dropped, Generate/Regenerate via 51 with the selected date, badges (Edited, degraded, flagged), the accepted banner, the cached note, Copy; 429 holds Regenerate for the wait, 422 and 503 `AI_DISABLED` show their messages, 409 turns the controls off and keeps Copy. Edit, Use as is and thumbs are absent (C~2). `canvas.css` gains `.seg button` so the tabs can be real buttons. Tests: E9-E11, E14, E15, E17, E18 and the error cases in `standup-live.test.tsx`. Checks: typecheck green; fe 176/176 | W~1 | `921683b` |
 | 2026-11-13 | T2 done: `LiveStandupScreen` (`src/fe/components/live/standup-live.tsx`) with the upload panel (file checks, one call to 49, result strip, rejections) and the summaries panel (sequential batches of 10, AI_BUSY countdown and resend, RATE_LIMITED stop, Retry failed); 404 shows the not-found text, 409 the archived banner with controls off. `canvas/Standup.tsx` renders it in `firebase` mode. Files are read with `FileReader` (jsdom lacks `Blob.text()`). Deviation D~1. Tests: `standup-live.test.tsx` (E1, E3-E7, E14, E17, 404, RATE_LIMITED). Checks: typecheck green; fe 165/165 | W~1 | `6dfcd17` |
@@ -64,9 +64,23 @@ describes `INT`; read it for context and write here instead of editing it.
 
 ---
 
+## 4. Architecture
+
+> Added at fold (2026-11-13, approved by ludannnn): the branch had listed Architecture as Untouched. Only the S20/S18 sentence is new; the rest of the web Now is unchanged and left for the `dev-lead-pages-wiring` fold to update.
+
+### 4.1 Web
+
+**Now (proposed):** The `src/fe` Next.js app is free of Prisma/database imports; its catch-all API adapter forwards `/api/*` to the Hono app, and business rules and authorization stay server-side. `authMode` picks the mode per request: `prototype` (fixtures and the role buttons, mock previews only), `firebase` (live sign-in) or `unconfigured`. In `firebase` mode `AuthRoot` and `SessionProvider` hold the Firebase session (`@firebase/app` and `@firebase/auth` only, loaded in `lib/auth/firebase.ts`), and `AuthGate` gates every page on it. The role comes from `GET /api/me`, never a cookie. Sign-in and register call endpoints 2-4. S20 (Upload and standup) and S18 (Team standups) call endpoints 9, 49-52 and 55 when real sign-in is on (`useAuthMode()`); `lib/api/dev.ts` holds those calls. `apiFetch` (`lib/api/http.ts`) is the only place that calls `fetch`; it attaches the ID token and is confined to same-origin `/api/` paths. `test/source-rules.test.ts` enforces these source rules. The UI tests use Vitest, Testing Library and jsdom and run under the root `npm test`. Screens other than sign-in and register still read fixtures until their workstreams wire them.
+
+| Path | Role |
+|---|---|
+| `src/fe/lib/api/dev.ts` | live calls for S20 and S18 |
+| `src/fe/components/live/standup-live.tsx`, `team-standups-live.tsx` | live S20 and S18 |
+
+---
+
 ## 6. Known Gaps
 
-- **Live S20/S18 are reached by URL only** — the project list and other W5 screens still read the mock, so a signed-in user opens `/projects/<uuid>/standup` or `/standups` directly until the W5 screens are wired.
 - **S20's summary list is lost on reload** — no endpoint lists a developer's earlier uploads (W10 Q6); the stored summaries are still used by the standup.
 
 ---
@@ -100,3 +114,19 @@ describes `INT`; read it for context and write here instead of editing it.
 - **Date:** 2026-11-13 · **Found by:** T5 review
 - **What diverged:** the spec's copy puts `{nextStandupDate}`, `{todaySgt}` and `{date}` (YYYY-MM-DD) in "For the next standup · …", "For today · …", "No standup for … yet." and the Earlier list; the screens format them as weekday, day and month ("Fri 13 Nov"), matching the W10 canvas markup. Requests still send YYYY-MM-DD.
 - **Impact:** display only.
+
+
+## Fold record
+Folded 2026-11-13 by Claude Opus 5.5 (with `ws fold`) on `sync/w9-wiring-folds` · merge commit `2d271e7` · base `d452926`
+
+At fold, with ludannnn's yes: Status set to Done (PR #36 merged); the "reached by URL only" Known Gap dropped (the W5 project switcher, PR #35, lists live projects); the `Untouched: Architecture` claim corrected by adding the S20/S18 sentence to the web Now (the rest left for the `dev-lead-pages-wiring` fold); the second handover rewritten as "One mock/live switch for the web app" because the W7 PM UI had merged. Folded before the earlier-merged `dev-lead-pages-wiring` (#35), which belongs to another owner.
+
+Sessions discarded at fold: none
+
+| Provisional | Permanent |
+|---|---|
+| C~1 | C100 |
+| W~1 | W19 |
+| D~2 | D40 |
+| C~2 | C101 |
+| D~1 | D41 |

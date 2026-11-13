@@ -5,7 +5,7 @@
 - **Phase:** Pre-implementation. The architecture passed its readiness gate for the first slice on 2026-10-29; the W10 clickable prototype, W1 foundation/API skeleton, W2 gateway, W3 guards, W4 auth, W6 AI context and W12 CI are merged, while the role features (W5, W7-W9) remain.
 - **Stack:** TypeScript monorepo, Next.js App Router with a Hono API under `/api`, Prisma, Postgres (Neon), Firebase Auth, Vercel (Hobby), NUS SoCLaaS
 - **Branch:** `INT` = `development`; `main` is the release branch. This file describes `INT` only.
-- **Last updated:** 2026-11-13 by Codex — merged development; documented W5, W8, W11, W13; retained W4/W9 guide checkpoint
+- **Last updated:** 2026-11-13 by Claude Opus 5.5 — folded w9-screen-wiring, w9-self-membership
 - **Last verified against repo:** 2026-11-13 (W4, W5, W8, W9, W11, and W13 guide checkpoint)
 - **Developer guide:** seeded 2026-11-02 from W10, [guide](../../docs/guide/index.md)
 - **Deadline:** 13 Nov 2026. Feature freeze end of 10 Nov (AD-69), production deploy 11 Nov (AD-70).
@@ -42,7 +42,7 @@ Verification commands are configured in `workflow/config.json`: `npm test`, `npm
 |---|---|---|---|---|
 | W5 `requireMember` and project/core resolver seams | Post-merge | implement filtered compound membership lookup and register W5 resource resolvers | handed over from w1 | 2026-11-03 |
 | W7 resource resolvers | Post-merge | implement proposal resolvers and register them (W9's activity/summary/standup resolvers are done) (session/usage resolvers are W15's) | handed over from w1, w2-gateway | 2026-11-03 |
-| W9 SELF membership check | Post-merge | ensure removed developers cannot access endpoints 52–54 through owner-only resolution | handed over from w1 | 2026-11-03 |
+| W16: standup edit and feedback must check membership | Todo | endpoint 52 is covered (its `DEV_STANDUP_MINE_READ` resolver calls `requireMember` before setting `ownerId`; route test in `src/be/api/test/dev-routes.test.ts`). When W16 builds 53 and 54 (`SELF` on a standup id), their resolvers must check the caller's current membership of the standup's project, not only that they own the row | handed over from w9-self-membership | 2026-11-13 |
 | W5 ADDER target-role semantics | Post-merge | resolve target roles and preserve 422/NOT_FOUND behavior for endpoints 10 and 11 | handed over from w1 | 2026-11-03 |
 | W13 Deploy hello-world calling SoCLaaS `GET /v1/models` | Todo | answers G-26, G-32, G-33 with something running | delivery-plan P0 | 2026-10-31 |
 | W15 usage endpoints 56 and 57 | Todo | W15 owns endpoints 56 and 57 and their resolvers (spec SD3). It calls `usageSummary` with a date range (it reads every matching row to compute the means) and gates endpoint 57 by role; `usageSessions`, `usageSummary` and `failureReason` all take `settings.tier` | handed over from w2-gateway | 2026-11-07 |
@@ -75,7 +75,8 @@ Verification commands are configured in `workflow/config.json`: `npm test`, `npm
 | S20/S18 wiring to the live W9 API | Workstream | Medium follow-up (C69), in progress on branch `w9-screen-wiring`; the browser must cut bodies over 2000 characters instead of rejecting them (spec SD4), send `{}` (not an empty body) to endpoint 51, and render summaries and standup lines as plain text only | handed over from w9-dev-slice | 2026-11-13 |
 | W5: `core.blockedTasks` ignores the window | Todo | to the Dev Lead (W5): `core.blockedTasks` now ignores `options.window` and lists every task assigned to the caller that is blocked now (D23); `context-sources.test.ts` was updated to match (the W5 spec names no window for this source, so it is unchanged). DEV_STANDUP is its only consumer | handed over from w9-dev-slice | 2026-11-13 |
 | Merge the two `bodyTooLarge` helpers | Todo | two identical `bodyTooLarge` helpers exist (`src/be/api/src/body-limit.ts` from W9, `src/be/api/src/routes/shared.ts` from W7/W8; `auth.ts` and `pm.ts` use the latter); fold them into one in a Small change. W4: `auth.ts` keeps 4,096 bytes. W1: `RouteDefinition.bodyLimitBytes` (plan P1) reads the body after authorisation; endpoints 49 (1 MiB), 50 and 51 (16 KiB) use it | handed over from w9-dev-slice | 2026-11-13 |
-| W9 integration test follow-ups | Todo | poll `pg_locks` instead of a 300 ms wait in the E47 lock test, and await the pending write before cleanup on failure (`src/be/dev/test/dev-integration.test.ts`) | handed over from w9-dev-slice | 2026-11-13 |
+| S20/S18 day tabs keyboard support | Todo | the day tabs (`role="tab"`) have no `tabpanel` or arrow-key navigation (accessibility) | handed over from w9-screen-wiring | 2026-11-13 |
+| One mock/live switch for the web app | Todo | three switches decide live vs fixtures: `useAuthMode()` (S20/S18, W9 SD1), `useProjectRoute().mode` (UUID in the URL, W5 #35) and `isLive()` (`LLM_MODE === 'live'`, W7 PM UI). `isLive()` keeps New project and Plan on fixtures whenever `LLM_MODE` is not `live`, even with real sign-in; the PM is fixing that. Pick one mechanism | handed over from w9-screen-wiring | 2026-11-13 |
 
 ---
 
@@ -91,7 +92,7 @@ Verification commands are configured in `workflow/config.json`: `npm test`, `npm
 | W6 | AI context assembly | Done | [spec](../../specs/2026-11-06-w6-ai-context-design.md) | [plan](../../plans/2026-11-06-w6-ai-context.md) | PR #16 merged 2026-11-07; SD4 signed off (C59); depends on W5 for `requireMember`; guide confirmed 2026-11-07 | Documented 2026-11-07 |
 | W7 | PM plan flow (proposals, pm) | Not started | — | — | Tier 1 · Big · owner PM · after W2, W3, W5, W6 | — |
 | W8 | Dev Lead facts and digest | Done | [spec](../../specs/2026-11-09-w8-dev-lead-facts-digest-design.md) (approved/amended 2026-11-09) | [plan](../../plans/2026-11-09-w8-dev-lead-facts-digest/plan.md) (approved/amended 2026-11-09) | `factsAsOf` migration, bounded ordering, `previousDigest`, session-cap mapping, compatibility trigger, and final verification complete; merged and folded 2026-11-13 | Documented 2026-11-13 |
-| W9 | Developer upload, summaries, standup | Done | [spec](../../specs/2026-11-08-w9-dev-slice-design.md) (approved 2026-11-08, amended 2026-11-09) | [plan](../../plans/2026-11-09-w9-dev-slice/plan.md) (approved 2026-11-09) | PR #29 merged 2026-11-13; S20/S18 wiring follows on `w9-screen-wiring`; guide confirmed 2026-11-13 | Documented 2026-11-13 |
+| W9 | Developer upload, summaries, standup | Done | [spec](../../specs/2026-11-08-w9-dev-slice-design.md) (approved 2026-11-08, amended 2026-11-09) | [plan](../../plans/2026-11-09-w9-dev-slice/plan.md) (approved 2026-11-09) | PR #29 merged 2026-11-13; S20/S18 wiring in W19; SELF membership for 52 verified (PR #38); guide confirmed 2026-11-13 | Documented 2026-11-13 |
 | W10 | UI mockups and shell | Done | [spec folder](../../specs/2026-11-01-w10-ui-design/ui.md) ([index](../../specs/2026-11-01-w10-ui-design.md), approved 2026-11-02) | [plan](../../plans/2026-11-02-w10-prototype.md) (approved 2026-11-02) | Tier 1 · Big · owner PM · merged 2026-11-02 (PR #6), confirmed 2026-11-02 | Documented 2026-11-02 |
 | W11 | Security corpus and authorisation tests | Done | [spec](../../specs/2026-11-09-w11-security-corpus-authorisation-tests-design.md) | [plan](../../plans/2026-11-09-w11-security-corpus-authorisation-tests/plan.md) | T1-T3 done; focused and full verification green; merged and folded 2026-11-13 | Documented 2026-11-13 |
 | W12 | CI and process security | Done | [spec](../../specs/2026-11-02-w12-ci-process-security-design.md) | [plan](../../plans/2026-11-02-w12-ci-process-security-plan.md) | T1–T7 merged (PR #9); agent policy narrowed (PR #13, C55); guide confirmed 2026-11-07 | Documented 2026-11-07 |
@@ -101,6 +102,7 @@ Verification commands are configured in `workflow/config.json`: `npm test`, `npm
 | W16 | Tier 2 remainder | Not started | — | — | Tier 2 · Medium · per owner · after W5, W7, W9 | — |
 | W17 | Experiments and telemetry evidence | Not started | — | — | P2 · Medium · all · after W7, W8, W9 | — |
 | W18 | Reflection document (R7) | Not started | — | — | Small · all · after W17 | — |
+| W19 | W9 screen wiring (S20, S18) | Done | [spec](../../specs/2026-11-12-w9-screen-wiring-design.md) (approved 2026-11-12) | in the spec (Medium) | PR #36 merged 2026-11-13; fold confirmed 2026-11-13; guide confirmed 2026-11-13; guide out of date: section 3 step 1 and the web Now still say screens other than sign-in, register and S20/S18 use fixtures (the W5 #35 and W7 #44 screens are live; their owners' checkpoint) | Documented 2026-11-13 |
 
 Sliced and confirmed 2026-10-31; realises, dependencies and areas per workstream in [slicing.md](../specs/slicing.md).
 
@@ -204,6 +206,8 @@ Status: `Not started` · `Spec'd` · `Planned` · `Building` · `Blocked — nee
 | C85 | Replace automated dev-check with manual owner evidence | decisions/C85.md |
 | C98 | Remove the W9 standup/AI probe from the T4 gate | decisions/C98.md |
 | C99 | Keep C85 for T6 | decisions/C99.md |
+| C100 | Wire the W9 endpoints only; the project screens stay mock (S20/S18) | [C100](decisions/C100.md) |
+| C101 | Hide standup Edit, Use as is and thumbs in live mode until W16 | [C101](decisions/C101.md) |
 
 ---
 
@@ -222,4 +226,4 @@ Status: `Not started` · `Spec'd` · `Planned` · `Building` · `Blocked — nee
 The Done ledger is **[`ledger/done-ledger.md`](ledger/done-ledger.md)**, newest first.
 
 - **Latest entry:** 2026-11-13
-- **Entries (live file):** 287
+- **Entries (live file):** 432
