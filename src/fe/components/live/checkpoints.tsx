@@ -1,9 +1,9 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ApiError, addCheckpoint_13, createCheckpointLive_13, healthOf, listCheckpointsLive_12, listEpicsLive_16, useDb, type LiveCheckpoint, type LiveEpic } from '../../lib/api';
+import { ApiError, addCheckpoint_13, createCheckpointLive_13, deleteCheckpointLive_15, healthOf, listCheckpointsLive_12, listEpicsLive_16, useDb, type LiveCheckpoint, type LiveEpic } from '../../lib/api';
 import { useProjectRoute } from '../../lib/api/project-mode';
 import { useRouter } from 'next/navigation';
-import { useModal, useRoute } from '../../lib/nav';
+import { useModal, useRole, useRoute } from '../../lib/nav';
 import RiskBadge from '../canvas/RiskBadge';
 import { toast } from './toast';
 import { fmtFull } from './people';
@@ -54,9 +54,22 @@ function LiveCheckpointCards({ projectId }: { projectId: string }) {
     return () => { active = false; };
   }, [projectId]);
   useEffect(() => { const cancel = load(); const onChange = () => { void load(); }; window.addEventListener('easel-checkpoints-changed', onChange); return () => { cancel?.(); window.removeEventListener('easel-checkpoints-changed', onChange); }; }, [load]);
+  const role = useRole();
+  const canEdit = role === 'pm' || role === 'lead';
+  // Endpoint 15: epics linked to it are unlinked by the server, so reload the whole list afterwards.
+  const remove = async (checkpoint: LiveCheckpoint) => {
+    if (!window.confirm(`Delete "${checkpoint.name}"? Its epics stay, unlinked.`)) return;
+    try {
+      await deleteCheckpointLive_15(checkpoint.id, checkpoint.version);
+      toast(`Checkpoint "${checkpoint.name}" deleted.`);
+    } catch (e) {
+      toast(e instanceof ApiError ? e.message : 'Something went wrong.', 'bad');
+    }
+    window.dispatchEvent(new Event('easel-checkpoints-changed'));
+  };
   if (loading) return <div className="card"><div className="sk" style={{ width: '45%' }} /><div className="sk" style={{ marginTop: 10 }} /></div>;
   if (error) return <div className="banner b-bad"><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg><span>{error}</span><button className="btn sm" type="button" onClick={() => { void load(); }}>Try again</button></div>;
-  return <>{rows.map((checkpoint) => <article className="card" key={checkpoint.id}><div className="row wrap between"><div className="row"><svg className="ic lg muted" aria-hidden="true"><use href="#i-flag" /></svg><h3 style={{ margin: 0 }}>{checkpoint.name}</h3></div></div><div className="row wrap" style={{ gap: 24, margin: '8px 0 12px' }}><span><span className="muted">Target </span><b className="num">{fmtFull(checkpoint.targetDate)}</b></span></div><div className="pill-list">{epics.some((e) => e.checkpointId === checkpoint.id) ? epics.filter((e) => e.checkpointId === checkpoint.id).map((e) => <span className="chip c-acc" key={e.id}>{e.title}</span>) : <span className="chip c-line">No epics linked yet</span>}</div></article>)}{rows.length === 0 && <div className="card"><b>No checkpoints yet.</b> <span className="muted">This project has no checkpoints yet. Add one to track a committed date.</span></div>}</>;
+  return <>{rows.map((checkpoint) => <article className="card" key={checkpoint.id}><div className="row wrap between"><div className="row"><svg className="ic lg muted" aria-hidden="true"><use href="#i-flag" /></svg><h3 style={{ margin: 0 }}>{checkpoint.name}</h3></div>{canEdit && <button className="btn g sm" type="button" style={{ color: 'var(--danger)' }} onClick={() => { void remove(checkpoint); }}>Delete</button>}</div><div className="row wrap" style={{ gap: 24, margin: '8px 0 12px' }}><span><span className="muted">Target </span><b className="num">{fmtFull(checkpoint.targetDate)}</b></span></div><div className="pill-list">{epics.some((e) => e.checkpointId === checkpoint.id) ? epics.filter((e) => e.checkpointId === checkpoint.id).map((e) => <span className="chip c-acc" key={e.id}>{e.title}</span>) : <span className="chip c-line">No epics linked yet</span>}</div></article>)}{rows.length === 0 && <div className="card"><b>No checkpoints yet.</b> <span className="muted">This project has no checkpoints yet. Add one to track a committed date.</span></div>}</>;
 }
 
 // Add-checkpoint form (endpoint 13).

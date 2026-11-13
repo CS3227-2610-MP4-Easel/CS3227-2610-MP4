@@ -372,6 +372,12 @@ export function removeMemberLive_11(projectId: string, userId: string): Promise<
   return apiFetch<void>(`/api/projects/${encodeURIComponent(projectId)}/members/${encodeURIComponent(userId)}`, { method: 'DELETE' });
 }
 
+// 15, 19, 25: soft deletes under the version guard. An epic delete also deletes its tasks; a DONE task (or an epic holding one) answers 409.
+const deleteLive = (path: string, id: string, version: number): Promise<void> => apiFetch<void>(`/api/${path}/${encodeURIComponent(id)}?version=${version}`, { method: 'DELETE' });
+export const deleteCheckpointLive_15 = (id: string, version: number) => deleteLive('checkpoints', id, version);
+export const deleteEpicLive_19 = (id: string, version: number) => deleteLive('epics', id, version);
+export const deleteTaskLive_25 = (id: string, version: number) => deleteLive('tasks', id, version);
+
 export async function addMemberLive_10(projectId: string, email: string): Promise<LiveMember> {
   const added = await apiFetch<LiveMember>(`/api/projects/${encodeURIComponent(projectId)}/members`, { method: 'POST', body: { email } });
   let members: LiveMember[];
