@@ -4,7 +4,10 @@ Easel is a web app for running a small Scrum project. A **Project Manager** turn
 
 This guide describes the deployed app as it is now: what each role can do, how to reach it, and how to test it. Where a feature is not available yet, it says so under [Known limitations](#9-known-limitations).
 
-<!-- TEAM: fill in the two values marked [FILL IN] before submission. -->
+<!-- TEAM: fill in the two values marked [FILL IN] before submission.
+     Retake after development is released to production (they show the older main build):
+     screenshots/new-project.png, screenshots/plan-epics.png, screenshots/add-task.png -->
+
 
 - [1. Accessing Easel](#1-accessing-easel)
 - [2. Signing up and signing in](#2-signing-up-and-signing-in)
@@ -37,6 +40,9 @@ The AI features run on the course's language-model service. If the service is bu
 
 1. Open the app. You land on **Sign in**. Click **Create an account**.
 2. **Step 1, Role and code (Pick your role):** choose **Project Manager**, **Dev Lead** or **Developer**, enter that role's **Registration code**, and click **Next**. The code is checked before any account is created. Your role cannot be changed after you register.
+
+   ![Create an account, step 1: pick a role and enter its registration code](screenshots/register-role.png)
+
 3. **Step 2, Account (Create your account):** enter a **Display name**, **Email** and **Password**, then click **Create account**.
 4. You are signed in and taken to your home page: **Projects** for a Project Manager or Dev Lead, **My work** for a Developer.
 
@@ -49,6 +55,8 @@ If you see:
 
 - **Sign in:** on the Sign in page enter the **Email** and **Password** you registered with and click **Sign in**.
 - **Sign out:** click **Sign out** at the right of the top bar.
+
+![The Sign in page](screenshots/sign-in.png)
 
 ## 3. Getting around
 
@@ -76,6 +84,8 @@ If you see:
 
 **Projects page** (Project Manager and Dev Lead): lists every project you are a member of, newest first, with its progress ("Points done"). Click a project to open its **Overview**. A Developer opens projects from the project switcher or from **My work**.
 
+![Projects page for a Project Manager, with the top bar and New project](screenshots/projects.png)
+
 ## 4. Project Manager
 
 ### 4.1 Create a project
@@ -84,6 +94,8 @@ If you see:
 2. Enter a **Name** (1 to 200 characters) and, optionally, a **Brief** (up to 4,000 characters). The assistant reads the brief when you plan with AI.
 3. Click **Create project**. You become a member automatically and land on the project's **Plan** tab.
 
+![New project form with a name and brief](screenshots/new-project.png)
+
 ### 4.2 Add a Dev Lead
 
 A Project Manager can add **Dev Leads** only.
@@ -91,6 +103,8 @@ A Project Manager can add **Dev Leads** only.
 1. Open the project's **Members** tab.
 2. Enter the Dev Lead's **Email** (they must already have an Easel account as a Dev Lead) and click **Add Dev Lead**.
 3. "Member added." confirms it. The project now appears on the Dev Lead's Projects page.
+
+![Members tab for a Project Manager, with the Add a Dev Lead form](screenshots/members-pm.png)
 
 Adding an email that has no account, or a user of another role, shows an error and adds nobody.
 
@@ -107,6 +121,8 @@ Prefer to skip AI? Use **Create manually** to go to the Backlog instead.
 - On each epic: **Edit** (title, description, checkpoint) or **Delete** (a plan keeps at least one epic).
 - **Add epic** (up to 10 epics).
 - **Confirm and Expand Epics**: the assistant writes the tasks for every epic, with story points (1 to 20). This can take up to a minute.
+
+![Plan draft: checkpoints and epics, each with its checkpoint and status](screenshots/plan-epics.png)
 
 **Step 3: review the tasks.** Each epic shows **Ready**, **Not expanded** or **Failed**, with its tasks and points.
 - **Regenerate** (a Ready epic): writes its tasks again.
@@ -141,8 +157,12 @@ On **Members**, enter a Developer's **Email** (they must already have an Easel a
 
 The **Backlog** lists epics with their tasks, grouped by epic, with each task's sprint, story points, status, a **Blocked** marker and assignee. Use **Search by title** and the filters **Unscheduled** (no sprint), **Unassigned** and **No estimate**.
 
+![Backlog grouped by epic, with search, filters, Add epic and Add task](screenshots/backlog.png)
+
 - **Add epic**: **Title** (required), **Description**, and an optional **Checkpoint** (an epic belongs to at most one).
 - **Add task**: **Epic** (required), **Title** (required), **Description**, **Acceptance criteria** (up to 12 lines of 300 characters; **Add criterion** adds a line), **Story points** (whole number 1 to 20, or none) and **Assignee** (project members only, or Unassigned).
+
+![The Add task dialog](screenshots/add-task.png)
 
 Click a task's title to open it (see [5.4](#54-board)).
 
@@ -154,6 +174,8 @@ Click a task's title to open it (see [5.4](#54-board)).
 
 Columns **To do**, **In progress**, **In review** and **Done**, each with its task count and points; 20 tasks per page (**Previous** / **Next**). Filters: **Status**, **Epic**, **Assignee** and **Blocked only**. **Add task** opens the same form as on the Backlog.
 
+![Board with To do, In progress, In review and Done columns; a blocked card shows its reason](screenshots/board.png)
+
 - **Change status**: click **…** on a card and pick a status, **Mark blocked** or **Unblock**. A blocked card shows a red **Blocked** marker.
 - **Open a task**: click its title. The task panel shows its details and lets you change **Status**, block or unblock it, and **Edit** its title, description and story points.
 
@@ -162,6 +184,8 @@ A task in a closed sprint cannot be changed ("This task is in a closed sprint an
 ### 5.5 Sprints
 
 The **Sprints** tab shows velocity and the sprints (active first, then planned, then closed), each with its dates and points. Click a sprint to show its tasks.
+
+![Sprints: velocity, an active sprint with Close sprint, and a planned sprint with Start disabled](screenshots/sprints.png)
 
 - **New sprint**: **Name**, **Start date** and **End date (inclusive)**, as YYYY-MM-DD. Sprint dates may not overlap.
 - **Start** (a planned sprint): only one sprint can be active; Start is disabled while another is active.
@@ -174,9 +198,13 @@ The **Sprints** tab shows velocity and the sprints (active first, then planned, 
 
 **Digest**: click **Generate digest** (later **Refresh digest**) for a short AI explanation of the facts. If nothing changed since the last digest, the same one is shown ("Nothing changed since the last digest, so the same one is shown."). If the AI is unavailable, the facts stay and the digest says "The AI part is unavailable right now."
 
+![Health: progress, velocity, checkpoint risk, overload and the Digest card](screenshots/health.png)
+
 ### 5.7 Team standups
 
 **Standups** shows one card per Developer in the project, in name order, for **For today** (default), **For the next standup** or **Earlier** (pick one of the 7 days before today). Filter by **Developer**. Each card shows **YESTERDAY**, **TODAY** and **BLOCKERS**, with the badges **Edited**, **Built from task activity only** (made without the AI) and **Flagged for review**. A Developer with no standup that day shows "not generated". This page is read-only.
+
+![Team standups for today, with a Developer who has not generated one](screenshots/team-standups.png)
 
 ## 6. Developer
 
@@ -189,11 +217,15 @@ Your home page. It lists your open tasks across all your projects ("*n* open, *b
 - **Mark blocked** / **Unblock** toggles its Blocked marker;
 - the project name opens the project, and the task title opens the task.
 
+![My work: open tasks with a status dropdown and Mark blocked](screenshots/my-work.png)
+
 On a project's **Board** you can change the status of tasks assigned to you, the same way as a Dev Lead ([5.4](#54-board)). Other people's tasks are read-only.
 
 ### 6.2 My standup
 
 Open a project and its **My standup** tab. The page has three parts.
+
+![My standup before an upload: the upload area, and no standup yet for the next standup](screenshots/standup-upload.png)
 
 **1. Upload activity.** Upload a JSON file of your commits and pull requests. Only titles, short bodies and file names are used; diffs are never read.
 - Choose or drop one `.json` file: at most 1 MB and 100 items. Use **Download an example file** to see the format.
@@ -213,6 +245,8 @@ Open a project and its **My standup** tab. The page has three parts.
 - **Regenerate** builds it again. If nothing changed: "Nothing has changed since this was generated. Upload new activity to refresh it."
 - **Copy** copies the standup as plain text.
 - "AI is busy. Try again in *s* s." disables Regenerate for that time. "AI features are off for this deployment." means AI is switched off.
+
+![A generated standup with Yesterday, Today and Blockers, and Regenerate and Copy](screenshots/standup.png)
 
 Only you see your own standup here; your Dev Lead sees it on **Standups**.
 
