@@ -107,19 +107,19 @@ test("E47 plan body schemas are strict and count code points", () => {
   const idea = (n: number, ch = "a") => ({ idea: ch.repeat(n) });
   assert.equal(PlanCreateBodySchema.safeParse(idea(19)).success, false);
   assert.equal(PlanCreateBodySchema.safeParse(idea(20)).success, true);
-  assert.equal(PlanCreateBodySchema.safeParse(idea(6000)).success, true);
-  assert.equal(PlanCreateBodySchema.safeParse(idea(6001)).success, false);
+  assert.equal(PlanCreateBodySchema.safeParse(idea(2000)).success, true);
+  assert.equal(PlanCreateBodySchema.safeParse(idea(2001)).success, false);
   assert.equal(PlanCreateBodySchema.safeParse(idea(20, "😀")).success, true);
-  assert.equal(PlanCreateBodySchema.safeParse(idea(6000, "😀")).success, true);
+  assert.equal(PlanCreateBodySchema.safeParse(idea(2000, "😀")).success, true);
   assert.equal(PlanCreateBodySchema.safeParse(idea(19, "😀")).success, false);
-  assert.equal(PlanCreateBodySchema.safeParse(idea(6001, "😀")).success, false);
+  assert.equal(PlanCreateBodySchema.safeParse(idea(2001, "😀")).success, false);
   assert.equal(PlanCreateBodySchema.safeParse({ idea: "😀".repeat(10) }).success, false);
-  assert.equal(PlanCreateBodySchema.safeParse(idea(24001)).success, false);
-  for (const n of [19, 6001]) {
+  assert.equal(PlanCreateBodySchema.safeParse(idea(8001)).success, false);
+  for (const n of [19, 2001]) {
     const r = PlanCreateBodySchema.safeParse(idea(n));
     assert.equal(r.success, false);
     if (!r.success) {
-      assert.equal(r.error.issues[0].message, "Must be 20 to 6000 characters.");
+      assert.equal(r.error.issues[0].message, "Must be 20 to 2000 characters.");
       assert.equal(r.error.issues[0].message.includes("a".repeat(19)), false);
     }
   }
