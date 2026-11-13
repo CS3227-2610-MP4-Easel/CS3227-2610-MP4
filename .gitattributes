@@ -3,5 +3,6 @@ workflow/** text eol=lf
 .claude/** text eol=lf
 .codex/** text eol=lf
 .githooks/* text eol=lf
+src/be/db/prisma/migrations/** text eol=lf
 AGENTS.md text eol=lf
 CLAUDE.md text eol=lf

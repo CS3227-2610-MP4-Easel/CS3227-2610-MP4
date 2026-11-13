@@ -4,6 +4,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { buildMigrationCommand, runProductionMigration, runProductionMigrationCli, validateMigrationInputs, validateMigrationManifest } from "../../../../scripts/w13/migrate-production.mjs";
 import { validateRecoveryEvidence } from "../../../../scripts/w13/recovery-evidence.mjs";
@@ -117,7 +118,7 @@ test("production migration CLI redacts executor failures", async () => {
 });
 
 test("production migration CLI rejects direct local invocation", () => {
-  const result = spawnSync(process.execPath, ["--import", "tsx", new URL("../../../../scripts/w13/migrate-production.mjs", import.meta.url).pathname], {
+  const result = spawnSync(process.execPath, ["--import", "tsx", fileURLToPath(new URL("../../../../scripts/w13/migrate-production.mjs", import.meta.url))], {
     env: { ...process.env, GITHUB_ACTIONS: "false" },
     encoding: "utf8",
   });
