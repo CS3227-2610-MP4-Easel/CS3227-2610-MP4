@@ -414,7 +414,7 @@ export function getTaskLive_22(taskId: string): Promise<LiveTask> {
 
 export function updateTaskLive_23(taskId: string, input: LiveTaskUpdateInput): Promise<LiveTask> {
   const body: Record<string, unknown> = {};
-  for (const key of ['title', 'description', 'acceptanceCriteria', 'storyPoints', 'assigneeId'] as const) {
+  for (const key of ['title', 'description', 'acceptanceCriteria', 'storyPoints', 'assigneeId', 'sprintId'] as const) {
     if (input[key] !== undefined) body[key] = input[key];
   }
   body.version = input.version;

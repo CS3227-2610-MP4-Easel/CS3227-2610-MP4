@@ -492,7 +492,7 @@ describe('endpoints', () => {
     expect(fetchMock.mock.calls[0][1].body).not.toContain('sprintId');
   });
 
-  it('F5/E11 task read and update encode IDs and include versions without sprintId', async () => {
+  it('F5/E11 task read and update encode IDs and include versions with sprint assignment', async () => {
     reply(200, '{}');
     await getTaskLive_22('task 1');
     expect(fetchMock.mock.calls[0][0]).toBe('/api/tasks/task%201');
@@ -500,8 +500,7 @@ describe('endpoints', () => {
     await updateTaskLive_23('task 1', { title: 'Updated', storyPoints: null, version: 4, sprintId: 'must-not-send' } as never);
     expect(fetchMock.mock.calls[1][0]).toBe('/api/tasks/task%201');
     expect(fetchMock.mock.calls[1][1].method).toBe('PATCH');
-    expect(fetchMock.mock.calls[1][1].body).toBe('{"title":"Updated","storyPoints":null,"version":4}');
-    expect(fetchMock.mock.calls[1][1].body).not.toContain('sprintId');
+    expect(fetchMock.mock.calls[1][1].body).toBe('{"title":"Updated","storyPoints":null,"sprintId":"must-not-send","version":4}');
 
     await updateTaskLive_23('task 1', { description: null, assigneeId: null, version: 5, extra: 'omit' } as never);
     expect(fetchMock.mock.calls[2][1].body).toBe('{"description":null,"assigneeId":null,"version":5}');

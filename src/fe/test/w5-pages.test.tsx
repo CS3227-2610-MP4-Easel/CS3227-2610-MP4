@@ -1,15 +1,19 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProjectRouteContext, projectRoute } from '../lib/api/project-mode';
-import { RoleCtx } from '../lib/nav';
+import { ModalCtx, RoleCtx } from '../lib/nav';
 import { ApiError } from '../lib/api';
 
 const listTasks = vi.fn();
 const listEpics = vi.fn();
+const listLiveEpics = vi.fn();
 const listMembers = vi.fn();
 const listCheckpoints = vi.fn();
+const getFacts = vi.fn();
 const listSprints = vi.fn();
+const readProgress = vi.fn();
 const createCheckpoint = vi.fn();
+const patchSprint = vi.fn();
 const getTask = vi.fn();
 const updateTask = vi.fn();
 const setStatus = vi.fn();
@@ -29,10 +33,14 @@ vi.mock('../lib/api', async () => {
     ...actual,
     listTasksLive_20: (...args: unknown[]) => listTasks(...args),
     listEpicsLive_16: (...args: unknown[]) => listEpics(...args),
+    listLiveEpics_16: (...args: unknown[]) => listLiveEpics(...args),
     listMembersLive_9: (...args: unknown[]) => listMembers(...args),
     listCheckpointsLive_12: (...args: unknown[]) => listCheckpoints(...args),
+    getFacts_42: (...args: unknown[]) => getFacts(...args),
     listSprintsLive_27: (...args: unknown[]) => listSprints(...args),
+    readProgressLive_33: (...args: unknown[]) => readProgress(...args),
     createCheckpointLive_13: (...args: unknown[]) => createCheckpoint(...args),
+    patchSprintLive_29: (...args: unknown[]) => patchSprint(...args),
     getTaskLive_22: (...args: unknown[]) => getTask(...args),
     updateTaskLive_23: (...args: unknown[]) => updateTask(...args),
     setTaskStatusLive_24: (...args: unknown[]) => setStatus(...args),
@@ -49,9 +57,11 @@ vi.mock('../lib/auth/session', async () => {
 import BoardView from '../components/canvas/BoardView';
 import { MemberTable, AddMember } from '../components/live/members';
 import { AddEpicForm, AddTaskForm } from '../components/live/forms';
+import { NewSprintForm } from '../components/live/forms';
 import BacklogList from '../components/live/backlog-list';
 import TaskDrawer from '../components/live/task-drawer';
 import { AddCheckpointForm, CheckpointCards } from '../components/live/checkpoints';
+import SprintsPage from '../components/live/sprints-page';
 
 const PROJECT = '550e8400-e29b-41d4-a716-446655440000';
 const route = projectRoute(`/projects/${PROJECT}/board`);
@@ -69,10 +79,14 @@ function liveView(children: React.ReactNode) {
 beforeEach(() => {
   listTasks.mockReset().mockResolvedValue({ items: [task], page: 0, size: 20, total: 1 });
   listEpics.mockReset().mockResolvedValue({ items: [{ id: 'epic-1', projectId: PROJECT, checkpointId: null, title: 'Live epic', description: null, position: 0, taskCount: 1, pointsTotal: 3, createdAt: '', updatedAt: '', version: 1 }], page: 0, size: 100, total: 1 });
+  listLiveEpics.mockReset().mockResolvedValue([]);
   listMembers.mockReset().mockResolvedValue([{ userId: 'user-1', displayName: 'Ada Lead', role: 'DEVELOPER', addedAt: '' }, { userId: 'user-1', displayName: 'Ada Lead', role: 'DEVELOPER', addedAt: '' }]);
   listCheckpoints.mockReset().mockResolvedValue([]);
+  getFacts.mockReset().mockResolvedValue({ checkpoints: [] });
   listSprints.mockReset().mockResolvedValue({ items: [{ id: 'sprint-must-not-be-used', projectId: PROJECT, name: 'Sprint 1: Test', status: 'ACTIVE', startDate: '', endDate: '', completedPoints: 0, version: 1 }], page: 0, size: 100, total: 1 });
+  readProgress.mockReset().mockResolvedValue({ pointsTotal: 3, pointsDone: 0, percent: 0, unestimatedTasks: 0, velocity: [] });
   createCheckpoint.mockReset().mockResolvedValue({ id: 'checkpoint-1', projectId: PROJECT, name: 'Launch', targetDate: '2026-12-01', createdAt: '', updatedAt: '', version: 1 });
+  patchSprint.mockReset().mockResolvedValue({ id: 'sprint-1', projectId: PROJECT, name: 'Sprint 1: Updated', status: 'PLANNED', startDate: '2026-11-16', endDate: '2026-11-27', completedPoints: null, version: 2 });
   getTask.mockReset().mockResolvedValue(task);
   updateTask.mockReset().mockResolvedValue({ ...task, title: 'Saved task', version: 5 });
   setStatus.mockReset().mockResolvedValue({ ...task, status: 'IN_PROGRESS', version: 5 });
@@ -145,6 +159,65 @@ describe('W5 live planning surfaces', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: 'Mark blocked' }));
     await act(async () => {});
     expect(setStatus).toHaveBeenCalledWith('task-1', expect.objectContaining({ blocked: true, blockedReason: 'Blocked', version: 4 }));
+  });
+
+  it('lets Dev Leads assign a task to a sprint or explicitly return it to No sprint', async () => {
+    listSprints.mockResolvedValue({ items: [{ id: 'sprint-1', projectId: PROJECT, name: 'Sprint 1', status: 'PLANNED', startDate: '', endDate: '', completedPoints: null, version: 1 }], page: 0, size: 100, total: 1 });
+    getTask.mockResolvedValue({ ...task, sprintId: null });
+    updateTask.mockResolvedValue({ ...task, sprintId: 'sprint-1', version: 5 });
+    render(liveView(<TaskDrawer projectId={PROJECT} />));
+    expect(await screen.findByRole('option', { name: 'No sprint' })).toBeTruthy();
+    expect(screen.getByRole('option', { name: 'Sprint 1' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Sprint'), { target: { value: 'sprint-1' } });
+    await act(async () => {});
+    expect(updateTask).toHaveBeenCalledWith('task-1', { sprintId: 'sprint-1', version: 4 });
+  });
+
+  it('highlights the Sprint field when story points are required for assignment', async () => {
+    getTask.mockResolvedValue({ ...task, storyPoints: null, sprintId: null });
+    render(liveView(<TaskDrawer projectId={PROJECT} />));
+    expect(await screen.findByRole('heading', { name: 'Live task' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Sprint'), { target: { value: 'sprint-must-not-be-used' } });
+    await act(async () => {});
+    expect(screen.getByLabelText('Sprint').className).toContain('err');
+    expect(screen.getAllByText('Add story points before assigning this task to a sprint.')).toHaveLength(2);
+    expect(updateTask).not.toHaveBeenCalled();
+  });
+
+  it('highlights Story points when saving an assigned task without an estimate', async () => {
+    getTask.mockResolvedValue({ ...task, sprintId: 'sprint-must-not-be-used', storyPoints: null });
+    render(liveView(<TaskDrawer projectId={PROJECT} />));
+    expect(await screen.findByRole('heading', { name: 'Live task' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await act(async () => {});
+    expect(screen.getByLabelText('Story points').className).toContain('err');
+    expect(screen.getByRole('alert').textContent).toContain('Add story points before saving a task assigned to a sprint.');
+    expect(updateTask).not.toHaveBeenCalled();
+  });
+
+  it('refreshes sprint task lists after a task assignment changes', async () => {
+    render(<ProjectRouteContext.Provider value={route}><RoleCtx.Provider value="lead"><SprintsPage /></RoleCtx.Provider></ProjectRouteContext.Provider>);
+    expect(await screen.findByText('Sprint 1: Test')).toBeTruthy();
+    expect(listSprints).toHaveBeenCalledTimes(1);
+    window.dispatchEvent(new Event('easel-board-refresh'));
+    await act(async () => {});
+    expect(listSprints).toHaveBeenCalledTimes(2);
+  });
+
+  it('loads sprint data into the edit modal and uses Save sprint', async () => {
+    listSprints.mockResolvedValue({ items: [{ id: 'sprint-1', projectId: PROJECT, name: 'Sprint 1: Planning', status: 'PLANNED', startDate: '2026-11-16', endDate: '2026-11-27', completedPoints: null, version: 4 }], page: 0, size: 100, total: 1 });
+    const close = vi.fn();
+    render(<ProjectRouteContext.Provider value={route}><RoleCtx.Provider value="lead"><ModalCtx.Provider value={{ modal: { file: 'SprintsNew', closeTo: `/projects/${PROJECT}/sprints`, params: { sprint: 'sprint-1' } }, open: vi.fn(), close }}><NewSprintForm /></ModalCtx.Provider></RoleCtx.Provider></ProjectRouteContext.Provider>);
+    expect(await screen.findByRole('heading', { name: 'Edit sprint' })).toBeTruthy();
+    expect(screen.getByLabelText('Name', { exact: false }).getAttribute('value')).toBe('Sprint 1: Planning');
+    expect(screen.getByLabelText('Start date', { exact: false }).getAttribute('value')).toBe('2026-11-16');
+    expect(screen.getByLabelText('End date (inclusive)', { exact: false }).getAttribute('value')).toBe('2026-11-27');
+    expect(screen.getByRole('button', { name: 'Save sprint' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Save sprint' }));
+    await act(async () => {});
+    expect(patchSprint).toHaveBeenCalledWith('sprint-1', { name: 'Sprint 1: Planning', startDate: '2026-11-16', endDate: '2026-11-27', version: 4 });
+    expect(close).toHaveBeenCalledTimes(1);
   });
 
   it('F7 E10 E12 loads and reloads live members without a remove control', async () => {
@@ -312,6 +385,53 @@ describe('W5 live planning surfaces', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByText('No checkpoints yet.')).toBeTruthy();
     expect(listCheckpoints).toHaveBeenCalledTimes(2);
+  });
+
+  it('renders only epics linked to each live checkpoint', async () => {
+    listCheckpoints.mockResolvedValueOnce([{ id: 'checkpoint-1', projectId: PROJECT, name: 'Launch', targetDate: '2026-12-01', createdAt: '', updatedAt: '', version: 1 }]);
+    listLiveEpics.mockResolvedValueOnce([
+      { id: 'epic-1', projectId: PROJECT, checkpointId: 'checkpoint-1', title: 'Linked epic', description: null, position: 0, taskCount: 0, pointsTotal: 0, createdAt: '', updatedAt: '', version: 1 },
+      { id: 'epic-2', projectId: PROJECT, checkpointId: null, title: 'Unlinked epic', description: null, position: 1, taskCount: 0, pointsTotal: 0, createdAt: '', updatedAt: '', version: 1 },
+    ]);
+
+    render(liveView(<CheckpointCards showRisk />));
+
+    expect(await screen.findByText('Linked epic', { exact: false })).toBeTruthy();
+    expect(screen.queryByText('Unlinked epic')).toBeNull();
+    expect(screen.queryByText('No linked epics in checkpoint response.')).toBeNull();
+    expect(listCheckpoints).toHaveBeenCalledWith(PROJECT);
+    expect(listLiveEpics).toHaveBeenCalledWith(PROJECT);
+  });
+
+  it('matches the role-specific checkpoint information in the mockup', async () => {
+    listCheckpoints.mockResolvedValue([{ id: 'checkpoint-1', projectId: PROJECT, name: 'Launch', targetDate: '2026-12-01', createdAt: '', updatedAt: '', version: 1 }]);
+    listLiveEpics.mockResolvedValue([{ id: 'epic-1', projectId: PROJECT, checkpointId: 'checkpoint-1', title: 'Linked epic', description: null, position: 0, taskCount: 2, pointsTotal: 5, createdAt: '', updatedAt: '', version: 1 }]);
+    getFacts.mockResolvedValue({ checkpoints: [{ id: 'checkpoint-1', name: 'Launch', targetDate: '2026-12-01', remainingPoints: 3, projectedDate: null, risk: 'AT_RISK' }] });
+
+    const lead = render(liveView(<CheckpointCards showRisk />));
+    expect(await lead.findByText('At risk')).toBeTruthy();
+    expect(lead.getByText('Remaining', { exact: false })).toBeTruthy();
+    expect(lead.getByText('Close a sprint to get a projected date.')).toBeTruthy();
+    expect(lead.getByText('Linked epic', { exact: false })).toBeTruthy();
+    lead.unmount();
+
+    const developer = render(<ProjectRouteContext.Provider value={route}><RoleCtx.Provider value="dev"><CheckpointCards showRisk={false} /></RoleCtx.Provider></ProjectRouteContext.Provider>);
+    expect(await developer.findByText('Linked epic', { exact: false })).toBeTruthy();
+    expect(developer.queryByText('At risk')).toBeNull();
+    expect(developer.queryByText('Close a sprint to get a projected date.')).toBeNull();
+    expect(getFacts).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows a computed forecast date on PM and lead checkpoint cards', async () => {
+    listCheckpoints.mockResolvedValue([{ id: 'checkpoint-1', projectId: PROJECT, name: 'Launch', targetDate: '2026-12-01', createdAt: '', updatedAt: '', version: 1 }]);
+    getFacts.mockResolvedValue({ checkpoints: [{ id: 'checkpoint-1', name: 'Launch', targetDate: '2026-12-01', remainingPoints: 0, projectedDate: '2026-11-28', risk: 'ON_TRACK' }] });
+
+    render(liveView(<CheckpointCards showRisk />));
+
+    expect(await screen.findByText('Projected')).toBeTruthy();
+    expect(screen.getByText('Sat 28 Nov')).toBeTruthy();
+    expect(screen.getByText('Remaining', { exact: false })).toBeTruthy();
+    expect(screen.queryByText('Close a sprint to get a projected date.')).toBeNull();
   });
 
   it('E14 keeps PM live board and task drawer read-only', async () => {
