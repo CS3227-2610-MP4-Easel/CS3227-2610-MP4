@@ -13,6 +13,7 @@
 - Added a regression test covering the PM/Lead risk presentation and the Developer information boundary.
 - Made computed forecast dates explicit on PM/Lead checkpoint cards; cards still explain how to get a forecast when no projected date exists.
 - Added a regression test for rendering a computed forecast date.
+- Updated checkpoint detail ordering to `Target`, `Projected`, then `Remaining`, and added task/point totals to every linked epic chip.
 
 ## Verification
 
@@ -20,6 +21,9 @@
 - `npm --prefix src/fe run lint` — passed.
 - `npm --prefix src/fe run typecheck` — passed.
 - `npm --prefix src/fe run build` — passed.
+- `npm --prefix src/fe test -- --run test/w5-pages.test.tsx` — 1 file, 26 tests passed.
+- `npm --prefix src/fe run typecheck` — passed.
+- `npm --prefix src/fe run lint` — passed.
 - `npm --prefix src/fe test -- --run test/w5-pages.test.tsx` — 1 file, 26 tests passed.
 - `npm --prefix src/fe run typecheck` — passed.
 - `npm --prefix src/fe run lint` — passed.

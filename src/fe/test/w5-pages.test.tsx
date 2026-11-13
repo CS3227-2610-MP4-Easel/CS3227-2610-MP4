@@ -329,7 +329,7 @@ describe('W5 live planning surfaces', () => {
 
     render(liveView(<CheckpointCards showRisk />));
 
-    expect(await screen.findByText('Linked epic')).toBeTruthy();
+    expect(await screen.findByText('Linked epic', { exact: false })).toBeTruthy();
     expect(screen.queryByText('Unlinked epic')).toBeNull();
     expect(screen.queryByText('No linked epics in checkpoint response.')).toBeNull();
     expect(listCheckpoints).toHaveBeenCalledWith(PROJECT);
@@ -338,18 +338,20 @@ describe('W5 live planning surfaces', () => {
 
   it('matches the role-specific checkpoint information in the mockup', async () => {
     listCheckpoints.mockResolvedValue([{ id: 'checkpoint-1', projectId: PROJECT, name: 'Launch', targetDate: '2026-12-01', createdAt: '', updatedAt: '', version: 1 }]);
-    listLiveEpics.mockResolvedValue([{ id: 'epic-1', projectId: PROJECT, checkpointId: 'checkpoint-1', title: 'Linked epic', description: null, position: 0, taskCount: 0, pointsTotal: 0, createdAt: '', updatedAt: '', version: 1 }]);
+    listLiveEpics.mockResolvedValue([{ id: 'epic-1', projectId: PROJECT, checkpointId: 'checkpoint-1', title: 'Linked epic', description: null, position: 0, taskCount: 2, pointsTotal: 5, createdAt: '', updatedAt: '', version: 1 }]);
     getFacts.mockResolvedValue({ checkpoints: [{ id: 'checkpoint-1', name: 'Launch', targetDate: '2026-12-01', remainingPoints: 3, projectedDate: null, risk: 'AT_RISK' }] });
 
     const lead = render(liveView(<CheckpointCards showRisk />));
     expect(await lead.findByText('At risk')).toBeTruthy();
-    expect(lead.getByText('Close a sprint to get a forecast.')).toBeTruthy();
+    expect(lead.getByText('Remaining', { exact: false })).toBeTruthy();
+    expect(lead.getByText('Close a sprint to get a projected date.')).toBeTruthy();
+    expect(lead.getByText('Linked epic', { exact: false })).toBeTruthy();
     lead.unmount();
 
     const developer = render(<ProjectRouteContext.Provider value={route}><RoleCtx.Provider value="dev"><CheckpointCards showRisk={false} /></RoleCtx.Provider></ProjectRouteContext.Provider>);
-    expect(await developer.findByText('Linked epic')).toBeTruthy();
+    expect(await developer.findByText('Linked epic', { exact: false })).toBeTruthy();
     expect(developer.queryByText('At risk')).toBeNull();
-    expect(developer.queryByText('Close a sprint to get a forecast.')).toBeNull();
+    expect(developer.queryByText('Close a sprint to get a projected date.')).toBeNull();
     expect(getFacts).toHaveBeenCalledTimes(1);
   });
 
@@ -359,9 +361,10 @@ describe('W5 live planning surfaces', () => {
 
     render(liveView(<CheckpointCards showRisk />));
 
-    expect(await screen.findByText('Forecast')).toBeTruthy();
+    expect(await screen.findByText('Projected')).toBeTruthy();
     expect(screen.getByText('Sat 28 Nov')).toBeTruthy();
-    expect(screen.queryByText('Close a sprint to get a forecast.')).toBeNull();
+    expect(screen.getByText('Remaining', { exact: false })).toBeTruthy();
+    expect(screen.queryByText('Close a sprint to get a projected date.')).toBeNull();
   });
 
   it('E14 keeps PM live board and task drawer read-only', async () => {

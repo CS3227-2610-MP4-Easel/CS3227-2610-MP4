@@ -8,7 +8,7 @@ import RiskBadge from '../canvas/RiskBadge';
 import { toast } from './toast';
 import { fmtFull } from './people';
 
-// Checkpoint cards (endpoint 12). Risk comes from the facts endpoint in the real build; a new checkpoint has no forecast yet.
+// Checkpoint cards (endpoint 12). PMs and Dev Leads also see delivery facts; Developers see dates and epics only.
 export function CheckpointCards({ showRisk }: { showRisk: boolean }) {
   const route = useProjectRoute();
   const db = useDb();
@@ -16,7 +16,7 @@ export function CheckpointCards({ showRisk }: { showRisk: boolean }) {
   const rows = healthOf(db).rows;
   return (
     <>
-      {rows.map(({ checkpoint: c, risk, epics, projected }) => (
+      {rows.map(({ checkpoint: c, risk, remaining, epics, projected }) => (
         <article className="card" key={c.id}>
           <div className="row wrap between">
             <div className="row">
@@ -27,9 +27,10 @@ export function CheckpointCards({ showRisk }: { showRisk: boolean }) {
           </div>
           <div className="row wrap" style={{ gap: 24, margin: '8px 0 12px' }}>
             <span><span className="muted">Target </span><b className="num">{fmtFull(c.targetDate)}</b></span>
-            {showRisk && (projected ? <span><span className="muted">Forecast </span><b className="num">{fmtFull(projected)}</b></span> : <span className="muted">Close a sprint to get a forecast.</span>)}
+            {showRisk && (projected ? <span><span className="muted">Projected </span><b className="num">{fmtFull(projected)}</b></span> : <span className="muted">Close a sprint to get a projected date.</span>)}
+            {showRisk && <span><span className="muted">Remaining </span><b className="num">{remaining} pts</b></span>}
           </div>
-          <div className="pill-list">{epics.length ? epics.map((e) => <span className="chip c-acc" key={e}>{e}</span>) : <span className="chip c-line">No epics linked yet</span>}</div>
+          <div className="pill-list">{epics.length ? epics.map((e) => { const epic = db.epics.find((candidate) => candidate.title === e); const tasks = epic ? db.tasks.filter((task) => task.epic === epic.title) : []; const points = tasks.reduce((sum, task) => sum + (task.points || 0), 0); return <span className="chip c-acc" key={e}>{e} · {tasks.length} task{tasks.length === 1 ? '' : 's'} · {points} pts</span>; }) : <span className="chip c-line">No epics linked yet</span>}</div>
         </article>
       ))}
       {db.checkpoints.length === 0 && (
@@ -67,7 +68,7 @@ function LiveCheckpointCards({ projectId, showRisk }: { projectId: string; showR
     const linkedEpics = epics.filter((epic) => epic.checkpointId === checkpoint.id);
     const fact = facts?.checkpoints.find((item) => item.id === checkpoint.id);
     const risk = fact?.risk === 'ON_TRACK' ? 'ok' : fact?.risk === 'AT_RISK' ? 'warn' : 'unknown';
-    return <article className="card" key={checkpoint.id}><div className="row wrap between"><div className="row"><svg className="ic lg muted" aria-hidden="true"><use href="#i-flag" /></svg><h3 style={{ margin: 0 }}>{checkpoint.name}</h3>{showRisk && <RiskBadge risk={risk} />}</div></div><div className="row wrap" style={{ gap: 24, margin: '8px 0 12px' }}><span><span className="muted">Target </span><b className="num">{fmtFull(checkpoint.targetDate)}</b></span>{showRisk && (fact?.projectedDate ? <span><span className="muted">Forecast </span><b className="num">{fmtFull(fact.projectedDate)}</b></span> : <span className="muted">Close a sprint to get a forecast.</span>)}</div><div className="pill-list">{linkedEpics.length ? linkedEpics.map((epic) => <span className="chip c-acc" key={epic.id}>{epic.title}</span>) : <span className="chip c-line">No epics linked yet</span>}</div></article>;
+    return <article className="card" key={checkpoint.id}><div className="row wrap between"><div className="row"><svg className="ic lg muted" aria-hidden="true"><use href="#i-flag" /></svg><h3 style={{ margin: 0 }}>{checkpoint.name}</h3>{showRisk && <RiskBadge risk={risk} />}</div></div><div className="row wrap" style={{ gap: 24, margin: '8px 0 12px' }}><span><span className="muted">Target </span><b className="num">{fmtFull(checkpoint.targetDate)}</b></span>{showRisk && (fact?.projectedDate ? <span><span className="muted">Projected </span><b className="num">{fmtFull(fact.projectedDate)}</b></span> : <span className="muted">Close a sprint to get a projected date.</span>)}{showRisk && <span><span className="muted">Remaining </span><b className="num">{fact?.remainingPoints ?? 0} pts</b></span>}</div><div className="pill-list">{linkedEpics.length ? linkedEpics.map((epic) => <span className="chip c-acc" key={epic.id}>{epic.title} · {epic.taskCount} task{epic.taskCount === 1 ? '' : 's'} · {epic.pointsTotal} pts</span>) : <span className="chip c-line">No epics linked yet</span>}</div></article>;
   })}{rows.length === 0 && <div className="card"><b>No checkpoints yet.</b> <span className="muted">This project has no checkpoints yet. Add one to track a committed date.</span></div>}</>;
 }
 
