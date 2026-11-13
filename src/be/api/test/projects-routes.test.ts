@@ -6,9 +6,9 @@ import { parseInput } from "../src/errors.js";
 
 test("E18 route factories provide validated-input routes without a database dependency", async () => {
   const projectRoutes = createProjectsRoutes({ create: async () => ({ id: "project" }), list: async () => ({ items: [], page: 0, size: 20, total: 0 }), detail: async () => ({ id: "project" }), update: async () => ({ id: "project" }), members: async () => [], addMember: async () => ({ member: { userId: "user" }, created: true }), removeMember: async () => {} });
-  const checkpointRoutes = createCheckpointsRoutes({ list: async () => [], create: async () => ({ id: "checkpoint" }), patch: async () => ({}) });
+  const checkpointRoutes = createCheckpointsRoutes({ list: async () => [], create: async () => ({ id: "checkpoint" }), patch: async () => ({}), remove: async () => {} });
   assert.deepEqual(projectRoutes.map((route) => route.operationId), ["PM_PROJECT_CREATE", "PROJECT_LIST", "PROJECT_READ", "PM_PROJECT_UPDATE", "PROJECT_MEMBER_LIST", "PROJECT_MEMBER_ADD", "PROJECT_MEMBER_REMOVE"]);
-  assert.deepEqual(checkpointRoutes.map((route) => route.operationId), ["CHECKPOINT_LIST", "CHECKPOINT_CREATE", "CHECKPOINT_UPDATE"]);
+  assert.deepEqual(checkpointRoutes.map((route) => route.operationId), ["CHECKPOINT_LIST", "CHECKPOINT_CREATE", "CHECKPOINT_UPDATE", "CHECKPOINT_DELETE"]);
   assert.ok(projectRoutes.every((route) => typeof route.handler === "function"));
 });
 

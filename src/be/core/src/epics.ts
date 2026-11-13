@@ -38,6 +38,21 @@ export function createEpics(db: EpicDb, gate: EpicAccess) {
         return output(await tx.epic.create({ data: { projectId, title: input.title, description: input.description ?? null, checkpointId: input.checkpointId ?? null, position } }));
       });
     },
+    /** Endpoint 19: soft delete that cascades to the epic's tasks; refused (409) while it holds a DONE task. */
+    async remove(actor: Actor, id: string, input: { version: number }) {
+      if (!actor.userId || (actor.role !== "PM" && actor.role !== "DEV_LEAD")) throw new Error("FORBIDDEN_ROLE");
+      await inMutationTransaction(db, async () => {}, async () => {}, async (tx: any) => {
+        const current = await tx.epic.findFirst({ where: { id } });
+        if (!current) throw new Error("NOT_FOUND");
+        await lockProjectForEpicPosition(tx, current.projectId);
+        await access(gate, actor, current.projectId, true, tx);
+        if (current.version !== input.version) throw new Error("CONFLICT_VERSION");
+        if (await tx.task.count({ where: { epicId: id, deletedAt: null, status: "DONE" } })) throw new Error("CONFLICT_STATE");
+        const now = new Date();
+        if (!(await tx.epic.updateMany({ where: { id, version: input.version }, data: { deletedAt: now, version: { increment: 1 } } })).count) throw new Error("CONFLICT_VERSION");
+        await tx.task.updateMany({ where: { epicId: id, deletedAt: null }, data: { deletedAt: now } });
+      });
+    },
     async patch(actor: Actor, id: string, input: { title?: string; description?: string | null; checkpointId?: string | null; position?: number; version: number }) {
       if (!actor.userId || (actor.role !== "PM" && actor.role !== "DEV_LEAD")) throw new Error("FORBIDDEN_ROLE");
       return inMutationTransaction(db, async () => {}, async () => {}, async (tx: any) => {
