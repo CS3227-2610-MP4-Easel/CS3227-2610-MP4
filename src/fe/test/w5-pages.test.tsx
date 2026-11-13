@@ -9,6 +9,7 @@ const listEpics = vi.fn();
 const listLiveEpics = vi.fn();
 const listMembers = vi.fn();
 const listCheckpoints = vi.fn();
+const getFacts = vi.fn();
 const listSprints = vi.fn();
 const createCheckpoint = vi.fn();
 const getTask = vi.fn();
@@ -33,6 +34,7 @@ vi.mock('../lib/api', async () => {
     listLiveEpics_16: (...args: unknown[]) => listLiveEpics(...args),
     listMembersLive_9: (...args: unknown[]) => listMembers(...args),
     listCheckpointsLive_12: (...args: unknown[]) => listCheckpoints(...args),
+    getFacts_42: (...args: unknown[]) => getFacts(...args),
     listSprintsLive_27: (...args: unknown[]) => listSprints(...args),
     createCheckpointLive_13: (...args: unknown[]) => createCheckpoint(...args),
     getTaskLive_22: (...args: unknown[]) => getTask(...args),
@@ -74,6 +76,7 @@ beforeEach(() => {
   listLiveEpics.mockReset().mockResolvedValue([]);
   listMembers.mockReset().mockResolvedValue([{ userId: 'user-1', displayName: 'Ada Lead', role: 'DEVELOPER', addedAt: '' }, { userId: 'user-1', displayName: 'Ada Lead', role: 'DEVELOPER', addedAt: '' }]);
   listCheckpoints.mockReset().mockResolvedValue([]);
+  getFacts.mockReset().mockResolvedValue({ checkpoints: [] });
   listSprints.mockReset().mockResolvedValue({ items: [{ id: 'sprint-must-not-be-used', projectId: PROJECT, name: 'Sprint 1: Test', status: 'ACTIVE', startDate: '', endDate: '', completedPoints: 0, version: 1 }], page: 0, size: 100, total: 1 });
   createCheckpoint.mockReset().mockResolvedValue({ id: 'checkpoint-1', projectId: PROJECT, name: 'Launch', targetDate: '2026-12-01', createdAt: '', updatedAt: '', version: 1 });
   getTask.mockReset().mockResolvedValue(task);
@@ -331,6 +334,23 @@ describe('W5 live planning surfaces', () => {
     expect(screen.queryByText('No linked epics in checkpoint response.')).toBeNull();
     expect(listCheckpoints).toHaveBeenCalledWith(PROJECT);
     expect(listLiveEpics).toHaveBeenCalledWith(PROJECT);
+  });
+
+  it('matches the role-specific checkpoint information in the mockup', async () => {
+    listCheckpoints.mockResolvedValue([{ id: 'checkpoint-1', projectId: PROJECT, name: 'Launch', targetDate: '2026-12-01', createdAt: '', updatedAt: '', version: 1 }]);
+    listLiveEpics.mockResolvedValue([{ id: 'epic-1', projectId: PROJECT, checkpointId: 'checkpoint-1', title: 'Linked epic', description: null, position: 0, taskCount: 0, pointsTotal: 0, createdAt: '', updatedAt: '', version: 1 }]);
+    getFacts.mockResolvedValue({ checkpoints: [{ id: 'checkpoint-1', name: 'Launch', targetDate: '2026-12-01', remainingPoints: 3, projectedDate: null, risk: 'AT_RISK' }] });
+
+    const lead = render(liveView(<CheckpointCards showRisk />));
+    expect(await lead.findByText('At risk')).toBeTruthy();
+    expect(lead.getByText('Close a sprint to get a forecast.')).toBeTruthy();
+    lead.unmount();
+
+    const developer = render(<ProjectRouteContext.Provider value={route}><RoleCtx.Provider value="dev"><CheckpointCards showRisk={false} /></RoleCtx.Provider></ProjectRouteContext.Provider>);
+    expect(await developer.findByText('Linked epic')).toBeTruthy();
+    expect(developer.queryByText('At risk')).toBeNull();
+    expect(developer.queryByText('Close a sprint to get a forecast.')).toBeNull();
+    expect(getFacts).toHaveBeenCalledTimes(1);
   });
 
   it('E14 keeps PM live board and task drawer read-only', async () => {

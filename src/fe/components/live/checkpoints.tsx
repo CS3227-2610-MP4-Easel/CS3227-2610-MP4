@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ApiError, addCheckpoint_13, createCheckpointLive_13, healthOf, listCheckpointsLive_12, listLiveEpics_16, useDb, type LiveCheckpoint, type LiveEpic } from '../../lib/api';
+import { ApiError, addCheckpoint_13, createCheckpointLive_13, getFacts_42, healthOf, listCheckpointsLive_12, listLiveEpics_16, useDb, type Facts, type LiveCheckpoint, type LiveEpic } from '../../lib/api';
 import { useProjectRoute } from '../../lib/api/project-mode';
 import { useRouter } from 'next/navigation';
 import { useModal, useRoute } from '../../lib/nav';
@@ -12,7 +12,7 @@ import { fmtFull } from './people';
 export function CheckpointCards({ showRisk }: { showRisk: boolean }) {
   const route = useProjectRoute();
   const db = useDb();
-  if (route.mode === 'live' && route.projectId) return <LiveCheckpointCards projectId={route.projectId} />;
+  if (route.mode === 'live' && route.projectId) return <LiveCheckpointCards projectId={route.projectId} showRisk={showRisk} />;
   const rows = healthOf(db).rows;
   return (
     <>
@@ -39,9 +39,10 @@ export function CheckpointCards({ showRisk }: { showRisk: boolean }) {
   );
 }
 
-function LiveCheckpointCards({ projectId }: { projectId: string }) {
+function LiveCheckpointCards({ projectId, showRisk }: { projectId: string; showRisk: boolean }) {
   const [rows, setRows] = useState<LiveCheckpoint[]>([]);
   const [epics, setEpics] = useState<LiveEpic[]>([]);
+  const [facts, setFacts] = useState<Facts | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const generation = useRef(0);
@@ -49,20 +50,24 @@ function LiveCheckpointCards({ projectId }: { projectId: string }) {
     const request = ++generation.current;
     let active = true;
     setLoading(true); setError('');
-    Promise.all([listCheckpointsLive_12(projectId), listLiveEpics_16(projectId)]).then(([nextCheckpoints, nextEpics]) => {
+    const factsRequest = showRisk ? getFacts_42(projectId).catch(() => null) : Promise.resolve(null);
+    Promise.all([listCheckpointsLive_12(projectId), listLiveEpics_16(projectId), factsRequest]).then(([nextCheckpoints, nextEpics, nextFacts]) => {
       if (active && request === generation.current) {
         setRows(nextCheckpoints);
         setEpics(nextEpics);
+        setFacts(nextFacts);
       }
     }).catch((e) => { if (active && request === generation.current) setError(e instanceof ApiError ? e.message : 'Something went wrong.'); }).finally(() => { if (active && request === generation.current) setLoading(false); });
     return () => { active = false; };
-  }, [projectId]);
+  }, [projectId, showRisk]);
   useEffect(() => { const cancel = load(); const onChange = () => { void load(); }; window.addEventListener('easel-checkpoints-changed', onChange); return () => { cancel?.(); window.removeEventListener('easel-checkpoints-changed', onChange); }; }, [load]);
   if (loading) return <div className="card"><div className="sk" style={{ width: '45%' }} /><div className="sk" style={{ marginTop: 10 }} /></div>;
   if (error) return <div className="banner b-bad"><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg><span>{error}</span><button className="btn sm" type="button" onClick={() => { void load(); }}>Try again</button></div>;
   return <>{rows.map((checkpoint) => {
     const linkedEpics = epics.filter((epic) => epic.checkpointId === checkpoint.id);
-    return <article className="card" key={checkpoint.id}><div className="row wrap between"><div className="row"><svg className="ic lg muted" aria-hidden="true"><use href="#i-flag" /></svg><h3 style={{ margin: 0 }}>{checkpoint.name}</h3></div></div><div className="row wrap" style={{ gap: 24, margin: '8px 0 12px' }}><span><span className="muted">Target </span><b className="num">{fmtFull(checkpoint.targetDate)}</b></span></div><div className="pill-list">{linkedEpics.length ? linkedEpics.map((epic) => <span className="chip c-acc" key={epic.id}>{epic.title}</span>) : <span className="chip c-line">No epics linked yet</span>}</div></article>;
+    const fact = facts?.checkpoints.find((item) => item.id === checkpoint.id);
+    const risk = fact?.risk === 'ON_TRACK' ? 'ok' : fact?.risk === 'AT_RISK' ? 'warn' : 'unknown';
+    return <article className="card" key={checkpoint.id}><div className="row wrap between"><div className="row"><svg className="ic lg muted" aria-hidden="true"><use href="#i-flag" /></svg><h3 style={{ margin: 0 }}>{checkpoint.name}</h3>{showRisk && <RiskBadge risk={risk} />}</div></div><div className="row wrap" style={{ gap: 24, margin: '8px 0 12px' }}><span><span className="muted">Target </span><b className="num">{fmtFull(checkpoint.targetDate)}</b></span>{showRisk && !fact?.projectedDate && <span className="muted">Close a sprint to get a forecast.</span>}</div><div className="pill-list">{linkedEpics.length ? linkedEpics.map((epic) => <span className="chip c-acc" key={epic.id}>{epic.title}</span>) : <span className="chip c-line">No epics linked yet</span>}</div></article>;
   })}{rows.length === 0 && <div className="card"><b>No checkpoints yet.</b> <span className="muted">This project has no checkpoints yet. Add one to track a committed date.</span></div>}</>;
 }
 
