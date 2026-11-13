@@ -1,20 +1,20 @@
-# Branch State — w7-link-ui
+# Branch State — w7c-pm-ui
 
 **What this branch has changed, and how to pick it up.** `workflow/project-state/STATE.md`
 describes `INT`; read it for context and write here instead of editing it.
 `sync-project-state` folds this file in after the branch merges.
 
-- **Branch:** w7-link-ui (from `w7-implement-pm-plan-flow` at `1bc7384`; stacked, so it merges after that branch and after W5 PR 23)
-- **Base:** 3519ff077de611e79be28b1c3743a027675260c9 (development, integrated through W7 and W7b)
+- **Branch:** w7c-pm-ui (continues the earlier `w7-link-ui` branch, whose record is merged into this file on 2026-11-13; `w7-link-ui` itself was stacked on `w7-implement-pm-plan-flow` at `1bc7384`)
+- **Base:** 57708a8 (`development` after PR #44 merged; PR #42 included)
 - **Owner:** Xiao-Congchen (PM)
-- **Status:** In review
-- **Last updated:** 2026-11-13 by Codex — PR #44 open; integration and fold boundaries reconciled
+- **Status:** Draft
+- **Last updated:** 2026-11-13 by Claude — merged the `w7-link-ui` record and the local CI-investigation record into this file
 
 **Untouched:** Conventions
 
 ---
 
-**Scope and fold boundary.** Substantive W7c record: story points 1–20 and plan-wide expansion (endpoint 61), plus W7-UI plan screens and live backlog work. PR #33 merged into a feature branch; PR #44 now carries this stack, including W7b, into `development` and is open for review. This record is not eligible for folding until that PR merges and the owner approves the fold. Do not duplicate W7 or W7b decisions/handovers; W14, W5 and W9 own their separate changes. The `codex/w7c-pm-ui.md` record only describes integration.
+**Scope and fold boundary.** Substantive W7c record: story points 1–20 and plan-wide expansion (endpoint 61), plus W7-UI plan screens and live backlog work. PR #33 merged into a feature branch; PR #44 carried this stack, including W7b, into `development` at `57708a8`. Reconcile outstanding evidence, approvals and overlapping provisional IDs before folding. Do not duplicate W7 or W7b decisions/handovers; W14, W5 and W9 own their separate changes. The former integration-only `codex/w7c-pm-ui` record and the `w7-link-ui` record are both folded into this file; `w7-implement-pm-plan-flow.md` holds W7 and W7b.
 
 **Current integration caveat:** the development merge retained newer live project navigation and backlog components in conflicts. Compare the final PR #44 diff with C~11–C~14 and the live-backlog spec before filing those decisions or claiming all earlier UI behavior remains; previously recorded browser verification predates this integration. Real authenticated PM flow, D~8 live outline, E36, conflict recovery and project switching remain unverified. Historical session rows and Remaining items below describe earlier work and require reconciliation before a fold.
 ---
@@ -26,14 +26,23 @@ describes `INT`; read it for context and write here instead of editing it.
 | Session | Started | Agent(s) | Workstream | Status | Doing | Next action | Last touched |
 |---|---|---|---|---|---|---|---|
 | s1 | 2026-11-08 | Claude Sonnet 5.5 | W7 UI | Paused | Survey done; waiting on the operator's answer on auth and live-versus-fixture mode (Remaining) | Add data-layer functions 34-41 in `src/fe/lib/api/index.ts`, then wire `PlanIdea` to 34 | 2026-11-08 |
-
 | s2 | 2026-11-10 | Codex | W7c, W7-UI | Blocked — live outline | PM history wired and reviewed; W5/W14/W16 remain with their owners; D~8 remains | Diagnose D~8; verify backlog conflict/project switching and complete E36 and live 10-epic measurement | 2026-11-11 |
+| s3 | 2026-11-13 | Claude | W7c, W7-UI | Paused | Verified CI fixes: operator ran the full suite against disposable PostgreSQL 16; only the flaky `transaction-marker` timeout failed. Merged `development` (57708a8). Consolidated branch states | Start the first item of Current remaining (PM backlog regression) | 2026-11-13 |
 
 **Upstream check (2026-11-11):** origin/main remains at the initial commit and is already an ancestor; a fast-forward-only pull was a no-op. origin/development has 59 commits absent from this branch; eight files changed on both sides. Do not merge or rebase without the required branch review and integration decision. The published parent stops at 1bc7384; its 30 W7b commits are local only.
 
 **Integration (2026-11-11):** Development integrated through the W7 and W7b stack. The PM UI now uses the Firebase-backed authenticated API client; the previous fixed frontend dev token is no longer used. Verify real sign-in, live PM calls, session behavior, project switching and sign-out before review; frontend typecheck and tests could not run because Firebase and Vitest dependencies were unavailable in the isolated checkout. W12-paths was extracted to codex/w12-paths; its independent PR must land separately.
 
-**Remaining**
+**Current remaining (2026-11-13)**
+
+- [ ] **Flaky test (handover):** `transaction-marker` fails intermittently with a connection/transaction timeout on a local PostgreSQL 16; passes on rerun. Not fixed, cause unproven; PR #44's CI run passed it.
+- [ ] Reconcile W7, W7b, W7c and W7-UI decisions, deviations, handovers and architecture together against current development and the final PR #44 tree; allocate separate provisional IDs by source before any permanent allocation.
+- [ ] **PM backlog regression:** `BacklogPM.tsx` renders `backlog-list.tsx`, while W7c `live-backlog.tsx` is no longer imported. Its checkpoint picker, editable rows, drag and keyboard moves are unreachable from the PM backlog after integration. Reconcile with W14 navigation and role/authorization behavior, restore the agreed functionality, and verify conflict recovery and project switching. C~11–C~13 cannot be treated as current implementation until repaired.
+- [ ] Diagnose live outline D~8 and verify authenticated idea → expand → approve, E36 and the live measurement where feasible; preserve limitations as handovers if unresolved.
+- [ ] Obtain owner review/approval and prepare the combined W7 family fold. Reconcile other already-folded workstreams against current development rather than replaying their entries.
+- [ ] Resolve or mark historical sessions and open items as handovers before fold; W7, W7b and W7c integration-only files must not duplicate substantive records.
+
+**Historical checklist (superseded; evidence to reconcile, not a current task list)**
 
 - [x] Flag chosen: `LLM_MODE` (C~1).
 - [x] Token source: dev token on the `local` tier (C~2); real sign-in is still the C46 follow-up.
@@ -56,10 +65,24 @@ describes `INT`; read it for context and write here instead of editing it.
 | W7c | Story points 1-20 and plan-wide expansion | Building | [spec](../../specs/2026-11-10-w7c-points-and-plan-expand-design.md) (approved 2026-11-10) | [plan](../../plans/2026-11-10-w7c-points-and-plan-expand/plan.md) (approved 2026-11-10; 9 tasks, 6 waves) | 10/10 tasks done; live E36 and measurement blocked by D~8 | — |
 | W7-UI | PM plan screens and live backlog editing | Building | [backlog editing draft](../../specs/2026-11-11-live-backlog-editing-design.md) | none yet | PM history wired; conflict/project-switch verification remains | — |
 
+## Integration record reconciliation
+
+- `codex/w7c-pm-ui` was an integration-only record. On 2026-11-12 it integrated the W7b base while retaining sprint and Dev Lead services. PR #33 merged into the W7b feature branch; PR #44 merged the stack to development at `57708a8`. The 2026-11-13 integration retained W14 services and UI, and its typecheck, 48 focused backend tests and 286 frontend tests passed. Real sign-in and the live PM flow remain unverified. W14 and other workstreams retain their own records.
+- The local CI-investigation record that briefly used this filename is folded into this file (its Changes lines are below). PR #44 head `8231861` passed the workspace CI job, whose workflow provisions PostgreSQL 16, applies migrations and runs `npm test` with `W1_INTEGRATION_DATABASE_URL`; typecheck, lint and contract jobs also passed. On 2026-11-13 the operator also ran the full suite locally against a disposable PostgreSQL 16 container: no failures except the flaky `transaction-marker` timeout.
+- `codex/w7-pm-plan-flow` and `codex/w7b-plan-editing` integration records were deleted; their content is in `w7-implement-pm-plan-flow.md` (Integration record reconciliation).
+
+---
+
 ## 3. Changes
 
 | Date | What changed | Workstream | Ref |
 |---|---|---|---|
+| 2026-11-13 | Consolidated branch states: `w7-link-ui.md` and the local CI-investigation record merged into this file; the three `codex/w7*` integration records deleted (already reconciled in `w7-implement-pm-plan-flow.md`). | W7c, W7-UI | working tree |
+| 2026-11-13 | Windows test fixes in `d164778`: LF for migration SQL in `.gitattributes`, `fileURLToPath` in `w13-migration.test.ts`, and a reviewed edit to `scripts/w13/migrate-production.mjs`. Full local suite against PostgreSQL 16 then passed except the flaky `transaction-marker` timeout. | W7b, W7c | d164778 |
+| 2026-11-13 | Updated stale W14 integration assertions and the story-points hint; reject edits on archived projects before reading proposal epics (CI repairs for PR #44). | W7b, W7c | 9f4afe7 |
+| 2026-11-13 | Compared merged PM backlog with W7c: `live-backlog.tsx` is not imported; W14 `backlog-list.tsx` is rendered instead, leaving W7c edit/drag/picker behavior unreachable. Repair and verification remain. | W7c, W7-UI | working tree |
+| 2026-11-13 | Confirmed PR #44 merged into development at `57708a8`; coordinated reconciliation remains pending. | W7c, W7-UI | 57708a8 |
+| 2026-11-13 | Owner requested one coordinated W7/W7b/W7c fold, preserving cross-branch changes and reconciling current development. Preparation only; PR #44 has merged at `57708a8`. | W7c, W7-UI | working tree |
 | 2026-11-13 | Integrated development and opened PR #44. Typecheck, 48 focused backend tests and 286 frontend tests passed; real authenticated flow and retained UI behavior remain to be reviewed. | W7c, W7-UI | fe016cd, PR #44 |
 | 2026-11-11 | Wired PM plan history to endpoint 36 with filters, paging and project-safe opening; live browser verified approved plan, filter and new composer. FE typecheck, lint and navigation epoch test pass; independent review fixed stale-navigation races. W5/W14/W16 owner scopes retained. | W7-UI | this commit |
 | 2026-11-11 | Restored compact backlog rows and status chips; chevrons toggle checkpoint/task details, direct epic drag and keyboard move with focus restoration verified in local test project. FE typecheck, lint and spec lint passed; independent review clean. | W7-UI | this commit |
