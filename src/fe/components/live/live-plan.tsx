@@ -1,7 +1,7 @@
 'use client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { A, r } from '../../lib/nav';
+import { A, r, routeFor } from '../../lib/nav';
 import { currentProject } from '../../lib/screens';
 import { advancePlanSelection } from '../../lib/plan-selection';
 import {
@@ -219,7 +219,7 @@ export default function LivePlan() {
     setProposalKey(selectionKey);
     setProposalEpoch(selectionEpoch);
     setProposal(p);
-    if (new URLSearchParams(search).has('new')) router.replace(`${r('PlanIdea.dc.html')}?proposal=${encodeURIComponent(p.id)}`);
+    if (new URLSearchParams(search).has('new')) router.replace(`${routeFor('PlanIdea.dc.html', projectId)}?proposal=${encodeURIComponent(p.id)}`);
   });
 
   const expand = (index: number) => run(`expand-${index}`, async () => {
@@ -248,7 +248,8 @@ export default function LivePlan() {
     remember(null);
     const { checkpoints, epics, tasks } = res.created;
     toast(`Plan approved: ${checkpoints} checkpoints, ${epics} epics and ${tasks} tasks created.`);
-    router.push(r('Backlog.dc.html'));
+    // `r` alone gives the prototype project (p1); a push must carry the open project's id.
+    router.push(routeFor('Backlog.dc.html', projectId));
   });
 
   const reject = () => run('reject', async () => {
