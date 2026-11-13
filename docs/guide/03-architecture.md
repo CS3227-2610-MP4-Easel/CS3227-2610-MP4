@@ -16,7 +16,7 @@ flowchart LR
   H --> D["src/be/db filtered client"]
 ```
 
-1. A screen calls a function in `lib/api`, for example `listTasks`. Sign-in and register call the API through `apiFetch`; the other screens still use the W10 fixture/store data layer.
+1. A screen calls a function in `lib/api`, for example `listTasks`. Sign-in, register, S20 (My standup) and S18 (Team standups) call the API through `apiFetch`; the other screens still use the W10 fixture/store data layer.
 2. Live requests enter through the minimal Next catch-all adapter and are forwarded to the Hono API.
 3. The API registers route definitions through the shared `ROUTES` list, authorizes through the policy map, validates input with contracts, and uses the filtered Prisma client for database access.
 4. Downstream workstreams provide principal lookup, resource resolvers, domain routes, and the remaining live frontend API functions.
