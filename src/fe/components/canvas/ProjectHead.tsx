@@ -39,7 +39,7 @@ export default function ProjectHead(props: { role?: string; active?: string; arc
   // Tabs a role can look at but not change, shown as a pill at the right of the tab bar.
   const MAINTAINED = 'View Only: This tab is maintained by the Dev Leads';
   const viewOnlyTabs: Record<string, Record<string, string>> = {
-    pm: { board: MAINTAINED, health: "View Only: You can't edit this tab" },
+    pm: { board: MAINTAINED, health: 'View Only: These data are dynamically generated' },
     dev: { backlog: 'View Only: This tab is maintained by your Dev Lead' },
   };
   const viewOnly = viewOnlyTabs[currentRole]?.[active];
