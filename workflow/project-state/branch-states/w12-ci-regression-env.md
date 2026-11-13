@@ -47,6 +47,15 @@
 | 2026-11-08 | Opened [PR #22](https://github.com/CS3227-2610-MP4-Easel/CS3227-2610-MP4/pull/22) against `development`. | W12 / W13 | `4271566` |
 | 2026-11-08 | Published the CI Postgres service port to the runner so migrations and integration tests can reach it. | W12 | this commit |
 
+## Folded record: `codex/w12-paths` (W12-paths)
+
+Folded here on 2026-11-13 from `codex-w12-paths.md` (branch fully merged into `development`; owner Xiao-Congchen). W12 spec: [process-security paths](../../specs/2026-11-11-process-security-paths-design.md).
+
+- **Change (2026-11-11, `122e83c`):** extracted from W7c the approved literal external-path fix to `scripts/agent-pre-tool-hook.mjs` (`isExternalPath`) and its regression tests; focused hook suite 19 passed, none skipped. Plan skipped by the operator.
+- **Decision:** the operator approved the narrowed security spec and directed implementation without a separate plan; security tests and review stayed required. Recorded on the W7c branch as C~7 — keep one entry at fold, attributed to W12-paths.
+- **Handover — shell working-directory assumption:** relative paths resolve against the Git root without an authoritative shell cwd; compound commands may change directory. Follow up with a cwd contract and tests.
+- **Handover — other shell-mediation limits:** command-script effects, shell expansion, symlinks and normalisation of absolute protected write targets are not comprehensively handled; absolute repository paths may miss root-relative protected-path matching. The literal-path fix does not close these gaps.
+
 ## 7. Decisions
 
 > Legend: `C` = project decision. AD-nn entries are in docs/architecture.
