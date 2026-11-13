@@ -58,7 +58,7 @@ export default function LiveSettings({ projectId }: { projectId: string }) {
   };
 
   return (
-    <div className="app">
+    <div className="app settings-page">
       <Top role="pm" />
       <div className="body">
         <main className="main">

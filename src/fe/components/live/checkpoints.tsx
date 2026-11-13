@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ApiError, addCheckpoint_13, createCheckpointLive_13, deleteCheckpointLive_15, healthOf, listCheckpointsLive_12, listEpicsLive_16, useDb, type LiveCheckpoint, type LiveEpic } from '../../lib/api';
+import { ApiError, addCheckpoint_13, createCheckpointLive_13, deleteCheckpointLive_15, healthOf, listCheckpointsLive_12, listEpicsLive_16, updateLiveCheckpoint_14, useDb, type LiveCheckpoint, type LiveEpic } from '../../lib/api';
 import { useProjectRoute } from '../../lib/api/project-mode';
 import { useRouter } from 'next/navigation';
 import { useModal, useRole, useRoute } from '../../lib/nav';
@@ -67,9 +67,27 @@ function LiveCheckpointCards({ projectId }: { projectId: string }) {
     }
     window.dispatchEvent(new Event('easel-checkpoints-changed'));
   };
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editDate, setEditDate] = useState('');
+  const [editErr, setEditErr] = useState('');
+  const [saving, setSaving] = useState(false);
+  const startEdit = (c: LiveCheckpoint) => { setEditId(c.id); setEditName(c.name); setEditDate(c.targetDate); setEditErr(''); };
+  const saveEdit = async (c: LiveCheckpoint) => {
+    if (!editName.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(editDate)) { setEditErr('Enter a name and a date as YYYY-MM-DD.'); return; }
+    setSaving(true); setEditErr('');
+    try {
+      await updateLiveCheckpoint_14(c.id, { name: editName.trim(), targetDate: editDate, version: c.version });
+      toast(`Checkpoint "${editName.trim()}" saved.`);
+      setEditId(null);
+      window.dispatchEvent(new Event('easel-checkpoints-changed'));
+    } catch (e) {
+      setEditErr(e instanceof ApiError ? e.message : 'Something went wrong.');
+    } finally { setSaving(false); }
+  };
   if (loading) return <div className="card"><div className="sk" style={{ width: '45%' }} /><div className="sk" style={{ marginTop: 10 }} /></div>;
   if (error) return <div className="banner b-bad"><svg className="ic" aria-hidden="true"><use href="#i-alert" /></svg><span>{error}</span><button className="btn sm" type="button" onClick={() => { void load(); }}>Try again</button></div>;
-  return <>{rows.map((checkpoint) => <article className="card" key={checkpoint.id}><div className="row wrap between"><div className="row"><svg className="ic lg muted" aria-hidden="true"><use href="#i-flag" /></svg><h3 style={{ margin: 0 }}>{checkpoint.name}</h3></div>{canEdit && <button className="btn g sm" type="button" style={{ color: 'var(--danger)' }} onClick={() => { void remove(checkpoint); }}>Delete</button>}</div><div className="row wrap" style={{ gap: 24, margin: '8px 0 12px' }}><span><span className="muted">Target </span><b className="num">{fmtFull(checkpoint.targetDate)}</b></span></div><div className="pill-list">{epics.some((e) => e.checkpointId === checkpoint.id) ? epics.filter((e) => e.checkpointId === checkpoint.id).map((e) => <span className="chip c-acc" key={e.id}>{e.title}</span>) : <span className="chip c-line">No epics linked yet</span>}</div></article>)}{rows.length === 0 && <div className="card"><b>No checkpoints yet.</b> <span className="muted">This project has no checkpoints yet. Add one to track a committed date.</span></div>}</>;
+  return <>{rows.map((checkpoint) => <article className="card" key={checkpoint.id}><div className="row wrap between"><div className="row"><svg className="ic lg muted" aria-hidden="true"><use href="#i-flag" /></svg><h3 style={{ margin: 0 }}>{checkpoint.name}</h3></div>{canEdit && editId !== checkpoint.id && <div className="row"><button className="ia" type="button" aria-label="Edit checkpoint" data-tip="Edit checkpoint" disabled={editId !== null} onClick={() => startEdit(checkpoint)}><svg className="ic" aria-hidden="true"><use href="#i-edit" /></svg></button><button className="ia d" type="button" aria-label="Delete checkpoint" data-tip="Delete checkpoint" disabled={editId !== null} onClick={() => { void remove(checkpoint); }}><svg className="ic" aria-hidden="true"><use href="#i-trash" /></svg></button></div>}</div>{editId === checkpoint.id ? <div className="stack8" style={{ margin: '12px 0' }}><div className="row wrap"><input className="in" aria-label="Checkpoint name" value={editName} onChange={(e) => setEditName(e.target.value)} style={{ flex: '1 1 240px' }} /><input className="in" aria-label="Target date" placeholder="2027-01-29" value={editDate} onChange={(e) => setEditDate(e.target.value)} style={{ width: 150 }} /></div>{editErr && <span className="err-t">{editErr}</span>}<div className="row"><button className="btn p sm" type="button" disabled={saving} onClick={() => { void saveEdit(checkpoint); }}>Save</button><button className="btn sm" type="button" disabled={saving} onClick={() => setEditId(null)}>Cancel</button></div></div> : <div className="row wrap" style={{ gap: 24, margin: '8px 0 12px' }}><span><span className="muted">Target </span><b className="num">{fmtFull(checkpoint.targetDate)}</b></span></div>}<div className="pill-list">{epics.some((e) => e.checkpointId === checkpoint.id) ? epics.filter((e) => e.checkpointId === checkpoint.id).map((e) => <span className="chip c-acc" key={e.id}>{e.title}</span>) : <span className="chip c-line">No epics linked yet</span>}</div></article>)}{rows.length === 0 && <div className="card"><b>No checkpoints yet.</b> <span className="muted">This project has no checkpoints yet. Add one to track a committed date.</span></div>}</>;
 }
 
 // Add-checkpoint form (endpoint 13).
