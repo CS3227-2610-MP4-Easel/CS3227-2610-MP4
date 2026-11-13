@@ -3,7 +3,7 @@
 // Fails on a dead link ("#", missing screen, or a screen the role cannot open) and lists
 // screens the crawl never reached and controls that look like buttons but go nowhere.
 const BASE = process.env.BASE || 'http://localhost:3100';
-const HOMES = { pm: '/projects', lead: '/lead/overview', dev: '/my-work' };
+const HOMES = { pm: '/projects', lead: '/projects', dev: '/my-work' };
 import fs from 'node:fs';
 let failed = 0;
 

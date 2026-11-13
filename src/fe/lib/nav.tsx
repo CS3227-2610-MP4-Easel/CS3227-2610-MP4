@@ -22,10 +22,8 @@ export function modalForHref(href: string): ModalRequest | null {
     'add-task': 'BacklogAddTask',
     'add-epic': 'BacklogAddEpic',
     add: path.endsWith('/checkpoints') ? 'CheckpointAdd' : '',
-    new: path === '/projects' ? 'NewProject' : path.endsWith('/sprints') ? 'SprintsNew' : '',
+    new: path === '/projects' ? 'NewProject' : '',
     remove: path.endsWith('/members') ? 'MembersRemove' : '',
-    close: path.endsWith('/sprints') ? 'SprintClose' : '',
-    'close-done': path.endsWith('/sprints') ? 'SprintCloseDone' : '',
   };
   const params = Object.fromEntries(url.searchParams.entries());
   delete params.view;

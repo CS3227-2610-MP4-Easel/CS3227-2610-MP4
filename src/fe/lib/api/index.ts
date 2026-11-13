@@ -626,11 +626,6 @@ export async function listTeamStandups_55(date: string, person?: import('./types
   return read().teamStandups.filter((s) => s.date === date && (!person || s.person === person));
 }
 
-// 56: the signed-in user's AI sessions with token and cost totals.
-export async function listAiSessions_56(): Promise<import('./types').AiSession[]> {
-  return read().aiSessions;
-}
-
 export type ApiRole = 'PM' | 'DEV_LEAD' | 'DEVELOPER';
 
 // 2: check a registration code (no session yet)
