@@ -102,7 +102,7 @@ Verification commands are configured in `workflow/config.json`: `npm test`, `npm
 | W16 | Tier 2 remainder | Not started | — | — | Tier 2 · Medium · per owner · after W5, W7, W9 | — |
 | W17 | Experiments and telemetry evidence | Not started | — | — | P2 · Medium · all · after W7, W8, W9 | — |
 | W18 | Reflection document (R7) | Not started | — | — | Small · all · after W17 | — |
-| W19 | W9 screen wiring (S20, S18) | Done | [spec](../../specs/2026-11-12-w9-screen-wiring-design.md) (approved 2026-11-12) | in the spec (Medium) | PR #36 merged 2026-11-13 | — |
+| W19 | W9 screen wiring (S20, S18) | Done | [spec](../../specs/2026-11-12-w9-screen-wiring-design.md) (approved 2026-11-12) | in the spec (Medium) | PR #36 merged 2026-11-13; fold confirmed 2026-11-13 | Awaiting confirmation |
 
 Sliced and confirmed 2026-10-31; realises, dependencies and areas per workstream in [slicing.md](../specs/slicing.md).
 
