@@ -353,6 +353,17 @@ describe('W5 live planning surfaces', () => {
     expect(getFacts).toHaveBeenCalledTimes(1);
   });
 
+  it('shows a computed forecast date on PM and lead checkpoint cards', async () => {
+    listCheckpoints.mockResolvedValue([{ id: 'checkpoint-1', projectId: PROJECT, name: 'Launch', targetDate: '2026-12-01', createdAt: '', updatedAt: '', version: 1 }]);
+    getFacts.mockResolvedValue({ checkpoints: [{ id: 'checkpoint-1', name: 'Launch', targetDate: '2026-12-01', remainingPoints: 0, projectedDate: '2026-11-28', risk: 'ON_TRACK' }] });
+
+    render(liveView(<CheckpointCards showRisk />));
+
+    expect(await screen.findByText('Forecast')).toBeTruthy();
+    expect(screen.getByText('Sat 28 Nov')).toBeTruthy();
+    expect(screen.queryByText('Close a sprint to get a forecast.')).toBeNull();
+  });
+
   it('E14 keeps PM live board and task drawer read-only', async () => {
     const pmView = <ProjectRouteContext.Provider value={route}><RoleCtx.Provider value="pm"><BoardView role="pm" /></RoleCtx.Provider></ProjectRouteContext.Provider>;
     render(pmView);

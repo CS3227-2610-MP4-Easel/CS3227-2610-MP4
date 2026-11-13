@@ -11,12 +11,18 @@
 - Added a regression test for the developer overview CTA and preserved the PM actions.
 - Matched live checkpoint cards to the role-specific mockups: PM and Dev Lead receive risk badges and forecast guidance from project facts, while Developers see only target dates and linked epics.
 - Added a regression test covering the PM/Lead risk presentation and the Developer information boundary.
+- Made computed forecast dates explicit on PM/Lead checkpoint cards; cards still explain how to get a forecast when no projected date exists.
+- Added a regression test for rendering a computed forecast date.
 
 ## Verification
 
 - `npm --prefix src/fe test` — 21 files, 287 tests passed.
 - `npm --prefix src/fe run lint` — passed.
 - `npm --prefix src/fe run typecheck` — passed.
+- `npm --prefix src/fe run build` — passed.
+- `npm --prefix src/fe test -- --run test/w5-pages.test.tsx` — 1 file, 26 tests passed.
+- `npm --prefix src/fe run typecheck` — passed.
+- `npm --prefix src/fe run lint` — passed.
 - `npm --prefix src/fe run build` — passed.
 - `npm --prefix src/fe test` — 21 files, 288 tests passed.
 - `npm --prefix src/fe test -- --run test/w5-pages.test.tsx` — 1 file, 25 tests passed.

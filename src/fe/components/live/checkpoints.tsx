@@ -27,7 +27,7 @@ export function CheckpointCards({ showRisk }: { showRisk: boolean }) {
           </div>
           <div className="row wrap" style={{ gap: 24, margin: '8px 0 12px' }}>
             <span><span className="muted">Target </span><b className="num">{fmtFull(c.targetDate)}</b></span>
-            {showRisk && !projected && <span className="muted">Close a sprint to get a forecast.</span>}
+            {showRisk && (projected ? <span><span className="muted">Forecast </span><b className="num">{fmtFull(projected)}</b></span> : <span className="muted">Close a sprint to get a forecast.</span>)}
           </div>
           <div className="pill-list">{epics.length ? epics.map((e) => <span className="chip c-acc" key={e}>{e}</span>) : <span className="chip c-line">No epics linked yet</span>}</div>
         </article>
@@ -67,7 +67,7 @@ function LiveCheckpointCards({ projectId, showRisk }: { projectId: string; showR
     const linkedEpics = epics.filter((epic) => epic.checkpointId === checkpoint.id);
     const fact = facts?.checkpoints.find((item) => item.id === checkpoint.id);
     const risk = fact?.risk === 'ON_TRACK' ? 'ok' : fact?.risk === 'AT_RISK' ? 'warn' : 'unknown';
-    return <article className="card" key={checkpoint.id}><div className="row wrap between"><div className="row"><svg className="ic lg muted" aria-hidden="true"><use href="#i-flag" /></svg><h3 style={{ margin: 0 }}>{checkpoint.name}</h3>{showRisk && <RiskBadge risk={risk} />}</div></div><div className="row wrap" style={{ gap: 24, margin: '8px 0 12px' }}><span><span className="muted">Target </span><b className="num">{fmtFull(checkpoint.targetDate)}</b></span>{showRisk && !fact?.projectedDate && <span className="muted">Close a sprint to get a forecast.</span>}</div><div className="pill-list">{linkedEpics.length ? linkedEpics.map((epic) => <span className="chip c-acc" key={epic.id}>{epic.title}</span>) : <span className="chip c-line">No epics linked yet</span>}</div></article>;
+    return <article className="card" key={checkpoint.id}><div className="row wrap between"><div className="row"><svg className="ic lg muted" aria-hidden="true"><use href="#i-flag" /></svg><h3 style={{ margin: 0 }}>{checkpoint.name}</h3>{showRisk && <RiskBadge risk={risk} />}</div></div><div className="row wrap" style={{ gap: 24, margin: '8px 0 12px' }}><span><span className="muted">Target </span><b className="num">{fmtFull(checkpoint.targetDate)}</b></span>{showRisk && (fact?.projectedDate ? <span><span className="muted">Forecast </span><b className="num">{fmtFull(fact.projectedDate)}</b></span> : <span className="muted">Close a sprint to get a forecast.</span>)}</div><div className="pill-list">{linkedEpics.length ? linkedEpics.map((epic) => <span className="chip c-acc" key={epic.id}>{epic.title}</span>) : <span className="chip c-line">No epics linked yet</span>}</div></article>;
   })}{rows.length === 0 && <div className="card"><b>No checkpoints yet.</b> <span className="muted">This project has no checkpoints yet. Add one to track a committed date.</span></div>}</>;
 }
 
