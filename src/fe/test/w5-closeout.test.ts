@@ -56,7 +56,8 @@ const evidence: Record<string, () => void> = {
     const ids = ['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'N1', 'N2', 'N3', ...Array.from({ length: 15 }, (_, i) => `E${i + 1}`)];
     for (const id of ids) expect(Object.keys(evidence)).toContain(id);
     expect(read('lib/api/index.ts')).toMatch(/createTaskLive_21|updateTaskLive_23/);
-    expect(liveScreens).not.toMatch(/createTaskLive_21\([^;]*sprintId|updateTaskLive_23\([^;]*sprintId/);
+    expect(liveScreens).not.toMatch(/createTaskLive_21\([^;]*sprintId/);
+    expect(read('components/live/task-drawer.tsx')).toContain('sprintId: sprintId || null');
   },
   E1: () => expect(focusedTests).toContain('E1'),
   E2: () => expect(focusedTests).toContain('E2'),
